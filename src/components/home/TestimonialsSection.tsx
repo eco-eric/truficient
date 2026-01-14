@@ -7,9 +7,9 @@ const testimonial = {
 };
 
 const platforms = [
-  { name: 'Facebook', icon: Facebook, color: 'bg-[#1877f2]' },
-  { name: 'Houzz', icon: null, color: 'bg-[#4dbc58]', letter: 'H' },
-  { name: 'Yelp', icon: null, color: 'bg-[#d32323]', letter: 'Y' },
+  { name: 'Facebook', icon: Facebook, color: 'bg-[#1877f2]', url: 'https://www.facebook.com/truficient' },
+  { name: 'Houzz', icon: null, color: 'bg-[#4dbc58]', letter: 'H', url: 'https://www.houzz.com/professionals/heating-and-cooling-sales-and-repair/truficient-energy-solutions-pfvwus-pf~127901012' },
+  { name: 'Yelp', icon: null, color: 'bg-[#d32323]', letter: 'Y', url: 'https://www.yelp.com/biz/truficient-energy-solutions-richardson' },
 ];
 
 const TestimonialsSection = () => {
@@ -60,7 +60,13 @@ const TestimonialsSection = () => {
           <p className="text-sm text-muted-foreground mb-6">Find us on:</p>
           <div className="flex justify-center items-center gap-8 flex-wrap">
             {platforms.map((platform) => (
-              <div key={platform.name} className="text-center group cursor-pointer">
+              <a 
+                key={platform.name} 
+                href={platform.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-center group cursor-pointer"
+              >
                 <div className={`w-14 h-14 ${platform.color} rounded-full flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform`}>
                   {platform.icon ? (
                     <platform.icon className="w-7 h-7 text-primary-foreground" />
@@ -69,7 +75,7 @@ const TestimonialsSection = () => {
                   )}
                 </div>
                 <p className="text-xs font-medium text-muted-foreground">{platform.name}</p>
-              </div>
+              </a>
             ))}
           </div>
         </motion.div>
