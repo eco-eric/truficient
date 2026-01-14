@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Phone } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 const CTASection = () => {
@@ -32,12 +33,14 @@ const CTASection = () => {
             Serving: Dallas Area • North Dallas Area • Frisco-McKinney Area • Mid-Cities Area • South Dallas Area
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              className="bg-secondary hover:bg-gold-dark text-secondary-foreground font-semibold text-lg px-8"
-            >
-              Schedule Service Now
-            </Button>
+            <Link to="/contact">
+              <Button 
+                size="lg" 
+                className="bg-secondary hover:bg-gold-dark text-secondary-foreground font-semibold text-lg px-8"
+              >
+                Schedule Service Now
+              </Button>
+            </Link>
             <a href="tel:214-238-4349">
               <Button 
                 size="lg" 
