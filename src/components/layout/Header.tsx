@@ -1,8 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, Mail, Menu, X, ChevronDown } from 'lucide-react';
+import { Phone, Mail, Menu, X, ChevronDown, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,24 +16,76 @@ const Header = () => {
   return (
     <>
       {/* Top Bar */}
-      <div className="bg-primary text-primary-foreground py-2">
+      <div className="bg-gray-800 text-white py-2">
         <div className="container mx-auto px-4 flex justify-between items-center text-sm">
-          <div className="hidden md:flex items-center gap-6">
-            <Link to="/about" className="hover:text-secondary transition-colors">
-              ABOUT
-            </Link>
-            <Link to="/residential-services" className="hover:text-secondary transition-colors">
-              SERVICES
-            </Link>
-            <Link to="/contact" className="hover:text-secondary transition-colors">
+          <div className="hidden md:flex items-center gap-1">
+            {/* ABOUT Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1 px-3 py-1 text-secondary hover:text-secondary/80 transition-colors font-medium">
+                ABOUT <ChevronDown className="w-3 h-3" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-gray-800 border-gray-700">
+                <DropdownMenuItem asChild>
+                  <Link to="/about" className="text-white hover:text-secondary cursor-pointer">
+                    Our Story
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/about#credentials" className="text-white hover:text-secondary cursor-pointer">
+                    Credentials & Certifications
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/about#commitment" className="text-white hover:text-secondary cursor-pointer">
+                    Our Commitment
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <span className="text-gray-500">|</span>
+
+            {/* SERVICE AREAS Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1 px-3 py-1 text-secondary hover:text-secondary/80 transition-colors font-medium">
+                SERVICE AREAS <ChevronDown className="w-3 h-3" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-gray-800 border-gray-700">
+                <DropdownMenuItem className="text-white hover:text-secondary cursor-pointer">
+                  Dallas
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-white hover:text-secondary cursor-pointer">
+                  Fort Worth
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-white hover:text-secondary cursor-pointer">
+                  Plano
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-white hover:text-secondary cursor-pointer">
+                  Arlington
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-white hover:text-secondary cursor-pointer">
+                  Frisco
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-white hover:text-secondary cursor-pointer">
+                  McKinney
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <span className="text-gray-500">|</span>
+
+            <Link to="/contact" className="px-3 py-1 text-secondary hover:text-secondary/80 transition-colors font-medium">
               CONTACT US
             </Link>
           </div>
           <div className="flex items-center gap-4 ml-auto">
+            <button className="text-white hover:text-secondary transition-colors">
+              <Search className="w-4 h-4" />
+            </button>
             <Button variant="secondary" size="sm" className="font-semibold">
               Schedule Online
             </Button>
-            <Button variant="outline" size="sm" className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary font-semibold">
+            <Button variant="outline" size="sm" className="border-white text-white hover:bg-white hover:text-gray-800 font-semibold">
               <Phone className="w-4 h-4 mr-1" />
               Call Now
             </Button>
