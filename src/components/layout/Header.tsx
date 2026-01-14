@@ -55,9 +55,9 @@ const Header = () => {
               <Link to="/" className="text-foreground hover:text-primary font-medium transition-colors">
                 Home
               </Link>
-              <a href="#services" className="text-foreground hover:text-primary font-medium transition-colors flex items-center gap-1">
+              <Link to="/residential-services" className="text-foreground hover:text-primary font-medium transition-colors flex items-center gap-1">
                 Services <ChevronDown className="w-4 h-4" />
-              </a>
+              </Link>
               <Link to="/about" className="text-foreground hover:text-primary font-medium transition-colors">
                 About Us
               </Link>
@@ -104,13 +104,13 @@ const Header = () => {
                   >
                     Home
                   </Link>
-                  <a 
-                    href="#services" 
+                  <Link 
+                    to="/residential-services" 
                     className="text-lg font-medium text-foreground hover:text-primary transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     Services
-                  </a>
+                  </Link>
                   <Link 
                     to="/about" 
                     className="text-lg font-medium text-foreground hover:text-primary transition-colors"
