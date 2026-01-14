@@ -1,0 +1,104 @@
+import { motion } from 'framer-motion';
+import { CheckCircle, Play } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+const features = [
+  { title: 'Residential & Commercial', subtitle: 'Expertise' },
+  { title: 'Single Zone & Multi-Zone', subtitle: 'Solutions' },
+  { title: '10 Year Residential Parts', subtitle: 'Warranty' },
+  { title: '10 Year Commercial Parts', subtitle: 'Warranty' },
+];
+
+const MitsubishiSection = () => {
+  return (
+    <section className="py-16 lg:py-24 bg-background">
+      <div className="container mx-auto px-4">
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          viewport={{ once: true }}
+          className="text-3xl md:text-4xl font-bold text-center mb-12 text-foreground"
+        >
+          DFW's Trusted Mitsubishi Diamond Contractor
+        </motion.h2>
+
+        <div className="grid lg:grid-cols-2 gap-12 items-center mb-12">
+          {/* Left - Text Content */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="relative"
+          >
+            {/* Decorative circles */}
+            <div className="absolute -left-4 -top-4 grid grid-cols-5 gap-2 opacity-10">
+              {[...Array(25)].map((_, i) => (
+                <div key={i} className="w-6 h-6 rounded-full bg-primary"></div>
+              ))}
+            </div>
+            <div className="relative z-10">
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                At Truficient, we're proud to be recognized as a Mitsubishi Electric Diamond Contractor—the highest level of certification in the industry. This prestigious designation reflects our commitment to excellence, extensive training, and proven expertise in designing and installing Mitsubishi's cutting-edge heating and cooling systems.
+              </p>
+              <p className="text-lg text-muted-foreground leading-relaxed mt-4">
+                As Diamond Contractors, we have access to exclusive products, extended warranties, and advanced training that allows us to deliver superior comfort solutions for your home or business.
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Right - Video Placeholder */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="relative"
+          >
+            <div className="relative rounded-2xl overflow-hidden shadow-xl group cursor-pointer">
+              <img
+                src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=600&h=400&fit=crop"
+                alt="HVAC technician at work"
+                className="w-full h-[350px] object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-primary/40 flex items-center justify-center">
+                <button className="w-20 h-20 rounded-full bg-secondary hover:bg-gold-dark transition-colors flex items-center justify-center shadow-lg">
+                  <Play className="w-8 h-8 text-secondary-foreground fill-current ml-1" />
+                </button>
+              </div>
+            </div>
+            <p className="text-center text-sm text-muted-foreground mt-4">Watch our story</p>
+          </motion.div>
+        </div>
+
+        {/* Features Grid */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          viewport={{ once: true }}
+          className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+        >
+          {features.map((feature, index) => (
+            <div key={index} className="flex items-start gap-3">
+              <CheckCircle className="w-6 h-6 text-secondary flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-bold text-foreground">{feature.title}</h4>
+                <p className="text-sm text-muted-foreground">{feature.subtitle}</p>
+              </div>
+            </div>
+          ))}
+        </motion.div>
+
+        <div className="text-center">
+          <Button size="lg" className="bg-secondary hover:bg-gold-dark text-secondary-foreground font-semibold">
+            Contact Us Today
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default MitsubishiSection;
