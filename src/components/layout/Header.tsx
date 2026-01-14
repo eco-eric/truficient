@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import truficientLogo from "@/assets/truficient-logo.jpg";
 import { Phone, Mail, Menu, X, ChevronDown, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -121,14 +122,12 @@ const Header = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between py-4">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-xl">T</span>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-foreground tracking-tight">truficient</div>
-                <div className="text-xs text-muted-foreground uppercase tracking-wider">hvac solutions</div>
-              </div>
+            <Link to="/" className="flex items-center">
+              <img 
+                src={truficientLogo} 
+                alt="Truficient HVAC Solutions" 
+                className="h-14 w-auto"
+              />
             </Link>
 
             {/* Desktop Navigation */}
