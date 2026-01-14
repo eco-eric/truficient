@@ -10,7 +10,6 @@ const platforms = [
   { name: 'Facebook', icon: Facebook, color: 'bg-[#1877f2]' },
   { name: 'Houzz', icon: null, color: 'bg-[#4dbc58]', letter: 'H' },
   { name: 'Yelp', icon: null, color: 'bg-[#d32323]', letter: 'Y' },
-  { name: 'Ecosource IQ', icon: null, color: 'bg-[#2d9cdb]', letter: 'E' },
 ];
 
 const TestimonialsSection = () => {
