@@ -320,14 +320,14 @@ const Contact = () => {
               <Card className="bg-card overflow-hidden">
                 <div className="relative h-[300px] bg-muted">
                   <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3346.7!2d-96.7!3d32.95!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzLCsDU3JzAwLjAiTiA5NsKwNDInMDAuMCJX!5e0!3m2!1sen!2sus!4v1"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3346.5!2d-96.7088!3d32.9567!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x864c1f8e0c0c0c0b%3A0x0!2s808%20Business%20Pkwy%2C%20Richardson%2C%20TX%2075081!5e0!3m2!1sen!2sus!4v1704067200000!5m2!1sen!2sus"
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}
                     allowFullScreen
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
-                    title="Truficient HVAC Location"
+                    title="Truficient HVAC Location - 808 Business Parkway, Richardson, TX"
                     className="absolute inset-0"
                   />
                 </div>
