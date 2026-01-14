@@ -69,6 +69,7 @@ const Contact = () => {
     setIsSubmitting(true);
 
     try {
+      // Save to database first
       const { error } = await supabase
         .from('contact_submissions')
         .insert({
@@ -81,6 +82,24 @@ const Contact = () => {
         });
 
       if (error) throw error;
+
+      // Sync to GoHighLevel (non-blocking - form succeeds even if GHL fails)
+      supabase.functions.invoke('sync-ghl-contact', {
+        body: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          serviceType: formData.serviceType,
+          message: formData.message,
+        },
+      }).then(({ error: ghlError }) => {
+        if (ghlError) {
+          console.error('GHL sync failed (non-critical):', ghlError);
+        } else {
+          console.log('Contact synced to GHL successfully');
+        }
+      });
 
       toast({
         title: "Message Sent!",
