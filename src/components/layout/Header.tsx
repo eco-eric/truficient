@@ -105,14 +105,16 @@ const Header = () => {
             <Button variant="secondary" size="sm" className="font-semibold">
               Schedule Online
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-gray-900 border-gray-900 text-white hover:bg-gray-700 hover:border-gray-700 font-semibold"
-            >
-              <Phone className="w-4 h-4 mr-1" />
-              Call Now
-            </Button>
+            <a href="tel:214-238-4349">
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-gray-900 border-gray-900 text-white hover:bg-gray-700 hover:border-gray-700 font-semibold"
+              >
+                <Phone className="w-4 h-4 mr-1" />
+                Call Now
+              </Button>
+            </a>
           </div>
         </div>
       </div>
