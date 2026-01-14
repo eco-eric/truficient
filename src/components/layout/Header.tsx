@@ -13,15 +13,15 @@ const Header = () => {
       <div className="bg-primary text-primary-foreground py-2">
         <div className="container mx-auto px-4 flex justify-between items-center text-sm">
           <div className="hidden md:flex items-center gap-6">
-            <a href="#about" className="hover:text-secondary transition-colors flex items-center gap-1">
-              ABOUT <ChevronDown className="w-3 h-3" />
-            </a>
-            <a href="#service-areas" className="hover:text-secondary transition-colors flex items-center gap-1">
-              SERVICE AREAS <ChevronDown className="w-3 h-3" />
-            </a>
-            <a href="#contact" className="hover:text-secondary transition-colors flex items-center gap-1">
-              CONTACT US <ChevronDown className="w-3 h-3" />
-            </a>
+            <Link to="/about" className="hover:text-secondary transition-colors">
+              ABOUT
+            </Link>
+            <Link to="/residential-services" className="hover:text-secondary transition-colors">
+              SERVICES
+            </Link>
+            <Link to="/contact" className="hover:text-secondary transition-colors">
+              CONTACT US
+            </Link>
           </div>
           <div className="flex items-center gap-4 ml-auto">
             <Button variant="secondary" size="sm" className="font-semibold">
@@ -61,9 +61,9 @@ const Header = () => {
               <Link to="/about" className="text-foreground hover:text-primary font-medium transition-colors">
                 About Us
               </Link>
-              <a href="#contact" className="text-foreground hover:text-primary font-medium transition-colors">
+              <Link to="/contact" className="text-foreground hover:text-primary font-medium transition-colors">
                 Contact
-              </a>
+              </Link>
             </nav>
 
             {/* Contact Info - Desktop */}
@@ -118,13 +118,13 @@ const Header = () => {
                   >
                     About Us
                   </Link>
-                  <a 
-                    href="#contact" 
+                  <Link 
+                    to="/contact" 
                     className="text-lg font-medium text-foreground hover:text-primary transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     Contact
-                  </a>
+                  </Link>
                   <div className="border-t pt-4 mt-4">
                     <div className="flex items-center gap-2 mb-3">
                       <Phone className="w-5 h-5 text-secondary" />
