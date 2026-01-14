@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import heroImage from '@/assets/hero-home-office.jpg';
 
 const HeroSection = () => {
   return (
@@ -40,8 +41,8 @@ const HeroSection = () => {
           >
             <div className="relative rounded-2xl overflow-hidden shadow-2xl">
               <img 
-                src="https://images.unsplash.com/photo-1631679706909-1844bbd07221?w=800&h=600&fit=crop" 
-                alt="Modern living room with energy-efficient HVAC system" 
+                src={heroImage}
+                alt="Man working comfortably in home office with energy-efficient mini-split HVAC" 
                 className="w-full h-[400px] lg:h-[500px] object-cover"
               />
               {/* Floating Badge */}
