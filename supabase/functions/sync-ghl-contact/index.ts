@@ -21,7 +21,7 @@ serve(async (req) => {
   }
 
   try {
-    const GHL_API_KEY = Deno.env.get('GHL_API_KEY');
+    const GHL_API_KEY = Deno.env.get('GHL_API_Key_Contact');
     const GHL_LOCATION_ID = Deno.env.get('GHL_LOCATION_ID');
 
     if (!GHL_API_KEY || !GHL_LOCATION_ID) {
