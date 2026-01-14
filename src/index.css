@@ -15,12 +15,12 @@
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 15%;
 
-    /* Navy Blue - Primary brand color */
-    --primary: 213 54% 24%;
+    /* Slate Blue - Primary brand color #435363 */
+    --primary: 210 19% 33%;
     --primary-foreground: 0 0% 100%;
 
-    /* Gold/Yellow - Accent color for CTAs */
-    --secondary: 40 76% 55%;
+    /* Gold/Orange - Accent color for CTAs #FFB547 */
+    --secondary: 36 100% 64%;
     --secondary-foreground: 215 25% 15%;
 
     /* Light gray backgrounds */
@@ -41,10 +41,11 @@
     --radius: 0.5rem;
 
     /* Custom brand colors */
-    --navy: 213 54% 24%;
-    --navy-dark: 213 60% 18%;
-    --gold: 40 76% 55%;
-    --gold-dark: 40 76% 48%;
+    --navy: 210 19% 33%;
+    --navy-dark: 210 19% 26%;
+    --gold: 36 100% 64%;
+    --gold-dark: 36 100% 54%;
+    --sage: 64 19% 59%;
     --slate: 215 25% 27%;
     --light-gray: 210 20% 96%;
 
