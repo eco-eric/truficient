@@ -66,6 +66,7 @@ export default {
           DEFAULT: "hsl(var(--gold))",
           dark: "hsl(var(--gold-dark))",
         },
+        sage: "hsl(var(--sage))",
         slate: "hsl(var(--slate))",
       },
       borderRadius: {
