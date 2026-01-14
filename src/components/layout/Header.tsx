@@ -16,11 +16,11 @@ const Header = () => {
             <a href="#about" className="hover:text-secondary transition-colors flex items-center gap-1">
               ABOUT <ChevronDown className="w-3 h-3" />
             </a>
-            <a href="#contact" className="hover:text-secondary transition-colors flex items-center gap-1">
-              CONTACT <ChevronDown className="w-3 h-3" />
+            <a href="#service-areas" className="hover:text-secondary transition-colors flex items-center gap-1">
+              SERVICE AREAS <ChevronDown className="w-3 h-3" />
             </a>
-            <a href="#careers" className="hover:text-secondary transition-colors flex items-center gap-1">
-              CAREERS <ChevronDown className="w-3 h-3" />
+            <a href="#contact" className="hover:text-secondary transition-colors flex items-center gap-1">
+              CONTACT US <ChevronDown className="w-3 h-3" />
             </a>
           </div>
           <div className="flex items-center gap-4 ml-auto">
