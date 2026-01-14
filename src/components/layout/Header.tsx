@@ -1,14 +1,14 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Phone, Mail, Menu, X, ChevronDown, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Phone, Mail, Menu, X, ChevronDown, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -57,12 +57,18 @@ const Header = () => {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/service-areas/north-dallas-area" className="text-white hover:text-secondary cursor-pointer">
+                  <Link
+                    to="/service-areas/north-dallas-area"
+                    className="text-white hover:text-secondary cursor-pointer"
+                  >
                     North Dallas Area
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/service-areas/frisco-mckinney-area" className="text-white hover:text-secondary cursor-pointer">
+                  <Link
+                    to="/service-areas/frisco-mckinney-area"
+                    className="text-white hover:text-secondary cursor-pointer"
+                  >
                     Frisco-McKinney Area
                   </Link>
                 </DropdownMenuItem>
@@ -72,7 +78,10 @@ const Header = () => {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/service-areas/south-dallas-area" className="text-white hover:text-secondary cursor-pointer">
+                  <Link
+                    to="/service-areas/south-dallas-area"
+                    className="text-white hover:text-secondary cursor-pointer"
+                  >
                     South Dallas Area
                   </Link>
                 </DropdownMenuItem>
@@ -81,7 +90,10 @@ const Header = () => {
 
             <span className="text-gray-500">|</span>
 
-            <Link to="/contact" className="px-3 py-1 text-secondary hover:text-secondary/80 transition-colors font-medium">
+            <Link
+              to="/contact"
+              className="px-3 py-1 text-secondary hover:text-secondary/80 transition-colors font-medium"
+            >
               CONTACT US
             </Link>
           </div>
@@ -92,7 +104,11 @@ const Header = () => {
             <Button variant="secondary" size="sm" className="font-semibold">
               Schedule Online
             </Button>
-            <Button variant="outline" size="sm" className="bg-gray-900 border-gray-900 text-white hover:bg-gray-700 hover:border-gray-700 font-semibold">
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-gray-900 border-gray-900 text-white hover:bg-gray-700 hover:border-gray-700 font-semibold"
+            >
               <Phone className="w-4 h-4 mr-1" />
               Call Now
             </Button>
@@ -120,7 +136,10 @@ const Header = () => {
               <Link to="/" className="text-foreground hover:text-primary font-medium transition-colors">
                 Home
               </Link>
-              <Link to="/residential-services" className="text-foreground hover:text-primary font-medium transition-colors flex items-center gap-1">
+              <Link
+                to="/residential-services"
+                className="text-foreground hover:text-primary font-medium transition-colors flex items-center gap-1"
+              >
                 Services <ChevronDown className="w-4 h-4" />
               </Link>
               <Link to="/about" className="text-foreground hover:text-primary font-medium transition-colors">
@@ -136,7 +155,7 @@ const Header = () => {
               <div className="flex items-center gap-2">
                 <Phone className="w-5 h-5 text-secondary" />
                 <div>
-                  <div className="text-xs text-muted-foreground">Emergency Services</div>
+                  <div className="text-xs text-muted-foreground">Text or Call</div>
                   <a href="tel:214-238-4349" className="font-bold text-foreground hover:text-primary transition-colors">
                     214-238-4349
                   </a>
@@ -146,7 +165,10 @@ const Header = () => {
                 <Mail className="w-5 h-5 text-secondary" />
                 <div>
                   <div className="text-xs text-muted-foreground">Email Us</div>
-                  <a href="mailto:info@truficient.com" className="font-bold text-foreground hover:text-primary transition-colors">
+                  <a
+                    href="mailto:info@truficient.com"
+                    className="font-bold text-foreground hover:text-primary transition-colors"
+                  >
                     info@truficient.com
                   </a>
                 </div>
@@ -162,29 +184,29 @@ const Header = () => {
               </SheetTrigger>
               <SheetContent side="right" className="w-80">
                 <nav className="flex flex-col gap-4 mt-8">
-                  <Link 
-                    to="/" 
+                  <Link
+                    to="/"
                     className="text-lg font-medium text-foreground hover:text-primary transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     Home
                   </Link>
-                  <Link 
-                    to="/residential-services" 
+                  <Link
+                    to="/residential-services"
                     className="text-lg font-medium text-foreground hover:text-primary transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     Services
                   </Link>
-                  <Link 
-                    to="/about" 
+                  <Link
+                    to="/about"
                     className="text-lg font-medium text-foreground hover:text-primary transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     About Us
                   </Link>
-                  <Link 
-                    to="/contact" 
+                  <Link
+                    to="/contact"
                     className="text-lg font-medium text-foreground hover:text-primary transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
@@ -193,11 +215,15 @@ const Header = () => {
                   <div className="border-t pt-4 mt-4">
                     <div className="flex items-center gap-2 mb-3">
                       <Phone className="w-5 h-5 text-secondary" />
-                      <a href="tel:214-238-4349" className="font-bold">214-238-4349</a>
+                      <a href="tel:214-238-4349" className="font-bold">
+                        214-238-4349
+                      </a>
                     </div>
                     <div className="flex items-center gap-2">
                       <Mail className="w-5 h-5 text-secondary" />
-                      <a href="mailto:info@truficient.com" className="font-bold">info@truficient.com</a>
+                      <a href="mailto:info@truficient.com" className="font-bold">
+                        info@truficient.com
+                      </a>
                     </div>
                   </div>
                   <Button className="mt-4 bg-secondary hover:bg-gold-dark text-secondary-foreground">
