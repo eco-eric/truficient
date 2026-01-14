@@ -25,8 +25,11 @@ const CTASection = () => {
             It's Time to Take Action.<br />
             Schedule Your HVAC Service Today!
           </h2>
-          <p className="text-lg md:text-xl mb-8 max-w-3xl mx-auto opacity-90">
+          <p className="text-lg md:text-xl mb-4 max-w-3xl mx-auto opacity-90">
             Don't wait until your HVAC system breaks down. Whether you need routine maintenance, a repair, or a new installation, Truficient is here to help. Contact us today to experience the difference of working with DFW's trusted HVAC experts.
+          </p>
+          <p className="text-sm mb-8 opacity-80">
+            Serving: Dallas Area • North Dallas Area • Frisco-McKinney Area • Mid-Cities Area • South Dallas Area
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 

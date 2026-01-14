@@ -7,14 +7,14 @@ const services = [
   {
     icon: Home,
     title: 'Residential Services',
-    description: 'We bring comfort, efficiency, and reliability to every room in your house. From installations to repairs and everything in between, your home\'s comfort is our priority.',
+    description: 'We provide reliable and energy-efficient residential HVAC solutions to keep your home comfortable year-round. From installations to repairs and maintenance, our expert team ensures top-quality service tailored to your needs.',
     cta: 'Learn More',
     link: '/services/residential',
   },
   {
     icon: Building2,
     title: 'Commercial Solutions',
-    description: 'Businesses count on us for reliable, energy-efficient HVAC systems. We understand the importance of uptime and offer solutions that keep your operations running smoothly.',
+    description: 'Ensure a comfortable and efficient workspace with Truficient\'s top-tier commercial HVAC solutions. We specialize in designing, installing, and maintaining energy-efficient systems tailored to your business needs.',
     cta: 'Request a Quote',
     link: '/services/commercial',
   },

@@ -4,42 +4,50 @@ import { Card, CardContent } from '@/components/ui/card';
 
 const services = [
   {
-    title: 'Air Conditioning Repair Services',
+    title: 'AC Repair',
+    description: 'AC running harder than it should be? Lower your utility costs and avoid further costly repairs by scheduling a service call with Truficient today.',
     image: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400&h=300&fit=crop',
     link: '/services/ac-repair',
   },
   {
-    title: 'Air Conditioning Replacement',
+    title: 'AC Replacement',
+    description: 'Is your heating and air conditioning unit decades old and about to kick the bucket? Call Truficient today and see if AC replacement is right for you.',
     image: 'https://images.unsplash.com/photo-1631545806609-a81784a80d37?w=400&h=300&fit=crop',
     link: '/services/ac-replacement',
   },
   {
-    title: 'Air Conditioning Installation',
+    title: 'AC Installation',
+    description: 'Your HVAC system bit the dust? Truficient offers full HVAC installation for all private, commercial, and residential customers.',
     image: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=400&h=300&fit=crop',
     link: '/services/ac-installation',
   },
   {
     title: 'Heating Repair',
+    description: 'Having your heater go out in the middle of winter is not something we want families to have to go through. Call Truficient to schedule a heating repair appointment today.',
     image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&h=300&fit=crop',
     link: '/services/heating-repair',
   },
   {
     title: 'Heating Installation',
+    description: 'Keep your energy bill low in the winter by having Truficient Service install a high-efficiency heating system.',
     image: 'https://images.unsplash.com/photo-1513467535987-fd81bc7d62f8?w=400&h=300&fit=crop',
     link: '/services/heating-installation',
   },
   {
-    title: 'Indoor Air Quality Solutions',
+    title: 'Indoor Air Quality',
+    description: 'Our customers\' comfort is one of our top concerns. That\'s why we offer air quality services such as air purification, humidifiers, and dehumidifiers.',
     image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop',
     link: '/services/air-quality',
   },
   {
-    title: 'Ductless Heating & Cooling',
+    title: 'Ductless Systems',
+    description: 'Our HVAC technicians can repair, replace, or install a ductless air conditioning unit and ductless split systems.',
     image: 'https://images.unsplash.com/photo-1585129777188-94600bc7b4e3?w=400&h=300&fit=crop',
     link: '/services/ductless',
   },
   {
     title: 'Commercial Services',
+    description: 'Expert Heating & Cooling Solutions for Small to Mid-Sized Commercial Buildings.',
     image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=300&fit=crop',
     link: '/services/commercial',
   },
@@ -82,10 +90,13 @@ const ServicesGrid = () => {
                   />
                 </div>
                 <CardContent className="p-6">
-                  <h3 className="text-lg font-bold mb-4 text-card-foreground leading-tight">
+                  <h3 className="text-lg font-bold mb-2 text-card-foreground leading-tight">
                     {service.title}
                   </h3>
-                  <Button 
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                    {service.description}
+                  </p>
+                  <Button
                     variant="default" 
                     className="w-full bg-primary hover:bg-navy-dark text-primary-foreground"
                   >

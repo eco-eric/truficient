@@ -15,8 +15,11 @@ const ServiceAreaBanner = () => {
         >
           <div className="text-center md:text-left">
             <h2 className="text-xl md:text-2xl font-bold text-secondary-foreground">
-              Providing Quality HVAC Services Across Dallas-Fort Worth
+              Efficient Mini Split Installation Across Dallas-Fort Worth
             </h2>
+            <p className="text-sm text-secondary-foreground/80 mt-1">
+              Looking for a reliable mini split or ductless AC solution? Truficient specializes in energy-efficient installations throughout the Dallas-Fort Worth Metroplex.
+            </p>
           </div>
           <Button 
             className="bg-primary hover:bg-navy-dark text-primary-foreground font-semibold whitespace-nowrap"

@@ -6,22 +6,22 @@ const posts = [
   {
     title: 'From Discomfort to Energy-Efficient Comfort: A Real Case Study',
     image: 'https://images.unsplash.com/photo-1513467535987-fd81bc7d62f8?w=300&h=200&fit=crop',
-    excerpt: 'Learn how we helped a family reduce their energy bills by 40%.',
+    excerpt: 'See how Truficient transformed a home\'s comfort with energy-efficient solutions.',
   },
   {
     title: 'Cooling Down a Garage for the Win!',
     image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&h=200&fit=crop',
-    excerpt: 'See how ductless systems transformed this workspace.',
+    excerpt: 'How ductless mini-splits can transform your garage into a comfortable workspace.',
   },
   {
     title: 'Commercial HVAC Efficiency: Energy Storage Systems',
     image: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=300&h=200&fit=crop',
-    excerpt: 'Exploring innovative solutions for business owners.',
+    excerpt: 'Exploring innovative HVAC solutions for business owners looking to reduce costs.',
   },
   {
-    title: 'Mini-Split Solutions for Home Office Comfort',
+    title: 'Why Mini-Splits Are Perfect for Home Offices',
     image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=200&fit=crop',
-    excerpt: 'Perfect climate control for remote workers.',
+    excerpt: 'Create the perfect climate control for remote work productivity.',
   },
 ];
 

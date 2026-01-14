@@ -5,17 +5,17 @@ const features = [
   {
     icon: Leaf,
     title: 'Energy-Saving Solutions',
-    description: 'Reduce your energy bills',
+    description: 'Lower utility costs',
   },
   {
     icon: Award,
     title: 'Expert Mini Split Installers',
-    description: 'Certified professionals',
+    description: 'Diamond Contractor certified',
   },
   {
     icon: MapPin,
     title: 'Serving All of DFW',
-    description: 'Local & reliable service',
+    description: 'Dallas-Fort Worth Metroplex',
   },
 ];
 

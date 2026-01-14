@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 const features = [
   { title: 'Residential & Commercial', subtitle: 'Expertise' },
   { title: 'Single Zone & Multi-Zone', subtitle: 'Solutions' },
-  { title: '10 Year Residential Parts', subtitle: 'Warranty' },
-  { title: '10 Year Commercial Parts', subtitle: 'Warranty' },
+  { title: '12-Year Residential Parts', subtitle: 'Warranty' },
+  { title: '10-Year Commercial Parts', subtitle: 'Warranty' },
 ];
 
 const MitsubishiSection = () => {
@@ -40,10 +40,10 @@ const MitsubishiSection = () => {
             </div>
             <div className="relative z-10">
               <p className="text-lg text-muted-foreground leading-relaxed">
-                At Truficient, we're proud to be recognized as a Mitsubishi Electric Diamond Contractor—the highest level of certification in the industry. This prestigious designation reflects our commitment to excellence, extensive training, and proven expertise in designing and installing Mitsubishi's cutting-edge heating and cooling systems.
+                Looking for a ductless mini-split air conditioner or ductless heating system? Truficient is your go-to expert. As a Mitsubishi Electric Diamond Contractor, we're among the top-tier professionals trusted to deliver unmatched comfort solutions.
               </p>
               <p className="text-lg text-muted-foreground leading-relaxed mt-4">
-                As Diamond Contractors, we have access to exclusive products, extended warranties, and advanced training that allows us to deliver superior comfort solutions for your home or business.
+                Ductless mini-split systems are an ideal way to add heating and cooling to areas of your home or business where conventional systems can't reach—without the need for ductwork. Experience the future of climate control with Truficient.
               </p>
             </div>
           </motion.div>

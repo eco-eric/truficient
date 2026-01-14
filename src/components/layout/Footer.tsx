@@ -19,7 +19,7 @@ const Footer = () => {
               </div>
             </div>
             <p className="text-sm opacity-80 mb-4">
-              Your trusted HVAC partner in the Dallas-Fort Worth Metroplex. Licensed, insured, and committed to energy efficiency.
+              Your trusted HVAC partner in the Dallas-Fort Worth Metroplex. Mitsubishi Diamond Contractor. Licensed, insured, and committed to energy efficiency.
             </p>
             <div className="flex gap-4">
               <a href="#" className="hover:text-secondary transition-colors">
@@ -39,7 +39,7 @@ const Footer = () => {
             <h4 className="font-bold mb-4 text-lg">COMPANY</h4>
             <ul className="space-y-2 text-sm opacity-80">
               <li><Link to="/about" className="hover:text-secondary transition-colors">About Us</Link></li>
-              <li><Link to="/team" className="hover:text-secondary transition-colors">Our Team</Link></li>
+              <li><Link to="/reviews" className="hover:text-secondary transition-colors">Reviews</Link></li>
               <li><Link to="/careers" className="hover:text-secondary transition-colors">Careers</Link></li>
               <li><Link to="/blog" className="hover:text-secondary transition-colors">Blog</Link></li>
             </ul>

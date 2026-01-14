@@ -8,9 +8,9 @@ const testimonial = {
 
 const platforms = [
   { name: 'Facebook', icon: Facebook, color: 'bg-[#1877f2]' },
-  { name: 'Google', icon: null, color: 'bg-[#4285f4]', letter: 'G' },
+  { name: 'Houzz', icon: null, color: 'bg-[#4dbc58]', letter: 'H' },
   { name: 'Yelp', icon: null, color: 'bg-[#d32323]', letter: 'Y' },
-  { name: 'Angi', icon: null, color: 'bg-[#ff6138]', letter: 'A' },
+  { name: 'Ecosource IQ', icon: null, color: 'bg-[#2d9cdb]', letter: 'E' },
 ];
 
 const TestimonialsSection = () => {
@@ -27,7 +27,9 @@ const TestimonialsSection = () => {
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
             Hear From Our Customers
           </h2>
-          <p className="text-muted-foreground">What Our Customers Say</p>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            We provide quality service at a reasonable price, but don't take our word for it. Explore what our satisfied customers have to say.
+          </p>
         </motion.div>
 
         {/* Testimonial Card */}
