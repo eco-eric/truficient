@@ -22,13 +22,13 @@ const Footer = () => {
               Your trusted HVAC partner in the Dallas-Fort Worth Metroplex. Mitsubishi Diamond Contractor. Licensed, insured, and committed to energy efficiency.
             </p>
             <div className="flex gap-4">
-              <a href="#" className="hover:text-secondary transition-colors">
+              <a href="https://www.facebook.com/truficient" target="_blank" rel="noopener noreferrer" className="hover:text-secondary transition-colors">
                 <Facebook className="w-5 h-5" />
               </a>
-              <a href="#" className="hover:text-secondary transition-colors">
+              <a href="https://www.instagram.com/truficient_hvac" target="_blank" rel="noopener noreferrer" className="hover:text-secondary transition-colors">
                 <Instagram className="w-5 h-5" />
               </a>
-              <a href="#" className="hover:text-secondary transition-colors">
+              <a href="https://www.linkedin.com/company/truficient/" target="_blank" rel="noopener noreferrer" className="hover:text-secondary transition-colors">
                 <Linkedin className="w-5 h-5" />
               </a>
             </div>
