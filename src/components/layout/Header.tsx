@@ -58,9 +58,9 @@ const Header = () => {
               <a href="#services" className="text-foreground hover:text-primary font-medium transition-colors flex items-center gap-1">
                 Services <ChevronDown className="w-4 h-4" />
               </a>
-              <a href="#about" className="text-foreground hover:text-primary font-medium transition-colors">
+              <Link to="/about" className="text-foreground hover:text-primary font-medium transition-colors">
                 About Us
-              </a>
+              </Link>
               <a href="#contact" className="text-foreground hover:text-primary font-medium transition-colors">
                 Contact
               </a>
@@ -111,13 +111,13 @@ const Header = () => {
                   >
                     Services
                   </a>
-                  <a 
-                    href="#about" 
+                  <Link 
+                    to="/about" 
                     className="text-lg font-medium text-foreground hover:text-primary transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     About Us
-                  </a>
+                  </Link>
                   <a 
                     href="#contact" 
                     className="text-lg font-medium text-foreground hover:text-primary transition-colors"
