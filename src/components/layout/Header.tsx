@@ -102,9 +102,11 @@ const Header = () => {
             <button className="text-white hover:text-secondary transition-colors">
               <Search className="w-4 h-4" />
             </button>
-            <Button variant="secondary" size="sm" className="font-semibold">
-              Schedule Online
-            </Button>
+            <Link to="/contact">
+              <Button variant="secondary" size="sm" className="font-semibold">
+                Schedule Online
+              </Button>
+            </Link>
             <a href="tel:214-238-4349">
               <Button
                 variant="outline"
@@ -227,9 +229,11 @@ const Header = () => {
                       </a>
                     </div>
                   </div>
-                  <Button className="mt-4 bg-secondary hover:bg-gold-dark text-secondary-foreground">
-                    Schedule Service
-                  </Button>
+                  <Link to="/contact" onClick={() => setIsOpen(false)}>
+                    <Button className="w-full mt-4 bg-secondary hover:bg-gold-dark text-secondary-foreground">
+                      Schedule Service
+                    </Button>
+                  </Link>
                 </nav>
               </SheetContent>
             </Sheet>
