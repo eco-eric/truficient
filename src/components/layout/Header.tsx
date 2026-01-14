@@ -51,23 +51,30 @@ const Header = () => {
                 SERVICE AREAS <ChevronDown className="w-3 h-3" />
               </DropdownMenuTrigger>
               <DropdownMenuContent className="bg-gray-800 border-gray-700">
-                <DropdownMenuItem className="text-white hover:text-secondary cursor-pointer">
-                  Dallas
+                <DropdownMenuItem asChild>
+                  <Link to="/service-areas/dallas-area" className="text-white hover:text-secondary cursor-pointer">
+                    Dallas Area
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-white hover:text-secondary cursor-pointer">
-                  Fort Worth
+                <DropdownMenuItem asChild>
+                  <Link to="/service-areas/north-dallas-area" className="text-white hover:text-secondary cursor-pointer">
+                    North Dallas Area
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-white hover:text-secondary cursor-pointer">
-                  Plano
+                <DropdownMenuItem asChild>
+                  <Link to="/service-areas/frisco-mckinney-area" className="text-white hover:text-secondary cursor-pointer">
+                    Frisco-McKinney Area
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-white hover:text-secondary cursor-pointer">
-                  Arlington
+                <DropdownMenuItem asChild>
+                  <Link to="/service-areas/mid-cities-area" className="text-white hover:text-secondary cursor-pointer">
+                    Mid-Cities Area
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-white hover:text-secondary cursor-pointer">
-                  Frisco
-                </DropdownMenuItem>
-                <DropdownMenuItem className="text-white hover:text-secondary cursor-pointer">
-                  McKinney
+                <DropdownMenuItem asChild>
+                  <Link to="/service-areas/south-dallas-area" className="text-white hover:text-secondary cursor-pointer">
+                    South Dallas Area
+                  </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
