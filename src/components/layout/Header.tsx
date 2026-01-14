@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import truficientLogo from "@/assets/truficient-logo.jpg";
+import truficientLogo from "@/assets/truficient-logo.png";
 import { Phone, Mail, Menu, X, ChevronDown, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
