@@ -9,6 +9,11 @@ import ResidentialServices from "./pages/ResidentialServices";
 import CommercialServices from "./pages/CommercialServices";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
+import DallasArea from "./pages/service-areas/DallasArea";
+import NorthDallasArea from "./pages/service-areas/NorthDallasArea";
+import FriscoMcKinneyArea from "./pages/service-areas/FriscoMcKinneyArea";
+import MidCitiesArea from "./pages/service-areas/MidCitiesArea";
+import SouthDallasArea from "./pages/service-areas/SouthDallasArea";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +29,11 @@ const App = () => (
           <Route path="/residential-services" element={<ResidentialServices />} />
           <Route path="/commercial-services" element={<CommercialServices />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/service-areas/dallas-area" element={<DallasArea />} />
+          <Route path="/service-areas/north-dallas-area" element={<NorthDallasArea />} />
+          <Route path="/service-areas/frisco-mckinney-area" element={<FriscoMcKinneyArea />} />
+          <Route path="/service-areas/mid-cities-area" element={<MidCitiesArea />} />
+          <Route path="/service-areas/south-dallas-area" element={<SouthDallasArea />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
