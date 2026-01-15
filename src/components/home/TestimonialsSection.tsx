@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Star, Facebook } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { trackSocialLinkClick } from '@/hooks/useSocialLinkTracking';
 
 const testimonial = {
   text: "I can't say enough good things about Truficient. They went above and beyond when our A/C broke down in the middle of a heat wave. Even though they were extremely busy and working long hours, they took care of us. Truficient is building its business the right way by providing excellent service and taking great care of their customers.",
@@ -9,26 +10,37 @@ const testimonial = {
 };
 
 interface SocialLink {
+  id: string;
   platform: string;
   url: string | null;
   display_name: string;
   is_active: boolean;
 }
 
-const defaultPlatforms = [
+interface Platform {
+  name: string;
+  icon: React.ComponentType<{ className?: string }> | null;
+  color: string;
+  url: string;
+  platform: string;
+  letter?: string;
+  id?: string;
+}
+
+const defaultPlatforms: Platform[] = [
   { name: 'Facebook', icon: Facebook, color: 'bg-[#1877f2]', url: 'https://www.facebook.com/truficient', platform: 'facebook' },
   { name: 'Houzz', icon: null, color: 'bg-[#4dbc58]', letter: 'H', url: 'https://www.houzz.com/professionals/heating-and-cooling-sales-and-repair/truficient-energy-solutions-pfvwus-pf~127901012', platform: 'houzz' },
   { name: 'Yelp', icon: null, color: 'bg-[#d32323]', letter: 'Y', url: 'https://www.yelp.com/biz/truficient-energy-solutions-richardson', platform: 'yelp' },
 ];
 
 const TestimonialsSection = () => {
-  const [platforms, setPlatforms] = useState(defaultPlatforms);
+  const [platforms, setPlatforms] = useState<Platform[]>(defaultPlatforms);
 
   useEffect(() => {
     const fetchSocialLinks = async () => {
       const { data, error } = await supabase
         .from('social_links')
-        .select('platform, url, display_name, is_active')
+        .select('id, platform, url, display_name, is_active')
         .eq('is_active', true)
         .in('platform', ['facebook', 'houzz', 'yelp']);
 
@@ -41,7 +53,7 @@ const TestimonialsSection = () => {
       const updatedPlatforms = defaultPlatforms.map(platform => {
         const dbLink = data.find(link => link.platform === platform.platform);
         if (dbLink && dbLink.url) {
-          return { ...platform, url: dbLink.url };
+          return { ...platform, url: dbLink.url, id: dbLink.id };
         }
         return platform;
       }).filter(platform => {
@@ -54,6 +66,10 @@ const TestimonialsSection = () => {
 
     fetchSocialLinks();
   }, []);
+
+  const handleClick = (platform: Platform) => {
+    trackSocialLinkClick(platform.platform, 'testimonials', platform.id);
+  };
 
   return (
     <section className="py-16 lg:py-24 bg-background">
@@ -108,6 +124,7 @@ const TestimonialsSection = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-center group cursor-pointer"
+                onClick={() => handleClick(platform)}
               >
                 <div className={`w-14 h-14 ${platform.color} rounded-full flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform`}>
                   {platform.icon ? (

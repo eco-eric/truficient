@@ -235,6 +235,44 @@ export type Database = {
         }
         Relationships: []
       }
+      social_link_clicks: {
+        Row: {
+          clicked_at: string
+          id: string
+          platform: string
+          referrer: string | null
+          social_link_id: string | null
+          source: string
+          user_agent: string | null
+        }
+        Insert: {
+          clicked_at?: string
+          id?: string
+          platform: string
+          referrer?: string | null
+          social_link_id?: string | null
+          source?: string
+          user_agent?: string | null
+        }
+        Update: {
+          clicked_at?: string
+          id?: string
+          platform?: string
+          referrer?: string | null
+          social_link_id?: string | null
+          source?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_link_clicks_social_link_id_fkey"
+            columns: ["social_link_id"]
+            isOneToOne: false
+            referencedRelation: "social_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_links: {
         Row: {
           created_at: string
