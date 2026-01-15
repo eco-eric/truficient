@@ -211,6 +211,13 @@ export const LandingPageForm = ({ slug, className, onSuccess }: LandingPageFormP
   }
 
   const fields = (formConfig.fields_config as unknown as FieldsConfig) || {
+    firstName: true,
+    lastName: true,
+    email: true,
+    phone: true,
+    serviceType: true,
+    message: true,
+  };
 
   return (
     <form onSubmit={handleSubmit} className={className}>

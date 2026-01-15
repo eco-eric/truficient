@@ -140,16 +140,16 @@ export default function LandingPageFormEditor() {
         // Create new form
         const { data: newForm, error } = await supabase
           .from('landing_page_forms')
-          .insert({
+          .insert([{
             name: formData.name,
             slug: formData.slug,
             description: formData.description || null,
             form_type: formData.form_type,
-            fields_config: formData.fields_config,
+            fields_config: JSON.parse(JSON.stringify(formData.fields_config)),
             success_message: formData.success_message,
             redirect_url: formData.redirect_url || null,
             is_active: formData.is_active,
-          })
+          }])
           .select()
           .single();
         if (error) throw error;
@@ -175,7 +175,7 @@ export default function LandingPageFormEditor() {
             slug: formData.slug,
             description: formData.description || null,
             form_type: formData.form_type,
-            fields_config: formData.fields_config as unknown as Record<string, unknown>,
+            fields_config: JSON.parse(JSON.stringify(formData.fields_config)),
             success_message: formData.success_message,
             redirect_url: formData.redirect_url || null,
             is_active: formData.is_active,
