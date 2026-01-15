@@ -32,10 +32,16 @@ const MitsubishiSection = () => {
             viewport={{ once: true }}
             className="relative"
           >
-            {/* Decorative circles */}
-            <div className="absolute -left-4 -top-4 grid grid-cols-5 gap-2 opacity-10">
+            {/* Decorative favicon grid */}
+            <div className="absolute -left-4 -top-4 grid grid-cols-5 gap-2">
               {[...Array(25)].map((_, i) => (
-                <div key={i} className="w-6 h-6 rounded-full bg-primary"></div>
+                <img 
+                  key={i} 
+                  src="/favicon.png" 
+                  alt="" 
+                  className="w-6 h-6 opacity-10"
+                  aria-hidden="true"
+                />
               ))}
             </div>
             <div className="relative z-10">
