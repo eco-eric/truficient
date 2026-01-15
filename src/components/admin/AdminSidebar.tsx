@@ -4,6 +4,7 @@ import {
   FileText, 
   PenSquare,
   Search,
+  Calculator,
   Settings,
   LogOut,
   ChevronLeft,
@@ -20,6 +21,7 @@ const navItems = [
   { label: 'Submissions', href: '/admin/submissions', icon: FileText },
   { label: 'Blog', href: '/admin/blog', icon: PenSquare },
   { label: 'SEO', href: '/admin/seo', icon: Search },
+  { label: 'Calculators', href: '/admin/calculators', icon: Calculator },
   { label: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 

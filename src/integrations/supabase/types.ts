@@ -62,6 +62,92 @@ export type Database = {
         }
         Relationships: []
       }
+      calculator_configs: {
+        Row: {
+          calculator_type: string
+          config: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          calculator_type?: string
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          calculator_type?: string
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      calculator_options: {
+        Row: {
+          calculator_id: string
+          created_at: string
+          help_text: string | null
+          id: string
+          is_required: boolean | null
+          label: string
+          option_name: string
+          option_type: string
+          options: Json | null
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          calculator_id: string
+          created_at?: string
+          help_text?: string | null
+          id?: string
+          is_required?: boolean | null
+          label: string
+          option_name: string
+          option_type?: string
+          options?: Json | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          calculator_id?: string
+          created_at?: string
+          help_text?: string | null
+          id?: string
+          is_required?: boolean | null
+          label?: string
+          option_name?: string
+          option_type?: string
+          options?: Json | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calculator_options_calculator_id_fkey"
+            columns: ["calculator_id"]
+            isOneToOne: false
+            referencedRelation: "calculator_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_submissions: {
         Row: {
           created_at: string
