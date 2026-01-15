@@ -27,6 +27,7 @@ import AdminSEOManagement from "./pages/admin/SEOManagement";
 import AdminSEOEditor from "./pages/admin/SEOEditor";
 import AdminCalculators from "./pages/admin/Calculators";
 import AdminCalculatorEditor from "./pages/admin/CalculatorEditor";
+import AdminUsers from "./pages/admin/Users";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 
 // Blog imports
@@ -67,6 +68,7 @@ const App = () => (
           <Route path="/admin/seo/:id" element={<ProtectedRoute><AdminSEOEditor /></ProtectedRoute>} />
           <Route path="/admin/calculators" element={<ProtectedRoute><AdminCalculators /></ProtectedRoute>} />
           <Route path="/admin/calculators/:id" element={<ProtectedRoute><AdminCalculatorEditor /></ProtectedRoute>} />
+          <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

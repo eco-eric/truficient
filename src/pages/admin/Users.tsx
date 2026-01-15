@@ -1,0 +1,414 @@
+import { useState, useEffect } from 'react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { 
+  Loader2, 
+  UserPlus, 
+  Search,
+  Shield,
+  Trash2,
+  Users
+} from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useUserRole, AppRole } from '@/hooks/useUserRole';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+
+interface UserRole {
+  id: string;
+  user_id: string;
+  role: AppRole;
+  created_at: string;
+  email?: string;
+}
+
+const UsersPage = () => {
+  const [users, setUsers] = useState<UserRole[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserRole, setNewUserRole] = useState<AppRole>('manager');
+  const [adding, setAdding] = useState(false);
+  const { toast } = useToast();
+  const { isAdmin } = useUserRole();
+
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setUsers((data || []) as UserRole[]);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load users',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const addUser = async () => {
+    if (!newUserEmail) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a user ID',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setAdding(true);
+
+    try {
+      // The email field is actually the user_id (UUID)
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: newUserEmail,
+          role: newUserRole,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'User role added successfully',
+      });
+
+      setNewUserEmail('');
+      setNewUserRole('manager');
+      setIsAddDialogOpen(false);
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error adding user:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to add user role',
+        variant: 'destructive',
+      });
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const updateRole = async (id: string, newRole: AppRole) => {
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .update({ role: newRole })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setUsers(prev => 
+        prev.map(u => u.id === id ? { ...u, role: newRole } : u)
+      );
+
+      toast({
+        title: 'Success',
+        description: 'Role updated successfully',
+      });
+    } catch (error) {
+      console.error('Error updating role:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update role',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const deleteUser = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setUsers(prev => prev.filter(u => u.id !== id));
+
+      toast({
+        title: 'Success',
+        description: 'User role removed',
+      });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to remove user role',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const filteredUsers = users.filter(u =>
+    u.user_id.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const getRoleBadgeVariant = (role: AppRole) => {
+    switch (role) {
+      case 'admin':
+        return 'default';
+      case 'manager':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
+  };
+
+  if (!isAdmin) {
+    return (
+      <AdminLayout title="Users">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Shield className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">Access Denied</h3>
+            <p className="text-muted-foreground text-center">
+              Only administrators can manage user roles.
+            </p>
+          </CardContent>
+        </Card>
+      </AdminLayout>
+    );
+  }
+
+  if (loading) {
+    return (
+      <AdminLayout title="Users">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-[#1e3a5f]" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  return (
+    <AdminLayout title="Users & Roles">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-between">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by user ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-[#1e3a5f] hover:bg-[#1e3a5f]/90">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add User Role
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add User Role</DialogTitle>
+                <DialogDescription>
+                  Enter the user's UUID from the authentication system to assign a role.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="userId">User ID (UUID)</Label>
+                  <Input
+                    id="userId"
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    placeholder="e.g., 123e4567-e89b-12d3-a456-426614174000"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    You can find the user ID in Settings after they log in.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Select value={newUserRole} onValueChange={(v) => setNewUserRole(v as AppRole)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin (Full Access)</SelectItem>
+                      <SelectItem value="manager">Manager (Limited Access)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={addUser} disabled={adding}>
+                  {adding && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Add Role
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Role Legend */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Role Permissions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="flex items-start gap-3">
+                <Badge>Admin</Badge>
+                <p className="text-sm text-muted-foreground">
+                  Full access: manage users, blog, SEO, calculators, and all submissions
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <Badge variant="secondary">Manager</Badge>
+                <p className="text-sm text-muted-foreground">
+                  Limited access: view dashboard, manage submissions and blog posts
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Users Table */}
+        {filteredUsers.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Users className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">No users found</h3>
+              <p className="text-muted-foreground text-center mb-4">
+                {searchQuery 
+                  ? 'No users match your search'
+                  : 'Add your first admin or manager user'
+                }
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User ID</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Added</TableHead>
+                  <TableHead className="w-[100px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredUsers.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-mono text-sm">
+                      {user.user_id}
+                    </TableCell>
+                    <TableCell>
+                      <Select 
+                        value={user.role} 
+                        onValueChange={(v) => updateRole(user.id, v as AppRole)}
+                      >
+                        <SelectTrigger className="w-[130px]">
+                          <Badge variant={getRoleBadgeVariant(user.role)}>
+                            {user.role}
+                          </Badge>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="manager">Manager</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Remove User Role</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will remove admin/manager access for this user. They will no longer be able to access the admin panel.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteUser(user.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Remove
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        )}
+      </div>
+    </AdminLayout>
+  );
+};
+
+export default UsersPage;
