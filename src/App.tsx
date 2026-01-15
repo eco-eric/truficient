@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import About from "./pages/About";
 import ResidentialServices from "./pages/ResidentialServices";
 import CommercialServices from "./pages/CommercialServices";
+import HvacEstimate from "./pages/HvacEstimate";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import DallasArea from "./pages/service-areas/DallasArea";
@@ -53,6 +54,7 @@ const App = () => (
           <Route path="/service-areas/frisco-mckinney-area" element={<FriscoMcKinneyArea />} />
           <Route path="/service-areas/mid-cities-area" element={<MidCitiesArea />} />
           <Route path="/service-areas/south-dallas-area" element={<SouthDallasArea />} />
+          <Route path="/hvac-estimate" element={<HvacEstimate />} />
           
           {/* Blog Routes */}
           <Route path="/blog" element={<Blog />} />
