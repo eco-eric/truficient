@@ -10,6 +10,9 @@ import CommercialServices from "./pages/CommercialServices";
 import HvacEstimate from "./pages/HvacEstimate";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import CookieConsent from "./components/CookieConsent";
 import DallasArea from "./pages/service-areas/DallasArea";
 import NorthDallasArea from "./pages/service-areas/NorthDallasArea";
 import FriscoMcKinneyArea from "./pages/service-areas/FriscoMcKinneyArea";
@@ -48,6 +51,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <TrackingScripts />
+        <CookieConsent />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/about" element={<About />} />
@@ -61,6 +65,8 @@ const App = () => (
           <Route path="/service-areas/south-dallas-area" element={<SouthDallasArea />} />
           <Route path="/hvac-estimate" element={<HvacEstimate />} />
           <Route path="/careers" element={<Careers />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
           
           {/* Blog Routes */}
           <Route path="/blog" element={<Blog />} />
