@@ -1,18 +1,60 @@
 import { motion } from 'framer-motion';
 import { Star, Facebook } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 const testimonial = {
   text: "I can't say enough good things about Truficient. They went above and beyond when our A/C broke down in the middle of a heat wave. Even though they were extremely busy and working long hours, they took care of us. Truficient is building its business the right way by providing excellent service and taking great care of their customers.",
   rating: 5,
 };
 
-const platforms = [
-  { name: 'Facebook', icon: Facebook, color: 'bg-[#1877f2]', url: 'https://www.facebook.com/truficient' },
-  { name: 'Houzz', icon: null, color: 'bg-[#4dbc58]', letter: 'H', url: 'https://www.houzz.com/professionals/heating-and-cooling-sales-and-repair/truficient-energy-solutions-pfvwus-pf~127901012' },
-  { name: 'Yelp', icon: null, color: 'bg-[#d32323]', letter: 'Y', url: 'https://www.yelp.com/biz/truficient-energy-solutions-richardson' },
+interface SocialLink {
+  platform: string;
+  url: string | null;
+  display_name: string;
+  is_active: boolean;
+}
+
+const defaultPlatforms = [
+  { name: 'Facebook', icon: Facebook, color: 'bg-[#1877f2]', url: 'https://www.facebook.com/truficient', platform: 'facebook' },
+  { name: 'Houzz', icon: null, color: 'bg-[#4dbc58]', letter: 'H', url: 'https://www.houzz.com/professionals/heating-and-cooling-sales-and-repair/truficient-energy-solutions-pfvwus-pf~127901012', platform: 'houzz' },
+  { name: 'Yelp', icon: null, color: 'bg-[#d32323]', letter: 'Y', url: 'https://www.yelp.com/biz/truficient-energy-solutions-richardson', platform: 'yelp' },
 ];
 
 const TestimonialsSection = () => {
+  const [platforms, setPlatforms] = useState(defaultPlatforms);
+
+  useEffect(() => {
+    const fetchSocialLinks = async () => {
+      const { data, error } = await supabase
+        .from('social_links')
+        .select('platform, url, display_name, is_active')
+        .eq('is_active', true)
+        .in('platform', ['facebook', 'houzz', 'yelp']);
+
+      if (error || !data) {
+        console.error('Error fetching social links:', error);
+        return;
+      }
+
+      // Update platforms with database URLs
+      const updatedPlatforms = defaultPlatforms.map(platform => {
+        const dbLink = data.find(link => link.platform === platform.platform);
+        if (dbLink && dbLink.url) {
+          return { ...platform, url: dbLink.url };
+        }
+        return platform;
+      }).filter(platform => {
+        const dbLink = data.find(link => link.platform === platform.platform);
+        return dbLink ? dbLink.is_active && dbLink.url : true;
+      });
+
+      setPlatforms(updatedPlatforms);
+    };
+
+    fetchSocialLinks();
+  }, []);
+
   return (
     <section className="py-16 lg:py-24 bg-background">
       <div className="container mx-auto px-4">

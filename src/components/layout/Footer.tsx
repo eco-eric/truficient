@@ -1,7 +1,67 @@
 import { Link } from 'react-router-dom';
-import { Phone, Mail, MapPin, Facebook, Instagram, Linkedin } from 'lucide-react';
+import { Phone, Mail, MapPin, Facebook, Instagram, Linkedin, Home } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface SocialLink {
+  platform: string;
+  url: string | null;
+  display_name: string;
+  is_active: boolean;
+}
+
+const platformIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  facebook: Facebook,
+  instagram: Instagram,
+  linkedin: Linkedin,
+  houzz: Home,
+  google_maps: MapPin,
+};
+
+// Custom Yelp icon
+const YelpIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M20.16 12.594l-4.995 1.433c-.96.276-1.74-.8-1.176-1.63l2.905-4.308a1.072 1.072 0 0 1 1.596-.206 9.194 9.194 0 0 1 1.813 3.03c.32.9-.143 1.68-1.143 1.68zM13.397 14.6l4.732 2.073c.913.4 1.06 1.533.387 2.213a9.24 9.24 0 0 1-2.885 1.673c-.88.34-1.66-.12-1.86-.96l-1.2-4.84c-.24-.96.826-1.76 1.826-1.16zM11.693 8.62V3.6c0-1 .76-1.47 1.62-1.073a9.22 9.22 0 0 1 2.88 2.3c.56.7.4 1.6-.36 2.12l-3.54 2.36c-.8.54-1.6.12-1.6-.687zM10.24 13.167l-2.4 4.533c-.48.91-1.593.953-2.2.12a9.22 9.22 0 0 1-1.26-3.16c-.2-.9.3-1.6 1.2-1.73l4.5-.6c.96-.13 1.48.927 1.16 1.837zM9.293 10.873l-4.88-.667c-.96-.133-1.38-.987-1.027-1.853a9.24 9.24 0 0 1 1.967-2.9c.64-.62 1.54-.54 2.08.18l3.113 3.78c.6.727.067 1.64-.853 1.46z"/>
+  </svg>
+);
+
+// Fallback links if database fetch fails
+const fallbackSocialLinks = [
+  { platform: 'facebook', url: 'https://www.facebook.com/truficient' },
+  { platform: 'instagram', url: 'https://www.instagram.com/truficient_hvac' },
+  { platform: 'linkedin', url: 'https://www.linkedin.com/company/truficient/' },
+];
 
 const Footer = () => {
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
+
+  useEffect(() => {
+    const fetchSocialLinks = async () => {
+      const { data, error } = await supabase
+        .from('social_links')
+        .select('platform, url, display_name, is_active')
+        .eq('is_active', true)
+        .in('platform', ['facebook', 'instagram', 'linkedin']);
+
+      if (error || !data) {
+        console.error('Error fetching social links:', error);
+        return;
+      }
+      setSocialLinks(data);
+    };
+
+    fetchSocialLinks();
+  }, []);
+
+  const getIcon = (platform: string) => {
+    if (platform === 'yelp') return YelpIcon;
+    return platformIcons[platform];
+  };
+
+  const displayLinks = socialLinks.length > 0 
+    ? socialLinks.filter(link => link.url) 
+    : fallbackSocialLinks;
+
   return (
     <footer className="bg-primary text-primary-foreground">
       {/* Main Footer */}
@@ -22,15 +82,21 @@ const Footer = () => {
               Your trusted HVAC partner in the Dallas-Fort Worth Metroplex. Mitsubishi Diamond Contractor. Licensed, insured, and committed to energy efficiency.
             </p>
             <div className="flex gap-4">
-              <a href="https://www.facebook.com/truficient" target="_blank" rel="noopener noreferrer" className="hover:text-secondary transition-colors">
-                <Facebook className="w-5 h-5" />
-              </a>
-              <a href="https://www.instagram.com/truficient_hvac" target="_blank" rel="noopener noreferrer" className="hover:text-secondary transition-colors">
-                <Instagram className="w-5 h-5" />
-              </a>
-              <a href="https://www.linkedin.com/company/truficient/" target="_blank" rel="noopener noreferrer" className="hover:text-secondary transition-colors">
-                <Linkedin className="w-5 h-5" />
-              </a>
+              {displayLinks.map((link) => {
+                const IconComponent = getIcon(link.platform);
+                if (!IconComponent || !link.url) return null;
+                return (
+                  <a 
+                    key={link.platform}
+                    href={link.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="hover:text-secondary transition-colors"
+                  >
+                    <IconComponent className="w-5 h-5" />
+                  </a>
+                );
+              })}
             </div>
           </div>
 
