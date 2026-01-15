@@ -12,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Plus, Search, Download, Upload, Pencil, Trash2, FileText, FileSpreadsheet } from 'lucide-react';
-import * as XLSX from 'xlsx';
 
 interface EquipmentSystem {
   id: string;
@@ -258,7 +257,8 @@ const SystemPricing = () => {
     saveMutation.mutate(editingSystem ? { ...formData, id: editingSystem.id } : formData);
   };
 
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
+    const XLSX = await import('xlsx');
     const templateData = [
       {
         'System Name': '',
@@ -297,6 +297,7 @@ const SystemPricing = () => {
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
+        const XLSX = await import('xlsx');
         const data = new Uint8Array(event.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
         const sheetName = workbook.SheetNames[0];
