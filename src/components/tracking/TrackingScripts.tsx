@@ -21,11 +21,12 @@ interface CookiePreferences {
 export const TrackingScripts = () => {
   const location = useLocation();
   const { data: settings } = useTrackingSettings();
-  const initializedRef = useRef<{ meta: boolean; ga: boolean }>({ meta: false, ga: false });
+  const initializedRef = useRef<{ meta: boolean; ga: boolean; ghl: boolean }>({ meta: false, ga: false, ghl: false });
   const [cookieConsent, setCookieConsent] = useState<CookiePreferences | null>(getCookieConsent);
 
   const metaPixel = getTrackingSetting(settings, 'meta_pixel_id');
   const googleAnalytics = getTrackingSetting(settings, 'ga_measurement_id');
+  const ghlChatWidget = getTrackingSetting(settings, 'ghl_chat_widget_id');
 
   // Listen for cookie consent updates
   useEffect(() => {
@@ -103,6 +104,29 @@ export const TrackingScripts = () => {
     window.gtag('config', measurementId);
     initializedRef.current.ga = true;
   }, [googleAnalytics?.is_enabled, googleAnalytics?.setting_value, cookieConsent?.analytics]);
+
+  // Initialize GHL Chat Widget (only if marketing consent given)
+  useEffect(() => {
+    if (!ghlChatWidget?.is_enabled || !ghlChatWidget.setting_value || initializedRef.current.ghl) {
+      return;
+    }
+
+    // Check for marketing consent
+    if (!cookieConsent?.marketing) {
+      return;
+    }
+
+    const widgetId = ghlChatWidget.setting_value;
+
+    // Load GHL chat widget script
+    const script = document.createElement('script');
+    script.src = 'https://widgets.leadconnectorhq.com/loader.js';
+    script.setAttribute('data-resources-url', 'https://widgets.leadconnectorhq.com/chat-widget/loader.js');
+    script.setAttribute('data-widget-id', widgetId);
+    document.body.appendChild(script);
+
+    initializedRef.current.ghl = true;
+  }, [ghlChatWidget?.is_enabled, ghlChatWidget?.setting_value, cookieConsent?.marketing]);
 
   // Track page views on route change
   useEffect(() => {
