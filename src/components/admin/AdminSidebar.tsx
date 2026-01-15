@@ -9,7 +9,8 @@ import {
   Settings,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Share2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,6 +25,7 @@ const navItems = [
   { label: 'Blog', href: '/admin/blog', icon: PenSquare, adminOnly: false },
   { label: 'SEO', href: '/admin/seo', icon: Search, adminOnly: true },
   { label: 'Calculators', href: '/admin/calculators', icon: Calculator, adminOnly: true },
+  { label: 'Social Media', href: '/admin/social-media', icon: Share2, adminOnly: true },
   { label: 'Users', href: '/admin/users', icon: Users, adminOnly: true },
   { label: 'Settings', href: '/admin/settings', icon: Settings, adminOnly: false },
 ];
