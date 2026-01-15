@@ -59,8 +59,9 @@ Deno.serve(async (req) => {
     console.log('Admin verified:', user.email);
 
     // Parse request body
-    const { action, targetUserId, newPassword } = await req.json();
-    console.log('Action:', action, 'Target user:', targetUserId);
+    const body = await req.json();
+    const { action, targetUserId, newPassword, email, password, role } = body;
+    console.log('Action:', action);
 
     // Create admin client with service role key
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
@@ -129,6 +130,88 @@ Deno.serve(async (req) => {
           success: true, 
           message: 'User email retrieved',
           email: userData.user.email 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+
+    } else if (action === 'create_user') {
+      // Create a new user with email and password
+      console.log('Creating new user with email:', email, 'role:', role);
+
+      if (!email || !password || !role) {
+        return new Response(
+          JSON.stringify({ error: 'Missing email, password, or role' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (password.length < 6) {
+        return new Response(
+          JSON.stringify({ error: 'Password must be at least 6 characters' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Validate role
+      if (!['admin', 'manager'].includes(role)) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid role. Must be admin or manager' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Create the user with email confirmation already done
+      const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
+        email: email,
+        password: password,
+        email_confirm: true, // Auto-confirm email
+      });
+
+      if (createError) {
+        console.error('Error creating user:', createError);
+        return new Response(
+          JSON.stringify({ error: createError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!newUser.user) {
+        return new Response(
+          JSON.stringify({ error: 'Failed to create user' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('User created successfully:', newUser.user.id);
+
+      // Assign the role to the new user
+      const { error: roleError } = await adminClient
+        .from('user_roles')
+        .insert({
+          user_id: newUser.user.id,
+          role: role,
+        });
+
+      if (roleError) {
+        console.error('Error assigning role:', roleError);
+        // User was created but role assignment failed - try to clean up
+        await adminClient.auth.admin.deleteUser(newUser.user.id);
+        return new Response(
+          JSON.stringify({ error: 'User created but failed to assign role: ' + roleError.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Role assigned successfully for user:', newUser.user.id);
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'User created successfully',
+          user: {
+            id: newUser.user.id,
+            email: newUser.user.email,
+            role: role,
+          }
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
