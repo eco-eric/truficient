@@ -39,6 +39,7 @@ import AdminGHLTags from "./pages/admin/GHLTags";
 import AdminLandingPageForms from "./pages/admin/LandingPageForms";
 import AdminLandingPageFormEditor from "./pages/admin/LandingPageFormEditor";
 import AdminLandingPageSubmissions from "./pages/admin/LandingPageSubmissions";
+import AdminSystemPricing from "./pages/admin/SystemPricing";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
 
@@ -86,6 +87,7 @@ const App = () => (
           <Route path="/admin/seo/:id" element={<ProtectedRoute><AdminSEOEditor /></ProtectedRoute>} />
           <Route path="/admin/calculators" element={<ProtectedRoute><AdminCalculators /></ProtectedRoute>} />
           <Route path="/admin/calculators/:id" element={<ProtectedRoute><AdminCalculatorEditor /></ProtectedRoute>} />
+          <Route path="/admin/system-pricing" element={<ProtectedRoute><AdminSystemPricing /></ProtectedRoute>} />
           <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
           <Route path="/admin/social-media" element={<ProtectedRoute><AdminSocialMediaTracker /></ProtectedRoute>} />
           <Route path="/admin/analytics" element={<ProtectedRoute><AdminAnalyticsTracking /></ProtectedRoute>} />
