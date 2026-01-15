@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Home } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import truficientLogo from '@/assets/truficient-logo.png';
 
@@ -123,6 +124,17 @@ export const AdminLogin = () => {
               ) : (
                 'Sign In'
               )}
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              asChild
+            >
+              <Link to="/">
+                <Home className="h-4 w-4 mr-2" />
+                Go to Home Page
+              </Link>
             </Button>
           </form>
         </CardContent>
