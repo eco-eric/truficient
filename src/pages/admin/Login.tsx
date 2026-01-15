@@ -13,12 +13,10 @@ import truficientLogo from '@/assets/truficient-logo.png';
 export const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const { signIn, signUp, user, loading } = useAuth();
+  const { signIn, user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -37,28 +35,12 @@ export const AdminLogin = () => {
     setIsLoading(true);
 
     try {
-      if (isSignUp) {
-        const { error } = await signUp(email, password, fullName);
-        if (error) {
-          if (error.message.includes('already registered')) {
-            setError('This email is already registered. Please sign in instead.');
-          } else {
-            setError(error.message);
-          }
+      const { error } = await signIn(email, password);
+      if (error) {
+        if (error.message.includes('Invalid login')) {
+          setError('Invalid email or password. Please try again.');
         } else {
-          toast({
-            title: 'Account created!',
-            description: 'Please wait for an admin to grant you access.',
-          });
-        }
-      } else {
-        const { error } = await signIn(email, password);
-        if (error) {
-          if (error.message.includes('Invalid login')) {
-            setError('Invalid email or password. Please try again.');
-          } else {
-            setError(error.message);
-          }
+          setError(error.message);
         }
       }
     } catch (err) {
@@ -88,12 +70,10 @@ export const AdminLogin = () => {
             />
           </div>
           <CardTitle className="text-2xl text-[#1e3a5f]">
-            {isSignUp ? 'Create Account' : 'Admin Login'}
+            Admin Login
           </CardTitle>
           <CardDescription>
-            {isSignUp 
-              ? 'Create an account to request admin access' 
-              : 'Sign in to access the admin dashboard'}
+            Sign in to access the admin dashboard
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -103,20 +83,6 @@ export const AdminLogin = () => {
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
-            )}
-            
-            {isSignUp && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="John Doe"
-                  required={isSignUp}
-                />
-              </div>
             )}
             
             <div className="space-y-2">
@@ -152,28 +118,13 @@ export const AdminLogin = () => {
               {isLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {isSignUp ? 'Creating Account...' : 'Signing In...'}
+                  Signing In...
                 </>
               ) : (
-                isSignUp ? 'Create Account' : 'Sign In'
+                'Sign In'
               )}
             </Button>
           </form>
-          
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError(null);
-              }}
-              className="text-sm text-[#1e3a5f] hover:underline"
-            >
-              {isSignUp 
-                ? 'Already have an account? Sign in' 
-                : 'Need an account? Sign up'}
-            </button>
-          </div>
         </CardContent>
       </Card>
     </div>
