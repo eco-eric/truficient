@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import { usePageSEO } from '@/hooks/usePageSEO';
 
 const mainServices = [
   {
@@ -106,6 +107,8 @@ const detailedServices = [
 ];
 
 const ResidentialServices = () => {
+  usePageSEO();
+  
   return (
     <div className="min-h-screen bg-background">
       <Header />

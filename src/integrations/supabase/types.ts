@@ -101,6 +101,54 @@ export type Database = {
         }
         Relationships: []
       }
+      page_seo: {
+        Row: {
+          canonical_url: string | null
+          created_at: string | null
+          id: string
+          meta_description: string | null
+          meta_title: string | null
+          og_description: string | null
+          og_image: string | null
+          og_title: string | null
+          page_name: string
+          page_path: string
+          robots: string | null
+          structured_data: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          canonical_url?: string | null
+          created_at?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          og_description?: string | null
+          og_image?: string | null
+          og_title?: string | null
+          page_name: string
+          page_path: string
+          robots?: string | null
+          structured_data?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          canonical_url?: string | null
+          created_at?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          og_description?: string | null
+          og_image?: string | null
+          og_title?: string | null
+          page_name?: string
+          page_path?: string
+          robots?: string | null
+          structured_data?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
