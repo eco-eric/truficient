@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { usePageSEO } from '@/hooks/usePageSEO';
+import { trackContactFormSubmission, trackPhoneCallClick } from '@/utils/conversionTracking';
 
 const contactInfo = [
   {
@@ -102,6 +103,9 @@ const Contact = () => {
           console.log('Contact synced to GHL successfully');
         }
       });
+
+      // Track conversion in Meta Pixel and Google Analytics
+      trackContactFormSubmission(formData.serviceType);
 
       toast({
         title: "Message Sent!",
@@ -381,7 +385,10 @@ const Contact = () => {
                       asChild
                       className="bg-secondary hover:bg-gold-dark text-secondary-foreground font-semibold"
                     >
-                      <a href="tel:214-238-4349">
+                      <a 
+                        href="tel:214-238-4349"
+                        onClick={() => trackPhoneCallClick('Contact Page')}
+                      >
                         <Phone className="w-4 h-4 mr-2" />
                         Call 214-238-4349
                       </a>

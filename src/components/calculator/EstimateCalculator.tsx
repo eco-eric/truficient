@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Calculator, Loader2, Phone, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { trackGetQuoteClick, trackPhoneCallClick } from '@/utils/conversionTracking';
 
 interface CalculatorOption {
   id: string;
@@ -209,14 +210,21 @@ export const EstimateCalculator = ({ slug = 'hvac-estimate', className = '' }: E
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <Button asChild className="flex-1 bg-secondary hover:bg-secondary/90 text-secondary-foreground">
+          <Button 
+            asChild 
+            className="flex-1 bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+            onClick={() => trackGetQuoteClick(estimate || undefined)}
+          >
             <Link to="/contact">
               Get Exact Quote
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
           <Button variant="outline" className="flex-1" asChild>
-            <a href="tel:214-238-4349">
+            <a 
+              href="tel:214-238-4349"
+              onClick={() => trackPhoneCallClick('HVAC Estimate Calculator')}
+            >
               <Phone className="mr-2 h-4 w-4" />
               Call Now
             </a>
