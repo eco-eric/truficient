@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from '@/hooks/useUserRole';
-import { Loader2, ExternalLink, Facebook, Instagram, Linkedin, MapPin, Home, Save } from 'lucide-react';
+import { Loader2, ExternalLink, Facebook, Instagram, Linkedin, MapPin, Home, Save, BarChart3, MousePointerClick } from 'lucide-react';
+import { format, subDays } from 'date-fns';
 
 interface SocialLink {
   id: string;
@@ -17,6 +18,15 @@ interface SocialLink {
   display_name: string;
   icon_name: string | null;
   is_active: boolean;
+}
+
+interface ClickStats {
+  platform: string;
+  total_clicks: number;
+  footer_clicks: number;
+  testimonials_clicks: number;
+  last_7_days: number;
+  last_30_days: number;
 }
 
 const platformIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -36,6 +46,7 @@ const YelpIcon = ({ className }: { className?: string }) => (
 
 const SocialMediaTracker = () => {
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
+  const [clickStats, setClickStats] = useState<ClickStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -43,6 +54,7 @@ const SocialMediaTracker = () => {
 
   useEffect(() => {
     fetchSocialLinks();
+    fetchClickStats();
   }, []);
 
   const fetchSocialLinks = async () => {
@@ -63,6 +75,39 @@ const SocialMediaTracker = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchClickStats = async () => {
+    try {
+      const now = new Date();
+      const sevenDaysAgo = subDays(now, 7);
+      const thirtyDaysAgo = subDays(now, 30);
+
+      // Get all clicks
+      const { data: allClicks, error } = await supabase
+        .from('social_link_clicks')
+        .select('platform, source, clicked_at');
+
+      if (error) throw error;
+
+      // Calculate stats per platform
+      const platforms = ['facebook', 'instagram', 'linkedin', 'yelp', 'google_maps', 'houzz'];
+      const stats: ClickStats[] = platforms.map(platform => {
+        const platformClicks = allClicks?.filter(c => c.platform === platform) || [];
+        return {
+          platform,
+          total_clicks: platformClicks.length,
+          footer_clicks: platformClicks.filter(c => c.source === 'footer').length,
+          testimonials_clicks: platformClicks.filter(c => c.source === 'testimonials').length,
+          last_7_days: platformClicks.filter(c => new Date(c.clicked_at) >= sevenDaysAgo).length,
+          last_30_days: platformClicks.filter(c => new Date(c.clicked_at) >= thirtyDaysAgo).length,
+        };
+      });
+
+      setClickStats(stats);
+    } catch (error) {
+      console.error('Error fetching click stats:', error);
     }
   };
 
@@ -113,6 +158,21 @@ const SocialMediaTracker = () => {
     return platformIcons[platform] || MapPin;
   };
 
+  const getStatsForPlatform = (platform: string): ClickStats => {
+    return clickStats.find(s => s.platform === platform) || {
+      platform,
+      total_clicks: 0,
+      footer_clicks: 0,
+      testimonials_clicks: 0,
+      last_7_days: 0,
+      last_30_days: 0,
+    };
+  };
+
+  const totalClicks = clickStats.reduce((sum, s) => sum + s.total_clicks, 0);
+  const totalLast7Days = clickStats.reduce((sum, s) => sum + s.last_7_days, 0);
+  const totalLast30Days = clickStats.reduce((sum, s) => sum + s.last_30_days, 0);
+
   if (roleLoading || loading) {
     return (
       <AdminLayout title="Social Media Tracker">
@@ -144,7 +204,7 @@ const SocialMediaTracker = () => {
           <div>
             <h1 className="text-2xl font-bold text-[#1e3a5f]">Social Media Tracker</h1>
             <p className="text-muted-foreground">
-              Manage your social media links across the website
+              Manage your social media links and view engagement analytics
             </p>
           </div>
           <Button onClick={saveAllChanges} disabled={saving}>
@@ -157,58 +217,116 @@ const SocialMediaTracker = () => {
           </Button>
         </div>
 
+        {/* Analytics Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-100 rounded-full">
+                  <MousePointerClick className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Clicks</p>
+                  <p className="text-2xl font-bold">{totalClicks}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-green-100 rounded-full">
+                  <BarChart3 className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Last 7 Days</p>
+                  <p className="text-2xl font-bold">{totalLast7Days}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-purple-100 rounded-full">
+                  <BarChart3 className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Last 30 Days</p>
+                  <p className="text-2xl font-bold">{totalLast30Days}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         <Card>
           <CardHeader>
             <CardTitle>Social Media Platforms</CardTitle>
             <CardDescription>
-              Update URLs and toggle visibility for each platform. Changes will reflect in the footer and testimonials section.
+              Update URLs and toggle visibility for each platform. Click analytics show engagement from footer and testimonials sections.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
               {socialLinks.map(link => {
                 const IconComponent = getIcon(link.platform);
+                const stats = getStatsForPlatform(link.platform);
                 return (
                   <div
                     key={link.id}
-                    className="flex items-center gap-4 p-4 border rounded-lg bg-muted/30"
+                    className="p-4 border rounded-lg bg-muted/30"
                   >
-                    <div className="flex items-center gap-3 w-40">
-                      <IconComponent className="h-6 w-6 text-[#1e3a5f]" />
-                      <span className="font-medium">{link.display_name}</span>
+                    <div className="flex items-center gap-4 mb-3">
+                      <div className="flex items-center gap-3 w-40">
+                        <IconComponent className="h-6 w-6 text-[#1e3a5f]" />
+                        <span className="font-medium">{link.display_name}</span>
+                      </div>
+
+                      <div className="flex-1">
+                        <Input
+                          value={link.url || ''}
+                          onChange={e => handleUrlChange(link.id, e.target.value)}
+                          placeholder={`Enter ${link.display_name} URL`}
+                          className="w-full"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id={`active-${link.id}`}
+                          checked={link.is_active}
+                          onCheckedChange={checked => handleActiveChange(link.id, checked)}
+                        />
+                        <Label htmlFor={`active-${link.id}`} className="text-sm w-14">
+                          {link.is_active ? 'Active' : 'Hidden'}
+                        </Label>
+                      </div>
+
+                      {link.url && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          asChild
+                        >
+                          <a href={link.url} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        </Button>
+                      )}
                     </div>
 
-                    <div className="flex-1">
-                      <Input
-                        value={link.url || ''}
-                        onChange={e => handleUrlChange(link.id, e.target.value)}
-                        placeholder={`Enter ${link.display_name} URL`}
-                        className="w-full"
-                      />
+                    {/* Click Stats Row */}
+                    <div className="flex items-center gap-6 ml-[172px] text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <MousePointerClick className="h-3.5 w-3.5" />
+                        <span>{stats.total_clicks} total</span>
+                      </div>
+                      <div>Footer: {stats.footer_clicks}</div>
+                      <div>Testimonials: {stats.testimonials_clicks}</div>
+                      <div className="text-green-600">7d: {stats.last_7_days}</div>
+                      <div className="text-purple-600">30d: {stats.last_30_days}</div>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        id={`active-${link.id}`}
-                        checked={link.is_active}
-                        onCheckedChange={checked => handleActiveChange(link.id, checked)}
-                      />
-                      <Label htmlFor={`active-${link.id}`} className="text-sm">
-                        {link.is_active ? 'Active' : 'Hidden'}
-                      </Label>
-                    </div>
-
-                    {link.url && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        asChild
-                      >
-                        <a href={link.url} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </Button>
-                    )}
                   </div>
                 );
               })}

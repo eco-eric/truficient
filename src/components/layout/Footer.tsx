@@ -2,8 +2,10 @@ import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Facebook, Instagram, Linkedin, Home } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { trackSocialLinkClick } from '@/hooks/useSocialLinkTracking';
 
 interface SocialLink {
+  id: string;
   platform: string;
   url: string | null;
   display_name: string;
@@ -26,10 +28,10 @@ const YelpIcon = ({ className }: { className?: string }) => (
 );
 
 // Fallback links if database fetch fails
-const fallbackSocialLinks = [
-  { platform: 'facebook', url: 'https://www.facebook.com/truficient' },
-  { platform: 'instagram', url: 'https://www.instagram.com/truficient_hvac' },
-  { platform: 'linkedin', url: 'https://www.linkedin.com/company/truficient/' },
+const fallbackSocialLinks: SocialLink[] = [
+  { id: '', platform: 'facebook', url: 'https://www.facebook.com/truficient', display_name: 'Facebook', is_active: true },
+  { id: '', platform: 'instagram', url: 'https://www.instagram.com/truficient_hvac', display_name: 'Instagram', is_active: true },
+  { id: '', platform: 'linkedin', url: 'https://www.linkedin.com/company/truficient/', display_name: 'LinkedIn', is_active: true },
 ];
 
 const Footer = () => {
@@ -39,7 +41,7 @@ const Footer = () => {
     const fetchSocialLinks = async () => {
       const { data, error } = await supabase
         .from('social_links')
-        .select('platform, url, display_name, is_active')
+        .select('id, platform, url, display_name, is_active')
         .eq('is_active', true)
         .in('platform', ['facebook', 'instagram', 'linkedin']);
 
@@ -56,6 +58,10 @@ const Footer = () => {
   const getIcon = (platform: string) => {
     if (platform === 'yelp') return YelpIcon;
     return platformIcons[platform];
+  };
+
+  const handleClick = (link: SocialLink) => {
+    trackSocialLinkClick(link.platform, 'footer', link.id || undefined);
   };
 
   const displayLinks = socialLinks.length > 0 
@@ -92,6 +98,7 @@ const Footer = () => {
                     target="_blank" 
                     rel="noopener noreferrer" 
                     className="hover:text-secondary transition-colors"
+                    onClick={() => handleClick(link)}
                   >
                     <IconComponent className="w-5 h-5" />
                   </a>
