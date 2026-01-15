@@ -15,6 +15,14 @@ import FriscoMcKinneyArea from "./pages/service-areas/FriscoMcKinneyArea";
 import MidCitiesArea from "./pages/service-areas/MidCitiesArea";
 import SouthDallasArea from "./pages/service-areas/SouthDallasArea";
 
+// Admin imports
+import AdminLogin from "./pages/admin/Login";
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminSubmissions from "./pages/admin/Submissions";
+import AdminSubmissionDetail from "./pages/admin/SubmissionDetail";
+import AdminSettings from "./pages/admin/Settings";
+import { ProtectedRoute } from "./components/admin/ProtectedRoute";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -34,6 +42,14 @@ const App = () => (
           <Route path="/service-areas/frisco-mckinney-area" element={<FriscoMcKinneyArea />} />
           <Route path="/service-areas/mid-cities-area" element={<MidCitiesArea />} />
           <Route path="/service-areas/south-dallas-area" element={<SouthDallasArea />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/submissions" element={<ProtectedRoute><AdminSubmissions /></ProtectedRoute>} />
+          <Route path="/admin/submissions/:id" element={<ProtectedRoute><AdminSubmissionDetail /></ProtectedRoute>} />
+          <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
