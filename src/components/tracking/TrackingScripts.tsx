@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTrackingSettings, getTrackingSetting } from '@/hooks/useTrackingSettings';
+import { getCookieConsent } from '@/components/CookieConsent';
 
 declare global {
   interface Window {
@@ -11,17 +12,41 @@ declare global {
   }
 }
 
+interface CookiePreferences {
+  essential: boolean;
+  analytics: boolean;
+  marketing: boolean;
+}
+
 export const TrackingScripts = () => {
   const location = useLocation();
   const { data: settings } = useTrackingSettings();
   const initializedRef = useRef<{ meta: boolean; ga: boolean }>({ meta: false, ga: false });
+  const [cookieConsent, setCookieConsent] = useState<CookiePreferences | null>(getCookieConsent);
 
   const metaPixel = getTrackingSetting(settings, 'meta_pixel_id');
   const googleAnalytics = getTrackingSetting(settings, 'ga_measurement_id');
 
-  // Initialize Meta Pixel
+  // Listen for cookie consent updates
+  useEffect(() => {
+    const handleConsentUpdate = (e: CustomEvent<CookiePreferences>) => {
+      setCookieConsent(e.detail);
+    };
+
+    window.addEventListener('cookie-consent-updated', handleConsentUpdate as EventListener);
+    return () => {
+      window.removeEventListener('cookie-consent-updated', handleConsentUpdate as EventListener);
+    };
+  }, []);
+
+  // Initialize Meta Pixel (only if marketing consent given)
   useEffect(() => {
     if (!metaPixel?.is_enabled || !metaPixel.setting_value || initializedRef.current.meta) {
+      return;
+    }
+
+    // Check for marketing consent
+    if (!cookieConsent?.marketing) {
       return;
     }
 
@@ -48,11 +73,16 @@ export const TrackingScripts = () => {
     window.fbq('init', pixelId);
     window.fbq('track', 'PageView');
     initializedRef.current.meta = true;
-  }, [metaPixel?.is_enabled, metaPixel?.setting_value]);
+  }, [metaPixel?.is_enabled, metaPixel?.setting_value, cookieConsent?.marketing]);
 
-  // Initialize Google Analytics
+  // Initialize Google Analytics (only if analytics consent given)
   useEffect(() => {
     if (!googleAnalytics?.is_enabled || !googleAnalytics.setting_value || initializedRef.current.ga) {
+      return;
+    }
+
+    // Check for analytics consent
+    if (!cookieConsent?.analytics) {
       return;
     }
 
@@ -72,21 +102,21 @@ export const TrackingScripts = () => {
     window.gtag('js', new Date());
     window.gtag('config', measurementId);
     initializedRef.current.ga = true;
-  }, [googleAnalytics?.is_enabled, googleAnalytics?.setting_value]);
+  }, [googleAnalytics?.is_enabled, googleAnalytics?.setting_value, cookieConsent?.analytics]);
 
   // Track page views on route change
   useEffect(() => {
-    if (metaPixel?.is_enabled && metaPixel.setting_value && initializedRef.current.meta) {
+    if (metaPixel?.is_enabled && metaPixel.setting_value && initializedRef.current.meta && cookieConsent?.marketing) {
       window.fbq?.('track', 'PageView');
     }
 
-    if (googleAnalytics?.is_enabled && googleAnalytics.setting_value && initializedRef.current.ga) {
+    if (googleAnalytics?.is_enabled && googleAnalytics.setting_value && initializedRef.current.ga && cookieConsent?.analytics) {
       window.gtag?.('event', 'page_view', {
         page_path: location.pathname,
         page_location: window.location.href,
       });
     }
-  }, [location.pathname, metaPixel, googleAnalytics]);
+  }, [location.pathname, metaPixel, googleAnalytics, cookieConsent]);
 
   return null;
 };

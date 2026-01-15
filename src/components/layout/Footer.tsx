@@ -115,6 +115,8 @@ const Footer = () => {
               <li><Link to="/reviews" className="hover:text-secondary transition-colors">Reviews</Link></li>
               <li><Link to="/careers" className="hover:text-secondary transition-colors">Careers</Link></li>
               <li><Link to="/blog" className="hover:text-secondary transition-colors">Blog</Link></li>
+              <li><Link to="/privacy-policy" className="hover:text-secondary transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/terms-of-service" className="hover:text-secondary transition-colors">Terms of Service</Link></li>
             </ul>
           </div>
 
@@ -155,7 +157,9 @@ const Footer = () => {
       <div className="border-t border-primary-foreground/20">
         <div className="container mx-auto px-4 py-4">
           <p className="text-center text-sm opacity-60">
-            © {new Date().getFullYear()} Truficient Energy Solutions. All rights reserved. | Licensed & Insured HVAC Contractor
+            © {new Date().getFullYear()} Truficient Energy Solutions. All rights reserved. | Licensed & Insured HVAC Contractor | {' '}
+            <Link to="/privacy-policy" className="hover:text-secondary transition-colors">Privacy Policy</Link> | {' '}
+            <Link to="/terms-of-service" className="hover:text-secondary transition-colors">Terms of Service</Link>
           </p>
         </div>
       </div>
