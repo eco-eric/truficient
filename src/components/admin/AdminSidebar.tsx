@@ -11,7 +11,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Share2,
-  BarChart3
+  BarChart3,
+  Tag,
+  FileInput
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,6 +28,8 @@ const navItems = [
   { label: 'Blog', href: '/admin/blog', icon: PenSquare, adminOnly: false },
   { label: 'SEO', href: '/admin/seo', icon: Search, adminOnly: true },
   { label: 'Calculators', href: '/admin/calculators', icon: Calculator, adminOnly: true },
+  { label: 'GHL Tags', href: '/admin/ghl-tags', icon: Tag, adminOnly: true },
+  { label: 'Landing Pages', href: '/admin/landing-pages', icon: FileInput, adminOnly: true },
   { label: 'Analytics', href: '/admin/analytics', icon: BarChart3, adminOnly: true },
   { label: 'Social Media', href: '/admin/social-media', icon: Share2, adminOnly: true },
   { label: 'Users', href: '/admin/users', icon: Users, adminOnly: true },

@@ -187,6 +187,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ghl_tags: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          tag_value: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          tag_value: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          tag_value?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       job_applications: {
         Row: {
           availability: string | null
@@ -240,6 +273,143 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      landing_page_form_tags: {
+        Row: {
+          created_at: string
+          form_id: string
+          id: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string
+          form_id: string
+          id?: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string
+          form_id?: string
+          id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_page_form_tags_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "landing_page_forms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_page_form_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "ghl_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_page_forms: {
+        Row: {
+          created_at: string
+          description: string | null
+          fields_config: Json
+          form_type: string
+          id: string
+          is_active: boolean
+          name: string
+          redirect_url: string | null
+          slug: string
+          success_message: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          fields_config?: Json
+          form_type?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          redirect_url?: string | null
+          slug: string
+          success_message?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          fields_config?: Json
+          form_type?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          redirect_url?: string | null
+          slug?: string
+          success_message?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      landing_page_submissions: {
+        Row: {
+          created_at: string
+          custom_fields: Json | null
+          email: string
+          first_name: string
+          form_id: string | null
+          ghl_contact_id: string | null
+          ghl_sync_status: string
+          id: string
+          last_name: string
+          message: string | null
+          phone: string | null
+          service_type: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          custom_fields?: Json | null
+          email: string
+          first_name: string
+          form_id?: string | null
+          ghl_contact_id?: string | null
+          ghl_sync_status?: string
+          id?: string
+          last_name: string
+          message?: string | null
+          phone?: string | null
+          service_type?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          custom_fields?: Json | null
+          email?: string
+          first_name?: string
+          form_id?: string | null
+          ghl_contact_id?: string | null
+          ghl_sync_status?: string
+          id?: string
+          last_name?: string
+          message?: string | null
+          phone?: string | null
+          service_type?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_page_submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "landing_page_forms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       page_seo: {
         Row: {

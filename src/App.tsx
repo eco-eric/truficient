@@ -35,6 +35,10 @@ import AdminCalculatorEditor from "./pages/admin/CalculatorEditor";
 import AdminUsers from "./pages/admin/Users";
 import AdminSocialMediaTracker from "./pages/admin/SocialMediaTracker";
 import AdminAnalyticsTracking from "./pages/admin/AnalyticsTracking";
+import AdminGHLTags from "./pages/admin/GHLTags";
+import AdminLandingPageForms from "./pages/admin/LandingPageForms";
+import AdminLandingPageFormEditor from "./pages/admin/LandingPageFormEditor";
+import AdminLandingPageSubmissions from "./pages/admin/LandingPageSubmissions";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
 
@@ -85,6 +89,11 @@ const App = () => (
           <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
           <Route path="/admin/social-media" element={<ProtectedRoute><AdminSocialMediaTracker /></ProtectedRoute>} />
           <Route path="/admin/analytics" element={<ProtectedRoute><AdminAnalyticsTracking /></ProtectedRoute>} />
+          <Route path="/admin/ghl-tags" element={<ProtectedRoute><AdminGHLTags /></ProtectedRoute>} />
+          <Route path="/admin/landing-pages" element={<ProtectedRoute><AdminLandingPageForms /></ProtectedRoute>} />
+          <Route path="/admin/landing-pages/new" element={<ProtectedRoute><AdminLandingPageFormEditor /></ProtectedRoute>} />
+          <Route path="/admin/landing-pages/submissions" element={<ProtectedRoute><AdminLandingPageSubmissions /></ProtectedRoute>} />
+          <Route path="/admin/landing-pages/:id" element={<ProtectedRoute><AdminLandingPageFormEditor /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

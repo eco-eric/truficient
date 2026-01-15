@@ -12,6 +12,8 @@ interface ContactData {
   phone?: string;
   serviceType?: string;
   message?: string;
+  tags?: string[];
+  source?: string;
 }
 
 serve(async (req) => {
@@ -38,8 +40,8 @@ serve(async (req) => {
       lastName: contactData.lastName,
       email: contactData.email,
       locationId: GHL_LOCATION_ID,
-      source: 'Website Contact Form',
-      tags: ['website-lead'],
+      source: contactData.source || 'Website Contact Form',
+      tags: contactData.tags || ['website-lead'],
     };
 
     // Add phone if provided
