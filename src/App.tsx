@@ -15,6 +15,7 @@ import NorthDallasArea from "./pages/service-areas/NorthDallasArea";
 import FriscoMcKinneyArea from "./pages/service-areas/FriscoMcKinneyArea";
 import MidCitiesArea from "./pages/service-areas/MidCitiesArea";
 import SouthDallasArea from "./pages/service-areas/SouthDallasArea";
+import Careers from "./pages/Careers";
 
 // Admin imports
 import AdminLogin from "./pages/admin/Login";
@@ -59,6 +60,7 @@ const App = () => (
           <Route path="/service-areas/mid-cities-area" element={<MidCitiesArea />} />
           <Route path="/service-areas/south-dallas-area" element={<SouthDallasArea />} />
           <Route path="/hvac-estimate" element={<HvacEstimate />} />
+          <Route path="/careers" element={<Careers />} />
           
           {/* Blog Routes */}
           <Route path="/blog" element={<Blog />} />
