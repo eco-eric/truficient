@@ -82,6 +82,15 @@ const UsersPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
 
+  // Create user state
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [createEmail, setCreateEmail] = useState('');
+  const [createPassword, setCreatePassword] = useState('');
+  const [createConfirmPassword, setCreateConfirmPassword] = useState('');
+  const [createRole, setCreateRole] = useState<AppRole>('manager');
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [creating, setCreating] = useState(false);
+
   const fetchUsers = async () => {
     try {
       // Use the RPC function to get users with emails
@@ -266,6 +275,72 @@ const UsersPage = () => {
     }
   };
 
+  const createUser = async () => {
+    if (!createEmail || !createPassword) {
+      toast({
+        title: 'Error',
+        description: 'Please enter email and password',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (createPassword !== createConfirmPassword) {
+      toast({
+        title: 'Error',
+        description: 'Passwords do not match',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (createPassword.length < 6) {
+      toast({
+        title: 'Error',
+        description: 'Password must be at least 6 characters',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setCreating(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-password-reset', {
+        body: {
+          action: 'create_user',
+          email: createEmail,
+          password: createPassword,
+          role: createRole,
+        },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast({
+        title: 'Success',
+        description: `User ${createEmail} created successfully`,
+      });
+
+      setCreateEmail('');
+      setCreatePassword('');
+      setCreateConfirmPassword('');
+      setCreateRole('manager');
+      setIsCreateDialogOpen(false);
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create user',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const filteredUsers = users.filter(u =>
     (u.email?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
     u.user_id.toLowerCase().includes(searchQuery.toLowerCase())
@@ -323,57 +398,149 @@ const UsersPage = () => {
             />
           </div>
           
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-[#1e3a5f] hover:bg-[#1e3a5f]/90">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add User Role
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add User Role</DialogTitle>
-                <DialogDescription>
-                  Enter the user's UUID from the authentication system to assign a role.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="userId">User ID (UUID)</Label>
-                  <Input
-                    id="userId"
-                    value={newUserEmail}
-                    onChange={(e) => setNewUserEmail(e.target.value)}
-                    placeholder="e.g., 123e4567-e89b-12d3-a456-426614174000"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    You can find the user ID in Settings after they log in.
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select value={newUserRole} onValueChange={(v) => setNewUserRole(v as AppRole)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin (Full Access)</SelectItem>
-                      <SelectItem value="manager">Manager (Limited Access)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancel
+          <div className="flex gap-2">
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-[#1e3a5f] hover:bg-[#1e3a5f]/90">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Add User
                 </Button>
-                <Button onClick={addUser} disabled={adding}>
-                  {adding && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Add Role
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New User</DialogTitle>
+                  <DialogDescription>
+                    Create a new user with email, password, and role assignment.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="createEmail">Email</Label>
+                    <Input
+                      id="createEmail"
+                      type="email"
+                      value={createEmail}
+                      onChange={(e) => setCreateEmail(e.target.value)}
+                      placeholder="user@example.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="createPassword">Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="createPassword"
+                        type={showCreatePassword ? 'text' : 'password'}
+                        value={createPassword}
+                        onChange={(e) => setCreatePassword(e.target.value)}
+                        placeholder="Enter password"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full px-3"
+                        onClick={() => setShowCreatePassword(!showCreatePassword)}
+                      >
+                        {showCreatePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="createConfirmPassword">Confirm Password</Label>
+                    <Input
+                      id="createConfirmPassword"
+                      type={showCreatePassword ? 'text' : 'password'}
+                      value={createConfirmPassword}
+                      onChange={(e) => setCreateConfirmPassword(e.target.value)}
+                      placeholder="Confirm password"
+                    />
+                  </div>
+                  {createPassword && createConfirmPassword && createPassword !== createConfirmPassword && (
+                    <p className="text-sm text-destructive">Passwords do not match</p>
+                  )}
+                  {createPassword && createPassword.length < 6 && (
+                    <p className="text-sm text-destructive">Password must be at least 6 characters</p>
+                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="createRole">Role</Label>
+                    <Select value={createRole} onValueChange={(v) => setCreateRole(v as AppRole)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin (Full Access)</SelectItem>
+                        <SelectItem value="manager">Manager (Limited Access)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={createUser} 
+                    disabled={creating || !createEmail || createPassword !== createConfirmPassword || createPassword.length < 6}
+                  >
+                    {creating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Create User
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Shield className="h-4 w-4 mr-2" />
+                  Add Role to Existing User
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add User Role</DialogTitle>
+                  <DialogDescription>
+                    Enter the user's UUID from the authentication system to assign a role.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="userId">User ID (UUID)</Label>
+                    <Input
+                      id="userId"
+                      value={newUserEmail}
+                      onChange={(e) => setNewUserEmail(e.target.value)}
+                      placeholder="e.g., 123e4567-e89b-12d3-a456-426614174000"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      You can find the user ID in Settings after they log in.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="role">Role</Label>
+                    <Select value={newUserRole} onValueChange={(v) => setNewUserRole(v as AppRole)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin (Full Access)</SelectItem>
+                        <SelectItem value="manager">Manager (Limited Access)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={addUser} disabled={adding}>
+                    {adding && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Add Role
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Role Legend */}
