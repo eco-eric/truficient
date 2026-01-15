@@ -15,6 +15,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { usePageSEO } from '@/hooks/usePageSEO';
+import { EstimateCalculator } from '@/components/calculator/EstimateCalculator';
 
 const mainServices = [
   {
@@ -296,6 +297,24 @@ const ResidentialServices = () => {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Estimate Calculator */}
+      <section className="py-16 lg:py-24 bg-background">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="max-w-xl mx-auto"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 text-foreground">
+              Get an Instant Estimate
+            </h2>
+            <EstimateCalculator />
+          </motion.div>
         </div>
       </section>
 
