@@ -187,6 +187,60 @@ export type Database = {
         }
         Relationships: []
       }
+      job_applications: {
+        Row: {
+          availability: string | null
+          certifications: string | null
+          cover_letter: string | null
+          created_at: string
+          email: string
+          experience: string
+          first_name: string
+          how_did_you_hear: string | null
+          id: string
+          last_name: string
+          phone: string
+          position: string | null
+          resume_url: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          availability?: string | null
+          certifications?: string | null
+          cover_letter?: string | null
+          created_at?: string
+          email: string
+          experience: string
+          first_name: string
+          how_did_you_hear?: string | null
+          id?: string
+          last_name: string
+          phone: string
+          position?: string | null
+          resume_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          availability?: string | null
+          certifications?: string | null
+          cover_letter?: string | null
+          created_at?: string
+          email?: string
+          experience?: string
+          first_name?: string
+          how_did_you_hear?: string | null
+          id?: string
+          last_name?: string
+          phone?: string
+          position?: string | null
+          resume_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       page_seo: {
         Row: {
           canonical_url: string | null

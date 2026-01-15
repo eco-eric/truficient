@@ -92,3 +92,13 @@ export const trackPhoneCallClick = (source: string) => {
     content_category: source,
   });
 };
+
+/**
+ * Track a job application submission
+ */
+export const trackJobApplicationSubmission = (position: string) => {
+  trackConversion('SubmitApplication', {
+    content_name: 'Job Application',
+    content_category: position,
+  });
+};
