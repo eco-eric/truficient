@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   FileText, 
+  PenSquare,
   Settings,
   LogOut,
   ChevronLeft,
@@ -16,6 +17,7 @@ import truficientLogo from '@/assets/truficient-logo.png';
 const navItems = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { label: 'Submissions', href: '/admin/submissions', icon: FileText },
+  { label: 'Blog', href: '/admin/blog', icon: PenSquare },
   { label: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 

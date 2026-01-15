@@ -21,7 +21,13 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import AdminSubmissions from "./pages/admin/Submissions";
 import AdminSubmissionDetail from "./pages/admin/SubmissionDetail";
 import AdminSettings from "./pages/admin/Settings";
+import AdminBlogPosts from "./pages/admin/BlogPosts";
+import AdminBlogPostEditor from "./pages/admin/BlogPostEditor";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
+
+// Blog imports
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 
 const queryClient = new QueryClient();
 
@@ -43,11 +49,16 @@ const App = () => (
           <Route path="/service-areas/mid-cities-area" element={<MidCitiesArea />} />
           <Route path="/service-areas/south-dallas-area" element={<SouthDallasArea />} />
           
+          {/* Blog Routes */}
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/submissions" element={<ProtectedRoute><AdminSubmissions /></ProtectedRoute>} />
           <Route path="/admin/submissions/:id" element={<ProtectedRoute><AdminSubmissionDetail /></ProtectedRoute>} />
+          <Route path="/admin/blog" element={<ProtectedRoute><AdminBlogPosts /></ProtectedRoute>} />
+          <Route path="/admin/blog/:id" element={<ProtectedRoute><AdminBlogPostEditor /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
