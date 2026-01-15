@@ -187,6 +187,81 @@ export type Database = {
         }
         Relationships: []
       }
+      equipment_systems: {
+        Row: {
+          ahri_number: string | null
+          capacity_btuh: number | null
+          condenser_heat_pump_model: string | null
+          condenser_price: number | null
+          created_at: string
+          eer2: number | null
+          evap_coil_model: string | null
+          evap_coil_price: number | null
+          furnace_air_handler_model: string | null
+          furnace_air_handler_price: number | null
+          furnace_air_handler_size: string | null
+          heat_kit: string | null
+          heat_kit_price: number | null
+          hspf2: number | null
+          id: string
+          notes: string | null
+          seer2: number | null
+          system_name: string
+          system_price: number | null
+          system_type: string
+          tonnage: number | null
+          updated_at: string
+        }
+        Insert: {
+          ahri_number?: string | null
+          capacity_btuh?: number | null
+          condenser_heat_pump_model?: string | null
+          condenser_price?: number | null
+          created_at?: string
+          eer2?: number | null
+          evap_coil_model?: string | null
+          evap_coil_price?: number | null
+          furnace_air_handler_model?: string | null
+          furnace_air_handler_price?: number | null
+          furnace_air_handler_size?: string | null
+          heat_kit?: string | null
+          heat_kit_price?: number | null
+          hspf2?: number | null
+          id?: string
+          notes?: string | null
+          seer2?: number | null
+          system_name: string
+          system_price?: number | null
+          system_type: string
+          tonnage?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ahri_number?: string | null
+          capacity_btuh?: number | null
+          condenser_heat_pump_model?: string | null
+          condenser_price?: number | null
+          created_at?: string
+          eer2?: number | null
+          evap_coil_model?: string | null
+          evap_coil_price?: number | null
+          furnace_air_handler_model?: string | null
+          furnace_air_handler_price?: number | null
+          furnace_air_handler_size?: string | null
+          heat_kit?: string | null
+          heat_kit_price?: number | null
+          hspf2?: number | null
+          id?: string
+          notes?: string | null
+          seer2?: number | null
+          system_name?: string
+          system_price?: number | null
+          system_type?: string
+          tonnage?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ghl_tags: {
         Row: {
           color: string | null
@@ -456,6 +531,36 @@ export type Database = {
           robots?: string | null
           structured_data?: Json | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      price_books: {
+        Row: {
+          category: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          category?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          category?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
         }
         Relationships: []
       }
