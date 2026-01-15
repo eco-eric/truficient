@@ -30,7 +30,9 @@ import AdminCalculators from "./pages/admin/Calculators";
 import AdminCalculatorEditor from "./pages/admin/CalculatorEditor";
 import AdminUsers from "./pages/admin/Users";
 import AdminSocialMediaTracker from "./pages/admin/SocialMediaTracker";
+import AdminAnalyticsTracking from "./pages/admin/AnalyticsTracking";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
+import { TrackingScripts } from "./components/tracking/TrackingScripts";
 
 // Blog imports
 import Blog from "./pages/Blog";
@@ -44,6 +46,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <TrackingScripts />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/about" element={<About />} />
@@ -73,6 +76,7 @@ const App = () => (
           <Route path="/admin/calculators/:id" element={<ProtectedRoute><AdminCalculatorEditor /></ProtectedRoute>} />
           <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
           <Route path="/admin/social-media" element={<ProtectedRoute><AdminSocialMediaTracker /></ProtectedRoute>} />
+          <Route path="/admin/analytics" element={<ProtectedRoute><AdminAnalyticsTracking /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
