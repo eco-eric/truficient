@@ -73,10 +73,9 @@ const UsersPage = () => {
 
   const fetchUsers = async () => {
     try {
+      // Use the RPC function to get users with emails
       const { data, error } = await supabase
-        .from('user_roles')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .rpc('get_user_roles_with_email');
 
       if (error) throw error;
       setUsers((data || []) as UserRole[]);
@@ -193,6 +192,7 @@ const UsersPage = () => {
   };
 
   const filteredUsers = users.filter(u =>
+    (u.email?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
     u.user_id.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -241,7 +241,7 @@ const UsersPage = () => {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by user ID..."
+              placeholder="Search by email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -343,7 +343,7 @@ const UsersPage = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>User ID</TableHead>
+                  <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Added</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
@@ -352,8 +352,11 @@ const UsersPage = () => {
               <TableBody>
                 {filteredUsers.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-mono text-sm">
-                      {user.user_id}
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{user.email || 'Unknown'}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{user.user_id}</p>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Select 
