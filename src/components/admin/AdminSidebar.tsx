@@ -5,6 +5,7 @@ import {
   PenSquare,
   Search,
   Calculator,
+  Users,
   Settings,
   LogOut,
   ChevronLeft,
@@ -15,24 +16,31 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import truficientLogo from '@/assets/truficient-logo.png';
+import { useUserRole } from '@/hooks/useUserRole';
 
 const navItems = [
-  { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { label: 'Submissions', href: '/admin/submissions', icon: FileText },
-  { label: 'Blog', href: '/admin/blog', icon: PenSquare },
-  { label: 'SEO', href: '/admin/seo', icon: Search },
-  { label: 'Calculators', href: '/admin/calculators', icon: Calculator },
-  { label: 'Settings', href: '/admin/settings', icon: Settings },
+  { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, adminOnly: false },
+  { label: 'Submissions', href: '/admin/submissions', icon: FileText, adminOnly: false },
+  { label: 'Blog', href: '/admin/blog', icon: PenSquare, adminOnly: false },
+  { label: 'SEO', href: '/admin/seo', icon: Search, adminOnly: true },
+  { label: 'Calculators', href: '/admin/calculators', icon: Calculator, adminOnly: true },
+  { label: 'Users', href: '/admin/users', icon: Users, adminOnly: true },
+  { label: 'Settings', href: '/admin/settings', icon: Settings, adminOnly: false },
 ];
+
 
 export const AdminSidebar = () => {
   const location = useLocation();
   const { signOut } = useAuth();
+  const { isAdmin } = useUserRole();
   const [collapsed, setCollapsed] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
   };
+
+  // Filter nav items based on role
+  const visibleNavItems = navItems.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <aside 
@@ -58,7 +66,7 @@ export const AdminSidebar = () => {
       {/* Navigation */}
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const isActive = location.pathname === item.href || 
               (item.href !== '/admin' && location.pathname.startsWith(item.href));
             
