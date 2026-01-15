@@ -9,8 +9,10 @@ import TestimonialsSection from '@/components/home/TestimonialsSection';
 import ServicesGrid from '@/components/home/ServicesGrid';
 import BlogSection from '@/components/home/BlogSection';
 import CTASection from '@/components/home/CTASection';
+import { usePageSEO } from '@/hooks/usePageSEO';
 
 const Index = () => {
+  usePageSEO();
   return (
     <div className="min-h-screen bg-background">
       <Header />

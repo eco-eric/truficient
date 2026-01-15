@@ -3,6 +3,7 @@ import {
   LayoutDashboard, 
   FileText, 
   PenSquare,
+  Search,
   Settings,
   LogOut,
   ChevronLeft,
@@ -18,6 +19,7 @@ const navItems = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { label: 'Submissions', href: '/admin/submissions', icon: FileText },
   { label: 'Blog', href: '/admin/blog', icon: PenSquare },
+  { label: 'SEO', href: '/admin/seo', icon: Search },
   { label: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 

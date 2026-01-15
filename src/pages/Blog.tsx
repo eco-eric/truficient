@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Calendar, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
+import { usePageSEO } from '@/hooks/usePageSEO';
 
 interface BlogPost {
   id: string;
@@ -18,6 +19,7 @@ interface BlogPost {
 }
 
 const Blog = () => {
+  usePageSEO();
   const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState<BlogPost[]>([]);
 

@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import { usePageSEO } from '@/hooks/usePageSEO';
 
 const contactInfo = [
   {
@@ -44,6 +45,7 @@ const contactInfo = [
 ];
 
 const Contact = () => {
+  usePageSEO();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
