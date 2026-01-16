@@ -1,1 +1,10 @@
 project_id = "xvsgdzwadxbwpevdezbp"
+
+[functions.admin-password-reset]
+verify_jwt = false
+
+[functions.sync-ghl-contact]
+verify_jwt = false
+
+[functions.get-ghl-conversations]
+verify_jwt = false
