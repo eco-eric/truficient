@@ -53,6 +53,7 @@ serve(async (req) => {
 
       const messagesText = await messagesResponse.text();
       console.log('Messages response status:', messagesResponse.status);
+      console.log('Messages response body:', messagesText);
 
       if (!messagesResponse.ok) {
         console.error('GHL Messages API error:', messagesText);
@@ -61,10 +62,14 @@ serve(async (req) => {
 
       const messagesData = JSON.parse(messagesText);
       
+      // GHL API returns messages in different structures, normalize it
+      const messagesList = messagesData.messages?.messages || messagesData.messages || messagesData.data || [];
+      console.log('Parsed messages count:', Array.isArray(messagesList) ? messagesList.length : 'not an array');
+      
       return new Response(
         JSON.stringify({
           success: true,
-          messages: messagesData.messages || [],
+          messages: Array.isArray(messagesList) ? messagesList : [],
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
