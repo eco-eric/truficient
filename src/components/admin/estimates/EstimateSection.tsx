@@ -214,7 +214,7 @@ const SortableRow = ({ item, actualIndex, onUpdateItem, onRemoveItem }: Sortable
           step="0.01"
           value={item.quantity}
           onChange={(e) => onUpdateItem(actualIndex, 'quantity', parseFloat(e.target.value) || 0)}
-          className="h-8 w-16"
+          className="h-8 w-24"
         />
       </TableCell>
       <TableCell className="text-muted-foreground">{item.unit}</TableCell>
@@ -341,7 +341,7 @@ export const EstimateSectionComponent = ({
                     <TableHead className="w-8"></TableHead>
                     <TableHead className="w-8">Type</TableHead>
                     <TableHead>Description</TableHead>
-                    <TableHead className="w-20">Qty</TableHead>
+                    <TableHead className="w-28">Qty</TableHead>
                     <TableHead className="w-20">Unit</TableHead>
                     <TableHead className="w-28 text-right">Unit Cost</TableHead>
                     <TableHead className="w-28 text-right">Total</TableHead>
