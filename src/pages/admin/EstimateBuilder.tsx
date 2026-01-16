@@ -829,6 +829,20 @@ const EstimateBuilder = () => {
               <Save className="h-4 w-4 mr-2" />
               {saveMutation.isPending ? 'Saving...' : 'Save'}
             </Button>
+            <Button 
+              variant="secondary"
+              onClick={() => {
+                saveMutation.mutate(undefined, {
+                  onSuccess: () => {
+                    navigate('/admin/estimates');
+                  }
+                });
+              }} 
+              disabled={saveMutation.isPending}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save & Exit
+            </Button>
           </div>
         </div>
 
