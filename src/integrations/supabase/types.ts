@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_costs: {
+        Row: {
+          amount: number
+          cost_type: Database["public"]["Enums"]["admin_cost_type"]
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_required: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          cost_type?: Database["public"]["Enums"]["admin_cost_type"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          cost_type?: Database["public"]["Enums"]["admin_cost_type"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author_id: string | null
@@ -349,6 +385,39 @@ export type Database = {
         }
         Relationships: []
       }
+      labor_rates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          rate: number
+          rate_type: Database["public"]["Enums"]["labor_rate_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          rate?: number
+          rate_type?: Database["public"]["Enums"]["labor_rate_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          rate?: number
+          rate_type?: Database["public"]["Enums"]["labor_rate_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       landing_page_form_tags: {
         Row: {
           created_at: string
@@ -485,6 +554,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      materials_catalog: {
+        Row: {
+          category: Database["public"]["Enums"]["material_category"]
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          part_number: string | null
+          supplier: string | null
+          unit: string
+          unit_cost: number
+          updated_at: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["material_category"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          part_number?: string | null
+          supplier?: string | null
+          unit?: string
+          unit_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["material_category"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          part_number?: string | null
+          supplier?: string | null
+          unit?: string
+          unit_cost?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       page_seo: {
         Row: {
@@ -711,7 +822,17 @@ export type Database = {
       }
     }
     Enums: {
+      admin_cost_type: "fixed" | "percentage" | "per_job"
       app_role: "admin" | "manager"
+      labor_rate_type: "hourly" | "daily" | "flat"
+      material_category:
+        | "refrigerant"
+        | "copper"
+        | "electrical"
+        | "ductwork"
+        | "controls"
+        | "supports"
+        | "misc"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -839,7 +960,18 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_cost_type: ["fixed", "percentage", "per_job"],
       app_role: ["admin", "manager"],
+      labor_rate_type: ["hourly", "daily", "flat"],
+      material_category: [
+        "refrigerant",
+        "copper",
+        "electrical",
+        "ductwork",
+        "controls",
+        "supports",
+        "misc",
+      ],
     },
   },
 } as const

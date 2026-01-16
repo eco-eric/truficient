@@ -40,6 +40,9 @@ import AdminLandingPageForms from "./pages/admin/LandingPageForms";
 import AdminLandingPageFormEditor from "./pages/admin/LandingPageFormEditor";
 import AdminLandingPageSubmissions from "./pages/admin/LandingPageSubmissions";
 import AdminSystemPricing from "./pages/admin/SystemPricing";
+import AdminMaterials from "./pages/admin/Materials";
+import AdminLaborRates from "./pages/admin/LaborRates";
+import AdminCosts from "./pages/admin/AdminCosts";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
 
@@ -88,6 +91,9 @@ const App = () => (
           <Route path="/admin/calculators" element={<ProtectedRoute><AdminCalculators /></ProtectedRoute>} />
           <Route path="/admin/calculators/:id" element={<ProtectedRoute><AdminCalculatorEditor /></ProtectedRoute>} />
           <Route path="/admin/system-pricing" element={<ProtectedRoute><AdminSystemPricing /></ProtectedRoute>} />
+          <Route path="/admin/materials" element={<ProtectedRoute><AdminMaterials /></ProtectedRoute>} />
+          <Route path="/admin/labor-rates" element={<ProtectedRoute><AdminLaborRates /></ProtectedRoute>} />
+          <Route path="/admin/admin-costs" element={<ProtectedRoute><AdminCosts /></ProtectedRoute>} />
           <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
           <Route path="/admin/social-media" element={<ProtectedRoute><AdminSocialMediaTracker /></ProtectedRoute>} />
           <Route path="/admin/analytics" element={<ProtectedRoute><AdminAnalyticsTracking /></ProtectedRoute>} />
