@@ -12,6 +12,11 @@ interface AdminLayoutProps {
 export const AdminLayout = ({ children, title }: AdminLayoutProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Set document title for admin pages
+  useEffect(() => {
+    document.title = `${title} | Admin - Truficient`;
+  }, [title]);
+
   // Add noindex meta tag to prevent search engine indexing of admin pages
   useEffect(() => {
     const existingMeta = document.querySelector('meta[name="robots"]');
