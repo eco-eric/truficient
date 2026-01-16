@@ -1166,6 +1166,7 @@ export type Database = {
         | "ducting"
         | "labor"
         | "admin_costs"
+        | "miscellaneous_outside"
       estimate_status: "draft" | "sent" | "accepted" | "declined" | "expired"
       heating_type: "gas" | "electric" | "heat_pump" | "dual_fuel"
       job_type:
@@ -1325,6 +1326,7 @@ export const Constants = {
         "ducting",
         "labor",
         "admin_costs",
+        "miscellaneous_outside",
       ],
       estimate_status: ["draft", "sent", "accepted", "declined", "expired"],
       heating_type: ["gas", "electric", "heat_pump", "dual_fuel"],

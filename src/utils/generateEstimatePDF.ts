@@ -1,4 +1,4 @@
-type EstimateSection = 'equipment_controls' | 'miscellaneous_inside' | 'ducting' | 'labor' | 'admin_costs';
+type EstimateSection = 'admin_costs' | 'equipment_controls' | 'miscellaneous_inside' | 'miscellaneous_outside' | 'ducting' | 'labor';
 
 interface LineItem {
   item_type: string;
@@ -46,19 +46,21 @@ const HEATING_TYPE_LABELS: Record<string, string> = {
 };
 
 const SECTION_LABELS: Record<EstimateSection, string> = {
+  admin_costs: 'Admin Costs',
   equipment_controls: 'Equipment & Controls',
   miscellaneous_inside: 'Miscellaneous Inside Items',
+  miscellaneous_outside: 'Miscellaneous Outside Items',
   ducting: 'Ducting',
   labor: 'Labor',
-  admin_costs: 'Admin Costs',
 };
 
 const SECTION_ORDER: EstimateSection[] = [
+  'admin_costs',
   'equipment_controls',
   'miscellaneous_inside',
+  'miscellaneous_outside',
   'ducting',
   'labor',
-  'admin_costs',
 ];
 
 const formatCurrency = (amount: number) => {
@@ -79,11 +81,12 @@ const formatDate = (dateString: string) => {
 // Group items by section
 const groupItemsBySection = (items: LineItem[]): Record<EstimateSection, LineItem[]> => {
   const grouped: Record<EstimateSection, LineItem[]> = {
+    admin_costs: [],
     equipment_controls: [],
     miscellaneous_inside: [],
+    miscellaneous_outside: [],
     ducting: [],
     labor: [],
-    admin_costs: [],
   };
 
   items.forEach(item => {
