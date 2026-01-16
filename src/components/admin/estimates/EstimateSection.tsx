@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Package, Users, Receipt, Wrench, Calculator, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Package, Users, Receipt, Wrench, Calculator, Plus, Trash2, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -11,6 +11,23 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 export type EstimateSection = 'admin_costs' | 'equipment_controls' | 'miscellaneous_inside' | 'miscellaneous_outside' | 'ducting' | 'labor';
 
@@ -117,6 +134,7 @@ interface EstimateSectionProps {
   onAddItem: (type: 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom', section: EstimateSection) => void;
   onRemoveItem: (index: number) => void;
   onUpdateItem: (index: number, field: keyof LineItem, value: any) => void;
+  onReorderItems?: (sectionItems: LineItem[], newOrder: LineItem[]) => void;
   getActualIndex: (item: LineItem) => number;
 }
 
@@ -127,25 +145,145 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+const getItemIcon = (itemType: string) => {
+  switch (itemType) {
+    case 'equipment': return <Wrench className="h-4 w-4 text-blue-500" />;
+    case 'material': return <Package className="h-4 w-4 text-green-500" />;
+    case 'labor': return <Users className="h-4 w-4 text-amber-500" />;
+    case 'admin_cost': return <Receipt className="h-4 w-4 text-purple-500" />;
+    default: return <Calculator className="h-4 w-4 text-gray-500" />;
+  }
+};
+
+// Sortable row component
+interface SortableRowProps {
+  item: LineItem;
+  actualIndex: number;
+  onUpdateItem: (index: number, field: keyof LineItem, value: any) => void;
+  onRemoveItem: (index: number) => void;
+}
+
+const SortableRow = ({ item, actualIndex, onUpdateItem, onRemoveItem }: SortableRowProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id || `${item.name}-${item.sort_order}` });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style} className={isDragging ? 'bg-muted' : ''}>
+      <TableCell className="w-8">
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab hover:cursor-grabbing p-1 text-muted-foreground hover:text-foreground"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      </TableCell>
+      <TableCell>{getItemIcon(item.item_type)}</TableCell>
+      <TableCell>
+        {item.item_type === 'custom' ? (
+          <Input
+            value={item.name}
+            onChange={(e) => onUpdateItem(actualIndex, 'name', e.target.value)}
+            className="h-8"
+          />
+        ) : (
+          <div>
+            <div className="font-medium">{item.name}</div>
+            {item.description && (
+              <div className="text-xs text-muted-foreground">{item.description}</div>
+            )}
+          </div>
+        )}
+      </TableCell>
+      <TableCell>
+        <Input
+          type="number"
+          min="0"
+          step="0.01"
+          value={item.quantity}
+          onChange={(e) => onUpdateItem(actualIndex, 'quantity', parseFloat(e.target.value) || 0)}
+          className="h-8 w-16"
+        />
+      </TableCell>
+      <TableCell className="text-muted-foreground">{item.unit}</TableCell>
+      <TableCell className="text-right">
+        {item.item_type === 'custom' ? (
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            value={item.unit_cost}
+            onChange={(e) => onUpdateItem(actualIndex, 'unit_cost', parseFloat(e.target.value) || 0)}
+            className="h-8 w-24 text-right"
+          />
+        ) : (
+          <span className="font-mono">{formatCurrency(item.unit_cost)}</span>
+        )}
+      </TableCell>
+      <TableCell className="text-right font-mono font-semibold">
+        {formatCurrency(item.quantity * item.unit_cost)}
+      </TableCell>
+      <TableCell>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-destructive hover:text-destructive"
+          onClick={() => onRemoveItem(actualIndex)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </TableCell>
+    </TableRow>
+  );
+};
+
 export const EstimateSectionComponent = ({
   config,
   items,
   onAddItem,
   onRemoveItem,
   onUpdateItem,
+  onReorderItems,
   getActualIndex,
 }: EstimateSectionProps) => {
   const [isOpen, setIsOpen] = useState(true);
 
   const sectionTotal = items.reduce((sum, item) => sum + (item.quantity * item.unit_cost), 0);
 
-  const getItemIcon = (itemType: string) => {
-    switch (itemType) {
-      case 'equipment': return <Wrench className="h-4 w-4 text-blue-500" />;
-      case 'material': return <Package className="h-4 w-4 text-green-500" />;
-      case 'labor': return <Users className="h-4 w-4 text-amber-500" />;
-      case 'admin_cost': return <Receipt className="h-4 w-4 text-purple-500" />;
-      default: return <Calculator className="h-4 w-4 text-gray-500" />;
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = items.findIndex(item => (item.id || `${item.name}-${item.sort_order}`) === active.id);
+      const newIndex = items.findIndex(item => (item.id || `${item.name}-${item.sort_order}`) === over.id);
+      
+      if (oldIndex !== -1 && newIndex !== -1 && onReorderItems) {
+        const newOrder = arrayMove(items, oldIndex, newIndex);
+        onReorderItems(items, newOrder);
+      }
     }
   };
 
@@ -192,83 +330,42 @@ export const EstimateSectionComponent = ({
               No items in this section. Use the buttons above to add items.
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-8">Type</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="w-20">Qty</TableHead>
-                  <TableHead className="w-20">Unit</TableHead>
-                  <TableHead className="w-28 text-right">Unit Cost</TableHead>
-                  <TableHead className="w-28 text-right">Total</TableHead>
-                  <TableHead className="w-10"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((item) => {
-                  const actualIndex = getActualIndex(item);
-                  return (
-                    <TableRow key={item.id || `${item.name}-${item.sort_order}`}>
-                      <TableCell>{getItemIcon(item.item_type)}</TableCell>
-                      <TableCell>
-                        {item.item_type === 'custom' ? (
-                          <Input
-                            value={item.name}
-                            onChange={(e) => onUpdateItem(actualIndex, 'name', e.target.value)}
-                            className="h-8"
-                          />
-                        ) : (
-                          <div>
-                            <div className="font-medium">{item.name}</div>
-                            {item.description && (
-                              <div className="text-xs text-muted-foreground">{item.description}</div>
-                            )}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={item.quantity}
-                          onChange={(e) => onUpdateItem(actualIndex, 'quantity', parseFloat(e.target.value) || 0)}
-                          className="h-8 w-16"
-                        />
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{item.unit}</TableCell>
-                      <TableCell className="text-right">
-                        {item.item_type === 'custom' ? (
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={item.unit_cost}
-                            onChange={(e) => onUpdateItem(actualIndex, 'unit_cost', parseFloat(e.target.value) || 0)}
-                            className="h-8 w-24 text-right"
-                          />
-                        ) : (
-                          <span className="font-mono">{formatCurrency(item.unit_cost)}</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right font-mono font-semibold">
-                        {formatCurrency(item.quantity * item.unit_cost)}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => onRemoveItem(actualIndex)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-8"></TableHead>
+                    <TableHead className="w-8">Type</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="w-20">Qty</TableHead>
+                    <TableHead className="w-20">Unit</TableHead>
+                    <TableHead className="w-28 text-right">Unit Cost</TableHead>
+                    <TableHead className="w-28 text-right">Total</TableHead>
+                    <TableHead className="w-10"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <SortableContext
+                    items={items.map(item => item.id || `${item.name}-${item.sort_order}`)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {items.map((item) => (
+                      <SortableRow
+                        key={item.id || `${item.name}-${item.sort_order}`}
+                        item={item}
+                        actualIndex={getActualIndex(item)}
+                        onUpdateItem={onUpdateItem}
+                        onRemoveItem={onRemoveItem}
+                      />
+                    ))}
+                  </SortableContext>
+                </TableBody>
+              </Table>
+            </DndContext>
           )}
         </div>
       </CollapsibleContent>

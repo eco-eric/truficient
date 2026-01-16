@@ -671,6 +671,26 @@ const EstimateBuilder = () => {
     setLineItems(updated);
   };
 
+  // Handle reordering items within a section
+  const handleReorderItems = (sectionItems: LineItem[], newOrder: LineItem[]) => {
+    // Create a new lineItems array with updated sort_order
+    const updated = [...lineItems];
+    
+    // Get all items not in this section (to preserve their order)
+    const otherItems = updated.filter(item => !sectionItems.includes(item));
+    
+    // Update sort_order for reordered items based on their new position
+    const reorderedItems = newOrder.map((item, index) => {
+      const actualIndex = updated.findIndex(li => li === item || (li.id && li.id === item.id));
+      if (actualIndex !== -1) {
+        updated[actualIndex] = { ...updated[actualIndex], sort_order: index };
+      }
+      return updated[actualIndex];
+    });
+    
+    setLineItems(updated);
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -882,6 +902,7 @@ const EstimateBuilder = () => {
                     onAddItem={handleSectionAddItem}
                     onRemoveItem={handleRemoveItem}
                     onUpdateItem={handleUpdateItem}
+                    onReorderItems={handleReorderItems}
                     getActualIndex={(item) => 
                       lineItems.findIndex(li => li === item || (li.id && li.id === item.id))
                     }
