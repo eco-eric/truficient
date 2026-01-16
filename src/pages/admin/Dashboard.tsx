@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { StatsCards } from '@/components/admin/dashboard/StatsCards';
 import { RecentSubmissions } from '@/components/admin/dashboard/RecentSubmissions';
+import { RecentChats } from '@/components/admin/dashboard/RecentChats';
 import { SubmissionsChart } from '@/components/admin/dashboard/SubmissionsChart';
 import { ServiceTypeChart } from '@/components/admin/dashboard/ServiceTypeChart';
 import { StatusChart } from '@/components/admin/dashboard/StatusChart';
@@ -99,9 +100,10 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <StatusChart submissions={allSubmissions} />
           <RecentSubmissions submissions={submissions} />
+          <RecentChats />
         </div>
       </div>
     </AdminLayout>
