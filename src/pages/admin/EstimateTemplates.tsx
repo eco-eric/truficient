@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -31,7 +32,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, LayoutTemplate, GripVertical, Copy } from 'lucide-react';
+import { Plus, Pencil, Trash2, LayoutTemplate, GripVertical, Copy, Settings } from 'lucide-react';
 
 type JobType = 'residential_new' | 'residential_replacement' | 'commercial_new' | 'commercial_replacement' | 'maintenance' | 'repair';
 type HeatingType = 'gas' | 'electric' | 'heat_pump' | 'dual_fuel';
@@ -64,6 +65,7 @@ const HEATING_TYPES: { value: HeatingType; label: string }[] = [
 ];
 
 const EstimateTemplates = () => {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
@@ -332,10 +334,18 @@ const EstimateTemplates = () => {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleOpenDialog(template)}
-                              title="Edit"
+                              onClick={() => navigate(`/admin/estimate-templates/${template.id}/edit`)}
+                              title="Edit Items"
                             >
                               <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleOpenDialog(template)}
+                              title="Settings"
+                            >
+                              <Settings className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
