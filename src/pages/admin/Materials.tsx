@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Package } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 
 type MaterialCategory = 'refrigerant' | 'copper' | 'electrical' | 'ductwork' | 'controls' | 'supports' | 'misc';
@@ -144,6 +144,32 @@ const Materials = () => {
     },
     onError: (error) => {
       toast.error('Failed to delete material: ' + error.message);
+    },
+  });
+
+  // Clone mutation
+  const cloneMutation = useMutation({
+    mutationFn: async (material: Material) => {
+      const { error } = await supabase
+        .from('materials_catalog')
+        .insert({
+          name: `${material.name} (Copy)`,
+          category: material.category,
+          unit: material.unit,
+          unit_cost: material.unit_cost,
+          description: material.description,
+          supplier: material.supplier,
+          part_number: material.part_number,
+          is_active: material.is_active,
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['materials'] });
+      toast.success('Material cloned successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to clone material: ' + error.message);
     },
   });
 
@@ -286,11 +312,20 @@ const Materials = () => {
                             {format(new Date(material.updated_at), 'MMM d, yyyy')}
                           </TableCell>
                           <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => cloneMutation.mutate(material)}
+                                title="Clone material"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleOpenDialog(material)}
+                                title="Edit material"
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
@@ -299,6 +334,7 @@ const Materials = () => {
                                 size="icon"
                                 onClick={() => handleDelete(material.id, material.name)}
                                 className="text-destructive hover:text-destructive"
+                                title="Delete material"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
