@@ -17,7 +17,8 @@ import {
   DollarSign,
   Package,
   Receipt,
-  ClipboardList
+  ClipboardList,
+  LayoutTemplate
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -53,6 +54,7 @@ const navSections: NavSection[] = [
     adminOnly: true,
     items: [
       { label: 'Estimates', href: '/admin/estimates', icon: FileText, adminOnly: true },
+      { label: 'Templates', href: '/admin/estimate-templates', icon: LayoutTemplate, adminOnly: true },
       { label: 'Materials', href: '/admin/materials', icon: Package, adminOnly: true },
       { label: 'Labor Rates', href: '/admin/labor-rates', icon: ClipboardList, adminOnly: true },
       { label: 'Admin Costs', href: '/admin/admin-costs', icon: Receipt, adminOnly: true },

@@ -391,6 +391,135 @@ export type Database = {
           },
         ]
       }
+      estimate_template_items: {
+        Row: {
+          admin_cost_id: string | null
+          created_at: string
+          description: string | null
+          equipment_system_id: string | null
+          id: string
+          item_type: Database["public"]["Enums"]["line_item_type"]
+          labor_rate_id: string | null
+          material_id: string | null
+          name: string
+          quantity: number
+          sort_order: number
+          template_id: string
+          unit: string
+          unit_cost: number
+          updated_at: string
+        }
+        Insert: {
+          admin_cost_id?: string | null
+          created_at?: string
+          description?: string | null
+          equipment_system_id?: string | null
+          id?: string
+          item_type?: Database["public"]["Enums"]["line_item_type"]
+          labor_rate_id?: string | null
+          material_id?: string | null
+          name: string
+          quantity?: number
+          sort_order?: number
+          template_id: string
+          unit?: string
+          unit_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          admin_cost_id?: string | null
+          created_at?: string
+          description?: string | null
+          equipment_system_id?: string | null
+          id?: string
+          item_type?: Database["public"]["Enums"]["line_item_type"]
+          labor_rate_id?: string | null
+          material_id?: string | null
+          name?: string
+          quantity?: number
+          sort_order?: number
+          template_id?: string
+          unit?: string
+          unit_cost?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estimate_template_items_admin_cost_id_fkey"
+            columns: ["admin_cost_id"]
+            isOneToOne: false
+            referencedRelation: "admin_costs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimate_template_items_equipment_system_id_fkey"
+            columns: ["equipment_system_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_systems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimate_template_items_labor_rate_id_fkey"
+            columns: ["labor_rate_id"]
+            isOneToOne: false
+            referencedRelation: "labor_rates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimate_template_items_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimate_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "estimate_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      estimate_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          heating_type: Database["public"]["Enums"]["heating_type"]
+          id: string
+          is_active: boolean
+          job_type: Database["public"]["Enums"]["job_type"]
+          name: string
+          profit_margin: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          heating_type?: Database["public"]["Enums"]["heating_type"]
+          id?: string
+          is_active?: boolean
+          job_type?: Database["public"]["Enums"]["job_type"]
+          name: string
+          profit_margin?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          heating_type?: Database["public"]["Enums"]["heating_type"]
+          id?: string
+          is_active?: boolean
+          job_type?: Database["public"]["Enums"]["job_type"]
+          name?: string
+          profit_margin?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       estimates: {
         Row: {
           created_at: string
