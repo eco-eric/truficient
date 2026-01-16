@@ -46,6 +46,7 @@ import AdminCosts from "./pages/admin/AdminCosts";
 import AdminEstimates from "./pages/admin/Estimates";
 import AdminEstimateBuilder from "./pages/admin/EstimateBuilder";
 import AdminEstimateTemplates from "./pages/admin/EstimateTemplates";
+import AdminTemplateBuilder from "./pages/admin/TemplateBuilder";
 import AdminGHLConversations from "./pages/admin/GHLConversations";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
@@ -106,6 +107,7 @@ const router = createBrowserRouter([
       { path: "/admin/estimates", element: <ProtectedRoute><AdminEstimates /></ProtectedRoute> },
       { path: "/admin/estimates/:id", element: <ProtectedRoute><AdminEstimateBuilder /></ProtectedRoute> },
       { path: "/admin/estimate-templates", element: <ProtectedRoute><AdminEstimateTemplates /></ProtectedRoute> },
+      { path: "/admin/estimate-templates/:id/edit", element: <ProtectedRoute><AdminTemplateBuilder /></ProtectedRoute> },
       { path: "/admin/users", element: <ProtectedRoute><AdminUsers /></ProtectedRoute> },
       { path: "/admin/social-media", element: <ProtectedRoute><AdminSocialMediaTracker /></ProtectedRoute> },
       { path: "/admin/analytics", element: <ProtectedRoute><AdminAnalyticsTracking /></ProtectedRoute> },
