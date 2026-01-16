@@ -128,14 +128,14 @@ export default function LandingPageForms() {
   return (
     <AdminLayout title="Landing Page Forms">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="space-y-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Landing Page Forms</h1>
             <p className="text-muted-foreground">
               Create and manage forms for your landing pages
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" asChild>
               <Link to="/admin/landing-pages/submissions">
                 <Eye className="h-4 w-4 mr-2" />
