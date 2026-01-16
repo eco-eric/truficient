@@ -76,13 +76,8 @@ const GHLConversations = () => {
   } = useQuery({
     queryKey: ['ghl-messages', selectedConversation?.id],
     queryFn: async () => {
-      if (!selectedConversation?.id) return null;
+      if (!selectedConversation?.id) return { messages: [] };
       
-      const { data, error } = await supabase.functions.invoke('get-ghl-conversations', {
-        body: null,
-      });
-      
-      // Use query params approach
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-ghl-conversations?conversationId=${selectedConversation.id}`,
         {
@@ -92,16 +87,16 @@ const GHLConversations = () => {
         }
       );
       
-      const data2 = await response.json();
-      if (!data2.success) throw new Error(data2.error);
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error);
       
-      return data2;
+      return data;
     },
     enabled: !!selectedConversation?.id,
   });
 
   const conversations: Conversation[] = conversationsData?.conversations || [];
-  const messages: Message[] = messagesData?.messages || [];
+  const messages: Message[] = Array.isArray(messagesData?.messages) ? messagesData.messages : [];
 
   const getContactDisplayName = (conv: Conversation) => {
     return conv.fullName || conv.contactName || conv.email || conv.phone || 'Unknown Contact';
