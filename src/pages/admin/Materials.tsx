@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -30,8 +30,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Package, Copy } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package, Copy, X } from 'lucide-react';
 import { format } from 'date-fns';
 
 type MaterialCategory = 'refrigerant' | 'copper' | 'electrical' | 'ductwork' | 'controls' | 'supports' | 'misc';
@@ -67,6 +68,7 @@ const Materials = () => {
   const [activeTab, setActiveTab] = useState<MaterialCategory>('refrigerant');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState({
     name: '',
     category: 'refrigerant' as MaterialCategory,
@@ -77,6 +79,11 @@ const Materials = () => {
     part_number: '',
     is_active: true,
   });
+
+  // Clear selection when changing tabs
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [activeTab]);
 
   // Fetch materials
   const { data: materials = [], isLoading } = useQuery({
@@ -173,6 +180,54 @@ const Materials = () => {
     },
   });
 
+  // Bulk delete mutation
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase
+        .from('materials_catalog')
+        .delete()
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ['materials'] });
+      toast.success(`${ids.length} material(s) deleted successfully`);
+      setSelectedIds(new Set());
+    },
+    onError: (error) => {
+      toast.error('Failed to delete materials: ' + error.message);
+    },
+  });
+
+  // Bulk clone mutation
+  const bulkCloneMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const materialsToClone = materials.filter(m => ids.includes(m.id));
+      const clones = materialsToClone.map(m => ({
+        name: `${m.name} (Copy)`,
+        category: m.category,
+        unit: m.unit,
+        unit_cost: m.unit_cost,
+        description: m.description,
+        supplier: m.supplier,
+        part_number: m.part_number,
+        is_active: m.is_active,
+      }));
+      const { error } = await supabase
+        .from('materials_catalog')
+        .insert(clones);
+      if (error) throw error;
+    },
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ['materials'] });
+      toast.success(`${ids.length} material(s) cloned successfully`);
+      setSelectedIds(new Set());
+    },
+    onError: (error) => {
+      toast.error('Failed to clone materials: ' + error.message);
+    },
+  });
+
   const handleOpenDialog = (material?: Material) => {
     if (material) {
       setEditingMaterial(material);
@@ -236,6 +291,39 @@ const Materials = () => {
 
   const filteredMaterials = materials.filter(m => m.category === activeTab);
 
+  // Selection handlers
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredMaterials.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredMaterials.map(m => m.id)));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    const count = selectedIds.size;
+    if (confirm(`Are you sure you want to delete ${count} material(s)?`)) {
+      bulkDeleteMutation.mutate(Array.from(selectedIds));
+    }
+  };
+
+  const handleBulkClone = () => {
+    bulkCloneMutation.mutate(Array.from(selectedIds));
+  };
+
+  const isAllSelected = filteredMaterials.length > 0 && selectedIds.size === filteredMaterials.length;
+  const isSomeSelected = selectedIds.size > 0;
+
   return (
     <AdminLayout title="Materials Catalog">
       <div className="space-y-6">
@@ -271,79 +359,136 @@ const Materials = () => {
                   No materials in this category. Click "Add Material" to get started.
                 </div>
               ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Unit</TableHead>
-                        <TableHead className="text-right">Unit Cost</TableHead>
-                        <TableHead>Supplier</TableHead>
-                        <TableHead>Part #</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Updated</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredMaterials.map((material) => (
-                        <TableRow key={material.id}>
-                          <TableCell className="font-medium">{material.name}</TableCell>
-                          <TableCell>{material.unit}</TableCell>
-                          <TableCell className="text-right font-mono">
-                            ${material.unit_cost.toFixed(2)}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {material.supplier || '—'}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {material.part_number || '—'}
-                          </TableCell>
-                          <TableCell>
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              material.is_active 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {material.is_active ? 'Active' : 'Inactive'}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground text-sm">
-                            {format(new Date(material.updated_at), 'MMM d, yyyy')}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => cloneMutation.mutate(material)}
-                                title="Clone material"
-                              >
-                                <Copy className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleOpenDialog(material)}
-                                title="Edit material"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDelete(material.id, material.name)}
-                                className="text-destructive hover:text-destructive"
-                                title="Delete material"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                <div className="space-y-4">
+                  {/* Bulk Actions Bar */}
+                  {isSomeSelected && (
+                    <div className="flex items-center gap-4 p-3 bg-muted rounded-lg border">
+                      <span className="text-sm font-medium">
+                        {selectedIds.size} selected
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleBulkClone}
+                          disabled={bulkCloneMutation.isPending}
+                        >
+                          <Copy className="h-4 w-4 mr-2" />
+                          Clone
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleBulkDelete}
+                          disabled={bulkDeleteMutation.isPending}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </Button>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedIds(new Set())}
+                        className="ml-auto"
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Clear
+                      </Button>
+                    </div>
+                  )}
+
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-12">
+                            <Checkbox
+                              checked={isAllSelected}
+                              onCheckedChange={toggleSelectAll}
+                              aria-label="Select all"
+                            />
+                          </TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Unit</TableHead>
+                          <TableHead className="text-right">Unit Cost</TableHead>
+                          <TableHead>Supplier</TableHead>
+                          <TableHead>Part #</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Updated</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredMaterials.map((material) => (
+                          <TableRow 
+                            key={material.id}
+                            className={selectedIds.has(material.id) ? 'bg-muted/50' : ''}
+                          >
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedIds.has(material.id)}
+                                onCheckedChange={() => toggleSelect(material.id)}
+                                aria-label={`Select ${material.name}`}
+                              />
+                            </TableCell>
+                            <TableCell className="font-medium">{material.name}</TableCell>
+                            <TableCell>{material.unit}</TableCell>
+                            <TableCell className="text-right font-mono">
+                              ${material.unit_cost.toFixed(2)}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {material.supplier || '—'}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {material.part_number || '—'}
+                            </TableCell>
+                            <TableCell>
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                material.is_active 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {material.is_active ? 'Active' : 'Inactive'}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">
+                              {format(new Date(material.updated_at), 'MMM d, yyyy')}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => cloneMutation.mutate(material)}
+                                  title="Clone material"
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleOpenDialog(material)}
+                                  title="Edit material"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDelete(material.id, material.name)}
+                                  className="text-destructive hover:text-destructive"
+                                  title="Delete material"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               )}
             </TabsContent>
