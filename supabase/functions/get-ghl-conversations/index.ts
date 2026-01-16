@@ -18,13 +18,16 @@ serve(async (req) => {
   }
 
   try {
-    const GHL_API_KEY = Deno.env.get('GHL_API_Key_Contact');
+    // Use dedicated conversations API key if available, fallback to contact key
+    const GHL_API_KEY = Deno.env.get('GHL_CONVERSATIONS_API_KEY') || Deno.env.get('GHL_API_Key_Contact');
     const GHL_LOCATION_ID = Deno.env.get('GHL_LOCATION_ID');
 
     if (!GHL_API_KEY || !GHL_LOCATION_ID) {
       console.error('Missing GHL credentials');
       throw new Error('GHL credentials not configured');
     }
+    
+    console.log('Using API key:', GHL_API_KEY ? 'Key present' : 'Missing');
 
     // Parse query parameters
     const url = new URL(req.url);
