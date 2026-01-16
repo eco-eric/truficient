@@ -43,8 +43,11 @@ import {
   Receipt, 
   Wrench,
   Search,
-  Calculator
+  Calculator,
+  FileDown,
+  LayoutTemplate
 } from 'lucide-react';
+import { generateEstimatePDF } from '@/utils/generateEstimatePDF';
 
 type JobType = 'residential_new' | 'residential_replacement' | 'commercial_new' | 'commercial_replacement' | 'maintenance' | 'repair';
 type HeatingType = 'gas' | 'electric' | 'heat_pump' | 'dual_fuel';
@@ -130,6 +133,21 @@ const EstimateBuilder = () => {
   const [addDialogType, setAddDialogType] = useState<LineItemType>('material');
   const [equipmentSearch, setEquipmentSearch] = useState('');
   const [materialCategory, setMaterialCategory] = useState('all');
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+
+  // Fetch estimate templates
+  const { data: templates = [] } = useQuery({
+    queryKey: ['estimate-templates-active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('estimate_templates')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+  });
 
   // Fetch estimate if editing
   const { data: estimate, isLoading: isLoadingEstimate } = useQuery({
@@ -524,6 +542,87 @@ const EstimateBuilder = () => {
     setLineItems([...lineItems, newItem]);
   };
 
+  // Apply template to estimate
+  const handleApplyTemplate = async (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (!template) return;
+
+    // Update form data with template settings
+    setFormData(prev => ({
+      ...prev,
+      job_type: template.job_type as JobType,
+      heating_type: template.heating_type as HeatingType,
+      profit_margin: Number(template.profit_margin),
+    }));
+
+    // Fetch template items
+    const { data: templateItems, error } = await supabase
+      .from('estimate_template_items')
+      .select('*')
+      .eq('template_id', templateId)
+      .order('sort_order');
+
+    if (error) {
+      toast.error('Failed to load template items');
+      return;
+    }
+
+    if (templateItems && templateItems.length > 0) {
+      const newItems: LineItem[] = templateItems.map((item, index) => ({
+        item_type: item.item_type as LineItemType,
+        name: item.name,
+        description: item.description,
+        material_id: item.material_id,
+        labor_rate_id: item.labor_rate_id,
+        admin_cost_id: item.admin_cost_id,
+        equipment_system_id: item.equipment_system_id,
+        quantity: Number(item.quantity),
+        unit: item.unit,
+        unit_cost: Number(item.unit_cost),
+        line_total: Number(item.quantity) * Number(item.unit_cost),
+        sort_order: lineItems.length + index,
+        isNew: true,
+      }));
+
+      setLineItems(prev => [...prev, ...newItems]);
+    }
+
+    setIsTemplateDialogOpen(false);
+    toast.success(`Applied template: ${template.name}`);
+  };
+
+  // Generate PDF
+  const handleExportPDF = () => {
+    if (!estimate && isNew) {
+      toast.error('Please save the estimate first before exporting');
+      return;
+    }
+
+    const estimateData = {
+      estimate_number: estimate?.estimate_number || 'NEW',
+      customer_name: formData.customer_name,
+      customer_email: formData.customer_email || null,
+      customer_phone: formData.customer_phone || null,
+      customer_address: formData.customer_address || null,
+      job_type: formData.job_type,
+      heating_type: formData.heating_type,
+      job_notes: formData.job_notes || null,
+      created_at: estimate?.created_at || new Date().toISOString(),
+      valid_until: estimate?.valid_until || null,
+    };
+
+    const pdfLineItems = activeLineItems.map(item => ({
+      item_type: item.item_type,
+      name: item.name,
+      description: item.description,
+      quantity: item.quantity,
+      unit: item.unit,
+      unit_cost: item.unit_cost,
+    }));
+
+    generateEstimatePDF(estimateData, pdfLineItems, totals, formData.tax_rate);
+  };
+
   const handleRemoveItem = (index: number) => {
     const item = lineItems[index];
     if (item.id) {
@@ -595,7 +694,13 @@ const EstimateBuilder = () => {
               )}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            {isNew && templates.length > 0 && (
+              <Button variant="outline" onClick={() => setIsTemplateDialogOpen(true)}>
+                <LayoutTemplate className="h-4 w-4 mr-2" />
+                Use Template
+              </Button>
+            )}
             <Select
               value={formData.status}
               onValueChange={(v) => setFormData({ ...formData, status: v as EstimateStatus })}
@@ -611,6 +716,12 @@ const EstimateBuilder = () => {
                 ))}
               </SelectContent>
             </Select>
+            {!isNew && (
+              <Button variant="outline" onClick={handleExportPDF}>
+                <FileDown className="h-4 w-4 mr-2" />
+                Export PDF
+              </Button>
+            )}
             <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
               <Save className="h-4 w-4 mr-2" />
               {saveMutation.isPending ? 'Saving...' : 'Save'}
@@ -1086,6 +1197,50 @@ const EstimateBuilder = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Template Selection Dialog */}
+      <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Select a Template</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            {templates.length === 0 ? (
+              <p className="text-center py-4 text-muted-foreground">No active templates available</p>
+            ) : (
+              templates.map((template) => (
+                <div
+                  key={template.id}
+                  className="p-4 border rounded-lg hover:bg-muted cursor-pointer transition-colors"
+                  onClick={() => handleApplyTemplate(template.id)}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium">{template.name}</div>
+                      {template.description && (
+                        <div className="text-sm text-muted-foreground">{template.description}</div>
+                      )}
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {JOB_TYPES.find(t => t.value === template.job_type)?.label} • {HEATING_TYPES.find(t => t.value === template.heating_type)?.label}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-mono text-primary">
+                        {((Number(template.profit_margin) - 1) * 100).toFixed(0)}% margin
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsTemplateDialogOpen(false)}>
+              Cancel
             </Button>
           </DialogFooter>
         </DialogContent>

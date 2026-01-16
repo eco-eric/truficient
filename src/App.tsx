@@ -45,6 +45,7 @@ import AdminLaborRates from "./pages/admin/LaborRates";
 import AdminCosts from "./pages/admin/AdminCosts";
 import AdminEstimates from "./pages/admin/Estimates";
 import AdminEstimateBuilder from "./pages/admin/EstimateBuilder";
+import AdminEstimateTemplates from "./pages/admin/EstimateTemplates";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
 
@@ -98,6 +99,7 @@ const App = () => (
           <Route path="/admin/admin-costs" element={<ProtectedRoute><AdminCosts /></ProtectedRoute>} />
           <Route path="/admin/estimates" element={<ProtectedRoute><AdminEstimates /></ProtectedRoute>} />
           <Route path="/admin/estimates/:id" element={<ProtectedRoute><AdminEstimateBuilder /></ProtectedRoute>} />
+          <Route path="/admin/estimate-templates" element={<ProtectedRoute><AdminEstimateTemplates /></ProtectedRoute>} />
           <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
           <Route path="/admin/social-media" element={<ProtectedRoute><AdminSocialMediaTracker /></ProtectedRoute>} />
           <Route path="/admin/analytics" element={<ProtectedRoute><AdminAnalyticsTracking /></ProtectedRoute>} />
