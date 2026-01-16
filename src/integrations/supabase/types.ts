@@ -298,6 +298,168 @@ export type Database = {
         }
         Relationships: []
       }
+      estimate_line_items: {
+        Row: {
+          admin_cost_id: string | null
+          created_at: string
+          description: string | null
+          equipment_system_id: string | null
+          estimate_id: string
+          id: string
+          item_type: Database["public"]["Enums"]["line_item_type"]
+          labor_rate_id: string | null
+          line_total: number
+          material_id: string | null
+          name: string
+          quantity: number
+          sort_order: number
+          unit: string
+          unit_cost: number
+          updated_at: string
+        }
+        Insert: {
+          admin_cost_id?: string | null
+          created_at?: string
+          description?: string | null
+          equipment_system_id?: string | null
+          estimate_id: string
+          id?: string
+          item_type: Database["public"]["Enums"]["line_item_type"]
+          labor_rate_id?: string | null
+          line_total?: number
+          material_id?: string | null
+          name: string
+          quantity?: number
+          sort_order?: number
+          unit?: string
+          unit_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          admin_cost_id?: string | null
+          created_at?: string
+          description?: string | null
+          equipment_system_id?: string | null
+          estimate_id?: string
+          id?: string
+          item_type?: Database["public"]["Enums"]["line_item_type"]
+          labor_rate_id?: string | null
+          line_total?: number
+          material_id?: string | null
+          name?: string
+          quantity?: number
+          sort_order?: number
+          unit?: string
+          unit_cost?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estimate_line_items_admin_cost_id_fkey"
+            columns: ["admin_cost_id"]
+            isOneToOne: false
+            referencedRelation: "admin_costs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimate_line_items_equipment_system_id_fkey"
+            columns: ["equipment_system_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_systems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimate_line_items_estimate_id_fkey"
+            columns: ["estimate_id"]
+            isOneToOne: false
+            referencedRelation: "estimates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimate_line_items_labor_rate_id_fkey"
+            columns: ["labor_rate_id"]
+            isOneToOne: false
+            referencedRelation: "labor_rates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimate_line_items_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      estimates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_address: string | null
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string | null
+          estimate_number: string
+          grand_total: number
+          heating_type: Database["public"]["Enums"]["heating_type"]
+          id: string
+          job_notes: string | null
+          job_type: Database["public"]["Enums"]["job_type"]
+          profit_margin: number
+          status: Database["public"]["Enums"]["estimate_status"]
+          subtotal_charge: number
+          subtotal_cost: number
+          tax_amount: number
+          tax_rate: number
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_address?: string | null
+          customer_email?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          estimate_number: string
+          grand_total?: number
+          heating_type?: Database["public"]["Enums"]["heating_type"]
+          id?: string
+          job_notes?: string | null
+          job_type?: Database["public"]["Enums"]["job_type"]
+          profit_margin?: number
+          status?: Database["public"]["Enums"]["estimate_status"]
+          subtotal_charge?: number
+          subtotal_cost?: number
+          tax_amount?: number
+          tax_rate?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_address?: string | null
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          estimate_number?: string
+          grand_total?: number
+          heating_type?: Database["public"]["Enums"]["heating_type"]
+          id?: string
+          job_notes?: string | null
+          job_type?: Database["public"]["Enums"]["job_type"]
+          profit_margin?: number
+          status?: Database["public"]["Enums"]["estimate_status"]
+          subtotal_charge?: number
+          subtotal_cost?: number
+          tax_amount?: number
+          tax_rate?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       ghl_tags: {
         Row: {
           color: string | null
@@ -799,6 +961,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_estimate_number: { Args: never; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -824,7 +987,22 @@ export type Database = {
     Enums: {
       admin_cost_type: "fixed" | "percentage" | "per_job"
       app_role: "admin" | "manager"
+      estimate_status: "draft" | "sent" | "accepted" | "declined" | "expired"
+      heating_type: "gas" | "electric" | "heat_pump" | "dual_fuel"
+      job_type:
+        | "residential_new"
+        | "residential_replacement"
+        | "commercial_new"
+        | "commercial_replacement"
+        | "maintenance"
+        | "repair"
       labor_rate_type: "hourly" | "daily" | "flat"
+      line_item_type:
+        | "equipment"
+        | "material"
+        | "labor"
+        | "admin_cost"
+        | "custom"
       material_category:
         | "refrigerant"
         | "copper"
@@ -962,7 +1140,24 @@ export const Constants = {
     Enums: {
       admin_cost_type: ["fixed", "percentage", "per_job"],
       app_role: ["admin", "manager"],
+      estimate_status: ["draft", "sent", "accepted", "declined", "expired"],
+      heating_type: ["gas", "electric", "heat_pump", "dual_fuel"],
+      job_type: [
+        "residential_new",
+        "residential_replacement",
+        "commercial_new",
+        "commercial_replacement",
+        "maintenance",
+        "repair",
+      ],
       labor_rate_type: ["hourly", "daily", "flat"],
+      line_item_type: [
+        "equipment",
+        "material",
+        "labor",
+        "admin_cost",
+        "custom",
+      ],
       material_category: [
         "refrigerant",
         "copper",
