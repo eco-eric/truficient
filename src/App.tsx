@@ -46,6 +46,7 @@ import AdminCosts from "./pages/admin/AdminCosts";
 import AdminEstimates from "./pages/admin/Estimates";
 import AdminEstimateBuilder from "./pages/admin/EstimateBuilder";
 import AdminEstimateTemplates from "./pages/admin/EstimateTemplates";
+import AdminGHLConversations from "./pages/admin/GHLConversations";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
 
@@ -104,6 +105,7 @@ const App = () => (
           <Route path="/admin/social-media" element={<ProtectedRoute><AdminSocialMediaTracker /></ProtectedRoute>} />
           <Route path="/admin/analytics" element={<ProtectedRoute><AdminAnalyticsTracking /></ProtectedRoute>} />
           <Route path="/admin/ghl-tags" element={<ProtectedRoute><AdminGHLTags /></ProtectedRoute>} />
+          <Route path="/admin/ghl-conversations" element={<ProtectedRoute><AdminGHLConversations /></ProtectedRoute>} />
           <Route path="/admin/landing-pages" element={<ProtectedRoute><AdminLandingPageForms /></ProtectedRoute>} />
           <Route path="/admin/landing-pages/new" element={<ProtectedRoute><AdminLandingPageFormEditor /></ProtectedRoute>} />
           <Route path="/admin/landing-pages/submissions" element={<ProtectedRoute><AdminLandingPageSubmissions /></ProtectedRoute>} />
