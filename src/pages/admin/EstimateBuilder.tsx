@@ -128,6 +128,11 @@ const EstimateBuilder = () => {
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSavedState, setLastSavedState] = useState<{ formData: EstimateData; lineItems: LineItem[] } | null>(null);
+  
+  // Percentage-based admin cost dialog state
+  const [percentageCostDialogOpen, setPercentageCostDialogOpen] = useState(false);
+  const [selectedPercentageCost, setSelectedPercentageCost] = useState<any>(null);
+  const [jobTotalForPercentage, setJobTotalForPercentage] = useState('');
 
   // Block navigation when there are unsaved changes
   const blocker = useBlocker(
@@ -550,24 +555,58 @@ const EstimateBuilder = () => {
       return;
     }
 
+    // For percentage-based costs, open a dialog to enter job total
+    if (cost.cost_type === 'percentage') {
+      setSelectedPercentageCost(cost);
+      setJobTotalForPercentage('');
+      setPercentageCostDialogOpen(true);
+      return;
+    }
+
+    // For fixed/per_job costs, add directly
+    addAdminCostLineItem(cost, Number(cost.amount));
+  };
+
+  const addAdminCostLineItem = (cost: any, calculatedAmount: number) => {
     const newItem: LineItem = {
       item_type: 'admin_cost',
       name: cost.name,
-      description: cost.description,
+      description: cost.cost_type === 'percentage' 
+        ? `${cost.amount}% of job total` 
+        : cost.description,
       material_id: null,
       labor_rate_id: null,
       admin_cost_id: cost.id,
       equipment_system_id: null,
       quantity: 1,
       unit: 'each',
-      unit_cost: parseFloat(cost.amount),
-      line_total: parseFloat(cost.amount),
+      unit_cost: calculatedAmount,
+      line_total: calculatedAmount,
       sort_order: lineItems.length,
       section: 'admin_costs',
       isNew: true,
     };
     setLineItems([...lineItems, newItem]);
     toast.success(`Added ${cost.name}`);
+  };
+
+  const handleConfirmPercentageCost = () => {
+    if (!selectedPercentageCost) return;
+    
+    const jobTotal = parseFloat(jobTotalForPercentage) || 0;
+    if (jobTotal <= 0) {
+      toast.error('Please enter a valid job total');
+      return;
+    }
+    
+    const percentage = parseFloat(selectedPercentageCost.amount);
+    const calculatedAmount = (percentage / 100) * jobTotal;
+    
+    addAdminCostLineItem(selectedPercentageCost, calculatedAmount);
+    setPercentageCostDialogOpen(false);
+    setSelectedPercentageCost(null);
+    setJobTotalForPercentage('');
+    setIsAddDialogOpen(false);
   };
 
   const handleAddEquipment = (equipment: any) => {
@@ -1356,6 +1395,74 @@ const EstimateBuilder = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Percentage Admin Cost Dialog */}
+      <Dialog open={percentageCostDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setPercentageCostDialogOpen(false);
+          setSelectedPercentageCost(null);
+          setJobTotalForPercentage('');
+        }
+      }}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Enter Job Total</DialogTitle>
+            <DialogDescription>
+              {selectedPercentageCost && (
+                <>
+                  <strong>{selectedPercentageCost.name}</strong> is calculated as {selectedPercentageCost.amount}% of the job total.
+                  Enter the job total to calculate the amount.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="jobTotal">Job Total ($)</Label>
+              <Input
+                id="jobTotal"
+                type="number"
+                step="0.01"
+                min="0"
+                value={jobTotalForPercentage}
+                onChange={(e) => setJobTotalForPercentage(e.target.value)}
+                placeholder="Enter estimated job total..."
+                autoFocus
+              />
+            </div>
+            {jobTotalForPercentage && parseFloat(jobTotalForPercentage) > 0 && selectedPercentageCost && (
+              <div className="bg-muted p-4 rounded-lg space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Job Total:</span>
+                  <span className="font-mono">{formatCurrency(parseFloat(jobTotalForPercentage))}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Percentage:</span>
+                  <span className="font-mono">{selectedPercentageCost.amount}%</span>
+                </div>
+                <div className="flex justify-between font-medium border-t pt-2">
+                  <span>Calculated Amount:</span>
+                  <span className="font-mono text-primary">
+                    {formatCurrency((parseFloat(selectedPercentageCost.amount) / 100) * parseFloat(jobTotalForPercentage))}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setPercentageCostDialogOpen(false);
+              setSelectedPercentageCost(null);
+              setJobTotalForPercentage('');
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmPercentageCost}>
+              Add Cost
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
