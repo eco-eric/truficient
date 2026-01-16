@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminHeader } from './AdminHeader';
 
@@ -8,6 +8,25 @@ interface AdminLayoutProps {
 }
 
 export const AdminLayout = ({ children, title }: AdminLayoutProps) => {
+  // Add noindex meta tag to prevent search engine indexing of admin pages
+  useEffect(() => {
+    const existingMeta = document.querySelector('meta[name="robots"]');
+    const meta = existingMeta || document.createElement('meta');
+    meta.setAttribute('name', 'robots');
+    meta.setAttribute('content', 'noindex, nofollow');
+    
+    if (!existingMeta) {
+      document.head.appendChild(meta);
+    }
+    
+    return () => {
+      // Restore default robots meta when leaving admin pages
+      if (meta.parentNode) {
+        meta.setAttribute('content', 'index, follow');
+      }
+    };
+  }, []);
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar />
