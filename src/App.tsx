@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import ResidentialServices from "./pages/ResidentialServices";
@@ -56,66 +56,79 @@ import BlogPost from "./pages/BlogPost";
 
 const queryClient = new QueryClient();
 
+// Root layout component that includes global elements
+const RootLayout = () => (
+  <>
+    <TrackingScripts />
+    <CookieConsent />
+    <Outlet />
+  </>
+);
+
+const router = createBrowserRouter([
+  {
+    element: <RootLayout />,
+    children: [
+      { path: "/", element: <Index /> },
+      { path: "/about", element: <About /> },
+      { path: "/residential-services", element: <ResidentialServices /> },
+      { path: "/commercial-services", element: <CommercialServices /> },
+      { path: "/contact", element: <Contact /> },
+      { path: "/service-areas/dallas-area", element: <DallasArea /> },
+      { path: "/service-areas/north-dallas-area", element: <NorthDallasArea /> },
+      { path: "/service-areas/frisco-mckinney-area", element: <FriscoMcKinneyArea /> },
+      { path: "/service-areas/mid-cities-area", element: <MidCitiesArea /> },
+      { path: "/service-areas/south-dallas-area", element: <SouthDallasArea /> },
+      { path: "/hvac-estimate", element: <HvacEstimate /> },
+      { path: "/careers", element: <Careers /> },
+      { path: "/privacy-policy", element: <PrivacyPolicy /> },
+      { path: "/terms-of-service", element: <TermsOfService /> },
+      
+      // Blog Routes
+      { path: "/blog", element: <Blog /> },
+      { path: "/blog/:slug", element: <BlogPost /> },
+      
+      // Admin Routes
+      { path: "/admin/login", element: <AdminLogin /> },
+      { path: "/admin", element: <ProtectedRoute><AdminDashboard /></ProtectedRoute> },
+      { path: "/admin/submissions", element: <ProtectedRoute><AdminSubmissions /></ProtectedRoute> },
+      { path: "/admin/submissions/:id", element: <ProtectedRoute><AdminSubmissionDetail /></ProtectedRoute> },
+      { path: "/admin/blog", element: <ProtectedRoute><AdminBlogPosts /></ProtectedRoute> },
+      { path: "/admin/blog/:id", element: <ProtectedRoute><AdminBlogPostEditor /></ProtectedRoute> },
+      { path: "/admin/seo", element: <ProtectedRoute><AdminSEOManagement /></ProtectedRoute> },
+      { path: "/admin/seo/:id", element: <ProtectedRoute><AdminSEOEditor /></ProtectedRoute> },
+      { path: "/admin/calculators", element: <ProtectedRoute><AdminCalculators /></ProtectedRoute> },
+      { path: "/admin/calculators/:id", element: <ProtectedRoute><AdminCalculatorEditor /></ProtectedRoute> },
+      { path: "/admin/system-pricing", element: <ProtectedRoute><AdminSystemPricing /></ProtectedRoute> },
+      { path: "/admin/materials", element: <ProtectedRoute><AdminMaterials /></ProtectedRoute> },
+      { path: "/admin/labor-rates", element: <ProtectedRoute><AdminLaborRates /></ProtectedRoute> },
+      { path: "/admin/admin-costs", element: <ProtectedRoute><AdminCosts /></ProtectedRoute> },
+      { path: "/admin/estimates", element: <ProtectedRoute><AdminEstimates /></ProtectedRoute> },
+      { path: "/admin/estimates/:id", element: <ProtectedRoute><AdminEstimateBuilder /></ProtectedRoute> },
+      { path: "/admin/estimate-templates", element: <ProtectedRoute><AdminEstimateTemplates /></ProtectedRoute> },
+      { path: "/admin/users", element: <ProtectedRoute><AdminUsers /></ProtectedRoute> },
+      { path: "/admin/social-media", element: <ProtectedRoute><AdminSocialMediaTracker /></ProtectedRoute> },
+      { path: "/admin/analytics", element: <ProtectedRoute><AdminAnalyticsTracking /></ProtectedRoute> },
+      { path: "/admin/ghl-tags", element: <ProtectedRoute><AdminGHLTags /></ProtectedRoute> },
+      { path: "/admin/ghl-conversations", element: <ProtectedRoute><AdminGHLConversations /></ProtectedRoute> },
+      { path: "/admin/landing-pages", element: <ProtectedRoute><AdminLandingPageForms /></ProtectedRoute> },
+      { path: "/admin/landing-pages/new", element: <ProtectedRoute><AdminLandingPageFormEditor /></ProtectedRoute> },
+      { path: "/admin/landing-pages/submissions", element: <ProtectedRoute><AdminLandingPageSubmissions /></ProtectedRoute> },
+      { path: "/admin/landing-pages/:id", element: <ProtectedRoute><AdminLandingPageFormEditor /></ProtectedRoute> },
+      { path: "/admin/settings", element: <ProtectedRoute><AdminSettings /></ProtectedRoute> },
+      
+      // Catch-all route
+      { path: "*", element: <NotFound /> },
+    ],
+  },
+]);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <TrackingScripts />
-        <CookieConsent />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/residential-services" element={<ResidentialServices />} />
-          <Route path="/commercial-services" element={<CommercialServices />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/service-areas/dallas-area" element={<DallasArea />} />
-          <Route path="/service-areas/north-dallas-area" element={<NorthDallasArea />} />
-          <Route path="/service-areas/frisco-mckinney-area" element={<FriscoMcKinneyArea />} />
-          <Route path="/service-areas/mid-cities-area" element={<MidCitiesArea />} />
-          <Route path="/service-areas/south-dallas-area" element={<SouthDallasArea />} />
-          <Route path="/hvac-estimate" element={<HvacEstimate />} />
-          <Route path="/careers" element={<Careers />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/terms-of-service" element={<TermsOfService />} />
-          
-          {/* Blog Routes */}
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/blog/:slug" element={<BlogPost />} />
-          {/* Admin Routes */}
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/admin/submissions" element={<ProtectedRoute><AdminSubmissions /></ProtectedRoute>} />
-          <Route path="/admin/submissions/:id" element={<ProtectedRoute><AdminSubmissionDetail /></ProtectedRoute>} />
-          <Route path="/admin/blog" element={<ProtectedRoute><AdminBlogPosts /></ProtectedRoute>} />
-          <Route path="/admin/blog/:id" element={<ProtectedRoute><AdminBlogPostEditor /></ProtectedRoute>} />
-          <Route path="/admin/seo" element={<ProtectedRoute><AdminSEOManagement /></ProtectedRoute>} />
-          <Route path="/admin/seo/:id" element={<ProtectedRoute><AdminSEOEditor /></ProtectedRoute>} />
-          <Route path="/admin/calculators" element={<ProtectedRoute><AdminCalculators /></ProtectedRoute>} />
-          <Route path="/admin/calculators/:id" element={<ProtectedRoute><AdminCalculatorEditor /></ProtectedRoute>} />
-          <Route path="/admin/system-pricing" element={<ProtectedRoute><AdminSystemPricing /></ProtectedRoute>} />
-          <Route path="/admin/materials" element={<ProtectedRoute><AdminMaterials /></ProtectedRoute>} />
-          <Route path="/admin/labor-rates" element={<ProtectedRoute><AdminLaborRates /></ProtectedRoute>} />
-          <Route path="/admin/admin-costs" element={<ProtectedRoute><AdminCosts /></ProtectedRoute>} />
-          <Route path="/admin/estimates" element={<ProtectedRoute><AdminEstimates /></ProtectedRoute>} />
-          <Route path="/admin/estimates/:id" element={<ProtectedRoute><AdminEstimateBuilder /></ProtectedRoute>} />
-          <Route path="/admin/estimate-templates" element={<ProtectedRoute><AdminEstimateTemplates /></ProtectedRoute>} />
-          <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
-          <Route path="/admin/social-media" element={<ProtectedRoute><AdminSocialMediaTracker /></ProtectedRoute>} />
-          <Route path="/admin/analytics" element={<ProtectedRoute><AdminAnalyticsTracking /></ProtectedRoute>} />
-          <Route path="/admin/ghl-tags" element={<ProtectedRoute><AdminGHLTags /></ProtectedRoute>} />
-          <Route path="/admin/ghl-conversations" element={<ProtectedRoute><AdminGHLConversations /></ProtectedRoute>} />
-          <Route path="/admin/landing-pages" element={<ProtectedRoute><AdminLandingPageForms /></ProtectedRoute>} />
-          <Route path="/admin/landing-pages/new" element={<ProtectedRoute><AdminLandingPageFormEditor /></ProtectedRoute>} />
-          <Route path="/admin/landing-pages/submissions" element={<ProtectedRoute><AdminLandingPageSubmissions /></ProtectedRoute>} />
-          <Route path="/admin/landing-pages/:id" element={<ProtectedRoute><AdminLandingPageFormEditor /></ProtectedRoute>} />
-          <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
-          
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <RouterProvider router={router} />
     </TooltipProvider>
   </QueryClientProvider>
 );
