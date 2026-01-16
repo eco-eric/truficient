@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-export type EstimateSection = 'equipment_controls' | 'miscellaneous_inside' | 'ducting' | 'labor' | 'admin_costs';
+export type EstimateSection = 'admin_costs' | 'equipment_controls' | 'miscellaneous_inside' | 'miscellaneous_outside' | 'ducting' | 'labor';
 
 export interface LineItem {
   id?: string;
@@ -44,6 +44,17 @@ interface SectionConfig {
 
 export const SECTION_CONFIGS: SectionConfig[] = [
   {
+    key: 'admin_costs',
+    title: 'Admin Costs',
+    icon: <Receipt className="h-4 w-4" />,
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-50 border-purple-200',
+    addButtons: [
+      { type: 'admin_cost', label: 'Admin Cost', icon: <Receipt className="h-4 w-4" /> },
+      { type: 'custom', label: 'Custom', icon: <Plus className="h-4 w-4" /> },
+    ],
+  },
+  {
     key: 'equipment_controls',
     title: 'Equipment & Controls',
     icon: <Wrench className="h-4 w-4" />,
@@ -60,6 +71,17 @@ export const SECTION_CONFIGS: SectionConfig[] = [
     icon: <Package className="h-4 w-4" />,
     color: 'text-green-600',
     bgColor: 'bg-green-50 border-green-200',
+    addButtons: [
+      { type: 'material', label: 'Material', icon: <Package className="h-4 w-4" /> },
+      { type: 'custom', label: 'Custom', icon: <Plus className="h-4 w-4" /> },
+    ],
+  },
+  {
+    key: 'miscellaneous_outside',
+    title: 'Miscellaneous Outside Items',
+    icon: <Package className="h-4 w-4" />,
+    color: 'text-teal-600',
+    bgColor: 'bg-teal-50 border-teal-200',
     addButtons: [
       { type: 'material', label: 'Material', icon: <Package className="h-4 w-4" /> },
       { type: 'custom', label: 'Custom', icon: <Plus className="h-4 w-4" /> },
@@ -84,17 +106,6 @@ export const SECTION_CONFIGS: SectionConfig[] = [
     bgColor: 'bg-amber-50 border-amber-200',
     addButtons: [
       { type: 'labor', label: 'Labor', icon: <Users className="h-4 w-4" /> },
-      { type: 'custom', label: 'Custom', icon: <Plus className="h-4 w-4" /> },
-    ],
-  },
-  {
-    key: 'admin_costs',
-    title: 'Admin Costs',
-    icon: <Receipt className="h-4 w-4" />,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50 border-purple-200',
-    addButtons: [
-      { type: 'admin_cost', label: 'Admin Cost', icon: <Receipt className="h-4 w-4" /> },
       { type: 'custom', label: 'Custom', icon: <Plus className="h-4 w-4" /> },
     ],
   },
@@ -279,9 +290,10 @@ export const getDefaultSection = (itemType: string): EstimateSection => {
 
 // Section labels for display
 export const SECTION_LABELS: Record<EstimateSection, string> = {
+  admin_costs: 'Admin Costs',
   equipment_controls: 'Equipment & Controls',
   miscellaneous_inside: 'Miscellaneous Inside Items',
+  miscellaneous_outside: 'Miscellaneous Outside Items',
   ducting: 'Ducting',
   labor: 'Labor',
-  admin_costs: 'Admin Costs',
 };
