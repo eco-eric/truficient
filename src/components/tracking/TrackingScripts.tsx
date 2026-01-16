@@ -105,27 +105,41 @@ export const TrackingScripts = () => {
     initializedRef.current.ga = true;
   }, [googleAnalytics?.is_enabled, googleAnalytics?.setting_value, cookieConsent?.analytics]);
 
-  // Initialize GHL Chat Widget (only if marketing consent given)
+  // Initialize/Remove GHL Chat Widget based on settings
   useEffect(() => {
-    if (!ghlChatWidget?.is_enabled || !ghlChatWidget.setting_value || initializedRef.current.ghl) {
-      return;
+    const shouldLoad = ghlChatWidget?.is_enabled && 
+                       ghlChatWidget.setting_value && 
+                       cookieConsent?.marketing;
+
+    if (shouldLoad && !initializedRef.current.ghl) {
+      // Load the widget
+      const widgetId = ghlChatWidget.setting_value;
+      const script = document.createElement('script');
+      script.src = 'https://widgets.leadconnectorhq.com/loader.js';
+      script.setAttribute('data-resources-url', 'https://widgets.leadconnectorhq.com/chat-widget/loader.js');
+      script.setAttribute('data-widget-id', widgetId);
+      script.id = 'ghl-chat-widget-script';
+      document.body.appendChild(script);
+      initializedRef.current.ghl = true;
+    } else if (!shouldLoad && initializedRef.current.ghl) {
+      // Remove the widget
+      const script = document.getElementById('ghl-chat-widget-script');
+      if (script) {
+        script.remove();
+      }
+      
+      // Remove GHL-created elements (chat widget container)
+      const ghlElements = document.querySelectorAll('[class*="lc_"], [id*="lc-"]');
+      ghlElements.forEach(el => el.remove());
+      
+      // Also try common GHL widget selectors
+      const chatWidget = document.querySelector('iframe[src*="leadconnectorhq"]');
+      if (chatWidget) {
+        chatWidget.parentElement?.remove();
+      }
+      
+      initializedRef.current.ghl = false;
     }
-
-    // Check for marketing consent
-    if (!cookieConsent?.marketing) {
-      return;
-    }
-
-    const widgetId = ghlChatWidget.setting_value;
-
-    // Load GHL chat widget script
-    const script = document.createElement('script');
-    script.src = 'https://widgets.leadconnectorhq.com/loader.js';
-    script.setAttribute('data-resources-url', 'https://widgets.leadconnectorhq.com/chat-widget/loader.js');
-    script.setAttribute('data-widget-id', widgetId);
-    document.body.appendChild(script);
-
-    initializedRef.current.ghl = true;
   }, [ghlChatWidget?.is_enabled, ghlChatWidget?.setting_value, cookieConsent?.marketing]);
 
   // Track page views on route change
