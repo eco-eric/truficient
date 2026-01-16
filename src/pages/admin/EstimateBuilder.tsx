@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useParams, useNavigate, useBlocker } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -22,7 +22,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { 
   Save, 
@@ -115,6 +126,13 @@ const EstimateBuilder = () => {
   const [materialCategory, setMaterialCategory] = useState('all');
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [lastSavedState, setLastSavedState] = useState<{ formData: EstimateData; lineItems: LineItem[] } | null>(null);
+
+  // Block navigation when there are unsaved changes
+  const blocker = useBlocker(
+    useCallback(() => hasUnsavedChanges, [hasUnsavedChanges])
+  );
 
   // Fetch estimate templates
   const { data: templates = [] } = useQuery({
@@ -223,7 +241,7 @@ const EstimateBuilder = () => {
   // Set form data when estimate loads
   useEffect(() => {
     if (estimate) {
-      setFormData({
+      const loadedFormData = {
         customer_name: estimate.customer_name || '',
         customer_email: estimate.customer_email || '',
         customer_phone: estimate.customer_phone || '',
@@ -234,21 +252,51 @@ const EstimateBuilder = () => {
         status: estimate.status,
         profit_margin: Number(estimate.profit_margin) || 1.60,
         tax_rate: Number(estimate.tax_rate) || 0.0825,
-      });
+      };
+      setFormData(loadedFormData);
+      // Store initial state for change detection
+      setLastSavedState(prev => prev ? { ...prev, formData: loadedFormData } : { formData: loadedFormData, lineItems: [] });
     }
   }, [estimate]);
 
   // Set line items when they load
   useEffect(() => {
     if (existingLineItems.length > 0) {
-      setLineItems(existingLineItems.map(item => ({
+      const loadedItems = existingLineItems.map(item => ({
         ...item,
         quantity: Number(item.quantity),
         unit_cost: Number(item.unit_cost),
         line_total: Number(item.line_total),
-      })));
+      }));
+      setLineItems(loadedItems);
+      // Store initial state for change detection
+      setLastSavedState(prev => prev ? { ...prev, lineItems: loadedItems } : { formData, lineItems: loadedItems });
     }
   }, [existingLineItems]);
+
+  // Track changes to formData and lineItems
+  useEffect(() => {
+    if (lastSavedState) {
+      const formChanged = JSON.stringify(formData) !== JSON.stringify(lastSavedState.formData);
+      const itemsChanged = JSON.stringify(lineItems) !== JSON.stringify(lastSavedState.lineItems);
+      setHasUnsavedChanges(formChanged || itemsChanged);
+    } else if (isNew) {
+      // For new estimates, consider it has changes if there's a customer name or line items
+      setHasUnsavedChanges(formData.customer_name.trim() !== '' || lineItems.length > 0);
+    }
+  }, [formData, lineItems, lastSavedState, isNew]);
+
+  // Browser beforeunload warning
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   // Auto-add required admin costs for new estimates
   useEffect(() => {
@@ -401,6 +449,9 @@ const EstimateBuilder = () => {
       return estimateId;
     },
     onSuccess: (estimateId) => {
+      // Update saved state to reset change tracking
+      setLastSavedState({ formData, lineItems });
+      setHasUnsavedChanges(false);
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
       queryClient.invalidateQueries({ queryKey: ['estimate', estimateId] });
       toast.success(isNew ? 'Estimate created successfully' : 'Estimate saved successfully');
@@ -1268,6 +1319,29 @@ const EstimateBuilder = () => {
           }}
         />
       )}
+
+      {/* Unsaved Changes Confirmation Dialog */}
+      <AlertDialog open={blocker.state === 'blocked'}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes to this estimate. Are you sure you want to leave? Your changes will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => blocker.reset?.()}>
+              Stay on Page
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => blocker.proceed?.()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Leave Without Saving
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };
