@@ -427,9 +427,30 @@ const EstimateBuilder = () => {
     }
   };
 
+  // Map material category to section
+  const getMaterialSection = (category: string): EstimateSection => {
+    const categoryLower = (category || '').toLowerCase();
+    
+    // Outdoor materials - refrigerant lines, copper, supports for outdoor units
+    if (['refrigerant', 'copper', 'supports'].includes(categoryLower)) {
+      return 'miscellaneous_outside';
+    }
+    
+    // Ductwork goes to ducting section
+    if (categoryLower === 'ductwork') {
+      return 'ducting';
+    }
+    
+    // Everything else (electrical, controls, misc) goes inside
+    return 'miscellaneous_inside';
+  };
+
   // Add line item handlers
   const handleAddMaterial = (material: any, section?: EstimateSection) => {
-    const targetSection = section || currentAddSection;
+    // Auto-map section based on material category, but allow override
+    const autoSection = getMaterialSection(material.category);
+    const targetSection = section || autoSection;
+    
     const newItem: LineItem = {
       item_type: 'material',
       name: material.name,
@@ -447,7 +468,7 @@ const EstimateBuilder = () => {
       isNew: true,
     };
     setLineItems([...lineItems, newItem]);
-    toast.success(`Added ${material.name}`);
+    toast.success(`Added ${material.name} to ${SECTION_CONFIGS.find(s => s.key === targetSection)?.title || targetSection}`);
   };
 
   const handleAddLabor = (labor: any) => {
