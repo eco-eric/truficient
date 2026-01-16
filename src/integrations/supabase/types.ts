@@ -899,6 +899,7 @@ export type Database = {
           is_active: boolean
           name: string
           part_number: string | null
+          sort_order: number | null
           supplier: string | null
           unit: string
           unit_cost: number
@@ -912,6 +913,7 @@ export type Database = {
           is_active?: boolean
           name: string
           part_number?: string | null
+          sort_order?: number | null
           supplier?: string | null
           unit?: string
           unit_cost?: number
@@ -925,6 +927,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           part_number?: string | null
+          sort_order?: number | null
           supplier?: string | null
           unit?: string
           unit_cost?: number

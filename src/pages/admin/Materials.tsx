@@ -32,8 +32,25 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Package, Copy, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package, Copy, X, GripVertical } from 'lucide-react';
 import { format } from 'date-fns';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 type MaterialCategory = 'refrigerant' | 'copper' | 'electrical' | 'ductwork' | 'controls' | 'supports' | 'misc';
 
@@ -47,6 +64,7 @@ interface Material {
   supplier: string | null;
   part_number: string | null;
   is_active: boolean;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }
@@ -62,6 +80,110 @@ const CATEGORIES: { value: MaterialCategory; label: string }[] = [
 ];
 
 const COMMON_UNITS = ['each', 'ft', 'lb', 'set', 'roll', 'gallon', 'box'];
+
+// Sortable row component
+interface SortableRowProps {
+  material: Material;
+  selectedIds: Set<string>;
+  toggleSelect: (id: string) => void;
+  onClone: (material: Material) => void;
+  onEdit: (material: Material) => void;
+  onDelete: (id: string, name: string) => void;
+}
+
+const SortableRow = ({ material, selectedIds, toggleSelect, onClone, onEdit, onDelete }: SortableRowProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: material.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <TableRow
+      ref={setNodeRef}
+      style={style}
+      className={`${selectedIds.has(material.id) ? 'bg-muted/50' : ''} ${isDragging ? 'bg-muted' : ''}`}
+    >
+      <TableCell className="w-10">
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </TableCell>
+      <TableCell>
+        <Checkbox
+          checked={selectedIds.has(material.id)}
+          onCheckedChange={() => toggleSelect(material.id)}
+          aria-label={`Select ${material.name}`}
+        />
+      </TableCell>
+      <TableCell className="font-medium">{material.name}</TableCell>
+      <TableCell>{material.unit}</TableCell>
+      <TableCell className="text-right font-mono">
+        ${material.unit_cost.toFixed(2)}
+      </TableCell>
+      <TableCell className="text-muted-foreground">
+        {material.supplier || '—'}
+      </TableCell>
+      <TableCell className="text-muted-foreground">
+        {material.part_number || '—'}
+      </TableCell>
+      <TableCell>
+        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+          material.is_active 
+            ? 'bg-green-100 text-green-800' 
+            : 'bg-gray-100 text-gray-800'
+        }`}>
+          {material.is_active ? 'Active' : 'Inactive'}
+        </span>
+      </TableCell>
+      <TableCell className="text-muted-foreground text-sm">
+        {format(new Date(material.updated_at), 'MMM d, yyyy')}
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onClone(material)}
+            title="Clone material"
+          >
+            <Copy className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onEdit(material)}
+            title="Edit material"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onDelete(material.id, material.name)}
+            className="text-destructive hover:text-destructive"
+            title="Delete material"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+};
 
 const Materials = () => {
   const queryClient = useQueryClient();
@@ -80,6 +202,18 @@ const Materials = () => {
     is_active: true,
   });
 
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   // Clear selection when changing tabs
   useEffect(() => {
     setSelectedIds(new Set());
@@ -92,7 +226,7 @@ const Materials = () => {
       const { data, error } = await supabase
         .from('materials_catalog')
         .select('*')
-        .order('name');
+        .order('sort_order');
       
       if (error) throw error;
       return data as Material[];
@@ -101,10 +235,15 @@ const Materials = () => {
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: async (data: Omit<Material, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (data: Omit<Material, 'id' | 'created_at' | 'updated_at' | 'sort_order'>) => {
+      // Get max sort_order for the category
+      const maxOrder = materials
+        .filter(m => m.category === data.category)
+        .reduce((max, m) => Math.max(max, m.sort_order || 0), 0);
+      
       const { error } = await supabase
         .from('materials_catalog')
-        .insert(data);
+        .insert({ ...data, sort_order: maxOrder + 1 });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -157,6 +296,10 @@ const Materials = () => {
   // Clone mutation
   const cloneMutation = useMutation({
     mutationFn: async (material: Material) => {
+      const maxOrder = materials
+        .filter(m => m.category === material.category)
+        .reduce((max, m) => Math.max(max, m.sort_order || 0), 0);
+      
       const { error } = await supabase
         .from('materials_catalog')
         .insert({
@@ -168,6 +311,7 @@ const Materials = () => {
           supplier: material.supplier,
           part_number: material.part_number,
           is_active: material.is_active,
+          sort_order: maxOrder + 1,
         });
       if (error) throw error;
     },
@@ -203,16 +347,26 @@ const Materials = () => {
   const bulkCloneMutation = useMutation({
     mutationFn: async (ids: string[]) => {
       const materialsToClone = materials.filter(m => ids.includes(m.id));
-      const clones = materialsToClone.map(m => ({
-        name: `${m.name} (Copy)`,
-        category: m.category,
-        unit: m.unit,
-        unit_cost: m.unit_cost,
-        description: m.description,
-        supplier: m.supplier,
-        part_number: m.part_number,
-        is_active: m.is_active,
-      }));
+      const categoryMaxOrders: Record<string, number> = {};
+      
+      materials.forEach(m => {
+        categoryMaxOrders[m.category] = Math.max(categoryMaxOrders[m.category] || 0, m.sort_order || 0);
+      });
+      
+      const clones = materialsToClone.map((m, index) => {
+        const baseOrder = categoryMaxOrders[m.category] || 0;
+        return {
+          name: `${m.name} (Copy)`,
+          category: m.category,
+          unit: m.unit,
+          unit_cost: m.unit_cost,
+          description: m.description,
+          supplier: m.supplier,
+          part_number: m.part_number,
+          is_active: m.is_active,
+          sort_order: baseOrder + index + 1,
+        };
+      });
       const { error } = await supabase
         .from('materials_catalog')
         .insert(clones);
@@ -227,6 +381,55 @@ const Materials = () => {
       toast.error('Failed to clone materials: ' + error.message);
     },
   });
+
+  // Reorder mutation
+  const reorderMutation = useMutation({
+    mutationFn: async (updates: { id: string; sort_order: number }[]) => {
+      // Update each item's sort_order
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('materials_catalog')
+          .update({ sort_order: update.sort_order })
+          .eq('id', update.id);
+        if (error) throw error;
+      }
+    },
+    onError: (error) => {
+      toast.error('Failed to reorder materials: ' + error.message);
+      queryClient.invalidateQueries({ queryKey: ['materials'] });
+    },
+  });
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = filteredMaterials.findIndex(m => m.id === active.id);
+      const newIndex = filteredMaterials.findIndex(m => m.id === over.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newOrder = arrayMove(filteredMaterials, oldIndex, newIndex);
+        
+        // Optimistically update the cache
+        const updatedMaterials = materials.map(m => {
+          const newPosition = newOrder.findIndex(nm => nm.id === m.id);
+          if (newPosition !== -1) {
+            return { ...m, sort_order: newPosition + 1 };
+          }
+          return m;
+        });
+        
+        queryClient.setQueryData(['materials'], updatedMaterials);
+
+        // Persist to database
+        const updates = newOrder.map((m, index) => ({
+          id: m.id,
+          sort_order: index + 1,
+        }));
+        reorderMutation.mutate(updates);
+      }
+    }
+  };
 
   const handleOpenDialog = (material?: Material) => {
     if (material) {
@@ -289,7 +492,9 @@ const Materials = () => {
     }
   };
 
-  const filteredMaterials = materials.filter(m => m.category === activeTab);
+  const filteredMaterials = materials
+    .filter(m => m.category === activeTab)
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
   // Selection handlers
   const toggleSelect = (id: string) => {
@@ -399,95 +604,52 @@ const Materials = () => {
                   )}
 
                   <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-12">
-                            <Checkbox
-                              checked={isAllSelected}
-                              onCheckedChange={toggleSelectAll}
-                              aria-label="Select all"
-                            />
-                          </TableHead>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Unit</TableHead>
-                          <TableHead className="text-right">Unit Cost</TableHead>
-                          <TableHead>Supplier</TableHead>
-                          <TableHead>Part #</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Updated</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredMaterials.map((material) => (
-                          <TableRow 
-                            key={material.id}
-                            className={selectedIds.has(material.id) ? 'bg-muted/50' : ''}
-                          >
-                            <TableCell>
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-10"></TableHead>
+                            <TableHead className="w-12">
                               <Checkbox
-                                checked={selectedIds.has(material.id)}
-                                onCheckedChange={() => toggleSelect(material.id)}
-                                aria-label={`Select ${material.name}`}
+                                checked={isAllSelected}
+                                onCheckedChange={toggleSelectAll}
+                                aria-label="Select all"
                               />
-                            </TableCell>
-                            <TableCell className="font-medium">{material.name}</TableCell>
-                            <TableCell>{material.unit}</TableCell>
-                            <TableCell className="text-right font-mono">
-                              ${material.unit_cost.toFixed(2)}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {material.supplier || '—'}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {material.part_number || '—'}
-                            </TableCell>
-                            <TableCell>
-                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                material.is_active 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-gray-100 text-gray-800'
-                              }`}>
-                                {material.is_active ? 'Active' : 'Inactive'}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground text-sm">
-                              {format(new Date(material.updated_at), 'MMM d, yyyy')}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => cloneMutation.mutate(material)}
-                                  title="Clone material"
-                                >
-                                  <Copy className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleOpenDialog(material)}
-                                  title="Edit material"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleDelete(material.id, material.name)}
-                                  className="text-destructive hover:text-destructive"
-                                  title="Delete material"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
+                            </TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Unit</TableHead>
+                            <TableHead className="text-right">Unit Cost</TableHead>
+                            <TableHead>Supplier</TableHead>
+                            <TableHead>Part #</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Updated</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          <SortableContext
+                            items={filteredMaterials.map(m => m.id)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            {filteredMaterials.map((material) => (
+                              <SortableRow
+                                key={material.id}
+                                material={material}
+                                selectedIds={selectedIds}
+                                toggleSelect={toggleSelect}
+                                onClone={(m) => cloneMutation.mutate(m)}
+                                onEdit={handleOpenDialog}
+                                onDelete={handleDelete}
+                              />
+                            ))}
+                          </SortableContext>
+                        </TableBody>
+                      </Table>
+                    </DndContext>
                   </div>
                 </div>
               )}
