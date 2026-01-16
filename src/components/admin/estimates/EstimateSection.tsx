@@ -219,7 +219,7 @@ const SortableRow = ({ item, actualIndex, onUpdateItem, onRemoveItem }: Sortable
       </TableCell>
       <TableCell className="text-muted-foreground">{item.unit}</TableCell>
       <TableCell className="text-right">
-        {item.item_type === 'custom' ? (
+        {item.item_type === 'custom' || item.item_type === 'admin_cost' ? (
           <Input
             type="number"
             min="0"
