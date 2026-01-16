@@ -293,13 +293,26 @@ const Materials = () => {
     },
   });
 
-  // Clone mutation
+  // Clone mutation - inserts clone immediately after the original
   const cloneMutation = useMutation({
     mutationFn: async (material: Material) => {
-      const maxOrder = materials
-        .filter(m => m.category === material.category)
-        .reduce((max, m) => Math.max(max, m.sort_order || 0), 0);
+      const originalOrder = material.sort_order || 0;
       
+      // Get all items in the same category that need to shift down
+      const itemsToShift = materials.filter(
+        m => m.category === material.category && (m.sort_order || 0) > originalOrder
+      );
+      
+      // Shift items down by 1
+      for (const item of itemsToShift) {
+        const { error } = await supabase
+          .from('materials_catalog')
+          .update({ sort_order: (item.sort_order || 0) + 1 })
+          .eq('id', item.id);
+        if (error) throw error;
+      }
+      
+      // Insert clone right after the original
       const { error } = await supabase
         .from('materials_catalog')
         .insert({
@@ -311,7 +324,7 @@ const Materials = () => {
           supplier: material.supplier,
           part_number: material.part_number,
           is_active: material.is_active,
-          sort_order: maxOrder + 1,
+          sort_order: originalOrder + 1,
         });
       if (error) throw error;
     },
@@ -343,34 +356,50 @@ const Materials = () => {
     },
   });
 
-  // Bulk clone mutation
+  // Bulk clone mutation - inserts each clone immediately after its original
   const bulkCloneMutation = useMutation({
     mutationFn: async (ids: string[]) => {
       const materialsToClone = materials.filter(m => ids.includes(m.id));
-      const categoryMaxOrders: Record<string, number> = {};
       
-      materials.forEach(m => {
-        categoryMaxOrders[m.category] = Math.max(categoryMaxOrders[m.category] || 0, m.sort_order || 0);
-      });
+      // Sort by sort_order descending so we process from bottom to top
+      // This prevents conflicts when shifting items
+      const sortedToClone = [...materialsToClone].sort(
+        (a, b) => (b.sort_order || 0) - (a.sort_order || 0)
+      );
       
-      const clones = materialsToClone.map((m, index) => {
-        const baseOrder = categoryMaxOrders[m.category] || 0;
-        return {
-          name: `${m.name} (Copy)`,
-          category: m.category,
-          unit: m.unit,
-          unit_cost: m.unit_cost,
-          description: m.description,
-          supplier: m.supplier,
-          part_number: m.part_number,
-          is_active: m.is_active,
-          sort_order: baseOrder + index + 1,
-        };
-      });
-      const { error } = await supabase
-        .from('materials_catalog')
-        .insert(clones);
-      if (error) throw error;
+      for (const material of sortedToClone) {
+        const originalOrder = material.sort_order || 0;
+        
+        // Get all items in the same category that need to shift down
+        const itemsToShift = materials.filter(
+          m => m.category === material.category && (m.sort_order || 0) > originalOrder
+        );
+        
+        // Shift items down by 1
+        for (const item of itemsToShift) {
+          const { error } = await supabase
+            .from('materials_catalog')
+            .update({ sort_order: (item.sort_order || 0) + 1 })
+            .eq('id', item.id);
+          if (error) throw error;
+        }
+        
+        // Insert clone right after the original
+        const { error } = await supabase
+          .from('materials_catalog')
+          .insert({
+            name: `${material.name} (Copy)`,
+            category: material.category,
+            unit: material.unit,
+            unit_cost: material.unit_cost,
+            description: material.description,
+            supplier: material.supplier,
+            part_number: material.part_number,
+            is_active: material.is_active,
+            sort_order: originalOrder + 1,
+          });
+        if (error) throw error;
+      }
     },
     onSuccess: (_, ids) => {
       queryClient.invalidateQueries({ queryKey: ['materials'] });
