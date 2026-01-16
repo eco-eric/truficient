@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { ExternalLink, User } from 'lucide-react';
+import { ExternalLink, User, Menu } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,9 +12,10 @@ import {
 
 interface AdminHeaderProps {
   title: string;
+  onMenuClick?: () => void;
 }
 
-export const AdminHeader = ({ title }: AdminHeaderProps) => {
+export const AdminHeader = ({ title, onMenuClick }: AdminHeaderProps) => {
   const { user, signOut } = useAuth();
 
   const handleSignOut = async () => {
@@ -22,14 +23,32 @@ export const AdminHeader = ({ title }: AdminHeaderProps) => {
   };
 
   return (
-    <header className="bg-white border-b border-border px-6 py-4 flex items-center justify-between">
-      <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
+    <header className="bg-white border-b border-border px-4 lg:px-6 py-4 flex items-center justify-between gap-2">
+      <div className="flex items-center gap-3 min-w-0">
+        {/* Hamburger menu - mobile only */}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="lg:hidden flex-shrink-0"
+          onClick={onMenuClick}
+        >
+          <Menu className="h-6 w-6" />
+        </Button>
+        
+        <h1 className="text-xl lg:text-2xl font-semibold text-foreground truncate">{title}</h1>
+      </div>
       
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="sm" asChild>
+      <div className="flex items-center gap-2 lg:gap-4 flex-shrink-0">
+        <Button variant="outline" size="sm" asChild className="hidden sm:flex">
           <Link to="/" target="_blank">
             <ExternalLink className="h-4 w-4 mr-2" />
             View Site
+          </Link>
+        </Button>
+        
+        <Button variant="outline" size="icon" asChild className="sm:hidden">
+          <Link to="/" target="_blank">
+            <ExternalLink className="h-4 w-4" />
           </Link>
         </Button>
 
@@ -39,13 +58,13 @@ export const AdminHeader = ({ title }: AdminHeaderProps) => {
               <div className="h-8 w-8 rounded-full bg-[#1e3a5f] flex items-center justify-center">
                 <User className="h-4 w-4 text-white" />
               </div>
-              <span className="hidden md:inline text-sm">
+              <span className="hidden md:inline text-sm truncate max-w-[150px]">
                 {user?.email}
               </span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem disabled className="text-xs text-muted-foreground">
+            <DropdownMenuItem disabled className="text-xs text-muted-foreground truncate">
               {user?.email}
             </DropdownMenuItem>
             <DropdownMenuSeparator />

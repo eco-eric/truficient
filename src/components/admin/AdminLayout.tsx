@@ -1,6 +1,8 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminHeader } from './AdminHeader';
+import { MobileAdminNav } from './MobileAdminNav';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -8,6 +10,8 @@ interface AdminLayoutProps {
 }
 
 export const AdminLayout = ({ children, title }: AdminLayoutProps) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // Add noindex meta tag to prevent search engine indexing of admin pages
   useEffect(() => {
     const existingMeta = document.querySelector('meta[name="robots"]');
@@ -29,10 +33,24 @@ export const AdminLayout = ({ children, title }: AdminLayoutProps) => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar />
-      <div className="flex-1 flex flex-col">
-        <AdminHeader title={title} />
-        <main className="flex-1 p-6 overflow-auto">
+      {/* Desktop Sidebar - hidden on mobile */}
+      <div className="hidden lg:block">
+        <AdminSidebar />
+      </div>
+      
+      {/* Mobile Sheet Menu */}
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent side="left" className="p-0 w-64 border-0">
+          <MobileAdminNav onClose={() => setMobileMenuOpen(false)} />
+        </SheetContent>
+      </Sheet>
+      
+      <div className="flex-1 flex flex-col min-w-0">
+        <AdminHeader 
+          title={title} 
+          onMenuClick={() => setMobileMenuOpen(true)} 
+        />
+        <main className="flex-1 p-4 lg:p-6 overflow-auto">
           {children}
         </main>
       </div>
