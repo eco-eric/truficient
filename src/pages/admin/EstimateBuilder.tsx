@@ -567,21 +567,29 @@ const EstimateBuilder = () => {
     addAdminCostLineItem(cost, Number(cost.amount));
   };
 
-  const addAdminCostLineItem = (cost: any, calculatedAmount: number) => {
+  const addAdminCostLineItem = (cost: any, amount: number, isPercentage: boolean = false, jobTotal?: number) => {
+    // For percentage-based costs:
+    // - quantity = job total (editable)
+    // - unit_cost = percentage rate as decimal (e.g., 0.02 for 2%)
+    // - line_total = quantity * unit_cost
+    const quantity = isPercentage && jobTotal !== undefined ? jobTotal : 1;
+    const unitCost = isPercentage ? amount : amount; // For percentage, amount is already the decimal rate
+    const lineTotal = quantity * unitCost;
+    
     const newItem: LineItem = {
       item_type: 'admin_cost',
       name: cost.name,
-      description: cost.cost_type === 'percentage' 
-        ? `${cost.amount}% of job total` 
+      description: isPercentage 
+        ? `${cost.amount}% of estimated total` 
         : cost.description,
       material_id: null,
       labor_rate_id: null,
       admin_cost_id: cost.id,
       equipment_system_id: null,
-      quantity: 1,
-      unit: 'each',
-      unit_cost: calculatedAmount,
-      line_total: calculatedAmount,
+      quantity: quantity,
+      unit: isPercentage ? 'est. total' : 'each',
+      unit_cost: unitCost,
+      line_total: lineTotal,
       sort_order: lineItems.length,
       section: 'admin_costs',
       isNew: true,
@@ -595,14 +603,15 @@ const EstimateBuilder = () => {
     
     const jobTotal = parseFloat(jobTotalForPercentage) || 0;
     if (jobTotal <= 0) {
-      toast.error('Please enter a valid job total');
+      toast.error('Please enter a valid estimated total');
       return;
     }
     
     const percentage = parseFloat(selectedPercentageCost.amount);
-    const calculatedAmount = (percentage / 100) * jobTotal;
+    const percentageRate = percentage / 100; // Convert 2% to 0.02
     
-    addAdminCostLineItem(selectedPercentageCost, calculatedAmount);
+    // Pass the percentage rate as unit_cost and job total as quantity
+    addAdminCostLineItem(selectedPercentageCost, percentageRate, true, jobTotal);
     setPercentageCostDialogOpen(false);
     setSelectedPercentageCost(null);
     setJobTotalForPercentage('');
