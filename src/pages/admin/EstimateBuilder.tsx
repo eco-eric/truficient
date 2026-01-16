@@ -45,9 +45,11 @@ import {
   Search,
   Calculator,
   FileDown,
-  LayoutTemplate
+  LayoutTemplate,
+  History
 } from 'lucide-react';
 import { generateEstimatePDF } from '@/utils/generateEstimatePDF';
+import { VersionHistoryDialog } from '@/components/admin/estimates/VersionHistoryDialog';
 
 type JobType = 'residential_new' | 'residential_replacement' | 'commercial_new' | 'commercial_replacement' | 'maintenance' | 'repair';
 type HeatingType = 'gas' | 'electric' | 'heat_pump' | 'dual_fuel';
@@ -134,6 +136,7 @@ const EstimateBuilder = () => {
   const [equipmentSearch, setEquipmentSearch] = useState('');
   const [materialCategory, setMaterialCategory] = useState('all');
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
 
   // Fetch estimate templates
   const { data: templates = [] } = useQuery({
@@ -717,10 +720,16 @@ const EstimateBuilder = () => {
               </SelectContent>
             </Select>
             {!isNew && (
-              <Button variant="outline" onClick={handleExportPDF}>
-                <FileDown className="h-4 w-4 mr-2" />
-                Export PDF
-              </Button>
+              <>
+                <Button variant="outline" onClick={() => setIsVersionHistoryOpen(true)}>
+                  <History className="h-4 w-4 mr-2" />
+                  History
+                </Button>
+                <Button variant="outline" onClick={handleExportPDF}>
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Export PDF
+                </Button>
+              </>
             )}
             <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
               <Save className="h-4 w-4 mr-2" />
@@ -1245,6 +1254,64 @@ const EstimateBuilder = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Version History Dialog */}
+      {!isNew && id && (
+        <VersionHistoryDialog
+          open={isVersionHistoryOpen}
+          onOpenChange={setIsVersionHistoryOpen}
+          estimateId={id}
+          currentEstimate={{
+            customer_name: formData.customer_name,
+            status: formData.status,
+            job_type: formData.job_type,
+            heating_type: formData.heating_type,
+            profit_margin: formData.profit_margin,
+            tax_rate: formData.tax_rate,
+            grand_total: totals.grandTotal,
+          }}
+          onRestoreVersion={(versionData) => {
+            // Restore form data from version
+            setFormData({
+              customer_name: versionData.customer_name || '',
+              customer_email: versionData.customer_email || '',
+              customer_phone: versionData.customer_phone || '',
+              customer_address: versionData.customer_address || '',
+              job_type: versionData.job_type as JobType,
+              heating_type: versionData.heating_type as HeatingType,
+              job_notes: versionData.job_notes || '',
+              status: versionData.status as EstimateStatus,
+              profit_margin: Number(versionData.profit_margin) || 1.60,
+              tax_rate: Number(versionData.tax_rate) || 0.0825,
+            });
+            
+            // Restore line items - mark existing as deleted and add version items as new
+            const restoredItems: LineItem[] = (versionData.line_items || []).map((item, index) => ({
+              item_type: item.item_type as LineItemType,
+              name: item.name,
+              description: item.description,
+              material_id: null,
+              labor_rate_id: null,
+              admin_cost_id: null,
+              equipment_system_id: null,
+              quantity: Number(item.quantity),
+              unit: item.unit,
+              unit_cost: Number(item.unit_cost),
+              line_total: Number(item.line_total),
+              sort_order: index,
+              isNew: true,
+            }));
+            
+            // Mark all current items for deletion and add restored items
+            const deletedItems = lineItems.filter(item => item.id).map(item => ({
+              ...item,
+              isDeleted: true,
+            }));
+            
+            setLineItems([...deletedItems, ...restoredItems]);
+          }}
+        />
+      )}
     </AdminLayout>
   );
 };
