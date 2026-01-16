@@ -520,6 +520,44 @@ export type Database = {
         }
         Relationships: []
       }
+      estimate_versions: {
+        Row: {
+          change_summary: string | null
+          created_at: string
+          created_by: string | null
+          estimate_id: string
+          id: string
+          snapshot_data: Json
+          version_number: number
+        }
+        Insert: {
+          change_summary?: string | null
+          created_at?: string
+          created_by?: string | null
+          estimate_id: string
+          id?: string
+          snapshot_data: Json
+          version_number?: number
+        }
+        Update: {
+          change_summary?: string | null
+          created_at?: string
+          created_by?: string | null
+          estimate_id?: string
+          id?: string
+          snapshot_data?: Json
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estimate_versions_estimate_id_fkey"
+            columns: ["estimate_id"]
+            isOneToOne: false
+            referencedRelation: "estimates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       estimates: {
         Row: {
           created_at: string
