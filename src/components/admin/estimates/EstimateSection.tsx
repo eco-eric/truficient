@@ -1,0 +1,287 @@
+import { useState } from 'react';
+import { ChevronDown, ChevronRight, Package, Users, Receipt, Wrench, Calculator, Plus, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+
+export type EstimateSection = 'equipment_controls' | 'miscellaneous_inside' | 'ducting' | 'labor' | 'admin_costs';
+
+export interface LineItem {
+  id?: string;
+  item_type: 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom';
+  name: string;
+  description: string | null;
+  material_id: string | null;
+  labor_rate_id: string | null;
+  admin_cost_id: string | null;
+  equipment_system_id: string | null;
+  quantity: number;
+  unit: string;
+  unit_cost: number;
+  line_total: number;
+  sort_order: number;
+  section?: EstimateSection;
+  isNew?: boolean;
+  isDeleted?: boolean;
+}
+
+interface SectionConfig {
+  key: EstimateSection;
+  title: string;
+  icon: React.ReactNode;
+  color: string;
+  bgColor: string;
+  addButtons: { type: 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom'; label: string; icon: React.ReactNode }[];
+}
+
+export const SECTION_CONFIGS: SectionConfig[] = [
+  {
+    key: 'equipment_controls',
+    title: 'Equipment & Controls',
+    icon: <Wrench className="h-4 w-4" />,
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50 border-blue-200',
+    addButtons: [
+      { type: 'equipment', label: 'Equipment', icon: <Wrench className="h-4 w-4" /> },
+      { type: 'custom', label: 'Custom', icon: <Plus className="h-4 w-4" /> },
+    ],
+  },
+  {
+    key: 'miscellaneous_inside',
+    title: 'Miscellaneous Inside Items',
+    icon: <Package className="h-4 w-4" />,
+    color: 'text-green-600',
+    bgColor: 'bg-green-50 border-green-200',
+    addButtons: [
+      { type: 'material', label: 'Material', icon: <Package className="h-4 w-4" /> },
+      { type: 'custom', label: 'Custom', icon: <Plus className="h-4 w-4" /> },
+    ],
+  },
+  {
+    key: 'ducting',
+    title: 'Ducting',
+    icon: <Package className="h-4 w-4" />,
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-50 border-orange-200',
+    addButtons: [
+      { type: 'material', label: 'Material', icon: <Package className="h-4 w-4" /> },
+      { type: 'custom', label: 'Custom', icon: <Plus className="h-4 w-4" /> },
+    ],
+  },
+  {
+    key: 'labor',
+    title: 'Labor',
+    icon: <Users className="h-4 w-4" />,
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-50 border-amber-200',
+    addButtons: [
+      { type: 'labor', label: 'Labor', icon: <Users className="h-4 w-4" /> },
+      { type: 'custom', label: 'Custom', icon: <Plus className="h-4 w-4" /> },
+    ],
+  },
+  {
+    key: 'admin_costs',
+    title: 'Admin Costs',
+    icon: <Receipt className="h-4 w-4" />,
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-50 border-purple-200',
+    addButtons: [
+      { type: 'admin_cost', label: 'Admin Cost', icon: <Receipt className="h-4 w-4" /> },
+      { type: 'custom', label: 'Custom', icon: <Plus className="h-4 w-4" /> },
+    ],
+  },
+];
+
+interface EstimateSectionProps {
+  config: SectionConfig;
+  items: LineItem[];
+  onAddItem: (type: 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom', section: EstimateSection) => void;
+  onRemoveItem: (index: number) => void;
+  onUpdateItem: (index: number, field: keyof LineItem, value: any) => void;
+  getActualIndex: (item: LineItem) => number;
+}
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount);
+};
+
+export const EstimateSectionComponent = ({
+  config,
+  items,
+  onAddItem,
+  onRemoveItem,
+  onUpdateItem,
+  getActualIndex,
+}: EstimateSectionProps) => {
+  const [isOpen, setIsOpen] = useState(true);
+
+  const sectionTotal = items.reduce((sum, item) => sum + (item.quantity * item.unit_cost), 0);
+
+  const getItemIcon = (itemType: string) => {
+    switch (itemType) {
+      case 'equipment': return <Wrench className="h-4 w-4 text-blue-500" />;
+      case 'material': return <Package className="h-4 w-4 text-green-500" />;
+      case 'labor': return <Users className="h-4 w-4 text-amber-500" />;
+      case 'admin_cost': return <Receipt className="h-4 w-4 text-purple-500" />;
+      default: return <Calculator className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-lg overflow-hidden">
+      <CollapsibleTrigger asChild>
+        <div className={`flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors ${config.bgColor}`}>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="h-6 w-6 p-0">
+              {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </Button>
+            <span className={config.color}>{config.icon}</span>
+            <h3 className="font-semibold">{config.title}</h3>
+            <span className="text-sm text-muted-foreground">({items.length} items)</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="font-mono font-semibold">{formatCurrency(sectionTotal)}</span>
+          </div>
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="border-t">
+          {/* Add buttons */}
+          <div className="flex gap-2 p-3 bg-muted/30 border-b">
+            {config.addButtons.map((btn) => (
+              <Button
+                key={btn.type}
+                size="sm"
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddItem(btn.type, config.key);
+                }}
+              >
+                {btn.icon}
+                <span className="ml-1">{btn.label}</span>
+              </Button>
+            ))}
+          </div>
+
+          {/* Items table */}
+          {items.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground text-sm">
+              No items in this section. Use the buttons above to add items.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-8">Type</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="w-20">Qty</TableHead>
+                  <TableHead className="w-20">Unit</TableHead>
+                  <TableHead className="w-28 text-right">Unit Cost</TableHead>
+                  <TableHead className="w-28 text-right">Total</TableHead>
+                  <TableHead className="w-10"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((item) => {
+                  const actualIndex = getActualIndex(item);
+                  return (
+                    <TableRow key={item.id || `${item.name}-${item.sort_order}`}>
+                      <TableCell>{getItemIcon(item.item_type)}</TableCell>
+                      <TableCell>
+                        {item.item_type === 'custom' ? (
+                          <Input
+                            value={item.name}
+                            onChange={(e) => onUpdateItem(actualIndex, 'name', e.target.value)}
+                            className="h-8"
+                          />
+                        ) : (
+                          <div>
+                            <div className="font-medium">{item.name}</div>
+                            {item.description && (
+                              <div className="text-xs text-muted-foreground">{item.description}</div>
+                            )}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={item.quantity}
+                          onChange={(e) => onUpdateItem(actualIndex, 'quantity', parseFloat(e.target.value) || 0)}
+                          className="h-8 w-16"
+                        />
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{item.unit}</TableCell>
+                      <TableCell className="text-right">
+                        {item.item_type === 'custom' ? (
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={item.unit_cost}
+                            onChange={(e) => onUpdateItem(actualIndex, 'unit_cost', parseFloat(e.target.value) || 0)}
+                            className="h-8 w-24 text-right"
+                          />
+                        ) : (
+                          <span className="font-mono">{formatCurrency(item.unit_cost)}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right font-mono font-semibold">
+                        {formatCurrency(item.quantity * item.unit_cost)}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => onRemoveItem(actualIndex)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
+
+// Helper to auto-assign section based on item type
+export const getDefaultSection = (itemType: string): EstimateSection => {
+  switch (itemType) {
+    case 'equipment': return 'equipment_controls';
+    case 'labor': return 'labor';
+    case 'admin_cost': return 'admin_costs';
+    case 'material':
+    case 'custom':
+    default: return 'miscellaneous_inside';
+  }
+};
+
+// Section labels for display
+export const SECTION_LABELS: Record<EstimateSection, string> = {
+  equipment_controls: 'Equipment & Controls',
+  miscellaneous_inside: 'Miscellaneous Inside Items',
+  ducting: 'Ducting',
+  labor: 'Labor',
+  admin_costs: 'Admin Costs',
+};

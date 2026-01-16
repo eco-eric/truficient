@@ -312,6 +312,7 @@ export type Database = {
           material_id: string | null
           name: string
           quantity: number
+          section: Database["public"]["Enums"]["estimate_section"] | null
           sort_order: number
           unit: string
           unit_cost: number
@@ -330,6 +331,7 @@ export type Database = {
           material_id?: string | null
           name: string
           quantity?: number
+          section?: Database["public"]["Enums"]["estimate_section"] | null
           sort_order?: number
           unit?: string
           unit_cost?: number
@@ -348,6 +350,7 @@ export type Database = {
           material_id?: string | null
           name?: string
           quantity?: number
+          section?: Database["public"]["Enums"]["estimate_section"] | null
           sort_order?: number
           unit?: string
           unit_cost?: number
@@ -403,6 +406,7 @@ export type Database = {
           material_id: string | null
           name: string
           quantity: number
+          section: Database["public"]["Enums"]["estimate_section"] | null
           sort_order: number
           template_id: string
           unit: string
@@ -420,6 +424,7 @@ export type Database = {
           material_id?: string | null
           name: string
           quantity?: number
+          section?: Database["public"]["Enums"]["estimate_section"] | null
           sort_order?: number
           template_id: string
           unit?: string
@@ -437,6 +442,7 @@ export type Database = {
           material_id?: string | null
           name?: string
           quantity?: number
+          section?: Database["public"]["Enums"]["estimate_section"] | null
           sort_order?: number
           template_id?: string
           unit?: string
@@ -1154,6 +1160,12 @@ export type Database = {
     Enums: {
       admin_cost_type: "fixed" | "percentage" | "per_job"
       app_role: "admin" | "manager"
+      estimate_section:
+        | "equipment_controls"
+        | "miscellaneous_inside"
+        | "ducting"
+        | "labor"
+        | "admin_costs"
       estimate_status: "draft" | "sent" | "accepted" | "declined" | "expired"
       heating_type: "gas" | "electric" | "heat_pump" | "dual_fuel"
       job_type:
@@ -1307,6 +1319,13 @@ export const Constants = {
     Enums: {
       admin_cost_type: ["fixed", "percentage", "per_job"],
       app_role: ["admin", "manager"],
+      estimate_section: [
+        "equipment_controls",
+        "miscellaneous_inside",
+        "ducting",
+        "labor",
+        "admin_costs",
+      ],
       estimate_status: ["draft", "sent", "accepted", "declined", "expired"],
       heating_type: ["gas", "electric", "heat_pump", "dual_fuel"],
       job_type: [
