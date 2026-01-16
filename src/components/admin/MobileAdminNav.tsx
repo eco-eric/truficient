@@ -15,7 +15,8 @@ import {
   DollarSign,
   Package,
   Receipt,
-  ClipboardList
+  ClipboardList,
+  MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -63,6 +64,7 @@ const navSections: NavSection[] = [
       { label: 'Calculators', href: '/admin/calculators', icon: Calculator, adminOnly: true },
       { label: 'System Pricing', href: '/admin/system-pricing', icon: DollarSign, adminOnly: true },
       { label: 'GHL Tags', href: '/admin/ghl-tags', icon: Tag, adminOnly: true },
+      { label: 'GHL Conversations', href: '/admin/ghl-conversations', icon: MessageSquare, adminOnly: true },
       { label: 'Landing Pages', href: '/admin/landing-pages', icon: FileInput, adminOnly: true },
       { label: 'Analytics', href: '/admin/analytics', icon: BarChart3, adminOnly: true },
       { label: 'Social Media', href: '/admin/social-media', icon: Share2, adminOnly: true },
