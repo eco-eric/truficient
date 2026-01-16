@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -17,14 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -37,42 +28,29 @@ import {
   Save, 
   ArrowLeft, 
   Plus, 
-  Trash2, 
   Package, 
   Users, 
   Receipt, 
   Wrench,
   Search,
-  Calculator,
   FileDown,
   LayoutTemplate,
   History
 } from 'lucide-react';
 import { generateEstimatePDF } from '@/utils/generateEstimatePDF';
 import { VersionHistoryDialog } from '@/components/admin/estimates/VersionHistoryDialog';
+import { 
+  EstimateSectionComponent, 
+  SECTION_CONFIGS, 
+  getDefaultSection,
+  type EstimateSection,
+  type LineItem 
+} from '@/components/admin/estimates/EstimateSection';
 
 type JobType = 'residential_new' | 'residential_replacement' | 'commercial_new' | 'commercial_replacement' | 'maintenance' | 'repair';
 type HeatingType = 'gas' | 'electric' | 'heat_pump' | 'dual_fuel';
 type EstimateStatus = 'draft' | 'sent' | 'accepted' | 'declined' | 'expired';
 type LineItemType = 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom';
-
-interface LineItem {
-  id?: string;
-  item_type: LineItemType;
-  name: string;
-  description: string | null;
-  material_id: string | null;
-  labor_rate_id: string | null;
-  admin_cost_id: string | null;
-  equipment_system_id: string | null;
-  quantity: number;
-  unit: string;
-  unit_cost: number;
-  line_total: number;
-  sort_order: number;
-  isNew?: boolean;
-  isDeleted?: boolean;
-}
 
 interface EstimateData {
   customer_name: string;
@@ -290,6 +268,7 @@ const EstimateBuilder = () => {
           unit_cost: Number(cost.amount),
           line_total: Number(cost.amount),
           sort_order: index,
+          section: 'admin_costs' as EstimateSection,
           isNew: true,
         }));
         setLineItems(newItems);
@@ -393,6 +372,7 @@ const EstimateBuilder = () => {
           unit: item.unit,
           unit_cost: item.unit_cost,
           sort_order: item.sort_order,
+          section: item.section || getDefaultSection(item.item_type),
         }));
 
         const { error } = await supabase
@@ -412,6 +392,7 @@ const EstimateBuilder = () => {
             unit: item.unit,
             unit_cost: item.unit_cost,
             sort_order: item.sort_order,
+            section: item.section || getDefaultSection(item.item_type),
           })
           .eq('id', item.id);
         if (error) throw error;
@@ -432,8 +413,23 @@ const EstimateBuilder = () => {
     },
   });
 
+  // State to track which section we're adding to
+  const [currentAddSection, setCurrentAddSection] = useState<EstimateSection>('miscellaneous_inside');
+
+  // Handle add item from section
+  const handleSectionAddItem = (type: LineItemType, section: EstimateSection) => {
+    setCurrentAddSection(section);
+    if (type === 'custom') {
+      handleAddCustomItem(section);
+    } else {
+      setAddDialogType(type);
+      setIsAddDialogOpen(true);
+    }
+  };
+
   // Add line item handlers
-  const handleAddMaterial = (material: any) => {
+  const handleAddMaterial = (material: any, section?: EstimateSection) => {
+    const targetSection = section || currentAddSection;
     const newItem: LineItem = {
       item_type: 'material',
       name: material.name,
@@ -447,6 +443,7 @@ const EstimateBuilder = () => {
       unit_cost: parseFloat(material.unit_cost),
       line_total: parseFloat(material.unit_cost),
       sort_order: lineItems.length,
+      section: targetSection,
       isNew: true,
     };
     setLineItems([...lineItems, newItem]);
@@ -467,6 +464,7 @@ const EstimateBuilder = () => {
       unit_cost: parseFloat(labor.rate),
       line_total: parseFloat(labor.rate),
       sort_order: lineItems.length,
+      section: 'labor',
       isNew: true,
     };
     setLineItems([...lineItems, newItem]);
@@ -493,6 +491,7 @@ const EstimateBuilder = () => {
       unit_cost: parseFloat(cost.amount),
       line_total: parseFloat(cost.amount),
       sort_order: lineItems.length,
+      section: 'admin_costs',
       isNew: true,
     };
     setLineItems([...lineItems, newItem]);
@@ -519,6 +518,7 @@ const EstimateBuilder = () => {
       unit_cost: totalPrice,
       line_total: totalPrice,
       sort_order: lineItems.length,
+      section: 'equipment_controls',
       isNew: true,
     };
     setLineItems([...lineItems, newItem]);
@@ -526,7 +526,7 @@ const EstimateBuilder = () => {
     toast.success(`Added ${equipment.system_name}`);
   };
 
-  const handleAddCustomItem = () => {
+  const handleAddCustomItem = (section: EstimateSection = 'miscellaneous_inside') => {
     const newItem: LineItem = {
       item_type: 'custom',
       name: 'Custom Item',
@@ -540,6 +540,7 @@ const EstimateBuilder = () => {
       unit_cost: 0,
       line_total: 0,
       sort_order: lineItems.length,
+      section: section,
       isNew: true,
     };
     setLineItems([...lineItems, newItem]);
@@ -621,6 +622,7 @@ const EstimateBuilder = () => {
       quantity: item.quantity,
       unit: item.unit,
       unit_cost: item.unit_cost,
+      section: item.section || getDefaultSection(item.item_type),
     }));
 
     generateEstimatePDF(estimateData, pdfLineItems, totals, formData.tax_rate);
@@ -838,122 +840,34 @@ const EstimateBuilder = () => {
               </CardContent>
             </Card>
 
-            {/* Line Items */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Line Items</CardTitle>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => { setAddDialogType('equipment'); setIsAddDialogOpen(true); }}>
-                    <Wrench className="h-4 w-4 mr-1" /> Equipment
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => { setAddDialogType('material'); setIsAddDialogOpen(true); }}>
-                    <Package className="h-4 w-4 mr-1" /> Material
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => { setAddDialogType('labor'); setIsAddDialogOpen(true); }}>
-                    <Users className="h-4 w-4 mr-1" /> Labor
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => { setAddDialogType('admin_cost'); setIsAddDialogOpen(true); }}>
-                    <Receipt className="h-4 w-4 mr-1" /> Admin
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={handleAddCustomItem}>
-                    <Plus className="h-4 w-4 mr-1" /> Custom
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {activeLineItems.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No items added yet. Use the buttons above to add equipment, materials, labor, or admin costs.
-                  </div>
-                ) : (
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-8">Type</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead className="w-20">Qty</TableHead>
-                          <TableHead className="w-20">Unit</TableHead>
-                          <TableHead className="w-28 text-right">Unit Cost</TableHead>
-                          <TableHead className="w-28 text-right">Total</TableHead>
-                          <TableHead className="w-10"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {activeLineItems.map((item, index) => {
-                          const actualIndex = lineItems.findIndex(li => li === item || (li.id && li.id === item.id));
-                          return (
-                            <TableRow key={item.id || index}>
-                              <TableCell>
-                                {item.item_type === 'equipment' && <Wrench className="h-4 w-4 text-blue-500" />}
-                                {item.item_type === 'material' && <Package className="h-4 w-4 text-green-500" />}
-                                {item.item_type === 'labor' && <Users className="h-4 w-4 text-amber-500" />}
-                                {item.item_type === 'admin_cost' && <Receipt className="h-4 w-4 text-purple-500" />}
-                                {item.item_type === 'custom' && <Calculator className="h-4 w-4 text-gray-500" />}
-                              </TableCell>
-                              <TableCell>
-                                {item.item_type === 'custom' ? (
-                                  <Input
-                                    value={item.name}
-                                    onChange={(e) => handleUpdateItem(actualIndex, 'name', e.target.value)}
-                                    className="h-8"
-                                  />
-                                ) : (
-                                  <div>
-                                    <div className="font-medium">{item.name}</div>
-                                    {item.description && (
-                                      <div className="text-xs text-muted-foreground">{item.description}</div>
-                                    )}
-                                  </div>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  value={item.quantity}
-                                  onChange={(e) => handleUpdateItem(actualIndex, 'quantity', parseFloat(e.target.value) || 0)}
-                                  className="h-8 w-16"
-                                />
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">{item.unit}</TableCell>
-                              <TableCell className="text-right">
-                                {item.item_type === 'custom' ? (
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={item.unit_cost}
-                                    onChange={(e) => handleUpdateItem(actualIndex, 'unit_cost', parseFloat(e.target.value) || 0)}
-                                    className="h-8 w-24 text-right"
-                                  />
-                                ) : (
-                                  <span className="font-mono">{formatCurrency(item.unit_cost)}</span>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right font-mono font-medium">
-                                {formatCurrency(item.quantity * item.unit_cost)}
-                              </TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-destructive hover:text-destructive"
-                                  onClick={() => handleRemoveItem(actualIndex)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Line Items - Sectioned */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Line Items</h2>
+                <span className="text-sm text-muted-foreground">
+                  {activeLineItems.length} items
+                </span>
+              </div>
+              
+              {SECTION_CONFIGS.map((config) => {
+                const sectionItems = activeLineItems.filter(
+                  item => (item.section || getDefaultSection(item.item_type)) === config.key
+                );
+                return (
+                  <EstimateSectionComponent
+                    key={config.key}
+                    config={config}
+                    items={sectionItems}
+                    onAddItem={handleSectionAddItem}
+                    onRemoveItem={handleRemoveItem}
+                    onUpdateItem={handleUpdateItem}
+                    getActualIndex={(item) => 
+                      lineItems.findIndex(li => li === item || (li.id && li.id === item.id))
+                    }
+                  />
+                );
+              })}
+            </div>
           </div>
 
           {/* Summary Panel */}

@@ -1,3 +1,5 @@
+type EstimateSection = 'equipment_controls' | 'miscellaneous_inside' | 'ducting' | 'labor' | 'admin_costs';
+
 interface LineItem {
   item_type: string;
   name: string;
@@ -5,6 +7,7 @@ interface LineItem {
   quantity: number;
   unit: string;
   unit_cost: number;
+  section?: EstimateSection;
 }
 
 interface EstimateData {
@@ -42,6 +45,22 @@ const HEATING_TYPE_LABELS: Record<string, string> = {
   dual_fuel: 'Dual Fuel',
 };
 
+const SECTION_LABELS: Record<EstimateSection, string> = {
+  equipment_controls: 'Equipment & Controls',
+  miscellaneous_inside: 'Miscellaneous Inside Items',
+  ducting: 'Ducting',
+  labor: 'Labor',
+  admin_costs: 'Admin Costs',
+};
+
+const SECTION_ORDER: EstimateSection[] = [
+  'equipment_controls',
+  'miscellaneous_inside',
+  'ducting',
+  'labor',
+  'admin_costs',
+];
+
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -57,6 +76,39 @@ const formatDate = (dateString: string) => {
   });
 };
 
+// Group items by section
+const groupItemsBySection = (items: LineItem[]): Record<EstimateSection, LineItem[]> => {
+  const grouped: Record<EstimateSection, LineItem[]> = {
+    equipment_controls: [],
+    miscellaneous_inside: [],
+    ducting: [],
+    labor: [],
+    admin_costs: [],
+  };
+
+  items.forEach(item => {
+    const section = item.section || getDefaultSection(item.item_type);
+    grouped[section].push(item);
+  });
+
+  return grouped;
+};
+
+// Get default section based on item type
+const getDefaultSection = (itemType: string): EstimateSection => {
+  switch (itemType) {
+    case 'equipment': return 'equipment_controls';
+    case 'labor': return 'labor';
+    case 'admin_cost': return 'admin_costs';
+    default: return 'miscellaneous_inside';
+  }
+};
+
+// Calculate section subtotal
+const calculateSectionSubtotal = (items: LineItem[]): number => {
+  return items.reduce((sum, item) => sum + (item.quantity * item.unit_cost), 0);
+};
+
 export const generateEstimatePDF = (
   estimate: EstimateData,
   lineItems: LineItem[],
@@ -69,6 +121,49 @@ export const generateEstimatePDF = (
     phone: '(469) 506-0053',
     email: 'service@truficient.com',
     website: 'www.truficient.com',
+  };
+
+  // Group items by section
+  const groupedItems = groupItemsBySection(lineItems);
+
+  // Generate section HTML
+  const generateSectionHTML = (section: EstimateSection, items: LineItem[]): string => {
+    if (items.length === 0) return '';
+    
+    const sectionSubtotal = calculateSectionSubtotal(items);
+    
+    return `
+      <div class="section-block">
+        <div class="section-header">${SECTION_LABELS[section]}</div>
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th style="width: 50%;">Description</th>
+              <th style="width: 15%; text-align: center;">Qty</th>
+              <th style="width: 15%; text-align: right;">Rate</th>
+              <th style="width: 20%; text-align: right;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map(item => `
+              <tr>
+                <td>
+                  <span class="item-name">${item.name}</span>
+                  ${item.description ? `<div class="item-description">${item.description}</div>` : ''}
+                </td>
+                <td style="text-align: center;">${item.quantity} ${item.unit}</td>
+                <td style="text-align: right;">${formatCurrency(item.unit_cost)}</td>
+                <td>${formatCurrency(item.quantity * item.unit_cost)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div class="section-subtotal">
+          <span>Section Subtotal:</span>
+          <span>${formatCurrency(sectionSubtotal)}</span>
+        </div>
+      </div>
+    `;
   };
 
   // Build HTML content
@@ -148,24 +243,36 @@ export const generateEstimatePDF = (
     .info-box strong {
       color: #1e3a5f;
     }
+    .section-block {
+      margin-bottom: 25px;
+    }
+    .section-header {
+      background: #1e3a5f;
+      color: white;
+      padding: 10px 15px;
+      font-size: 13px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
     .items-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 30px;
     }
     .items-table th {
-      background: #1e3a5f;
-      color: white;
-      padding: 12px 15px;
+      background: #f8f9fa;
+      color: #1e3a5f;
+      padding: 10px 15px;
       text-align: left;
-      font-size: 11px;
+      font-size: 10px;
       text-transform: uppercase;
+      border-bottom: 1px solid #ddd;
     }
     .items-table th:last-child {
       text-align: right;
     }
     .items-table td {
-      padding: 12px 15px;
+      padding: 10px 15px;
       border-bottom: 1px solid #eee;
     }
     .items-table td:last-child {
@@ -173,7 +280,7 @@ export const generateEstimatePDF = (
       font-weight: 600;
     }
     .items-table tr:nth-child(even) {
-      background: #f8f9fa;
+      background: #fafafa;
     }
     .item-name {
       font-weight: 600;
@@ -182,41 +289,39 @@ export const generateEstimatePDF = (
       font-size: 11px;
       color: #666;
     }
-    .item-type {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 10px;
-      text-transform: uppercase;
-      margin-right: 8px;
+    .section-subtotal {
+      display: flex;
+      justify-content: flex-end;
+      gap: 20px;
+      padding: 10px 15px;
+      background: #f0f0f0;
+      font-weight: 600;
+      font-size: 12px;
     }
-    .type-equipment { background: #dbeafe; color: #1e40af; }
-    .type-material { background: #dcfce7; color: #166534; }
-    .type-labor { background: #fef3c7; color: #92400e; }
-    .type-admin_cost { background: #f3e8ff; color: #7c3aed; }
-    .type-custom { background: #f3f4f6; color: #374151; }
     .totals-section {
       display: flex;
       justify-content: flex-end;
       margin-bottom: 40px;
+      margin-top: 20px;
     }
     .totals-box {
       width: 300px;
+      border: 2px solid #1e3a5f;
+      border-radius: 8px;
+      overflow: hidden;
     }
     .totals-row {
       display: flex;
       justify-content: space-between;
-      padding: 8px 0;
+      padding: 10px 15px;
       border-bottom: 1px solid #eee;
     }
     .totals-row.grand-total {
       font-size: 18px;
       font-weight: bold;
-      color: #1e3a5f;
+      color: white;
+      background: #1e3a5f;
       border-bottom: none;
-      border-top: 2px solid #1e3a5f;
-      margin-top: 10px;
-      padding-top: 15px;
     }
     .totals-row.grand-total .amount {
       color: #d4a84b;
@@ -300,30 +405,8 @@ export const generateEstimatePDF = (
       </div>
     </div>
 
-    <table class="items-table">
-      <thead>
-        <tr>
-          <th style="width: 50%;">Description</th>
-          <th style="width: 15%; text-align: center;">Qty</th>
-          <th style="width: 15%; text-align: right;">Rate</th>
-          <th style="width: 20%; text-align: right;">Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${lineItems.map(item => `
-          <tr>
-            <td>
-              <span class="item-type type-${item.item_type}">${item.item_type.replace('_', ' ')}</span>
-              <span class="item-name">${item.name}</span>
-              ${item.description ? `<div class="item-description">${item.description}</div>` : ''}
-            </td>
-            <td style="text-align: center;">${item.quantity} ${item.unit}</td>
-            <td style="text-align: right;">${formatCurrency(item.quantity * item.unit_cost / item.quantity)}</td>
-            <td>${formatCurrency(item.quantity * item.unit_cost)}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
+    <!-- Sections -->
+    ${SECTION_ORDER.map(section => generateSectionHTML(section, groupedItems[section])).join('')}
 
     <div class="totals-section">
       <div class="totals-box">
