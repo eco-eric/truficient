@@ -11,6 +11,13 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Search,
   Library,
   ScanLine,
@@ -18,6 +25,13 @@ import {
   Thermometer,
   Wind,
   Gauge,
+  Snowflake,
+  Flame,
+  Fan,
+  Droplets,
+  LayoutGrid,
+  GitBranch,
+  Factory,
 } from 'lucide-react';
 import { usePageSEO } from '@/hooks/usePageSEO';
 
@@ -36,14 +50,28 @@ interface EquipmentPage {
 
 const BRAND_TABS = ['all', 'carrier', 'trane', 'lennox', 'goodman', 'rheem', 'mitsubishi', 'other'];
 
+const EQUIPMENT_TYPES = [
+  { value: 'all', label: 'All Types', icon: Factory },
+  { value: 'Air Conditioner', label: 'Air Conditioner', icon: Snowflake },
+  { value: 'Heat Pump', label: 'Heat Pump', icon: Thermometer },
+  { value: 'Furnace', label: 'Furnace', icon: Flame },
+  { value: 'Air Handler', label: 'Air Handler', icon: Fan },
+  { value: 'Evaporator Coil', label: 'Evaporator Coil', icon: Droplets },
+  { value: 'Condenser', label: 'Condenser', icon: Snowflake },
+  { value: 'Mini Split', label: 'Mini Split', icon: Wind },
+  { value: 'Window Unit', label: 'Window Unit', icon: LayoutGrid },
+  { value: 'Branch Box', label: 'Branch Box', icon: GitBranch },
+];
+
 export default function EquipmentLibrary() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('all');
+  const [selectedType, setSelectedType] = useState('all');
 
   usePageSEO('/equipment');
 
   const { data: equipment, isLoading } = useQuery({
-    queryKey: ['equipment-library', selectedBrand, searchQuery],
+    queryKey: ['equipment-library', selectedBrand, selectedType, searchQuery],
     queryFn: async () => {
       let query = supabase
         .from('equipment_pages')
@@ -61,6 +89,10 @@ export default function EquipmentLibrary() {
           .not('brand', 'ilike', 'goodman')
           .not('brand', 'ilike', 'rheem')
           .not('brand', 'ilike', 'mitsubishi');
+      }
+
+      if (selectedType !== 'all') {
+        query = query.ilike('equipment_type', selectedType);
       }
 
       if (searchQuery) {
@@ -148,19 +180,41 @@ export default function EquipmentLibrary() {
 
         {/* Brand Filters */}
         <section className="container mx-auto px-4 py-6">
-          <Tabs value={selectedBrand} onValueChange={setSelectedBrand}>
-            <TabsList className="flex-wrap h-auto gap-2 bg-transparent p-0">
-              {BRAND_TABS.map((brand) => (
-                <TabsTrigger
-                  key={brand}
-                  value={brand}
-                  className="capitalize data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                >
-                  {brand === 'all' ? 'All Brands' : brand}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <Tabs value={selectedBrand} onValueChange={setSelectedBrand} className="flex-1">
+              <TabsList className="flex-wrap h-auto gap-2 bg-transparent p-0">
+                {BRAND_TABS.map((brand) => (
+                  <TabsTrigger
+                    key={brand}
+                    value={brand}
+                    className="capitalize data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  >
+                    {brand === 'all' ? 'All Brands' : brand}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+
+            {/* Equipment Type Filter */}
+            <Select value={selectedType} onValueChange={setSelectedType}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Equipment Type" />
+              </SelectTrigger>
+              <SelectContent>
+                {EQUIPMENT_TYPES.map((type) => {
+                  const Icon = type.icon;
+                  return (
+                    <SelectItem key={type.value} value={type.value}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4" />
+                        <span>{type.label}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
         </section>
 
         {/* Equipment Grid */}
