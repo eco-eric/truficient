@@ -8,6 +8,7 @@ import acRepairImage from '@/assets/ac-repair.jpg';
 import designInstallImage from '@/assets/design-and-install.jpg';
 import commercialServicesImage from '@/assets/commercial-services.jpg';
 import ductlessServicesImage from '@/assets/ductless-services.jpg';
+import heatingRepairImage from '@/assets/heating-repair.jpg';
 
 const services = [
   {
@@ -37,7 +38,7 @@ const services = [
   {
     title: 'Heating Repair',
     description: 'Having your heater go out in the middle of winter is not something we want families to have to go through. Call Truficient to schedule a heating repair appointment today.',
-    image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&h=300&fit=crop',
+    image: heatingRepairImage,
     link: '/residential-services#heating-repair',
   },
   {
