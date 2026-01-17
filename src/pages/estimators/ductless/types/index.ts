@@ -151,7 +151,7 @@ export const ROOM_TYPE_OPTIONS: RoomTypeOption[] = [
 export const ROOM_SIZE_OPTIONS: { value: RoomSize; label: string; sqftRange: string }[] = [
   { value: "small", label: "Small", sqftRange: "Up to 250 sq ft" },
   { value: "medium", label: "Medium", sqftRange: "250–400 sq ft" },
-  { value: "large", label: "Large", sqftRange: "400+ sq ft" },
+  { value: "large", label: "Large", sqftRange: "400–600 sq ft" },
 ];
 
 export const SUN_EXPOSURE_OPTIONS: { value: SunExposure; label: string }[] = [

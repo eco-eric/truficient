@@ -37,16 +37,20 @@ const SUN_EXPOSURE_MULTIPLIERS: Record<SunExposure, number> = {
   west: 1.15,   // Afternoon sun = hottest
 };
 
-// Standard BTU sizes available for mini-splits
-const STANDARD_BTU_SIZES = [6000, 9000, 12000, 15000, 18000, 24000, 30000, 36000];
+// Available system sizes in tons (converts to BTU by × 12000)
+const SYSTEM_SIZE_TONS = [0.6, 0.9, 1.0, 1.25, 1.5, 2.0, 2.5];
+
+// Standard BTU sizes based on available system tonnages
+const STANDARD_BTU_SIZES = SYSTEM_SIZE_TONS.map(tons => Math.round(tons * 12000));
 
 /**
- * Round BTU to nearest standard size
+ * Round up to next available system size (always round UP for sizing)
  */
 function roundToStandardBtu(rawBtu: number): number {
-  return STANDARD_BTU_SIZES.reduce((prev, curr) => {
-    return Math.abs(curr - rawBtu) < Math.abs(prev - rawBtu) ? curr : prev;
-  });
+  // Find the first BTU size that is >= the raw BTU (round UP)
+  const nextSize = STANDARD_BTU_SIZES.find(size => size >= rawBtu);
+  // If no size is large enough, return the largest available
+  return nextSize ?? STANDARD_BTU_SIZES[STANDARD_BTU_SIZES.length - 1];
 }
 
 /**
