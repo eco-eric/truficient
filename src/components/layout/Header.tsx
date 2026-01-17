@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import truficientLogo from "@/assets/truficient-logo.png";
-import { Phone, Mail, Menu, X, ChevronDown, Search } from "lucide-react";
+import { Phone, Mail, Menu, ChevronDown, Search, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -10,14 +10,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useButtonTracking } from "@/hooks/useButtonTracking";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [openMobileMenus, setOpenMobileMenus] = useState<Record<string, boolean>>({});
   const { trackButtonClick } = useButtonTracking();
 
   const handleTrackClick = (buttonName: string, buttonLocation: string, destinationUrl?: string) => {
     trackButtonClick({ buttonName, buttonLocation, destinationUrl });
+  };
+
+  const toggleMobileMenu = (menu: string) => {
+    setOpenMobileMenus(prev => ({ ...prev, [menu]: !prev[menu] }));
   };
 
   return (
@@ -26,47 +36,6 @@ const Header = () => {
       <div className="bg-gray-800 text-white py-2">
         <div className="container mx-auto px-4 flex justify-between items-center text-sm">
           <div className="hidden md:flex items-center gap-1">
-            {/* ABOUT Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger 
-                className="flex items-center gap-1 px-3 py-1 text-secondary hover:text-secondary/80 transition-colors font-medium"
-                onClick={() => handleTrackClick('ABOUT Menu', 'Header - Top Bar')}
-              >
-                ABOUT <ChevronDown className="w-3 h-3" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-gray-800 border-gray-700">
-                <DropdownMenuItem asChild>
-                  <Link 
-                    to="/about" 
-                    className="text-white hover:text-secondary cursor-pointer"
-                    onClick={() => handleTrackClick('Our Story', 'Header - Top Bar', '/about')}
-                  >
-                    Our Story
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link 
-                    to="/about#credentials" 
-                    className="text-white hover:text-secondary cursor-pointer"
-                    onClick={() => handleTrackClick('Credentials & Certifications', 'Header - Top Bar', '/about#credentials')}
-                  >
-                    Credentials & Certifications
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link 
-                    to="/about#commitment" 
-                    className="text-white hover:text-secondary cursor-pointer"
-                    onClick={() => handleTrackClick('Our Commitment', 'Header - Top Bar', '/about#commitment')}
-                  >
-                    Our Commitment
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <span className="text-gray-500">|</span>
-
             {/* SERVICE AREAS Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger 
@@ -192,27 +161,124 @@ const Header = () => {
               >
                 Home
               </Link>
-              <Link
-                to="/residential-services"
-                className="text-foreground hover:text-primary font-medium transition-colors flex items-center gap-1"
-                onClick={() => handleTrackClick('Services', 'Header - Main Nav', '/residential-services')}
-              >
-                Services <ChevronDown className="w-4 h-4" />
-              </Link>
-              <Link 
-                to="/about" 
-                className="text-foreground hover:text-primary font-medium transition-colors"
-                onClick={() => handleTrackClick('About Us', 'Header - Main Nav', '/about')}
-              >
-                About Us
-              </Link>
-              <Link 
-                to="/blog" 
-                className="text-foreground hover:text-primary font-medium transition-colors"
-                onClick={() => handleTrackClick('Blog', 'Header - Main Nav', '/blog')}
-              >
-                Blog
-              </Link>
+
+              {/* Services Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger 
+                  className="flex items-center gap-1 text-foreground hover:text-primary font-medium transition-colors"
+                  onClick={() => handleTrackClick('Services Menu', 'Header - Main Nav')}
+                >
+                  Services <ChevronDown className="w-4 h-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-background border-border">
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/services/residential" 
+                      className="cursor-pointer"
+                      onClick={() => handleTrackClick('Residential', 'Header - Main Nav', '/services/residential')}
+                    >
+                      Residential
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/services/commercial" 
+                      className="cursor-pointer"
+                      onClick={() => handleTrackClick('Commercial', 'Header - Main Nav', '/services/commercial')}
+                    >
+                      Commercial
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/services/ductless" 
+                      className="cursor-pointer"
+                      onClick={() => handleTrackClick('Ductless (Mini-Splits)', 'Header - Main Nav', '/services/ductless')}
+                    >
+                      Ductless (Mini-Splits)
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Estimators Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger 
+                  className="flex items-center gap-1 text-foreground hover:text-primary font-medium transition-colors"
+                  onClick={() => handleTrackClick('Estimators Menu', 'Header - Main Nav')}
+                >
+                  Estimators <ChevronDown className="w-4 h-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-background border-border">
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/hvac-estimate" 
+                      className="cursor-pointer"
+                      onClick={() => handleTrackClick('Sizing Calculator', 'Header - Main Nav', '/hvac-estimate')}
+                    >
+                      Sizing Calculator
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/hvac-estimate" 
+                      className="cursor-pointer"
+                      onClick={() => handleTrackClick('Cost Estimator', 'Header - Main Nav', '/hvac-estimate')}
+                    >
+                      Cost Estimator
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/hvac-estimate" 
+                      className="cursor-pointer"
+                      onClick={() => handleTrackClick('Savings Calculator', 'Header - Main Nav', '/hvac-estimate')}
+                    >
+                      Savings Calculator
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* About Us Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger 
+                  className="flex items-center gap-1 text-foreground hover:text-primary font-medium transition-colors"
+                  onClick={() => handleTrackClick('About Us Menu', 'Header - Main Nav')}
+                >
+                  About Us <ChevronDown className="w-4 h-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-background border-border">
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/about" 
+                      className="cursor-pointer"
+                      onClick={() => handleTrackClick('Our Story', 'Header - Main Nav', '/about')}
+                    >
+                      Our Story
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/blog" 
+                      className="cursor-pointer"
+                      onClick={() => handleTrackClick('Blog', 'Header - Main Nav', '/blog')}
+                    >
+                      Blog
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/careers" 
+                      className="cursor-pointer"
+                      onClick={() => handleTrackClick('Careers', 'Header - Main Nav', '/careers')}
+                    >
+                      Careers
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Link 
                 to="/contact" 
                 className="text-foreground hover:text-primary font-medium transition-colors"
@@ -260,10 +326,10 @@ const Header = () => {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-80">
-                <nav className="flex flex-col gap-4 mt-8">
+                <nav className="flex flex-col gap-2 mt-8">
                   <Link
                     to="/"
-                    className="text-lg font-medium text-foreground hover:text-primary transition-colors"
+                    className="text-lg font-medium text-foreground hover:text-primary transition-colors py-2"
                     onClick={() => {
                       handleTrackClick('Home', 'Header - Mobile Menu', '/');
                       setIsOpen(false);
@@ -271,39 +337,190 @@ const Header = () => {
                   >
                     Home
                   </Link>
-                  <Link
-                    to="/residential-services"
-                    className="text-lg font-medium text-foreground hover:text-primary transition-colors"
-                    onClick={() => {
-                      handleTrackClick('Services', 'Header - Mobile Menu', '/residential-services');
-                      setIsOpen(false);
-                    }}
-                  >
-                    Services
-                  </Link>
-                  <Link
-                    to="/about"
-                    className="text-lg font-medium text-foreground hover:text-primary transition-colors"
-                    onClick={() => {
-                      handleTrackClick('About Us', 'Header - Mobile Menu', '/about');
-                      setIsOpen(false);
-                    }}
-                  >
-                    About Us
-                  </Link>
-                  <Link
-                    to="/blog"
-                    className="text-lg font-medium text-foreground hover:text-primary transition-colors"
-                    onClick={() => {
-                      handleTrackClick('Blog', 'Header - Mobile Menu', '/blog');
-                      setIsOpen(false);
-                    }}
-                  >
-                    Blog
-                  </Link>
+
+                  {/* Services Collapsible */}
+                  <Collapsible open={openMobileMenus.services} onOpenChange={() => toggleMobileMenu('services')}>
+                    <CollapsibleTrigger className="flex items-center justify-between w-full text-lg font-medium text-foreground hover:text-primary transition-colors py-2">
+                      Services
+                      <ChevronRight className={`w-4 h-4 transition-transform ${openMobileMenus.services ? 'rotate-90' : ''}`} />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pl-4 space-y-2">
+                      <Link
+                        to="/services/residential"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        onClick={() => {
+                          handleTrackClick('Residential', 'Header - Mobile Menu', '/services/residential');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Residential
+                      </Link>
+                      <Link
+                        to="/services/commercial"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        onClick={() => {
+                          handleTrackClick('Commercial', 'Header - Mobile Menu', '/services/commercial');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Commercial
+                      </Link>
+                      <Link
+                        to="/services/ductless"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        onClick={() => {
+                          handleTrackClick('Ductless (Mini-Splits)', 'Header - Mobile Menu', '/services/ductless');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Ductless (Mini-Splits)
+                      </Link>
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  {/* Estimators Collapsible */}
+                  <Collapsible open={openMobileMenus.estimators} onOpenChange={() => toggleMobileMenu('estimators')}>
+                    <CollapsibleTrigger className="flex items-center justify-between w-full text-lg font-medium text-foreground hover:text-primary transition-colors py-2">
+                      Estimators
+                      <ChevronRight className={`w-4 h-4 transition-transform ${openMobileMenus.estimators ? 'rotate-90' : ''}`} />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pl-4 space-y-2">
+                      <Link
+                        to="/hvac-estimate"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        onClick={() => {
+                          handleTrackClick('Sizing Calculator', 'Header - Mobile Menu', '/hvac-estimate');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Sizing Calculator
+                      </Link>
+                      <Link
+                        to="/hvac-estimate"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        onClick={() => {
+                          handleTrackClick('Cost Estimator', 'Header - Mobile Menu', '/hvac-estimate');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Cost Estimator
+                      </Link>
+                      <Link
+                        to="/hvac-estimate"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        onClick={() => {
+                          handleTrackClick('Savings Calculator', 'Header - Mobile Menu', '/hvac-estimate');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Savings Calculator
+                      </Link>
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  {/* About Us Collapsible */}
+                  <Collapsible open={openMobileMenus.about} onOpenChange={() => toggleMobileMenu('about')}>
+                    <CollapsibleTrigger className="flex items-center justify-between w-full text-lg font-medium text-foreground hover:text-primary transition-colors py-2">
+                      About Us
+                      <ChevronRight className={`w-4 h-4 transition-transform ${openMobileMenus.about ? 'rotate-90' : ''}`} />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pl-4 space-y-2">
+                      <Link
+                        to="/about"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        onClick={() => {
+                          handleTrackClick('Our Story', 'Header - Mobile Menu', '/about');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Our Story
+                      </Link>
+                      <Link
+                        to="/blog"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        onClick={() => {
+                          handleTrackClick('Blog', 'Header - Mobile Menu', '/blog');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Blog
+                      </Link>
+                      <Link
+                        to="/careers"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        onClick={() => {
+                          handleTrackClick('Careers', 'Header - Mobile Menu', '/careers');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Careers
+                      </Link>
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  {/* Service Areas Collapsible */}
+                  <Collapsible open={openMobileMenus.serviceAreas} onOpenChange={() => toggleMobileMenu('serviceAreas')}>
+                    <CollapsibleTrigger className="flex items-center justify-between w-full text-lg font-medium text-foreground hover:text-primary transition-colors py-2">
+                      Service Areas
+                      <ChevronRight className={`w-4 h-4 transition-transform ${openMobileMenus.serviceAreas ? 'rotate-90' : ''}`} />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pl-4 space-y-2">
+                      <Link
+                        to="/service-areas/dallas-area"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        onClick={() => {
+                          handleTrackClick('Dallas Area', 'Header - Mobile Menu', '/service-areas/dallas-area');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Dallas Area
+                      </Link>
+                      <Link
+                        to="/service-areas/north-dallas-area"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        onClick={() => {
+                          handleTrackClick('North Dallas Area', 'Header - Mobile Menu', '/service-areas/north-dallas-area');
+                          setIsOpen(false);
+                        }}
+                      >
+                        North Dallas Area
+                      </Link>
+                      <Link
+                        to="/service-areas/frisco-mckinney-area"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        onClick={() => {
+                          handleTrackClick('Frisco-McKinney Area', 'Header - Mobile Menu', '/service-areas/frisco-mckinney-area');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Frisco-McKinney Area
+                      </Link>
+                      <Link
+                        to="/service-areas/mid-cities-area"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        onClick={() => {
+                          handleTrackClick('Mid-Cities Area', 'Header - Mobile Menu', '/service-areas/mid-cities-area');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Mid-Cities Area
+                      </Link>
+                      <Link
+                        to="/service-areas/south-dallas-area"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        onClick={() => {
+                          handleTrackClick('South Dallas Area', 'Header - Mobile Menu', '/service-areas/south-dallas-area');
+                          setIsOpen(false);
+                        }}
+                      >
+                        South Dallas Area
+                      </Link>
+                    </CollapsibleContent>
+                  </Collapsible>
+
                   <Link
                     to="/contact"
-                    className="text-lg font-medium text-foreground hover:text-primary transition-colors"
+                    className="text-lg font-medium text-foreground hover:text-primary transition-colors py-2"
                     onClick={() => {
                       handleTrackClick('Contact', 'Header - Mobile Menu', '/contact');
                       setIsOpen(false);
@@ -311,6 +528,7 @@ const Header = () => {
                   >
                     Contact
                   </Link>
+
                   <div className="border-t pt-4 mt-4">
                     <div className="flex items-center gap-2 mb-3">
                       <Phone className="w-5 h-5 text-secondary" />
