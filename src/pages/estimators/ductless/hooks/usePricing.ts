@@ -1,17 +1,32 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { RoomConfig, RoomSize, SunExposure, DuctlessUnitType, DuctlessSystemTier, DuctlessAddon } from "../types";
+import type { RoomConfig, RoomSize, SunExposure, RoomType, GarageConfig, DuctlessUnitType, DuctlessSystemTier, DuctlessAddon } from "../types";
 
 // BTU calculation constants
 const BTU_PER_SQFT_BASE = 25; // Base BTU per sq ft
-const CEILING_HEIGHT_BASELINE = 8; // Standard ceiling height
+const CEILING_HEIGHT_BASELINE = 9; // Standard ceiling height (updated to 9ft)
 
 // Room size square footage estimates
 const ROOM_SIZE_SQFT: Record<RoomSize, number> = {
   small: 200,   // Up to 250 sq ft
   medium: 325,  // 250-400 sq ft
   large: 500,   // 400+ sq ft
+};
+
+// Garage base tonnage by room size
+const GARAGE_SIZE_TONS: Record<RoomSize, number> = {
+  small: 0.5,   // 6,000 BTU
+  medium: 1.0,  // 12,000 BTU
+  large: 1.5,   // 18,000 BTU
+};
+
+// Garage add-on tonnage values
+const GARAGE_ADDON_TONS = {
+  notInsulated: 0.25,      // +3,000 BTU
+  standalone: 0.5,         // +6,000 BTU
+  atticAbove: 0.25,        // +3,000 BTU
+  comfortTemp: 0.25,       // +3,000 BTU
 };
 
 // Sun exposure multipliers
@@ -26,13 +41,51 @@ const SUN_EXPOSURE_MULTIPLIERS: Record<SunExposure, number> = {
 const STANDARD_BTU_SIZES = [6000, 9000, 12000, 15000, 18000, 24000, 30000, 36000];
 
 /**
+ * Round BTU to nearest standard size
+ */
+function roundToStandardBtu(rawBtu: number): number {
+  return STANDARD_BTU_SIZES.reduce((prev, curr) => {
+    return Math.abs(curr - rawBtu) < Math.abs(prev - rawBtu) ? curr : prev;
+  });
+}
+
+/**
+ * Calculate recommended BTU for a garage using additive tonnage approach
+ */
+function calculateGarageBtu(size: RoomSize, garageConfig?: GarageConfig): number {
+  let tons = GARAGE_SIZE_TONS[size];
+  
+  if (garageConfig) {
+    // Add tonnage based on garage conditions
+    if (!garageConfig.isInsulated) tons += GARAGE_ADDON_TONS.notInsulated;
+    if (garageConfig.isStandalone) tons += GARAGE_ADDON_TONS.standalone;
+    if (garageConfig.hasAtticAbove) tons += GARAGE_ADDON_TONS.atticAbove;
+    if (garageConfig.wantsComfortTemp) tons += GARAGE_ADDON_TONS.comfortTemp;
+  } else {
+    // Default: attic above only
+    tons += GARAGE_ADDON_TONS.atticAbove;
+  }
+  
+  // Convert tons to BTU and round to standard size
+  const rawBtu = tons * 12000;
+  return roundToStandardBtu(rawBtu);
+}
+
+/**
  * Calculate recommended BTU for a room based on size, ceiling height, and sun exposure
  */
 export function calculateRoomBtu(
   size: RoomSize,
   ceilingHeight: number,
-  sunExposure: SunExposure
+  sunExposure: SunExposure,
+  roomType?: RoomType,
+  garageConfig?: GarageConfig
 ): number {
+  // For garages, use additive tonnage approach
+  if (roomType === "garage") {
+    return calculateGarageBtu(size, garageConfig);
+  }
+  
   // Get base square footage for room size
   const sqft = ROOM_SIZE_SQFT[size];
   
@@ -46,17 +99,44 @@ export function calculateRoomBtu(
   const rawBtu = sqft * BTU_PER_SQFT_BASE * ceilingMultiplier * sunMultiplier;
   
   // Round to nearest standard BTU size
-  const nearestBtu = STANDARD_BTU_SIZES.reduce((prev, curr) => {
-    return Math.abs(curr - rawBtu) < Math.abs(prev - rawBtu) ? curr : prev;
-  });
+  return roundToStandardBtu(rawBtu);
+}
+
+/**
+ * Get detailed BTU breakdown for a garage
+ */
+export function getGarageBtuBreakdown(room: RoomConfig) {
+  const baseTons = GARAGE_SIZE_TONS[room.size];
+  const config = room.garageConfig;
   
-  return nearestBtu;
+  const insulationAddTons = config && !config.isInsulated ? GARAGE_ADDON_TONS.notInsulated : 0;
+  const attachmentAddTons = config?.isStandalone ? GARAGE_ADDON_TONS.standalone : 0;
+  const aboveAddTons = config?.hasAtticAbove !== false ? GARAGE_ADDON_TONS.atticAbove : 0; // Default is attic above
+  const tempAddTons = config?.wantsComfortTemp ? GARAGE_ADDON_TONS.comfortTemp : 0;
+  
+  const totalTons = baseTons + insulationAddTons + attachmentAddTons + aboveAddTons + tempAddTons;
+  
+  return {
+    baseTons,
+    insulationAddTons,
+    attachmentAddTons,
+    aboveAddTons,
+    tempAddTons,
+    totalTons,
+    recommendedBtu: roundToStandardBtu(totalTons * 12000),
+    isGarage: true,
+  };
 }
 
 /**
  * Get detailed BTU breakdown for a room
  */
 export function getBtuBreakdown(room: RoomConfig) {
+  // Use garage-specific breakdown for garages
+  if (room.roomType === "garage") {
+    return getGarageBtuBreakdown(room);
+  }
+  
   const sqft = ROOM_SIZE_SQFT[room.size];
   const baseBtu = sqft * BTU_PER_SQFT_BASE;
   const ceilingAdjustment = (room.ceilingHeight / CEILING_HEIGHT_BASELINE) - 1;
@@ -68,6 +148,7 @@ export function getBtuBreakdown(room: RoomConfig) {
     ceilingAdjustmentPercent: Math.round(ceilingAdjustment * 100),
     sunAdjustmentPercent: Math.round(sunAdjustment * 100),
     recommendedBtu: calculateRoomBtu(room.size, room.ceilingHeight, room.sunExposure),
+    isGarage: false,
   };
 }
 
@@ -179,7 +260,7 @@ export function usePricing(input: PricingInput): {
     
     // Calculate total BTU across all rooms
     const totalBtu = input.rooms.reduce((sum, room) => {
-      return sum + calculateRoomBtu(room.size, room.ceilingHeight, room.sunExposure);
+      return sum + calculateRoomBtu(room.size, room.ceilingHeight, room.sunExposure, room.roomType, room.garageConfig);
     }, 0);
 
     // Base equipment cost = unit base price × number of zones

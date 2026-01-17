@@ -1,4 +1,11 @@
 // Room configuration types
+export interface GarageConfig {
+  isInsulated: boolean;          // Yes = +0, No = +0.25 tons
+  isStandalone: boolean;         // Attached = +0, Standalone = +0.5 tons
+  hasAtticAbove: boolean;        // Room above = +0, Attic = +0.25 tons
+  wantsComfortTemp: boolean;     // Storage = +0, Comfort = +0.25 tons
+}
+
 export interface RoomConfig {
   id: string;
   roomType: RoomType;
@@ -9,7 +16,29 @@ export interface RoomConfig {
   quantity: number;
   recommendedBtu: number;
   unitTypeId?: string;
+  garageConfig?: GarageConfig;   // Only used for garage rooms
 }
+
+// Garage add-on options with tonnage values
+export const GARAGE_INSULATION_OPTIONS = [
+  { value: true, label: "Yes, Insulated", addedTons: 0 },
+  { value: false, label: "No Insulation", addedTons: 0.25 },
+] as const;
+
+export const GARAGE_ATTACHMENT_OPTIONS = [
+  { value: false, label: "Attached to House", addedTons: 0 },
+  { value: true, label: "Standalone / Detached", addedTons: 0.5 },
+] as const;
+
+export const GARAGE_ABOVE_OPTIONS = [
+  { value: false, label: "Room Above", description: "Same as house", addedTons: 0 },
+  { value: true, label: "Attic / Unconditioned", description: "More heat loss", addedTons: 0.25 },
+] as const;
+
+export const GARAGE_TEMP_OPTIONS = [
+  { value: false, label: "Conditioned Storage", description: "Keep comfortable, not precise", addedTons: 0 },
+  { value: true, label: "Comfort Like House", description: "Maintain ~70 degrees", addedTons: 0.25 },
+] as const;
 
 export type RoomType =
   | "master_bedroom"

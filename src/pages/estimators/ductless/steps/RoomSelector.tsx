@@ -60,10 +60,17 @@ export const RoomSelector = () => {
           roomType: opt.type,
           label: count > 1 ? `${opt.label} ${i + 1}` : opt.label,
           size: "medium",
-          ceilingHeight: 8,
+          ceilingHeight: 9,
           sunExposure: "north",
           quantity: 1,
           recommendedBtu: 12000, // Placeholder
+          // Initialize garage config with defaults for garage rooms
+          garageConfig: opt.type === "garage" ? {
+            isInsulated: true,       // Default: insulated
+            isStandalone: false,     // Default: attached
+            hasAtticAbove: true,     // Default: attic above
+            wantsComfortTemp: false, // Default: storage temp
+          } : undefined,
         });
       }
     });
