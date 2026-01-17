@@ -91,6 +91,25 @@ export default function EquipmentDetail() {
     enabled: !!slug,
   });
 
+  // Query for related pages with same model number but different brands
+  const { data: relatedPages } = useQuery({
+    queryKey: ['equipment-related', equipment?.model_number],
+    queryFn: async () => {
+      if (!equipment?.model_number) return [];
+
+      const { data, error } = await supabase
+        .from('equipment_pages')
+        .select('id, slug, brand, model_number')
+        .ilike('model_number', equipment.model_number)
+        .neq('id', equipment.id)
+        .eq('published', true);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!equipment?.model_number && !!equipment?.id,
+  });
+
   const specs = equipment?.specs as Record<string, unknown> | undefined;
   const currentYear = new Date().getFullYear();
   const manufacturedYear = specs?.manufactured_year as number | undefined;
@@ -376,6 +395,33 @@ export default function EquipmentDetail() {
                         Modern systems offer significantly improved efficiency.
                       </p>
                     </div>
+                  </div>
+                </Card>
+              )}
+
+              {/* Related Equipment (Same Model, Different Brands) */}
+              {relatedPages && relatedPages.length > 0 && (
+                <Card className="p-6">
+                  <h2 className="text-xl font-bold mb-4">Related Equipment Pages</h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    This model number appears under multiple brand variations:
+                  </p>
+                  <div className="space-y-2">
+                    {relatedPages.map((page) => (
+                      <Link
+                        key={page.id}
+                        to={`/equipment/${page.slug}`}
+                        className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="capitalize">
+                            {page.brand}
+                          </Badge>
+                          <span className="font-mono text-sm">{page.model_number}</span>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      </Link>
+                    ))}
                   </div>
                 </Card>
               )}

@@ -321,11 +321,13 @@ IMPORTANT:
     }
 
     // Auto-generate equipment page if it doesn't exist
+    // Check for duplicates by model number to avoid creating multiple pages for same equipment
     if (specs.brand && typeof specs.brand === 'string') {
       const brandSlug = specs.brand.toLowerCase().replace(/[\s\/]+/g, '-');
       const modelSlug = specs.model_number.toLowerCase().replace(/\s+/g, '-');
       const slug = `${brandSlug}/${modelSlug}`;
       
+      // First check if exact slug exists
       const { data: existingPage } = await supabase
         .from('equipment_pages')
         .select('id, times_searched')
@@ -333,24 +335,41 @@ IMPORTANT:
         .single();
 
       if (existingPage) {
-        // Increment search count
+        // Increment search count for existing page
         await supabase
           .from('equipment_pages')
           .update({ times_searched: (existingPage.times_searched || 0) + 1 })
           .eq('id', existingPage.id);
       } else {
-        // Create new equipment page
-        await supabase
+        // Check if a page with the same model number already exists (duplicate detection)
+        const { data: duplicatePage } = await supabase
           .from('equipment_pages')
-          .insert({
-            slug,
-            brand: specs.brand,
-            model_number: specs.model_number,
-            model_pattern: specs.model_number.substring(0, 8),
-            specs: specs,
-            seo_title: `${specs.brand} ${specs.model_number} Specifications, Manuals & Documentation | Truficient`,
-            seo_description: `Complete specs for ${specs.brand} ${specs.model_number} including tonnage, refrigerant type, SEER rating, and downloadable manuals. Free resource from Truficient Energy Solutions.`,
-          });
+          .select('id, times_searched, slug, brand')
+          .ilike('model_number', specs.model_number)
+          .limit(1)
+          .single();
+
+        if (duplicatePage) {
+          // Increment search count on existing page instead of creating duplicate
+          console.log(`Duplicate detected: ${specs.model_number} already exists as ${duplicatePage.slug}`);
+          await supabase
+            .from('equipment_pages')
+            .update({ times_searched: (duplicatePage.times_searched || 0) + 1 })
+            .eq('id', duplicatePage.id);
+        } else {
+          // No duplicates found - create new equipment page
+          await supabase
+            .from('equipment_pages')
+            .insert({
+              slug,
+              brand: specs.brand,
+              model_number: specs.model_number,
+              model_pattern: specs.model_number.substring(0, 8),
+              specs: specs,
+              seo_title: `${specs.brand} ${specs.model_number} Specifications, Manuals & Documentation | Truficient`,
+              seo_description: `Complete specs for ${specs.brand} ${specs.model_number} including tonnage, refrigerant type, SEER rating, and downloadable manuals. Free resource from Truficient Energy Solutions.`,
+            });
+        }
       }
     }
 
