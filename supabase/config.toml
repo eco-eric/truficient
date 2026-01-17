@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.decode-equipment]
 verify_jwt = false
+
+[functions.search-documentation]
+verify_jwt = false

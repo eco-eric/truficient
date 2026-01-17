@@ -253,6 +253,36 @@ export type Database = {
         }
         Relationships: []
       }
+      documentation_search_log: {
+        Row: {
+          brand: string | null
+          cache_hit: boolean | null
+          created_at: string | null
+          documents_found: number | null
+          id: string
+          model_number: string | null
+          search_duration_ms: number | null
+        }
+        Insert: {
+          brand?: string | null
+          cache_hit?: boolean | null
+          created_at?: string | null
+          documents_found?: number | null
+          id?: string
+          model_number?: string | null
+          search_duration_ms?: number | null
+        }
+        Update: {
+          brand?: string | null
+          cache_hit?: boolean | null
+          created_at?: string | null
+          documents_found?: number | null
+          id?: string
+          model_number?: string | null
+          search_duration_ms?: number | null
+        }
+        Relationships: []
+      }
       ductless_addons: {
         Row: {
           created_at: string
@@ -532,10 +562,15 @@ export type Database = {
           document_title: string | null
           document_type: string
           document_url: string
+          file_type: string | null
           id: string
           last_verified: string | null
+          model_number: string | null
           model_pattern: string
+          search_query_used: string | null
+          source_domain: string | null
           source_url: string | null
+          verified_working: boolean | null
         }
         Insert: {
           brand: string
@@ -543,10 +578,15 @@ export type Database = {
           document_title?: string | null
           document_type: string
           document_url: string
+          file_type?: string | null
           id?: string
           last_verified?: string | null
+          model_number?: string | null
           model_pattern: string
+          search_query_used?: string | null
+          source_domain?: string | null
           source_url?: string | null
+          verified_working?: boolean | null
         }
         Update: {
           brand?: string
@@ -554,10 +594,15 @@ export type Database = {
           document_title?: string | null
           document_type?: string
           document_url?: string
+          file_type?: string | null
           id?: string
           last_verified?: string | null
+          model_number?: string | null
           model_pattern?: string
+          search_query_used?: string | null
+          source_domain?: string | null
           source_url?: string | null
+          verified_working?: boolean | null
         }
         Relationships: []
       }
@@ -566,6 +611,9 @@ export type Database = {
           auto_generated: boolean | null
           brand: string
           created_at: string | null
+          custom_content: string | null
+          documentation_count: number | null
+          equipment_type: string | null
           id: string
           model_number: string
           model_pattern: string | null
@@ -581,6 +629,9 @@ export type Database = {
           auto_generated?: boolean | null
           brand: string
           created_at?: string | null
+          custom_content?: string | null
+          documentation_count?: number | null
+          equipment_type?: string | null
           id?: string
           model_number: string
           model_pattern?: string | null
@@ -596,6 +647,9 @@ export type Database = {
           auto_generated?: boolean | null
           brand?: string
           created_at?: string | null
+          custom_content?: string | null
+          documentation_count?: number | null
+          equipment_type?: string | null
           id?: string
           model_number?: string
           model_pattern?: string | null

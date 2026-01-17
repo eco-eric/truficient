@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import truficientLogo from "@/assets/truficient-logo.png";
-import { Phone, Mail, Menu, ChevronDown, Search, ChevronRight, ScanLine } from "lucide-react";
+import { Phone, Mail, Menu, ChevronDown, Search, ChevronRight, ScanLine, Library } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -215,6 +215,27 @@ const Header = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link 
+                      to="/services/ductless" 
+                      className="cursor-pointer"
+                      onClick={() => handleTrackClick('Ductless (Mini-Splits)', 'Header - Main Nav', '/services/ductless')}
+                    >
+                      Ductless (Mini-Splits)
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Resources Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger 
+                  className="flex items-center gap-1 text-foreground hover:text-primary font-medium transition-colors"
+                  onClick={() => handleTrackClick('Resources Menu', 'Header - Main Nav')}
+                >
+                  Resources <ChevronDown className="w-4 h-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-background border-border">
+                  <DropdownMenuItem asChild>
+                    <Link 
                       to="/scanner" 
                       className="cursor-pointer flex items-center gap-2"
                       onClick={() => handleTrackClick('Equipment Scanner', 'Header - Main Nav', '/scanner')}
@@ -225,11 +246,12 @@ const Header = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link 
-                      to="/services/ductless" 
-                      className="cursor-pointer"
-                      onClick={() => handleTrackClick('Ductless (Mini-Splits)', 'Header - Main Nav', '/services/ductless')}
+                      to="/equipment" 
+                      className="cursor-pointer flex items-center gap-2"
+                      onClick={() => handleTrackClick('Equipment Library', 'Header - Main Nav', '/equipment')}
                     >
-                      Ductless (Mini-Splits)
+                      <Library className="w-4 h-4 text-primary" />
+                      Equipment Library
                     </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -426,6 +448,36 @@ const Header = () => {
                         }}
                       >
                         Ductless (Mini-Splits)
+                      </Link>
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  {/* Resources Collapsible */}
+                  <Collapsible open={openMobileMenus.resources} onOpenChange={() => toggleMobileMenu('resources')}>
+                    <CollapsibleTrigger className="flex items-center justify-between w-full text-lg font-medium text-foreground hover:text-primary transition-colors py-3 touch-target">
+                      Resources
+                      <ChevronRight className={`w-4 h-4 transition-transform ${openMobileMenus.resources ? 'rotate-90' : ''}`} />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pl-4 space-y-1 pb-2">
+                      <Link
+                        to="/scanner"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
+                        onClick={() => {
+                          handleTrackClick('Equipment Scanner', 'Header - Mobile Menu', '/scanner');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Equipment Scanner
+                      </Link>
+                      <Link
+                        to="/equipment"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
+                        onClick={() => {
+                          handleTrackClick('Equipment Library', 'Header - Mobile Menu', '/equipment');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Equipment Library
                       </Link>
                     </CollapsibleContent>
                   </Collapsible>
