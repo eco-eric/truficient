@@ -10,10 +10,28 @@ import {
   Factory,
   Info,
   ExternalLink,
+  Snowflake,
+  Flame,
+  Fan,
+  Droplets,
+  LayoutGrid,
+  GitBranch,
 } from 'lucide-react';
 import { useScanner } from '../context/ScannerContext';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+
+const EQUIPMENT_TYPE_ICONS: Record<string, React.ReactNode> = {
+  'Air Conditioner': <Snowflake className="w-4 h-4" />,
+  'Heat Pump': <Thermometer className="w-4 h-4" />,
+  'Furnace': <Flame className="w-4 h-4" />,
+  'Air Handler': <Fan className="w-4 h-4" />,
+  'Evaporator Coil': <Droplets className="w-4 h-4" />,
+  'Window Unit': <LayoutGrid className="w-4 h-4" />,
+  'Branch Box': <GitBranch className="w-4 h-4" />,
+  'Condenser': <Snowflake className="w-4 h-4" />,
+  'Mini Split': <Wind className="w-4 h-4" />,
+};
 
 interface SpecRowProps {
   icon: React.ReactNode;
@@ -69,7 +87,8 @@ export function ResultsCard() {
           )}
         </div>
         {specs.equipment_type && (
-          <Badge variant="secondary" className="text-sm">
+          <Badge variant="secondary" className="text-sm flex items-center gap-1.5">
+            {EQUIPMENT_TYPE_ICONS[specs.equipment_type] || <Factory className="w-4 h-4" />}
             {specs.equipment_type}
           </Badge>
         )}
