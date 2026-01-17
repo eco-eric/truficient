@@ -24,7 +24,8 @@ import {
   AirVent,
   Images,
   CreditCard,
-  Library
+  Library,
+  Target
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -52,6 +53,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, adminOnly: false },
       { label: 'Submissions', href: '/admin/submissions', icon: FileText, adminOnly: false },
+      { label: 'DFW Watch List', href: '/admin/dfw-watchlist', icon: Target, adminOnly: true },
       { label: 'Blog', href: '/admin/blog', icon: PenSquare, adminOnly: false },
     ],
   },
