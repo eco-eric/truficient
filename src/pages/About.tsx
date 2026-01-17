@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { usePageSEO } from '@/hooks/usePageSEO';
+import aboutUsStoryImage from '@/assets/about-us-story.png';
 
 const credentials = [
   {
@@ -146,9 +147,9 @@ const About = () => {
             >
               <div className="rounded-2xl overflow-hidden shadow-xl">
                 <img
-                  src="https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=600&h=400&fit=crop"
-                  alt="HVAC technician at work"
-                  className="w-full h-[350px] object-cover"
+                  src={aboutUsStoryImage}
+                  alt="Truficient HVAC owner presenting"
+                  className="w-full h-[400px] object-cover object-top"
                 />
               </div>
             </motion.div>
