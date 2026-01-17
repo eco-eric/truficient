@@ -6,6 +6,12 @@ import { useButtonTracking } from '@/hooks/useButtonTracking';
 
 const services = [
   {
+    title: 'Heat Pump Installation',
+    description: 'Keep your energy bill low in the winter by having Truficient Service install a high-efficiency heat pump system.',
+    image: 'https://images.unsplash.com/photo-1513467535987-fd81bc7d62f8?w=400&h=300&fit=crop',
+    link: '/residential-services#heating-installation',
+  },
+  {
     title: 'AC Repair',
     description: 'AC running harder than it should be? Lower your utility costs and avoid further costly repairs by scheduling a service call with Truficient today.',
     image: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400&h=300&fit=crop',
@@ -18,8 +24,8 @@ const services = [
     link: '/residential-services#ac-replacement',
   },
   {
-    title: 'AC Installation',
-    description: 'Your HVAC system bit the dust? Truficient offers full HVAC installation for all private, commercial, and residential customers.',
+    title: 'Design and Install Services',
+    description: 'Your HVAC system bit the dust? Truficient offers full HVAC design and installation for all private, commercial, and residential customers.',
     image: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=400&h=300&fit=crop',
     link: '/residential-services#ac-installation',
   },
@@ -28,12 +34,6 @@ const services = [
     description: 'Having your heater go out in the middle of winter is not something we want families to have to go through. Call Truficient to schedule a heating repair appointment today.',
     image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&h=300&fit=crop',
     link: '/residential-services#heating-repair',
-  },
-  {
-    title: 'Heating Installation',
-    description: 'Keep your energy bill low in the winter by having Truficient Service install a high-efficiency heating system.',
-    image: 'https://images.unsplash.com/photo-1513467535987-fd81bc7d62f8?w=400&h=300&fit=crop',
-    link: '/residential-services#heating-installation',
   },
   {
     title: 'Indoor Air Quality',
