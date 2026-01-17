@@ -525,6 +525,150 @@ export type Database = {
         }
         Relationships: []
       }
+      equipment_documentation: {
+        Row: {
+          brand: string
+          created_at: string | null
+          document_title: string | null
+          document_type: string
+          document_url: string
+          id: string
+          last_verified: string | null
+          model_pattern: string
+          source_url: string | null
+        }
+        Insert: {
+          brand: string
+          created_at?: string | null
+          document_title?: string | null
+          document_type: string
+          document_url: string
+          id?: string
+          last_verified?: string | null
+          model_pattern: string
+          source_url?: string | null
+        }
+        Update: {
+          brand?: string
+          created_at?: string | null
+          document_title?: string | null
+          document_type?: string
+          document_url?: string
+          id?: string
+          last_verified?: string | null
+          model_pattern?: string
+          source_url?: string | null
+        }
+        Relationships: []
+      }
+      equipment_pages: {
+        Row: {
+          auto_generated: boolean | null
+          brand: string
+          created_at: string | null
+          id: string
+          model_number: string
+          model_pattern: string | null
+          published: boolean | null
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+          specs: Json
+          times_searched: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          auto_generated?: boolean | null
+          brand: string
+          created_at?: string | null
+          id?: string
+          model_number: string
+          model_pattern?: string | null
+          published?: boolean | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+          specs: Json
+          times_searched?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          auto_generated?: boolean | null
+          brand?: string
+          created_at?: string | null
+          id?: string
+          model_number?: string
+          model_pattern?: string | null
+          published?: boolean | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+          specs?: Json
+          times_searched?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      equipment_scans: {
+        Row: {
+          brand: string | null
+          breaker_size: string | null
+          compressor_info: string | null
+          created_at: string | null
+          email: string | null
+          equipment_type: string | null
+          fan_motor_info: string | null
+          id: string
+          is_dfw: boolean | null
+          manufactured_year: number | null
+          model_number: string
+          raw_ai_response: Json | null
+          refrigerant: string | null
+          seer_rating: number | null
+          serial_number: string | null
+          tonnage: string | null
+          zip_code: string
+        }
+        Insert: {
+          brand?: string | null
+          breaker_size?: string | null
+          compressor_info?: string | null
+          created_at?: string | null
+          email?: string | null
+          equipment_type?: string | null
+          fan_motor_info?: string | null
+          id?: string
+          is_dfw?: boolean | null
+          manufactured_year?: number | null
+          model_number: string
+          raw_ai_response?: Json | null
+          refrigerant?: string | null
+          seer_rating?: number | null
+          serial_number?: string | null
+          tonnage?: string | null
+          zip_code: string
+        }
+        Update: {
+          brand?: string | null
+          breaker_size?: string | null
+          compressor_info?: string | null
+          created_at?: string | null
+          email?: string | null
+          equipment_type?: string | null
+          fan_motor_info?: string | null
+          id?: string
+          is_dfw?: boolean | null
+          manufactured_year?: number | null
+          model_number?: string
+          raw_ai_response?: Json | null
+          refrigerant?: string | null
+          seer_rating?: number | null
+          serial_number?: string | null
+          tonnage?: string | null
+          zip_code?: string
+        }
+        Relationships: []
+      }
       equipment_systems: {
         Row: {
           ahri_number: string | null
