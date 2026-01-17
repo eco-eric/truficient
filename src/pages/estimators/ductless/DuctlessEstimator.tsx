@@ -20,8 +20,8 @@ const STEP_LABELS = [
   "Your Info",
   "Select Rooms",
   "Room Details",
-  "System Tier",
   "Unit Style",
+  "System Tier",
   "Add-ons",
   "Your Quote",
   "Thank You",
@@ -50,9 +50,9 @@ const EstimatorContent = () => {
       case 3:
         return <RoomDetails />;
       case 4:
-        return <SystemTierComparison />;
-      case 5:
         return <UnitStyleSelector />;
+      case 5:
+        return <SystemTierComparison />;
       case 6:
         return <AddOnsSelector />;
       case 7:
