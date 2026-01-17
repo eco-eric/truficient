@@ -53,12 +53,6 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: 'Estimators',
-    items: [
-      { label: 'Ductless Estimator', href: '/estimate/ductless', icon: AirVent, adminOnly: false },
-    ],
-  },
-  {
     title: 'Project Estimator',
     adminOnly: true,
     items: [
