@@ -1,0 +1,294 @@
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import type { DuctedEstimatorState, SquareFootage, getSquareFootageMidpoint } from "../types";
+
+// Tax rate constant
+const TAX_RATE = 0.0825; // 8.25% Texas sales tax
+
+// Financing constants
+const FINANCING_TERM_MONTHS = 60;
+const FINANCING_APR = 0.0599; // 5.99% APR
+
+interface DuctedEquipment {
+  id: string;
+  brand: string;
+  tonnage: number;
+  seer_rating: number;
+  system_type: string;
+  equipment_cost: number;
+  installation_labor: number;
+  warranty_years: number;
+  is_best_value: boolean;
+  is_energy_star: boolean;
+  efficiency_tier_id: string | null;
+  features: string[] | null;
+  model_number: string | null;
+}
+
+interface DuctedAddon {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  icon_name: string | null;
+  is_popular: boolean;
+  sort_order: number;
+}
+
+interface DuctedEfficiencyTier {
+  id: string;
+  name: string;
+  display_name: string;
+  description: string | null;
+  seer_min: number;
+  seer_max: number;
+  features: string[] | null;
+  sort_order: number;
+}
+
+interface TonnageRule {
+  id: string;
+  home_type: string;
+  layout: string;
+  sq_ft_min: number;
+  sq_ft_max: number;
+  recommended_tonnage: number;
+}
+
+interface PricingBreakdown {
+  // Equipment costs
+  equipmentCost: number;
+  installationCost: number;
+  
+  // Add-ons
+  addonsBreakdown: Array<{
+    id: string;
+    name: string;
+    price: number;
+  }>;
+  addonsCost: number;
+  
+  // Totals
+  subtotal: number;
+  taxAmount: number;
+  finalTotal: number;
+  monthlyFinancing: number;
+  
+  // Metadata
+  recommendedTonnage: number | null;
+  selectedEquipment: DuctedEquipment | null;
+  selectedTier: DuctedEfficiencyTier | null;
+}
+
+/**
+ * Get square footage midpoint value for calculations
+ */
+function getSqftMidpoint(sqft: SquareFootage): number {
+  const midpoints: Record<SquareFootage, number> = {
+    "under_800": 600,
+    "800_1200": 1000,
+    "1200_1600": 1400,
+    "1600_2000": 1800,
+    "2000_2500": 2250,
+    "2500_3000": 2750,
+    "3000_3500": 3250,
+    "3500_4000": 3750,
+    "4000_plus": 4500,
+  };
+  return midpoints[sqft];
+}
+
+/**
+ * Custom hook that provides pricing calculations based on selections
+ */
+export function useDuctedPricing(state: DuctedEstimatorState): {
+  pricing: PricingBreakdown;
+  equipment: DuctedEquipment[];
+  tiers: DuctedEfficiencyTier[];
+  addons: DuctedAddon[];
+  tonnageRules: TonnageRule[];
+  isLoading: boolean;
+  matchingEquipment: DuctedEquipment[];
+} {
+  // Fetch equipment
+  const { data: equipment = [], isLoading: equipmentLoading } = useQuery({
+    queryKey: ["ducted_equipment_active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ducted_equipment")
+        .select("*")
+        .eq("is_active", true)
+        .order("display_order");
+      if (error) throw error;
+      return data as DuctedEquipment[];
+    },
+  });
+
+  // Fetch efficiency tiers
+  const { data: tiers = [], isLoading: tiersLoading } = useQuery({
+    queryKey: ["ducted_efficiency_tiers_active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ducted_efficiency_tiers")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order");
+      if (error) throw error;
+      return data as DuctedEfficiencyTier[];
+    },
+  });
+
+  // Fetch add-ons
+  const { data: addons = [], isLoading: addonsLoading } = useQuery({
+    queryKey: ["ducted_addons_active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ducted_addons")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order");
+      if (error) throw error;
+      return data as DuctedAddon[];
+    },
+  });
+
+  // Fetch tonnage sizing rules
+  const { data: tonnageRules = [], isLoading: rulesLoading } = useQuery({
+    queryKey: ["ducted_tonnage_sizing_rules"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ducted_tonnage_sizing_rules")
+        .select("*")
+        .eq("is_active", true);
+      if (error) throw error;
+      return data as TonnageRule[];
+    },
+  });
+
+  const isLoading = equipmentLoading || tiersLoading || addonsLoading || rulesLoading;
+
+  // Calculate recommended tonnage based on home characteristics
+  const recommendedTonnage = useMemo(() => {
+    if (!state.homeType || !state.homeLayout || !state.squareFootage || tonnageRules.length === 0) {
+      return null;
+    }
+
+    const sqftMidpoint = getSqftMidpoint(state.squareFootage);
+    
+    // Find matching rule
+    const matchingRule = tonnageRules.find((rule) => {
+      const homeTypeMatch = rule.home_type === state.homeType;
+      const layoutMatch = rule.layout === state.homeLayout;
+      const sqftMatch = sqftMidpoint >= rule.sq_ft_min && sqftMidpoint <= rule.sq_ft_max;
+      return homeTypeMatch && layoutMatch && sqftMatch;
+    });
+
+    // If no exact match, find by just sqft range
+    if (!matchingRule) {
+      const fallbackRule = tonnageRules.find((rule) => {
+        return sqftMidpoint >= rule.sq_ft_min && sqftMidpoint <= rule.sq_ft_max;
+      });
+      return fallbackRule?.recommended_tonnage || null;
+    }
+
+    return matchingRule.recommended_tonnage;
+  }, [state.homeType, state.homeLayout, state.squareFootage, tonnageRules]);
+
+  // Find matching equipment based on tonnage, heating type, and efficiency tier
+  const matchingEquipment = useMemo(() => {
+    if (!recommendedTonnage || !state.heatingType || !state.efficiencyTierId) {
+      return [];
+    }
+
+    const systemType = state.heatingType === "gas_system" ? "gas_furnace_ac" : "heat_pump";
+
+    return equipment.filter((eq) => {
+      const tonnageMatch = eq.tonnage === recommendedTonnage;
+      const typeMatch = eq.system_type === systemType;
+      const tierMatch = eq.efficiency_tier_id === state.efficiencyTierId;
+      return tonnageMatch && typeMatch && tierMatch;
+    });
+  }, [equipment, recommendedTonnage, state.heatingType, state.efficiencyTierId]);
+
+  // Find selected equipment
+  const selectedEquipment = useMemo(() => {
+    if (state.selectedEquipmentId) {
+      return equipment.find((eq) => eq.id === state.selectedEquipmentId) || null;
+    }
+    // Auto-select best value or first matching equipment
+    return matchingEquipment.find((eq) => eq.is_best_value) || matchingEquipment[0] || null;
+  }, [state.selectedEquipmentId, equipment, matchingEquipment]);
+
+  // Find selected tier
+  const selectedTier = useMemo(() => {
+    return tiers.find((t) => t.id === state.efficiencyTierId) || null;
+  }, [tiers, state.efficiencyTierId]);
+
+  // Find selected addons
+  const selectedAddons = useMemo(() => {
+    return addons.filter((a) => state.selectedAddonIds.includes(a.id));
+  }, [addons, state.selectedAddonIds]);
+
+  // Calculate pricing breakdown
+  const pricing = useMemo<PricingBreakdown>(() => {
+    const equipmentCost = selectedEquipment?.equipment_cost || 0;
+    const installationCost = selectedEquipment?.installation_labor || 0;
+
+    // Calculate add-ons
+    const addonsBreakdown = selectedAddons.map((addon) => ({
+      id: addon.id,
+      name: addon.name,
+      price: addon.price,
+    }));
+    
+    const addonsCost = addonsBreakdown.reduce((sum, a) => sum + a.price, 0);
+
+    // Calculate totals
+    const subtotal = equipmentCost + installationCost + addonsCost;
+    const taxAmount = subtotal * TAX_RATE;
+    const finalTotal = subtotal + taxAmount;
+
+    // Calculate monthly financing
+    const monthlyRate = FINANCING_APR / 12;
+    const monthlyFinancing = finalTotal > 0
+      ? (finalTotal * monthlyRate * Math.pow(1 + monthlyRate, FINANCING_TERM_MONTHS)) /
+        (Math.pow(1 + monthlyRate, FINANCING_TERM_MONTHS) - 1)
+      : 0;
+
+    return {
+      equipmentCost,
+      installationCost,
+      addonsBreakdown,
+      addonsCost,
+      subtotal,
+      taxAmount,
+      finalTotal,
+      monthlyFinancing: Math.round(monthlyFinancing),
+      recommendedTonnage,
+      selectedEquipment,
+      selectedTier,
+    };
+  }, [selectedEquipment, selectedAddons, recommendedTonnage, selectedTier]);
+
+  return {
+    pricing,
+    equipment,
+    tiers,
+    addons,
+    tonnageRules,
+    isLoading,
+    matchingEquipment,
+  };
+}
+
+/**
+ * Format currency for display
+ */
+export function formatMoney(n: number, showCents = false): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: showCents ? 2 : 0,
+  }).format(n);
+}
