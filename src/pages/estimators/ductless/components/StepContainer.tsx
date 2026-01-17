@@ -13,7 +13,10 @@ export const StepContainer = ({ children, className }: StepContainerProps) => {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      className={cn("flex flex-col min-h-[calc(100vh-200px)]", className)}
+      className={cn(
+        "flex flex-col min-h-[calc(100dvh-200px)] pb-20 md:pb-24",
+        className
+      )}
     >
       {children}
     </motion.div>

@@ -32,10 +32,10 @@ const Header = () => {
 
   return (
     <>
-      {/* Top Bar */}
-      <div className="bg-gray-800 text-white py-2">
+      {/* Top Bar - Desktop */}
+      <div className="hidden md:block bg-gray-800 text-white py-2">
         <div className="container mx-auto px-4 flex justify-between items-center text-sm">
-          <div className="hidden md:flex items-center gap-1">
+          <div className="flex items-center gap-1">
             {/* SERVICE AREAS Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger 
@@ -135,8 +135,32 @@ const Header = () => {
         </div>
       </div>
 
+      {/* Mobile Top Bar - Condensed */}
+      <div className="md:hidden bg-gray-800 text-white py-2 px-4">
+        <div className="flex items-center justify-between">
+          <a 
+            href="tel:214-238-4349"
+            className="flex items-center gap-2 touch-target"
+            onClick={() => handleTrackClick('Call Now Mobile', 'Header - Mobile Top Bar', 'tel:214-238-4349')}
+          >
+            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+              <Phone className="w-4 h-4 text-secondary-foreground" />
+            </div>
+            <span className="font-semibold text-sm">214-238-4349</span>
+          </a>
+          <Link 
+            to="/contact"
+            onClick={() => handleTrackClick('Schedule Now Mobile', 'Header - Mobile Top Bar', '/contact')}
+          >
+            <Button variant="secondary" size="sm" className="font-semibold text-xs h-9 px-3">
+              Schedule Now
+            </Button>
+          </Link>
+        </div>
+      </div>
+
       {/* Main Header */}
-      <header className="bg-background shadow-md sticky top-0 z-50">
+      <header className="bg-background/95 backdrop-blur-md shadow-md sticky top-0 z-50">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between py-4">
             {/* Logo */}
@@ -330,15 +354,15 @@ const Header = () => {
             {/* Mobile Menu */}
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild className="lg:hidden">
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="touch-target">
                   <Menu className="w-6 h-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-80">
-                <nav className="flex flex-col gap-2 mt-8">
+              <SheetContent side="right" className="w-[85vw] max-w-80 overflow-y-auto">
+                <nav className="flex flex-col gap-1 mt-6">
                   <Link
                     to="/"
-                    className="text-lg font-medium text-foreground hover:text-primary transition-colors py-2"
+                    className="text-lg font-medium text-foreground hover:text-primary transition-colors py-3 touch-target flex items-center"
                     onClick={() => {
                       handleTrackClick('Home', 'Header - Mobile Menu', '/');
                       setIsOpen(false);
@@ -349,14 +373,14 @@ const Header = () => {
 
                   {/* Services Collapsible */}
                   <Collapsible open={openMobileMenus.services} onOpenChange={() => toggleMobileMenu('services')}>
-                    <CollapsibleTrigger className="flex items-center justify-between w-full text-lg font-medium text-foreground hover:text-primary transition-colors py-2">
+                    <CollapsibleTrigger className="flex items-center justify-between w-full text-lg font-medium text-foreground hover:text-primary transition-colors py-3 touch-target">
                       Services
                       <ChevronRight className={`w-4 h-4 transition-transform ${openMobileMenus.services ? 'rotate-90' : ''}`} />
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="pl-4 space-y-2">
+                    <CollapsibleContent className="pl-4 space-y-1 pb-2">
                       <Link
                         to="/services/residential"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
                           handleTrackClick('Residential', 'Header - Mobile Menu', '/services/residential');
                           setIsOpen(false);
@@ -366,7 +390,7 @@ const Header = () => {
                       </Link>
                       <Link
                         to="/services/commercial"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
                           handleTrackClick('Commercial', 'Header - Mobile Menu', '/services/commercial');
                           setIsOpen(false);
@@ -376,7 +400,7 @@ const Header = () => {
                       </Link>
                       <Link
                         to="/services/ductless"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
                           handleTrackClick('Ductless (Mini-Splits)', 'Header - Mobile Menu', '/services/ductless');
                           setIsOpen(false);
@@ -389,14 +413,14 @@ const Header = () => {
 
                   {/* Estimators Collapsible */}
                   <Collapsible open={openMobileMenus.estimators} onOpenChange={() => toggleMobileMenu('estimators')}>
-                    <CollapsibleTrigger className="flex items-center justify-between w-full text-lg font-medium text-foreground hover:text-primary transition-colors py-2">
+                    <CollapsibleTrigger className="flex items-center justify-between w-full text-lg font-medium text-foreground hover:text-primary transition-colors py-3 touch-target">
                       Estimators
                       <ChevronRight className={`w-4 h-4 transition-transform ${openMobileMenus.estimators ? 'rotate-90' : ''}`} />
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="pl-4 space-y-2">
+                    <CollapsibleContent className="pl-4 space-y-1 pb-2">
                       <Link
                         to="/estimate/ductless"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
                           handleTrackClick('Ductless Estimator', 'Header - Mobile Menu', '/estimate/ductless');
                           setIsOpen(false);
@@ -406,7 +430,7 @@ const Header = () => {
                       </Link>
                       <Link
                         to="/estimators/sizing"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
                           handleTrackClick('Sizing Calculator', 'Header - Mobile Menu', '/estimators/sizing');
                           setIsOpen(false);
@@ -416,7 +440,7 @@ const Header = () => {
                       </Link>
                       <Link
                         to="/estimators/cost"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
                           handleTrackClick('Cost Estimator', 'Header - Mobile Menu', '/estimators/cost');
                           setIsOpen(false);
@@ -426,7 +450,7 @@ const Header = () => {
                       </Link>
                       <Link
                         to="/estimators/savings"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
                           handleTrackClick('Savings Calculator', 'Header - Mobile Menu', '/estimators/savings');
                           setIsOpen(false);
@@ -439,14 +463,14 @@ const Header = () => {
 
                   {/* About Us Collapsible */}
                   <Collapsible open={openMobileMenus.about} onOpenChange={() => toggleMobileMenu('about')}>
-                    <CollapsibleTrigger className="flex items-center justify-between w-full text-lg font-medium text-foreground hover:text-primary transition-colors py-2">
+                    <CollapsibleTrigger className="flex items-center justify-between w-full text-lg font-medium text-foreground hover:text-primary transition-colors py-3 touch-target">
                       About Us
                       <ChevronRight className={`w-4 h-4 transition-transform ${openMobileMenus.about ? 'rotate-90' : ''}`} />
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="pl-4 space-y-2">
+                    <CollapsibleContent className="pl-4 space-y-1 pb-2">
                       <Link
                         to="/about"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
                           handleTrackClick('Our Story', 'Header - Mobile Menu', '/about');
                           setIsOpen(false);
@@ -456,7 +480,7 @@ const Header = () => {
                       </Link>
                       <Link
                         to="/blog"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
                           handleTrackClick('Blog', 'Header - Mobile Menu', '/blog');
                           setIsOpen(false);
@@ -466,7 +490,7 @@ const Header = () => {
                       </Link>
                       <Link
                         to="/careers"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
                           handleTrackClick('Careers', 'Header - Mobile Menu', '/careers');
                           setIsOpen(false);
@@ -479,14 +503,14 @@ const Header = () => {
 
                   {/* Service Areas Collapsible */}
                   <Collapsible open={openMobileMenus.serviceAreas} onOpenChange={() => toggleMobileMenu('serviceAreas')}>
-                    <CollapsibleTrigger className="flex items-center justify-between w-full text-lg font-medium text-foreground hover:text-primary transition-colors py-2">
+                    <CollapsibleTrigger className="flex items-center justify-between w-full text-lg font-medium text-foreground hover:text-primary transition-colors py-3 touch-target">
                       Service Areas
                       <ChevronRight className={`w-4 h-4 transition-transform ${openMobileMenus.serviceAreas ? 'rotate-90' : ''}`} />
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="pl-4 space-y-2">
+                    <CollapsibleContent className="pl-4 space-y-1 pb-2">
                       <Link
                         to="/service-areas/dallas-area"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
                           handleTrackClick('Dallas Area', 'Header - Mobile Menu', '/service-areas/dallas-area');
                           setIsOpen(false);
@@ -496,7 +520,7 @@ const Header = () => {
                       </Link>
                       <Link
                         to="/service-areas/north-dallas-area"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
                           handleTrackClick('North Dallas Area', 'Header - Mobile Menu', '/service-areas/north-dallas-area');
                           setIsOpen(false);
@@ -506,7 +530,7 @@ const Header = () => {
                       </Link>
                       <Link
                         to="/service-areas/frisco-mckinney-area"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
                           handleTrackClick('Frisco-McKinney Area', 'Header - Mobile Menu', '/service-areas/frisco-mckinney-area');
                           setIsOpen(false);
@@ -516,7 +540,7 @@ const Header = () => {
                       </Link>
                       <Link
                         to="/service-areas/mid-cities-area"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
                           handleTrackClick('Mid-Cities Area', 'Header - Mobile Menu', '/service-areas/mid-cities-area');
                           setIsOpen(false);
@@ -526,7 +550,7 @@ const Header = () => {
                       </Link>
                       <Link
                         to="/service-areas/south-dallas-area"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
                           handleTrackClick('South Dallas Area', 'Header - Mobile Menu', '/service-areas/south-dallas-area');
                           setIsOpen(false);
@@ -539,7 +563,7 @@ const Header = () => {
 
                   <Link
                     to="/contact"
-                    className="text-lg font-medium text-foreground hover:text-primary transition-colors py-2"
+                    className="text-lg font-medium text-foreground hover:text-primary transition-colors py-3 touch-target flex items-center"
                     onClick={() => {
                       handleTrackClick('Contact', 'Header - Mobile Menu', '/contact');
                       setIsOpen(false);
@@ -548,27 +572,33 @@ const Header = () => {
                     Contact
                   </Link>
 
-                  <div className="border-t pt-4 mt-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Phone className="w-5 h-5 text-secondary" />
-                      <a 
-                        href="tel:214-238-4349" 
-                        className="font-bold"
-                        onClick={() => handleTrackClick('Phone: 214-238-4349', 'Header - Mobile Menu', 'tel:214-238-4349')}
-                      >
-                        214-238-4349
-                      </a>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-5 h-5 text-secondary" />
-                      <a 
-                        href="mailto:info@truficient.com" 
-                        className="font-bold"
-                        onClick={() => handleTrackClick('Email: info@truficient.com', 'Header - Mobile Menu', 'mailto:info@truficient.com')}
-                      >
-                        info@truficient.com
-                      </a>
-                    </div>
+                  <div className="border-t pt-4 mt-4 space-y-3">
+                    <a 
+                      href="tel:214-238-4349"
+                      className="flex items-center gap-3 p-3 rounded-lg bg-muted touch-target"
+                      onClick={() => handleTrackClick('Phone: 214-238-4349', 'Header - Mobile Menu', 'tel:214-238-4349')}
+                    >
+                      <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                        <Phone className="w-5 h-5 text-secondary-foreground" />
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Call or Text</div>
+                        <div className="font-bold">214-238-4349</div>
+                      </div>
+                    </a>
+                    <a 
+                      href="mailto:info@truficient.com"
+                      className="flex items-center gap-3 p-3 rounded-lg bg-muted touch-target"
+                      onClick={() => handleTrackClick('Email: info@truficient.com', 'Header - Mobile Menu', 'mailto:info@truficient.com')}
+                    >
+                      <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                        <Mail className="w-5 h-5 text-primary-foreground" />
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Email Us</div>
+                        <div className="font-bold text-sm">info@truficient.com</div>
+                      </div>
+                    </a>
                   </div>
                   <Link 
                     to="/contact" 
@@ -577,7 +607,7 @@ const Header = () => {
                       setIsOpen(false);
                     }}
                   >
-                    <Button className="w-full mt-4 bg-secondary hover:bg-gold-dark text-secondary-foreground">
+                    <Button className="w-full mt-4 h-12 bg-secondary hover:bg-gold-dark text-secondary-foreground font-semibold text-base">
                       Schedule Service
                     </Button>
                   </Link>

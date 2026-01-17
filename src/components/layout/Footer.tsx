@@ -71,11 +71,11 @@ const Footer = () => {
   return (
     <footer className="bg-primary text-primary-foreground">
       {/* Main Footer */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="container mx-auto px-4 py-8 md:py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
-          <div>
-            <div className="flex items-center gap-3 mb-4">
+          <div className="text-center sm:text-left">
+            <div className="flex items-center gap-3 mb-4 justify-center sm:justify-start">
               <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
                 <span className="text-secondary-foreground font-bold text-lg">T</span>
               </div>
@@ -87,7 +87,7 @@ const Footer = () => {
             <p className="text-sm opacity-80 mb-4">
               Your trusted HVAC partner in the Dallas-Fort Worth Metroplex. Mitsubishi Diamond Contractor. Licensed, insured, and committed to energy efficiency.
             </p>
-            <div className="flex gap-4">
+            <div className="flex gap-4 justify-center sm:justify-start">
               {displayLinks.map((link) => {
                 const IconComponent = getIcon(link.platform);
                 if (!IconComponent || !link.url) return null;
@@ -97,7 +97,7 @@ const Footer = () => {
                     href={link.url} 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    className="hover:text-secondary transition-colors"
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-primary-foreground/10 hover:bg-secondary hover:text-secondary-foreground transition-all touch-target"
                     onClick={() => handleClick(link)}
                   >
                     <IconComponent className="w-5 h-5" />
@@ -108,45 +108,55 @@ const Footer = () => {
           </div>
 
           {/* Company Links */}
-          <div>
+          <div className="text-center sm:text-left">
             <h4 className="font-bold mb-4 text-lg">COMPANY</h4>
             <ul className="space-y-2 text-sm opacity-80">
-              <li><Link to="/about" className="hover:text-secondary transition-colors">About Us</Link></li>
-              <li><Link to="/reviews" className="hover:text-secondary transition-colors">Reviews</Link></li>
-              <li><Link to="/careers" className="hover:text-secondary transition-colors">Careers</Link></li>
-              <li><Link to="/blog" className="hover:text-secondary transition-colors">Blog</Link></li>
-              <li><Link to="/privacy-policy" className="hover:text-secondary transition-colors">Privacy Policy</Link></li>
-              <li><Link to="/terms-of-service" className="hover:text-secondary transition-colors">Terms of Service</Link></li>
+              <li><Link to="/about" className="hover:text-secondary transition-colors inline-block py-1 touch-target">About Us</Link></li>
+              <li><Link to="/reviews" className="hover:text-secondary transition-colors inline-block py-1 touch-target">Reviews</Link></li>
+              <li><Link to="/careers" className="hover:text-secondary transition-colors inline-block py-1 touch-target">Careers</Link></li>
+              <li><Link to="/blog" className="hover:text-secondary transition-colors inline-block py-1 touch-target">Blog</Link></li>
+              <li><Link to="/privacy-policy" className="hover:text-secondary transition-colors inline-block py-1 touch-target">Privacy Policy</Link></li>
+              <li><Link to="/terms-of-service" className="hover:text-secondary transition-colors inline-block py-1 touch-target">Terms of Service</Link></li>
             </ul>
           </div>
 
           {/* Services Links */}
-          <div>
+          <div className="text-center sm:text-left">
             <h4 className="font-bold mb-4 text-lg">SERVICES</h4>
             <ul className="space-y-2 text-sm opacity-80">
-              <li><Link to="/services/residential" className="hover:text-secondary transition-colors">Residential Services</Link></li>
-              <li><Link to="/services/commercial" className="hover:text-secondary transition-colors">Commercial Services</Link></li>
-              <li><Link to="/services/residential#cooling" className="hover:text-secondary transition-colors">AC Installation</Link></li>
-              <li><Link to="/services/residential#cooling" className="hover:text-secondary transition-colors">AC Repair</Link></li>
-              <li><Link to="/services/ductless" className="hover:text-secondary transition-colors">Ductless Systems</Link></li>
+              <li><Link to="/services/residential" className="hover:text-secondary transition-colors inline-block py-1 touch-target">Residential Services</Link></li>
+              <li><Link to="/services/commercial" className="hover:text-secondary transition-colors inline-block py-1 touch-target">Commercial Services</Link></li>
+              <li><Link to="/services/residential#cooling" className="hover:text-secondary transition-colors inline-block py-1 touch-target">AC Installation</Link></li>
+              <li><Link to="/services/residential#cooling" className="hover:text-secondary transition-colors inline-block py-1 touch-target">AC Repair</Link></li>
+              <li><Link to="/services/ductless" className="hover:text-secondary transition-colors inline-block py-1 touch-target">Ductless Systems</Link></li>
             </ul>
           </div>
 
           {/* Contact Info */}
-          <div>
+          <div className="text-center sm:text-left">
             <h4 className="font-bold mb-4 text-lg">CONTACT</h4>
             <ul className="space-y-3 text-sm opacity-80">
-              <li className="flex items-start gap-2">
+              <li className="flex items-start gap-2 justify-center sm:justify-start">
                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span>808 Business Parkway<br />Richardson, TX 75081</span>
               </li>
-              <li className="flex items-center gap-2">
-                <Phone className="w-4 h-4 flex-shrink-0" />
-                <a href="tel:214-238-4349" className="hover:text-secondary transition-colors">214-238-4349</a>
+              <li>
+                <a 
+                  href="tel:214-238-4349" 
+                  className="flex items-center gap-2 justify-center sm:justify-start hover:text-secondary transition-colors py-1 touch-target"
+                >
+                  <Phone className="w-4 h-4 flex-shrink-0" />
+                  <span>214-238-4349</span>
+                </a>
               </li>
-              <li className="flex items-center gap-2">
-                <Mail className="w-4 h-4 flex-shrink-0" />
-                <a href="mailto:info@truficient.com" className="hover:text-secondary transition-colors">info@truficient.com</a>
+              <li>
+                <a 
+                  href="mailto:info@truficient.com" 
+                  className="flex items-center gap-2 justify-center sm:justify-start hover:text-secondary transition-colors py-1 touch-target"
+                >
+                  <Mail className="w-4 h-4 flex-shrink-0" />
+                  <span>info@truficient.com</span>
+                </a>
               </li>
             </ul>
           </div>
@@ -156,10 +166,10 @@ const Footer = () => {
       {/* Bottom Bar */}
       <div className="border-t border-primary-foreground/20">
         <div className="container mx-auto px-4 py-4">
-          <p className="text-center text-sm opacity-60">
+          <p className="text-center text-xs sm:text-sm opacity-60">
             © {new Date().getFullYear()} Truficient Energy Solutions. All rights reserved. | Licensed & Insured HVAC Contractor | {' '}
-            <Link to="/privacy-policy" className="hover:text-secondary transition-colors">Privacy Policy</Link> | {' '}
-            <Link to="/terms-of-service" className="hover:text-secondary transition-colors">Terms of Service</Link>
+            <Link to="/privacy-policy" className="hover:text-secondary transition-colors">Privacy</Link> | {' '}
+            <Link to="/terms-of-service" className="hover:text-secondary transition-colors">Terms</Link>
           </p>
         </div>
       </div>
