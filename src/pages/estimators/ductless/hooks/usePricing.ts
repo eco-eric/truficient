@@ -274,8 +274,14 @@ export function usePricing(input: PricingInput): {
       return sum + calculateRoomBtu(room.size, room.ceilingHeight, room.sunExposure, room.roomType, room.garageConfig);
     }, 0);
 
-    // Base equipment cost = unit base price × number of zones
-    const baseEquipmentCost = (selectedUnit?.base_price || 0) * zoneCount;
+    // Calculate base equipment cost from per-room unit type selections
+    // If rooms have individual unit types, use those; otherwise fall back to global unitTypeId
+    const baseEquipmentCost = input.rooms.reduce((sum, room) => {
+      const roomUnitType = unitTypes.find(u => u.id === room.unitTypeId);
+      // Use room's unit type if set, otherwise fall back to global selection or 0
+      const unitPrice = roomUnitType?.base_price || selectedUnit?.base_price || 0;
+      return sum + unitPrice;
+    }, 0);
     
     // Apply tier multiplier
     const tierMultiplier = selectedTier?.price_multiplier || 1;
@@ -324,7 +330,7 @@ export function usePricing(input: PricingInput): {
       zoneCount,
       totalBtu,
     };
-  }, [input.rooms, selectedUnit, selectedTier, selectedAddons]);
+  }, [input.rooms, selectedUnit, selectedTier, selectedAddons, unitTypes]);
 
   return {
     pricing,

@@ -121,12 +121,25 @@ export const DuctlessSubmissionDetail = ({ metadata }: DuctlessSubmissionDetailP
       {selectedRooms && selectedRooms.length > 0 && (
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">Selected Rooms</p>
-          <div className="flex flex-wrap gap-1">
+          <div className="space-y-2">
             {selectedRooms.map((room: any, idx: number) => (
-              <Badge key={idx} variant="outline" className="text-xs">
-                {room.name || room.type || `Room ${idx + 1}`}
-                {room.size && ` (${room.size})`}
-              </Badge>
+              <div key={idx} className="bg-muted/30 p-2 rounded-md">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">
+                    {room.label || room.name || room.type || `Room ${idx + 1}`}
+                  </span>
+                  <Badge variant="outline" className="text-xs">
+                    {room.recommendedBtu?.toLocaleString() || "—"} BTU
+                  </Badge>
+                </div>
+                {(room.unitTypeName || room.size) && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {room.unitTypeName && <span>{room.unitTypeName}</span>}
+                    {room.unitTypeName && room.size && <span> • </span>}
+                    {room.size && <span className="capitalize">{room.size}</span>}
+                  </p>
+                )}
+              </div>
             ))}
           </div>
         </div>
