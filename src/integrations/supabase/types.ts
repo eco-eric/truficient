@@ -935,6 +935,60 @@ export type Database = {
         }
         Relationships: []
       }
+      financing_options: {
+        Row: {
+          applies_to: string[] | null
+          contractor_fee: number
+          created_at: string
+          dealer_net_cost: string | null
+          id: string
+          interest_rate: number
+          is_active: boolean
+          months_to_payoff: number | null
+          notes: string | null
+          payment_factor: number
+          plan_name: string
+          promotional_offer: string
+          sort_order: number
+          tran_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          applies_to?: string[] | null
+          contractor_fee?: number
+          created_at?: string
+          dealer_net_cost?: string | null
+          id?: string
+          interest_rate?: number
+          is_active?: boolean
+          months_to_payoff?: number | null
+          notes?: string | null
+          payment_factor?: number
+          plan_name: string
+          promotional_offer: string
+          sort_order?: number
+          tran_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          applies_to?: string[] | null
+          contractor_fee?: number
+          created_at?: string
+          dealer_net_cost?: string | null
+          id?: string
+          interest_rate?: number
+          is_active?: boolean
+          months_to_payoff?: number | null
+          notes?: string | null
+          payment_factor?: number
+          plan_name?: string
+          promotional_offer?: string
+          sort_order?: number
+          tran_code?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       gallery_image_tags: {
         Row: {
           created_at: string | null

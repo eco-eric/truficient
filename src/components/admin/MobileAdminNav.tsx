@@ -16,6 +16,7 @@ import {
   DollarSign,
   Package,
   Receipt,
+  CreditCard,
   ClipboardList,
   MessageSquare
 } from 'lucide-react';
@@ -64,6 +65,7 @@ const navSections: NavSection[] = [
       { label: 'SEO', href: '/admin/seo', icon: Search, adminOnly: true },
       { label: 'Calculators', href: '/admin/calculators', icon: Calculator, adminOnly: true },
       { label: 'System Pricing', href: '/admin/system-pricing', icon: DollarSign, adminOnly: true },
+      { label: 'Financing', href: '/admin/financing', icon: CreditCard, adminOnly: true },
       { label: 'GHL Tags', href: '/admin/ghl-tags', icon: Tag, adminOnly: true },
       { label: 'GHL Conversations', href: '/admin/ghl-conversations', icon: MessageSquare, adminOnly: true },
       { label: 'Landing Pages', href: '/admin/landing-pages', icon: FileInput, adminOnly: true },
