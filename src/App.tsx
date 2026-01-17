@@ -48,6 +48,7 @@ import AdminEstimateBuilder from "./pages/admin/EstimateBuilder";
 import AdminEstimateTemplates from "./pages/admin/EstimateTemplates";
 import AdminTemplateBuilder from "./pages/admin/TemplateBuilder";
 import AdminGHLConversations from "./pages/admin/GHLConversations";
+import AdminButtonClicks from "./pages/admin/ButtonClicks";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
 
@@ -118,6 +119,7 @@ const router = createBrowserRouter([
       { path: "/admin/landing-pages/submissions", element: <ProtectedRoute><AdminLandingPageSubmissions /></ProtectedRoute> },
       { path: "/admin/landing-pages/:id", element: <ProtectedRoute><AdminLandingPageFormEditor /></ProtectedRoute> },
       { path: "/admin/settings", element: <ProtectedRoute><AdminSettings /></ProtectedRoute> },
+      { path: "/admin/button-clicks", element: <ProtectedRoute><AdminButtonClicks /></ProtectedRoute> },
       
       // Catch-all route
       { path: "*", element: <NotFound /> },

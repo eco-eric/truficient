@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
-import { CheckCircle, Play } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
+import { useButtonTracking } from '@/hooks/useButtonTracking';
 
 const features = [
   { title: 'Residential & Commercial', subtitle: 'Expertise' },
@@ -10,6 +12,16 @@ const features = [
 ];
 
 const MitsubishiSection = () => {
+  const { trackButtonClick } = useButtonTracking();
+
+  const handleContactClick = () => {
+    trackButtonClick({
+      buttonName: 'Contact Us Today',
+      buttonLocation: 'Mitsubishi Section',
+      destinationUrl: '/contact',
+    });
+  };
+
   return (
     <section className="py-16 lg:py-24 bg-background">
       <div className="container mx-auto px-4">
@@ -95,9 +107,11 @@ const MitsubishiSection = () => {
         </motion.div>
 
         <div className="text-center">
-          <Button size="lg" className="bg-secondary hover:bg-gold-dark text-secondary-foreground font-semibold">
-            Contact Us Today
-          </Button>
+          <Link to="/contact" onClick={handleContactClick}>
+            <Button size="lg" className="bg-secondary hover:bg-gold-dark text-secondary-foreground font-semibold">
+              Contact Us Today
+            </Button>
+          </Link>
         </div>
       </div>
     </section>
