@@ -29,6 +29,7 @@ import {
   Droplets,
   LayoutGrid,
   GitBranch,
+  Beaker,
 } from 'lucide-react';
 import { usePageSEO } from '@/hooks/usePageSEO';
 
@@ -259,6 +260,11 @@ export default function EquipmentDetail() {
                     icon={<Factory className="w-5 h-5" />}
                     label="Compressor"
                     value={specs?.compressor_info as string}
+                  />
+                  <SpecRow
+                    icon={<Beaker className="w-5 h-5" />}
+                    label="Factory Charge"
+                    value={specs?.factory_charge as string}
                   />
                 </div>
 

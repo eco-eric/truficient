@@ -671,6 +671,7 @@ export type Database = {
           created_at: string | null
           email: string | null
           equipment_type: string | null
+          factory_charge: string | null
           fan_motor_info: string | null
           id: string
           is_dfw: boolean | null
@@ -690,6 +691,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           equipment_type?: string | null
+          factory_charge?: string | null
           fan_motor_info?: string | null
           id?: string
           is_dfw?: boolean | null
@@ -709,6 +711,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           equipment_type?: string | null
+          factory_charge?: string | null
           fan_motor_info?: string | null
           id?: string
           is_dfw?: boolean | null
