@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Upload, Trash2, Loader2, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { compressImage } from "@/utils/imageCompression";
 
 interface ImageUploadProps {
   bucketName: string;
@@ -32,17 +33,24 @@ export const ImageUpload = ({
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be under 5MB");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image must be under 10MB");
       return;
     }
 
     setIsUploading(true);
 
     try {
+      // Compress image before upload
+      const compressedFile = await compressImage(file, {
+        maxWidth: 1920,
+        maxHeight: 1920,
+        quality: 0.85,
+      });
+
       // Generate unique filename
       const timestamp = Date.now();
-      const ext = file.name.split(".").pop() || "jpg";
+      const ext = compressedFile.name.split(".").pop() || "jpg";
       const fileName = folder 
         ? `${folder}/${timestamp}.${ext}` 
         : `${timestamp}.${ext}`;
@@ -55,10 +63,10 @@ export const ImageUpload = ({
         }
       }
 
-      // Upload new image
+      // Upload compressed image
       const { error: uploadError } = await supabase.storage
         .from(bucketName)
-        .upload(fileName, file, {
+        .upload(fileName, compressedFile, {
           cacheControl: "3600",
           upsert: false,
         });
@@ -71,7 +79,14 @@ export const ImageUpload = ({
         .getPublicUrl(fileName);
 
       onUpload(urlData.publicUrl);
-      toast.success("Image uploaded successfully");
+      
+      // Show compression savings if applicable
+      if (compressedFile.size < file.size) {
+        const savedKB = Math.round((file.size - compressedFile.size) / 1024);
+        toast.success(`Image uploaded (saved ${savedKB}KB)`);
+      } else {
+        toast.success("Image uploaded successfully");
+      }
     } catch (error: any) {
       console.error("Upload error:", error);
       toast.error(error?.message || "Failed to upload image");
@@ -181,7 +196,7 @@ export const ImageUpload = ({
                 Click or drag an image to upload
               </p>
               <p className="text-xs text-muted-foreground">
-                JPEG, PNG, WebP, or GIF (max 5MB)
+                JPEG, PNG, WebP, or GIF (max 10MB, auto-optimized)
               </p>
             </div>
           )}
