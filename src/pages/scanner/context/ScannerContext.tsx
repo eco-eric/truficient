@@ -6,6 +6,8 @@ const MAX_SCANS = 5;
 const initialState: ScannerState = {
   step: 'zip',
   zipCode: '',
+  city: null,
+  state: null,
   email: '',
   modelNumber: '',
   serialNumber: '',
@@ -25,6 +27,12 @@ function scannerReducer(state: ScannerState, action: ScannerAction): ScannerStat
         ...state, 
         zipCode: action.payload,
         isDfw: isDfwZipCode(action.payload),
+      };
+    case 'SET_LOCATION':
+      return { 
+        ...state, 
+        city: action.payload.city,
+        state: action.payload.state,
       };
     case 'SET_EMAIL':
       return { ...state, email: action.payload };

@@ -667,6 +667,7 @@ export type Database = {
         Row: {
           brand: string | null
           breaker_size: string | null
+          city: string | null
           compressor_info: string | null
           created_at: string | null
           customer_address: string | null
@@ -687,6 +688,7 @@ export type Database = {
           refrigerant: string | null
           seer_rating: number | null
           serial_number: string | null
+          state: string | null
           status: string
           tonnage: string | null
           voltage_info: string | null
@@ -695,6 +697,7 @@ export type Database = {
         Insert: {
           brand?: string | null
           breaker_size?: string | null
+          city?: string | null
           compressor_info?: string | null
           created_at?: string | null
           customer_address?: string | null
@@ -715,6 +718,7 @@ export type Database = {
           refrigerant?: string | null
           seer_rating?: number | null
           serial_number?: string | null
+          state?: string | null
           status?: string
           tonnage?: string | null
           voltage_info?: string | null
@@ -723,6 +727,7 @@ export type Database = {
         Update: {
           brand?: string | null
           breaker_size?: string | null
+          city?: string | null
           compressor_info?: string | null
           created_at?: string | null
           customer_address?: string | null
@@ -743,6 +748,7 @@ export type Database = {
           refrigerant?: string | null
           seer_rating?: number | null
           serial_number?: string | null
+          state?: string | null
           status?: string
           tonnage?: string | null
           voltage_info?: string | null

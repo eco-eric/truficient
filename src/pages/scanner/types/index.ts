@@ -41,6 +41,8 @@ export type InputMethod = 'scan' | 'upload' | 'manual';
 export interface ScannerState {
   step: 'zip' | 'examples' | 'input-method' | 'scan' | 'upload' | 'manual' | 'processing' | 'results';
   zipCode: string;
+  city: string | null;
+  state: string | null;
   email: string;
   modelNumber: string;
   serialNumber: string;
@@ -55,6 +57,7 @@ export interface ScannerState {
 
 export type ScannerAction =
   | { type: 'SET_ZIP_CODE'; payload: string }
+  | { type: 'SET_LOCATION'; payload: { city: string | null; state: string | null } }
   | { type: 'SET_EMAIL'; payload: string }
   | { type: 'SET_MODEL_NUMBER'; payload: string }
   | { type: 'SET_SERIAL_NUMBER'; payload: string }
@@ -69,6 +72,28 @@ export type ScannerAction =
   | { type: 'REMOVE_FROM_RESULTS'; payload: string }
   | { type: 'SCAN_ANOTHER' }
   | { type: 'RESET' };
+
+// DFW cities for more accurate detection
+export const DFW_CITIES = [
+  'Dallas', 'Fort Worth', 'Arlington', 'Plano', 'Irving', 
+  'Garland', 'Frisco', 'McKinney', 'Grand Prairie', 'Denton',
+  'Mesquite', 'Carrollton', 'Richardson', 'Lewisville', 'Allen',
+  'Flower Mound', 'North Richland Hills', 'Mansfield', 'Rowlett',
+  'Euless', 'DeSoto', 'Grapevine', 'Bedford', 'Cedar Hill',
+  'Wylie', 'Keller', 'Coppell', 'Haltom City', 'Duncanville',
+  'Burleson', 'The Colony', 'Little Elm', 'Prosper', 'Rockwall',
+  'Southlake', 'Colleyville', 'Hurst', 'Farmers Branch', 'Addison',
+  'University Park', 'Highland Park', 'Sachse', 'Murphy', 'Midlothian',
+  'Waxahachie', 'Weatherford', 'Cleburne', 'Ennis', 'Terrell'
+];
+
+export function isDfwByCity(city: string | null, state: string | null): boolean {
+  if (!state || (state !== 'Texas' && state !== 'TX')) return false;
+  if (!city) return false;
+  return DFW_CITIES.some(dfwCity => 
+    city.toLowerCase().includes(dfwCity.toLowerCase())
+  );
+}
 
 // DFW zip code prefixes
 export const DFW_ZIP_PREFIXES = [
