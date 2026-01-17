@@ -1,24 +1,24 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useScanner } from '../context/ScannerContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Mail, Check, Loader2, Download, FileText } from 'lucide-react';
+import { Mail, Loader2, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { generateEquipmentReportPDF } from '@/utils/generateEquipmentReportPDF';
 
 export function EmailCapture() {
   const { state, dispatch } = useScanner();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [marketingOptIn, setMarketingOptIn] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
 
   // Get all scan IDs (current result + accumulated results)
   const getAllScanIds = (): string[] => {
@@ -71,62 +71,17 @@ export function EmailCapture() {
       if (error) throw error;
 
       dispatch({ type: 'SET_EMAIL', payload: email });
-      setIsSubmitted(true);
-      toast.success(
-        totalScans > 1 
-          ? `Email saved! We'll send your ${totalScans} equipment reports shortly.`
-          : 'Email saved! We\'ll send your results shortly.'
-      );
+      
+      // Navigate to the report page with scan IDs
+      const scanIdsParam = scanIds.join(',');
+      navigate(`/scanner/report?scans=${scanIdsParam}&email=${encodeURIComponent(email)}`);
+      
     } catch (err) {
       console.error('Failed to save email:', err);
       toast.error('Failed to save email. Please try again.');
-    } finally {
       setIsSubmitting(false);
     }
   };
-
-  const handleDownloadPDF = () => {
-    const scans = state.results.length > 0 ? state.results : (state.result ? [{ ...state.result, scannedAt: new Date() }] : []);
-    generateEquipmentReportPDF(scans, {
-      name: name || undefined,
-      email: email || undefined,
-      phone: phone || undefined,
-      address: address || undefined,
-    });
-  };
-
-  if (isSubmitted) {
-    return (
-      <div className="space-y-4">
-        <Card className="border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
-              <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <p className="font-medium text-green-800 dark:text-green-200">Email saved!</p>
-              <p className="text-sm text-green-600 dark:text-green-400">
-                {totalScans > 1 
-                  ? `We'll send your ${totalScans} equipment reports to ${email}`
-                  : `We'll send your equipment report to ${email}`
-                }
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Download PDF Button */}
-        <Button 
-          onClick={handleDownloadPDF}
-          variant="outline"
-          className="w-full"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          Download Equipment Report (PDF)
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <Card>
