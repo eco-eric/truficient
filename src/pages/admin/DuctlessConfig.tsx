@@ -13,8 +13,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { Pencil, Plus, Trash2, ChevronDown, ChevronRight, ImageIcon } from "lucide-react";
 import { UnitSizePricingTable } from "./components/UnitSizePricingTable";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 
 type JsonArrayStrings = string[];
 
@@ -590,8 +591,14 @@ const DuctlessConfig = () => {
                     </div>
 
                     <div className="grid gap-2">
-                      <Label>Image URL (optional)</Label>
-                      <Input value={unitForm.image_url} onChange={(e) => setUnitForm((p) => ({ ...p, image_url: e.target.value }))} />
+                      <Label>Unit Image</Label>
+                      <ImageUpload
+                        bucketName="ductless-images"
+                        currentUrl={unitForm.image_url || null}
+                        folder="unit-types"
+                        onUpload={(url) => setUnitForm((p) => ({ ...p, image_url: url }))}
+                        onRemove={() => setUnitForm((p) => ({ ...p, image_url: "" }))}
+                      />
                     </div>
 
                     <div className="flex justify-end gap-2">
@@ -625,6 +632,17 @@ const DuctlessConfig = () => {
                               <ChevronRight className="h-4 w-4 text-muted-foreground" />
                             )}
                           </div>
+                          {u.image_url ? (
+                            <img
+                              src={u.image_url}
+                              alt={u.display_name}
+                              className="w-10 h-10 object-cover rounded-md border flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
+                              <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          )}
                           <div>
                             <div className="font-medium">{u.display_name}</div>
                             <div className="text-xs text-muted-foreground">{u.name}</div>

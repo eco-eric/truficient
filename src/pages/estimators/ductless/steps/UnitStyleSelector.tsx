@@ -3,7 +3,7 @@ import { CTAButton } from "../components/CTAButton";
 import { SelectableCard } from "../components/SelectableCard";
 import { useQuote } from "../context/QuoteContext";
 import { usePricing, formatMoney, getPriceRange } from "../hooks/usePricing";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Loader2, CheckCircle, ImageIcon } from "lucide-react";
 
 export const UnitStyleSelector = () => {
   const { state, setUnitTypeId, nextStep, prevStep } = useQuote();
@@ -49,38 +49,55 @@ export const UnitStyleSelector = () => {
                   onClick={() => handleSelect(unit.id)}
                   className="w-full"
                 >
-                  <div className="w-full">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-foreground text-lg">{unit.display_name}</h3>
-                        <p className="text-sm text-muted-foreground">{unit.description}</p>
+                  <div className="flex gap-4 w-full">
+                    {/* Unit Image */}
+                    {unit.image_url ? (
+                      <img
+                        src={unit.image_url}
+                        alt={unit.display_name}
+                        className="w-20 h-20 md:w-24 md:h-24 object-cover rounded-lg flex-shrink-0"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 md:w-24 md:h-24 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                        <ImageIcon className="h-8 w-8 text-muted-foreground" />
                       </div>
-                      <div className="text-right ml-4">
-                        <div className="text-lg font-bold text-[#1e3a5f]">
-                          {formatMoney(priceRange.low)}
-                          {priceRange.high !== priceRange.low && (
-                            <span className="text-sm font-normal text-muted-foreground">
-                              {" "}– {formatMoney(priceRange.high)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatMoney(unit.base_price)}/zone × {zoneCount}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Benefits */}
-                    {benefits.length > 0 && (
-                      <ul className="space-y-1 mt-3">
-                        {benefits.slice(0, 4).map((b, i) => (
-                          <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <CheckCircle className="h-4 w-4 text-[#a5a983]" />
-                            {b}
-                          </li>
-                        ))}
-                      </ul>
                     )}
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-foreground text-lg">{unit.display_name}</h3>
+                          <p className="text-sm text-muted-foreground line-clamp-2">{unit.description}</p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-lg font-bold text-[#1e3a5f]">
+                            {formatMoney(priceRange.low)}
+                            {priceRange.high !== priceRange.low && (
+                              <span className="text-sm font-normal text-muted-foreground">
+                                {" "}– {formatMoney(priceRange.high)}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {formatMoney(unit.base_price)}/zone × {zoneCount}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Benefits */}
+                      {benefits.length > 0 && (
+                        <ul className="space-y-1">
+                          {benefits.slice(0, 3).map((b, i) => (
+                            <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <CheckCircle className="h-4 w-4 text-[#a5a983] flex-shrink-0" />
+                              <span className="line-clamp-1">{b}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   </div>
                 </SelectableCard>
               );
