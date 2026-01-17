@@ -30,13 +30,16 @@ export interface DocumentationResult {
   source_url: string | null;
 }
 
+export type InputMethod = 'scan' | 'upload' | 'manual';
+
 export interface ScannerState {
-  step: 'zip' | 'examples' | 'scan' | 'processing' | 'results';
+  step: 'zip' | 'examples' | 'input-method' | 'scan' | 'upload' | 'manual' | 'processing' | 'results';
   zipCode: string;
   email: string;
   modelNumber: string;
   serialNumber: string;
   imageBase64: string | null;
+  inputMethod: InputMethod | null;
   isDfw: boolean;
   isProcessing: boolean;
   result: ScanResult | null;
@@ -49,6 +52,7 @@ export type ScannerAction =
   | { type: 'SET_MODEL_NUMBER'; payload: string }
   | { type: 'SET_SERIAL_NUMBER'; payload: string }
   | { type: 'SET_IMAGE'; payload: string | null }
+  | { type: 'SET_INPUT_METHOD'; payload: InputMethod }
   | { type: 'SET_IS_DFW'; payload: boolean }
   | { type: 'GO_TO_STEP'; payload: ScannerState['step'] }
   | { type: 'START_PROCESSING' }
