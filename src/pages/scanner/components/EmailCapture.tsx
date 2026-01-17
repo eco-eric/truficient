@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Mail, Loader2, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { trackEmailCaptured } from '@/utils/conversionTracking';
 
 export function EmailCapture() {
   const { state, dispatch } = useScanner();
@@ -97,6 +98,9 @@ export function EmailCapture() {
         // Don't block navigation if GHL sync fails - just log it
         console.error('GHL sync failed:', ghlError);
       }
+      
+      // Track email capture conversion
+      trackEmailCaptured(scanIds.length, state.isDfw || false);
       
       // Navigate to the report page
       navigate(reportUrl.replace(window.location.origin, ''));

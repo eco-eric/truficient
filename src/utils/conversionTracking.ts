@@ -102,3 +102,96 @@ export const trackJobApplicationSubmission = (position: string) => {
     content_category: position,
   });
 };
+
+/**
+ * Track equipment scanner page view
+ */
+export const trackScannerPageView = () => {
+  if (typeof window.gtag === 'function') {
+    window.gtag('event', 'page_view', {
+      page_title: 'Equipment Scanner',
+      page_location: window.location.href,
+      event_category: 'scanner',
+    });
+  }
+};
+
+/**
+ * Track equipment scan started (zip code entered)
+ */
+export const trackScanStarted = (zipCode: string, isDFW: boolean) => {
+  if (typeof window.gtag === 'function') {
+    window.gtag('event', 'scan_started', {
+      event_category: 'scanner',
+      event_label: isDFW ? 'DFW Area' : 'Outside DFW',
+      zip_code: zipCode,
+    });
+  }
+  if (typeof window.fbq === 'function') {
+    window.fbq('trackCustom', 'ScanStarted', { zip_code: zipCode, is_dfw: isDFW });
+  }
+};
+
+/**
+ * Track equipment scan completed
+ */
+export const trackScanCompleted = (brand: string | null, equipmentType: string | null) => {
+  if (typeof window.gtag === 'function') {
+    window.gtag('event', 'scan_completed', {
+      event_category: 'scanner',
+      event_label: brand || 'Unknown',
+      equipment_type: equipmentType || 'Unknown',
+    });
+  }
+  if (typeof window.fbq === 'function') {
+    window.fbq('trackCustom', 'ScanCompleted', { brand, equipment_type: equipmentType });
+  }
+};
+
+/**
+ * Track email capture conversion (main conversion event)
+ */
+export const trackEmailCaptured = (scanCount: number, isDFW: boolean) => {
+  trackConversion('Lead', {
+    content_name: 'Equipment Scanner Email Capture',
+    content_category: 'Equipment Scanner',
+    value: scanCount,
+  });
+  
+  if (typeof window.gtag === 'function') {
+    window.gtag('event', 'email_captured', {
+      event_category: 'scanner',
+      event_label: isDFW ? 'DFW Lead' : 'Non-DFW Lead',
+      scan_count: scanCount,
+    });
+  }
+};
+
+/**
+ * Track equipment report page view
+ */
+export const trackReportPageView = (scanCount: number) => {
+  if (typeof window.gtag === 'function') {
+    window.gtag('event', 'report_page_view', {
+      event_category: 'scanner',
+      event_label: 'Equipment Report Viewed',
+      scan_count: scanCount,
+    });
+  }
+};
+
+/**
+ * Track PDF download from report page
+ */
+export const trackPDFDownload = (scanCount: number) => {
+  if (typeof window.gtag === 'function') {
+    window.gtag('event', 'pdf_download', {
+      event_category: 'scanner',
+      event_label: 'Equipment Report PDF',
+      scan_count: scanCount,
+    });
+  }
+  if (typeof window.fbq === 'function') {
+    window.fbq('trackCustom', 'PDFDownload', { scan_count: scanCount });
+  }
+};

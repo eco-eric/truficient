@@ -7,6 +7,7 @@ import { ArrowLeft, Search, Loader2 } from 'lucide-react';
 import { useScanner } from '../context/ScannerContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { trackScanCompleted } from '@/utils/conversionTracking';
 
 export function ManualEntry() {
   const { state, dispatch } = useScanner();
@@ -63,6 +64,9 @@ export function ManualEntry() {
         },
       });
 
+      // Track scan completion
+      trackScanCompleted(data.specs?.brand, data.specs?.equipment_type);
+      
       toast.success('Equipment decoded successfully!');
     } catch (err) {
       console.error('Decode error:', err);

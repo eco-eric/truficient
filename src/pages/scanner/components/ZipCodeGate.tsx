@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { MapPin, ArrowRight } from 'lucide-react';
 import { useScanner } from '../context/ScannerContext';
 import { isDfwZipCode } from '../types';
+import { trackScanStarted } from '@/utils/conversionTracking';
 
 export function ZipCodeGate() {
   const { state, dispatch } = useScanner();
@@ -21,6 +22,9 @@ export function ZipCodeGate() {
       return;
     }
 
+    const isDfw = isDfwZipCode(cleanZip);
+    trackScanStarted(cleanZip, isDfw);
+    
     dispatch({ type: 'SET_ZIP_CODE', payload: cleanZip });
     dispatch({ type: 'GO_TO_STEP', payload: 'examples' });
   };

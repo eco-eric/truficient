@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Upload, X, Check, ArrowLeft, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { trackScanCompleted } from '@/utils/conversionTracking';
 
 export function ImageUpload() {
   const { state, dispatch } = useScanner();
@@ -71,6 +72,9 @@ export function ImageUpload() {
             raw_ai_response: data.raw_ai_response,
           },
         });
+        
+        // Track scan completion
+        trackScanCompleted(data.specs?.brand, data.specs?.equipment_type);
       } else {
         throw new Error('No specs returned from decoder');
       }
