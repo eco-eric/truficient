@@ -110,32 +110,32 @@ const Footer = () => {
           {/* Company Links */}
           <div className="text-center sm:text-left">
             <h4 className="font-bold mb-4 text-lg">COMPANY</h4>
-            <ul className="space-y-2 text-sm opacity-80">
-              <li><Link to="/about" className="hover:text-secondary transition-colors inline-block py-1 touch-target">About Us</Link></li>
-              <li><Link to="/reviews" className="hover:text-secondary transition-colors inline-block py-1 touch-target">Reviews</Link></li>
-              <li><Link to="/careers" className="hover:text-secondary transition-colors inline-block py-1 touch-target">Careers</Link></li>
-              <li><Link to="/blog" className="hover:text-secondary transition-colors inline-block py-1 touch-target">Blog</Link></li>
-              <li><Link to="/privacy-policy" className="hover:text-secondary transition-colors inline-block py-1 touch-target">Privacy Policy</Link></li>
-              <li><Link to="/terms-of-service" className="hover:text-secondary transition-colors inline-block py-1 touch-target">Terms of Service</Link></li>
+            <ul className="space-y-1 text-sm opacity-80">
+              <li><Link to="/about" className="hover:text-secondary transition-colors inline-block touch-target">About Us</Link></li>
+              <li><Link to="/reviews" className="hover:text-secondary transition-colors inline-block touch-target">Reviews</Link></li>
+              <li><Link to="/careers" className="hover:text-secondary transition-colors inline-block touch-target">Careers</Link></li>
+              <li><Link to="/blog" className="hover:text-secondary transition-colors inline-block touch-target">Blog</Link></li>
+              <li><Link to="/privacy-policy" className="hover:text-secondary transition-colors inline-block touch-target">Privacy Policy</Link></li>
+              <li><Link to="/terms-of-service" className="hover:text-secondary transition-colors inline-block touch-target">Terms of Service</Link></li>
             </ul>
           </div>
 
           {/* Services Links */}
           <div className="text-center sm:text-left">
             <h4 className="font-bold mb-4 text-lg">SERVICES</h4>
-            <ul className="space-y-2 text-sm opacity-80">
-              <li><Link to="/services/residential" className="hover:text-secondary transition-colors inline-block py-1 touch-target">Residential Services</Link></li>
-              <li><Link to="/services/commercial" className="hover:text-secondary transition-colors inline-block py-1 touch-target">Commercial Services</Link></li>
-              <li><Link to="/services/residential#cooling" className="hover:text-secondary transition-colors inline-block py-1 touch-target">AC Installation</Link></li>
-              <li><Link to="/services/residential#cooling" className="hover:text-secondary transition-colors inline-block py-1 touch-target">AC Repair</Link></li>
-              <li><Link to="/services/ductless" className="hover:text-secondary transition-colors inline-block py-1 touch-target">Ductless Systems</Link></li>
+            <ul className="space-y-1 text-sm opacity-80">
+              <li><Link to="/services/residential" className="hover:text-secondary transition-colors inline-block touch-target">Residential Services</Link></li>
+              <li><Link to="/services/commercial" className="hover:text-secondary transition-colors inline-block touch-target">Commercial Services</Link></li>
+              <li><Link to="/services/residential#cooling" className="hover:text-secondary transition-colors inline-block touch-target">AC Installation</Link></li>
+              <li><Link to="/services/residential#cooling" className="hover:text-secondary transition-colors inline-block touch-target">AC Repair</Link></li>
+              <li><Link to="/services/ductless" className="hover:text-secondary transition-colors inline-block touch-target">Ductless Systems</Link></li>
             </ul>
           </div>
 
           {/* Contact Info */}
           <div className="text-center sm:text-left">
             <h4 className="font-bold mb-4 text-lg">CONTACT</h4>
-            <ul className="space-y-3 text-sm opacity-80">
+            <ul className="space-y-2 text-sm opacity-80">
               <li className="flex items-start gap-2 justify-center sm:justify-start">
                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span>808 Business Parkway<br />Richardson, TX 75081</span>
@@ -143,7 +143,7 @@ const Footer = () => {
               <li>
                 <a 
                   href="tel:214-238-4349" 
-                  className="flex items-center gap-2 justify-center sm:justify-start hover:text-secondary transition-colors py-1 touch-target"
+                  className="flex items-center gap-2 justify-center sm:justify-start hover:text-secondary transition-colors touch-target"
                 >
                   <Phone className="w-4 h-4 flex-shrink-0" />
                   <span>214-238-4349</span>
@@ -152,7 +152,7 @@ const Footer = () => {
               <li>
                 <a 
                   href="mailto:info@truficient.com" 
-                  className="flex items-center gap-2 justify-center sm:justify-start hover:text-secondary transition-colors py-1 touch-target"
+                  className="flex items-center gap-2 justify-center sm:justify-start hover:text-secondary transition-colors touch-target"
                 >
                   <Mail className="w-4 h-4 flex-shrink-0" />
                   <span>info@truficient.com</span>
@@ -167,7 +167,7 @@ const Footer = () => {
       <div className="border-t border-primary-foreground/20">
         <div className="container mx-auto px-4 py-4">
           <p className="text-center text-xs sm:text-sm opacity-60">
-            © {new Date().getFullYear()} Truficient Energy Solutions. All rights reserved. | Licensed & Insured HVAC Contractor | {' '}
+            © {new Date().getFullYear()} Truficient Energy Solutions. All rights reserved. | TACLA: TACLB77247C | Licensed & Insured | {' '}
             <Link to="/privacy-policy" className="hover:text-secondary transition-colors">Privacy</Link> | {' '}
             <Link to="/terms-of-service" className="hover:text-secondary transition-colors">Terms</Link>
           </p>
