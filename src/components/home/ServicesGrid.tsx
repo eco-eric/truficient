@@ -3,12 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { useButtonTracking } from '@/hooks/useButtonTracking';
+import heatPumpImage from '@/assets/heat-pump-installation.png';
 
 const services = [
   {
     title: 'Heat Pump Installation',
     description: 'Keep your energy bill low in the winter by having Truficient Service install a high-efficiency heat pump system.',
-    image: 'https://images.unsplash.com/photo-1513467535987-fd81bc7d62f8?w=400&h=300&fit=crop',
+    image: heatPumpImage,
     link: '/residential-services#heating-installation',
   },
   {
