@@ -56,7 +56,7 @@ function roundToStandardBtu(rawBtu: number): number {
 /**
  * Calculate recommended BTU for a garage using additive tonnage approach
  */
-function calculateGarageBtu(size: RoomSize, garageConfig?: GarageConfig): number {
+function calculateGarageBtu(size: RoomSize, sunExposure: SunExposure, garageConfig?: GarageConfig): number {
   let tons = GARAGE_SIZE_TONS[size];
   
   if (garageConfig) {
@@ -70,8 +70,11 @@ function calculateGarageBtu(size: RoomSize, garageConfig?: GarageConfig): number
     tons += GARAGE_ADDON_TONS.atticAbove;
   }
   
-  // Convert tons to BTU and round to standard size
-  const rawBtu = tons * 12000;
+  // Apply sun exposure multiplier
+  const sunMultiplier = SUN_EXPOSURE_MULTIPLIERS[sunExposure];
+  
+  // Convert tons to BTU, apply sun adjustment, and round to standard size
+  const rawBtu = tons * 12000 * sunMultiplier;
   return roundToStandardBtu(rawBtu);
 }
 
@@ -85,9 +88,9 @@ export function calculateRoomBtu(
   roomType?: RoomType,
   garageConfig?: GarageConfig
 ): number {
-  // For garages, use additive tonnage approach
+  // For garages, use additive tonnage approach with sun exposure
   if (roomType === "garage") {
-    return calculateGarageBtu(size, garageConfig);
+    return calculateGarageBtu(size, sunExposure, garageConfig);
   }
   
   // Get base square footage for room size
@@ -112,6 +115,7 @@ export function calculateRoomBtu(
 export function getGarageBtuBreakdown(room: RoomConfig) {
   const baseTons = GARAGE_SIZE_TONS[room.size];
   const config = room.garageConfig;
+  const sunMultiplier = SUN_EXPOSURE_MULTIPLIERS[room.sunExposure];
   
   const insulationAddTons = config && !config.isInsulated ? GARAGE_ADDON_TONS.notInsulated : 0;
   const attachmentAddTons = config?.isStandalone ? GARAGE_ADDON_TONS.standalone : 0;
@@ -119,6 +123,7 @@ export function getGarageBtuBreakdown(room: RoomConfig) {
   const tempAddTons = config?.wantsComfortTemp ? GARAGE_ADDON_TONS.comfortTemp : 0;
   
   const totalTons = baseTons + insulationAddTons + attachmentAddTons + aboveAddTons + tempAddTons;
+  const sunAdjustmentPercent = Math.round((sunMultiplier - 1) * 100);
   
   return {
     baseTons,
@@ -127,7 +132,9 @@ export function getGarageBtuBreakdown(room: RoomConfig) {
     aboveAddTons,
     tempAddTons,
     totalTons,
-    recommendedBtu: roundToStandardBtu(totalTons * 12000),
+    sunAdjustmentPercent,
+    sunMultiplier,
+    recommendedBtu: roundToStandardBtu(totalTons * 12000 * sunMultiplier),
     isGarage: true,
   };
 }
