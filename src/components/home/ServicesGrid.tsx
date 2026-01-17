@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { useButtonTracking } from '@/hooks/useButtonTracking';
 import heatPumpImage from '@/assets/heat-pump-installation.png';
+import acRepairImage from '@/assets/ac-repair.jpg';
 
 const services = [
   {
@@ -15,7 +16,7 @@ const services = [
   {
     title: 'AC Repair',
     description: 'AC running harder than it should be? Lower your utility costs and avoid further costly repairs by scheduling a service call with Truficient today.',
-    image: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400&h=300&fit=crop',
+    image: acRepairImage,
     link: '/residential-services#ac-repair',
   },
   {
@@ -99,7 +100,7 @@ const ServicesGrid = () => {
                   <img
                     src={service.image}
                     alt={service.title}
-                    className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-56 object-cover object-center group-hover:scale-110 transition-transform duration-500"
                   />
                 </div>
                 <CardContent className="p-6">
