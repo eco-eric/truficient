@@ -293,6 +293,15 @@ const Header = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link 
+                      to="/gallery" 
+                      className="cursor-pointer"
+                      onClick={() => handleTrackClick('Gallery', 'Header - Main Nav', '/gallery')}
+                    >
+                      Gallery
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link 
                       to="/blog" 
                       className="cursor-pointer"
                       onClick={() => handleTrackClick('Blog', 'Header - Main Nav', '/blog')}
