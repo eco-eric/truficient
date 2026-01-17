@@ -8,6 +8,7 @@ import { Download, Camera, Phone, Mail, MapPin, User, Calendar, Gauge, Thermomet
 import { generateEquipmentReportPDF } from '@/utils/generateEquipmentReportPDF';
 import type { AccumulatedScan } from './types';
 import truficientLogo from '@/assets/truficient-logo.png';
+import { trackReportPageView, trackPDFDownload } from '@/utils/conversionTracking';
 
 interface ScanData {
   id: string;
@@ -61,6 +62,8 @@ export default function EquipmentReport() {
           setError('No equipment scans found');
         } else {
           setScans(data);
+          // Track report page view
+          trackReportPageView(data.length);
         }
       } catch (err) {
         console.error('Failed to fetch scans:', err);
@@ -101,6 +104,9 @@ export default function EquipmentReport() {
       }
     }));
 
+    // Track PDF download
+    trackPDFDownload(scans.length);
+    
     generateEquipmentReportPDF(formattedScans, customerInfo);
   };
 
