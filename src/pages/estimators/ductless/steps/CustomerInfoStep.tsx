@@ -66,13 +66,8 @@ export const CustomerInfoStep = () => {
     }
   };
 
-  const isFormValid =
-    state.customerInfo.name.trim().length > 0 &&
-    isValidEmail(state.customerInfo.email) &&
-    state.customerInfo.phone.replace(/\D/g, "").length >= 10 &&
-    state.customerInfo.address.trim().length > 0 &&
-    (isAddressValidated || state.customerInfo.address.length > 5) &&
-    (!addressError || continueAnyway);
+  // All fields optional for testing
+  const isFormValid = !addressError || continueAnyway;
 
   const handleContinue = () => {
     if (isFormValid) {
@@ -108,7 +103,7 @@ export const CustomerInfoStep = () => {
           <div className="grid gap-2">
             <Label htmlFor="name" className="flex items-center gap-2">
               <User className="h-4 w-4 text-muted-foreground" />
-              Full Name <span className="text-destructive">*</span>
+              Full Name
             </Label>
             <Input
               id="name"
@@ -123,7 +118,7 @@ export const CustomerInfoStep = () => {
           <div className="grid gap-2">
             <Label htmlFor="email" className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-muted-foreground" />
-              Email <span className="text-destructive">*</span>
+              Email
             </Label>
             <Input
               id="email"
@@ -132,22 +127,14 @@ export const CustomerInfoStep = () => {
               onChange={(e) => setCustomerInfo({ email: e.target.value })}
               placeholder="john@example.com"
               autoComplete="email"
-              className={
-                state.customerInfo.email && !isValidEmail(state.customerInfo.email)
-                  ? "border-destructive focus-visible:ring-destructive"
-                  : ""
-              }
             />
-            {state.customerInfo.email && !isValidEmail(state.customerInfo.email) && (
-              <p className="text-xs text-destructive">Please enter a valid email address</p>
-            )}
           </div>
 
           {/* Phone */}
           <div className="grid gap-2">
             <Label htmlFor="phone" className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-muted-foreground" />
-              Phone <span className="text-destructive">*</span>
+              Phone
             </Label>
             <Input
               id="phone"
@@ -163,7 +150,7 @@ export const CustomerInfoStep = () => {
           <div className="grid gap-2">
             <Label htmlFor="address" className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
-              Installation Address <span className="text-destructive">*</span>
+              Installation Address
             </Label>
             <AddressAutocomplete
               value={state.customerInfo.address}
