@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Users } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 
 type LaborRateType = 'hourly' | 'daily' | 'flat';
@@ -186,6 +186,18 @@ const LaborRates = () => {
     }
   };
 
+  const handleClone = (rate: LaborRate) => {
+    setEditingRate(null);
+    setFormData({
+      name: `${rate.name} (Copy)`,
+      rate_type: rate.rate_type,
+      rate: rate.rate.toString(),
+      description: rate.description || '',
+      is_active: rate.is_active,
+    });
+    setIsDialogOpen(true);
+  };
+
   const getRateSuffix = (type: LaborRateType) => {
     return RATE_TYPES.find(t => t.value === type)?.suffix || '';
   };
@@ -273,6 +285,14 @@ const LaborRates = () => {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleClone(rate)}
+                                  title="Duplicate"
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="icon"
