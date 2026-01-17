@@ -24,6 +24,7 @@ import {
 import { Loader2, Search, X, Eye, Inbox } from "lucide-react";
 import { format } from "date-fns";
 import { SubmissionDetailSheet } from "@/components/admin/submissions/SubmissionDetailSheet";
+import { ExpandableEquipmentRow } from "@/components/admin/submissions/ExpandableEquipmentRow";
 
 export type SubmissionSource = "contact" | "landing_page" | "ductless" | "scanner";
 
@@ -485,61 +486,65 @@ const UnifiedSubmissions = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredSubmissions.map((submission) => (
-                    <TableRow
-                      key={`${submission.source}-${submission.id}`}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => setSelectedSubmission(submission)}
-                    >
-                      <TableCell>
-                        <Badge className={sourceColors[submission.source]} variant="secondary">
-                          {sourceLabels[submission.source]}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
+                    submission.source === "scanner" ? (
+                      <ExpandableEquipmentRow
+                        key={`${submission.source}-${submission.id}`}
+                        submission={submission}
+                        sourceColors={sourceColors}
+                        sourceLabels={sourceLabels}
+                        onStatusChange={handleStatusChange}
+                        onViewDetails={setSelectedSubmission}
+                      />
+                    ) : (
+                      <TableRow
+                        key={`${submission.source}-${submission.id}`}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => setSelectedSubmission(submission)}
+                      >
+                        <TableCell>
+                          <Badge className={sourceColors[submission.source]} variant="secondary">
+                            {sourceLabels[submission.source]}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">
                           {submission.customerName}
-                          {submission.source === "scanner" && (submission.metadata.equipmentCount as number) > 1 && (
-                            <Badge variant="outline" className="text-xs">
-                              {submission.metadata.equipmentCount as number} units
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell text-muted-foreground">
-                        {submission.customerEmail}
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={submission.status}
-                          onValueChange={(value) => {
-                            handleStatusChange(submission, value);
-                          }}
-                        >
-                          <SelectTrigger
-                            className="w-[120px] h-8"
-                            onClick={(e) => e.stopPropagation()}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-muted-foreground">
+                          {submission.customerEmail}
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={submission.status}
+                            onValueChange={(value) => {
+                              handleStatusChange(submission, value);
+                            }}
                           >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="new">New</SelectItem>
-                            <SelectItem value="contacted">Contacted</SelectItem>
-                            <SelectItem value="reviewed">Reviewed</SelectItem>
-                            <SelectItem value="scheduled">Scheduled</SelectItem>
-                            <SelectItem value="converted">Converted</SelectItem>
-                            <SelectItem value="closed">Closed</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground whitespace-nowrap">
-                        {format(new Date(submission.createdAt), "MMM d, yyyy")}
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                            <SelectTrigger
+                              className="w-[120px] h-8"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="new">New</SelectItem>
+                              <SelectItem value="contacted">Contacted</SelectItem>
+                              <SelectItem value="reviewed">Reviewed</SelectItem>
+                              <SelectItem value="scheduled">Scheduled</SelectItem>
+                              <SelectItem value="converted">Converted</SelectItem>
+                              <SelectItem value="closed">Closed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground whitespace-nowrap">
+                          {format(new Date(submission.createdAt), "MMM d, yyyy")}
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )
                   ))}
                 </TableBody>
               </Table>
