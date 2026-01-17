@@ -57,6 +57,26 @@ export function EmailCapture() {
     setIsSubmitting(true);
 
     try {
+      // Get equipment data from the first scan for GHL
+      const primaryScan = state.result || state.results[0];
+      const currentYear = new Date().getFullYear();
+      const equipmentAge = primaryScan?.specs?.manufactured_year 
+        ? currentYear - primaryScan.specs.manufactured_year 
+        : undefined;
+
+      // Build tags based on equipment data
+      const tags = ['equipment-scanner', marketingOptIn ? 'marketing-opted-in' : 'marketing-opted-out'];
+      if (state.isDfw) {
+        tags.push('dfw-lead');
+      }
+      if (equipmentAge !== undefined) {
+        if (equipmentAge >= 20) {
+          tags.push('hot-lead');
+        } else if (equipmentAge >= 12) {
+          tags.push('warm-lead');
+        }
+      }
+
       // Update all scan records with the email and contact info
       const { error } = await supabase
         .from('equipment_scans')
@@ -65,7 +85,8 @@ export function EmailCapture() {
           customer_name: name || null,
           customer_phone: phone || null,
           customer_address: address || null,
-          marketing_opt_in: marketingOptIn
+          marketing_opt_in: marketingOptIn,
+          ghl_sync_status: 'pending'
         })
         .in('id', scanIds);
 
@@ -82,22 +103,49 @@ export function EmailCapture() {
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
       
+      let ghlContactId: string | null = null;
+      let ghlSyncStatus = 'failed';
+
       try {
-        await supabase.functions.invoke('sync-ghl-contact', {
+        const ghlResponse = await supabase.functions.invoke('sync-ghl-contact', {
           body: {
             firstName,
             lastName,
             email,
             phone: phone || undefined,
-            tags: ['equipment-scanner', marketingOptIn ? 'marketing-opted-in' : 'marketing-opted-out'],
+            tags,
             source: 'Equipment Scanner',
             equipmentReportUrl: reportUrl,
+            zipCode: state.zipCode,
+            isDfw: state.isDfw,
+            equipment: primaryScan?.specs ? {
+              brand: primaryScan.specs.brand,
+              age: equipmentAge,
+              tonnage: primaryScan.specs.tonnage,
+              refrigerant: primaryScan.specs.refrigerant,
+              seerRating: primaryScan.specs.seer_rating,
+              equipmentType: primaryScan.specs.equipment_type,
+            } : undefined,
           }
         });
+
+        if (ghlResponse.data?.success && ghlResponse.data?.contactId) {
+          ghlContactId = ghlResponse.data.contactId;
+          ghlSyncStatus = 'synced';
+        }
       } catch (ghlError) {
         // Don't block navigation if GHL sync fails - just log it
         console.error('GHL sync failed:', ghlError);
       }
+
+      // Update scan records with GHL sync status
+      await supabase
+        .from('equipment_scans')
+        .update({ 
+          ghl_contact_id: ghlContactId,
+          ghl_sync_status: ghlSyncStatus
+        })
+        .in('id', scanIds);
       
       // Track email capture conversion
       trackEmailCaptured(scanIds.length, state.isDfw || false);

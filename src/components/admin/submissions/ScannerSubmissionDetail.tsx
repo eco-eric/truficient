@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Thermometer, Calendar, Wrench, CheckCircle, XCircle } from "lucide-react";
+import { MapPin, Thermometer, Calendar, Wrench, CheckCircle, XCircle, ExternalLink } from "lucide-react";
 
 interface ScannerSubmissionDetailProps {
   metadata: Record<string, unknown>;
@@ -9,6 +9,26 @@ export const ScannerSubmissionDetail = ({ metadata }: ScannerSubmissionDetailPro
   const currentYear = new Date().getFullYear();
   const manufacturedYear = metadata.manufacturedYear as number | null;
   const equipmentAge = manufacturedYear ? currentYear - manufacturedYear : null;
+
+  const ghlSyncStatus = metadata.ghlSyncStatus as string | undefined;
+  const ghlContactId = metadata.ghlContactId as string | undefined;
+
+  const getSyncStatusBadge = () => {
+    switch (ghlSyncStatus) {
+      case 'synced':
+        return <Badge className="bg-green-100 text-green-800">Synced</Badge>;
+      case 'pending':
+        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+      case 'failed':
+        return <Badge className="bg-red-100 text-red-800">Failed</Badge>;
+      case 'unknown':
+        return <Badge variant="secondary">Unknown</Badge>;
+      case 'not_applicable':
+        return <Badge variant="outline">N/A</Badge>;
+      default:
+        return <Badge variant="outline">{ghlSyncStatus || 'N/A'}</Badge>;
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -125,6 +145,26 @@ export const ScannerSubmissionDetail = ({ metadata }: ScannerSubmissionDetailPro
           </div>
         </div>
       )}
+
+      {/* GHL Sync Status */}
+      <div>
+        <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+          <ExternalLink className="h-4 w-4" />
+          GHL Integration
+        </h4>
+        <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">Sync Status:</span>
+            {getSyncStatusBadge()}
+          </div>
+          {ghlContactId && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Contact ID:</span>
+              <span className="font-mono text-xs">{ghlContactId}</span>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Marketing Opt-In */}
       <div className="flex items-center gap-2 text-sm">
