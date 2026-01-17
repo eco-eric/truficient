@@ -12,6 +12,7 @@ export interface EquipmentSpecs {
   equipment_type: string | null;
   fan_motor_info: string | null;
   compressor_info: string | null;
+  factory_charge: string | null;
 }
 
 export interface ScanResult {

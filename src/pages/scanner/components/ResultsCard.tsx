@@ -16,6 +16,7 @@ import {
   Droplets,
   LayoutGrid,
   GitBranch,
+  Beaker,
 } from 'lucide-react';
 import { useScanner } from '../context/ScannerContext';
 import { Button } from '@/components/ui/button';
@@ -136,6 +137,11 @@ export function ResultsCard() {
           icon={<Factory className="w-5 h-5" />}
           label="Compressor"
           value={specs.compressor_info}
+        />
+        <SpecRow
+          icon={<Beaker className="w-5 h-5" />}
+          label="Factory Charge"
+          value={specs.factory_charge}
         />
       </div>
 

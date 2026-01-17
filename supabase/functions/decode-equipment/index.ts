@@ -141,14 +141,15 @@ Please analyze this equipment and provide the following information. If you cann
 Return ONLY a valid JSON object with these fields:
 {
   "brand": "The manufacturer name (Carrier, Trane, Lennox, Goodman, Rheem, Mitsubishi, Daikin, York, Amana, Bryant, etc.)",
-  "equipment_type": "The type of equipment (Central AC, Heat Pump, Gas Furnace, Air Handler, Package Unit, Mini-Split, etc.)",
+  "equipment_type": "The type of equipment (Air Conditioner, Heat Pump, Furnace, Air Handler, Evaporator Coil, Window Unit, Branch Box, Package Unit, Mini-Split, Condenser, etc.)",
   "manufactured_year": "The year of manufacture as a number (decode from serial number patterns)",
   "tonnage": "The system capacity (e.g., '2 Ton', '3 Ton', '4 Ton')",
   "refrigerant": "The refrigerant type (R-22, R-410A, R-32, R-454B, etc.)",
   "seer_rating": "The SEER rating as a number if decodable from model number",
   "breaker_size": "Recommended circuit breaker size in amps (e.g., '20', '30', '40')",
   "fan_motor_info": "Fan motor details if available (e.g., 'Variable Speed', 'Single Stage', 'ECM')",
-  "compressor_info": "Compressor details if available (e.g., 'Single Stage', 'Two Stage', 'Variable Speed')"
+  "compressor_info": "Compressor details if available (e.g., 'Single Stage', 'Two Stage', 'Variable Speed')",
+  "factory_charge": "Factory refrigerant charge in ounces or pounds if decodable (e.g., '106 oz', '8 lbs 10 oz')"
 }
 
 IMPORTANT: 
@@ -158,6 +159,7 @@ IMPORTANT:
 - For Lennox: First 2 digits often indicate year
 - For Goodman/Amana: First 4 digits are year/month
 - For Rheem: Look at first 4 characters for week/year
+- Factory charge is typically encoded in model numbers or found on data plates
 - Return ONLY the JSON object, no additional text`;
 
     // Call the Lovable AI Gateway for decoding
@@ -190,6 +192,7 @@ IMPORTANT:
                   breaker_size: { type: 'string', description: 'Recommended breaker size in amps' },
                   fan_motor_info: { type: 'string', description: 'Fan motor details' },
                   compressor_info: { type: 'string', description: 'Compressor details' },
+                  factory_charge: { type: 'string', description: 'Factory refrigerant charge' },
                 },
                 required: ['brand'],
               },
@@ -276,6 +279,7 @@ IMPORTANT:
       equipment_type: decodedSpecs.equipment_type || null,
       fan_motor_info: decodedSpecs.fan_motor_info || null,
       compressor_info: decodedSpecs.compressor_info || null,
+      factory_charge: decodedSpecs.factory_charge || null,
     };
 
     console.log('Final decoded specs:', specs);
