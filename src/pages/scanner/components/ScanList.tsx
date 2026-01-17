@@ -169,17 +169,6 @@ function ScanItem({ scan, onRemove }: { scan: AccumulatedScan; onRemove: () => v
           )}
         </div>
 
-        {/* View Full Equipment Page Link */}
-        {specs.brand && specs.model_number && (
-          <div className="pt-2 border-t border-border">
-            <Button asChild variant="outline" size="sm" className="w-full">
-              <Link to={`/equipment/${specs.brand.toLowerCase().replace(/\s+/g, '-')}/${specs.model_number.toLowerCase()}`}>
-                <ExternalLink className="w-4 h-4 mr-2" />
-                View Full Equipment Page
-              </Link>
-            </Button>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
