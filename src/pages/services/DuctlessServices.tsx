@@ -25,6 +25,7 @@ import Footer from '@/components/layout/Footer';
 import { usePageSEO } from '@/hooks/usePageSEO';
 import { Link } from 'react-router-dom';
 import { useButtonTracking } from '@/hooks/useButtonTracking';
+import ServiceGallery from '@/components/gallery/ServiceGallery';
 
 const idealApplications = [
   {
@@ -578,6 +579,12 @@ const DuctlessServices = () => {
           </motion.div>
         </div>
       </section>
+
+      <ServiceGallery 
+        serviceTag="ductless" 
+        title="Ductless Mini-Split Installations"
+        subtitle="Expert installations by our Mitsubishi Diamond Contractor team"
+      />
 
       <Footer />
     </div>

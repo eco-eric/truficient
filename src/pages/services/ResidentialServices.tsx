@@ -20,6 +20,7 @@ import { usePageSEO } from "@/hooks/usePageSEO";
 import { EstimateCalculator } from "@/components/calculator/EstimateCalculator";
 import { Link } from "react-router-dom";
 import { useButtonTracking } from "@/hooks/useButtonTracking";
+import ServiceGallery from "@/components/gallery/ServiceGallery";
 
 const trustBadges = [
   { icon: Shield, label: "Licensed & Insured" },
@@ -622,6 +623,12 @@ const ResidentialServices = () => {
           </div>
         </div>
       </section>
+
+      <ServiceGallery 
+        serviceTag="residential" 
+        title="Our Residential Installations"
+        subtitle="See our recent work in Dallas-Fort Worth homes"
+      />
 
       <Footer />
     </div>

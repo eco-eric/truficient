@@ -20,6 +20,7 @@ import Footer from '@/components/layout/Footer';
 import { usePageSEO } from '@/hooks/usePageSEO';
 import { Link } from 'react-router-dom';
 import { useButtonTracking } from '@/hooks/useButtonTracking';
+import ServiceGallery from '@/components/gallery/ServiceGallery';
 
 const commercialServices = [
   {
@@ -403,6 +404,12 @@ const CommercialServices = () => {
           </motion.div>
         </div>
       </section>
+
+      <ServiceGallery 
+        serviceTag="commercial" 
+        title="Commercial Installations"
+        subtitle="HVAC solutions for DFW businesses"
+      />
 
       <Footer />
     </div>
