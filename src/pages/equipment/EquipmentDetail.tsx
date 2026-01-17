@@ -23,8 +23,26 @@ import {
   ScanLine,
   Home,
   Phone,
+  Snowflake,
+  Flame,
+  Fan,
+  Droplets,
+  LayoutGrid,
+  GitBranch,
 } from 'lucide-react';
 import { usePageSEO } from '@/hooks/usePageSEO';
+
+const EQUIPMENT_TYPE_ICONS: Record<string, React.ReactNode> = {
+  'Air Conditioner': <Snowflake className="w-4 h-4" />,
+  'Heat Pump': <Thermometer className="w-4 h-4" />,
+  'Furnace': <Flame className="w-4 h-4" />,
+  'Air Handler': <Fan className="w-4 h-4" />,
+  'Evaporator Coil': <Droplets className="w-4 h-4" />,
+  'Window Unit': <LayoutGrid className="w-4 h-4" />,
+  'Branch Box': <GitBranch className="w-4 h-4" />,
+  'Condenser': <Snowflake className="w-4 h-4" />,
+  'Mini Split': <Wind className="w-4 h-4" />,
+};
 import { documentationApi, DocumentResult, getBrandSupportUrl } from '@/lib/api/documentation';
 import { useState, useEffect } from 'react';
 
@@ -190,7 +208,10 @@ export default function EquipmentDetail() {
                         {equipment.brand}
                       </Badge>
                       {equipment.equipment_type && (
-                        <Badge variant="outline">{equipment.equipment_type}</Badge>
+                        <Badge variant="outline" className="flex items-center gap-1.5">
+                          {EQUIPMENT_TYPE_ICONS[equipment.equipment_type] || <Factory className="w-4 h-4" />}
+                          {equipment.equipment_type}
+                        </Badge>
                       )}
                     </div>
                     <h1 className="text-3xl font-bold font-mono">
