@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -66,28 +66,6 @@ type DuctlessAddon = {
   updated_at: string;
 };
 
-type DuctlessSubmissionStatus = "new" | "contacted" | "scheduled" | "converted" | "closed";
-
-type DuctlessEstimateSubmission = {
-  id: string;
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string | null;
-  customer_address: string | null;
-  selected_rooms: any;
-  unit_type_id: string | null;
-  system_tier_id: string | null;
-  selected_addons: any;
-  zone_count: number;
-  subtotal: number;
-  tax_amount: number;
-  rebates: number;
-  final_total: number;
-  status: DuctlessSubmissionStatus;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-};
 
 const formatMoney = (n: number | null | undefined) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(n || 0));
@@ -106,7 +84,7 @@ const arrayToLines = (arr: unknown): string => {
 const DuctlessConfig = () => {
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<"unitTypes" | "tiers" | "addons" | "submissions">("unitTypes");
+  const [activeTab, setActiveTab] = useState<"unitTypes" | "tiers" | "addons">("unitTypes");
   const [expandedUnitIds, setExpandedUnitIds] = useState<Set<string>>(new Set());
 
   const toggleUnitExpanded = (id: string) => {
@@ -452,48 +430,6 @@ const DuctlessConfig = () => {
     onError: (e: any) => toast.error(e?.message || "Failed to delete"),
   });
 
-  // -------- Submissions --------
-  const submissionsQuery = useQuery({
-    queryKey: ["ductless_estimate_submissions"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ductless_estimate_submissions")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as DuctlessEstimateSubmission[];
-    },
-  });
-
-  const unitTypeMap = useMemo(() => {
-    const map = new Map<string, DuctlessUnitType>();
-    (unitTypesQuery.data || []).forEach((u) => map.set(u.id, u));
-    return map;
-  }, [unitTypesQuery.data]);
-
-  const tierMap = useMemo(() => {
-    const map = new Map<string, DuctlessSystemTier>();
-    (tiersQuery.data || []).forEach((t) => map.set(t.id, t));
-    return map;
-  }, [tiersQuery.data]);
-
-  const updateSubmissionMutation = useMutation({
-    mutationFn: async (payload: { id: string; status?: DuctlessSubmissionStatus; notes?: string | null }) => {
-      const { error } = await supabase
-        .from("ductless_estimate_submissions")
-        .update({
-          ...(payload.status ? { status: payload.status } : {}),
-          ...(payload.notes !== undefined ? { notes: payload.notes } : {}),
-        })
-        .eq("id", payload.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ductless_estimate_submissions"] });
-      toast.success("Submission updated");
-    },
-    onError: (e: any) => toast.error(e?.message || "Failed to update"),
-  });
 
   return (
     <AdminLayout title="Ductless Configuration">
@@ -512,7 +448,6 @@ const DuctlessConfig = () => {
             <TabsTrigger value="unitTypes">Unit Types</TabsTrigger>
             <TabsTrigger value="tiers">System Tiers</TabsTrigger>
             <TabsTrigger value="addons">Add-ons</TabsTrigger>
-            <TabsTrigger value="submissions">Submissions</TabsTrigger>
           </TabsList>
 
           {/* Unit Types */}
@@ -1011,128 +946,6 @@ const DuctlessConfig = () => {
                       <TableCell colSpan={5} className="text-sm text-muted-foreground">
                         Loading...
                       </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </TabsContent>
-
-          {/* Submissions */}
-          <TabsContent value="submissions" className="space-y-4">
-            <div className="text-sm text-muted-foreground">{submissionsQuery.data?.length || 0} submissions</div>
-
-            <div className="rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Config</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(submissionsQuery.data || []).map((s) => {
-                    const unit = s.unit_type_id ? unitTypeMap.get(s.unit_type_id) : null;
-                    const tier = s.system_tier_id ? tierMap.get(s.system_tier_id) : null;
-
-                    return (
-                      <TableRow key={s.id}>
-                        <TableCell>
-                          <div className="font-medium">{s.customer_name}</div>
-                          <div className="text-xs text-muted-foreground">{s.customer_email}</div>
-                        </TableCell>
-                        <TableCell className="w-[220px]">
-                          <Select
-                            value={s.status}
-                            onValueChange={(v) => updateSubmissionMutation.mutate({ id: s.id, status: v as DuctlessSubmissionStatus })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="new">New</SelectItem>
-                              <SelectItem value="contacted">Contacted</SelectItem>
-                              <SelectItem value="scheduled">Scheduled</SelectItem>
-                              <SelectItem value="converted">Converted</SelectItem>
-                              <SelectItem value="closed">Closed</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>{formatMoney(s.final_total)}</TableCell>
-                        <TableCell className="text-sm">
-                          <div>{s.zone_count} zone(s)</div>
-                          <div className="text-xs text-muted-foreground">
-                            {tier?.display_name || "—"} • {unit?.display_name || "—"}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" size="sm">View</Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-3xl">
-                              <DialogHeader>
-                                <DialogTitle>Submission</DialogTitle>
-                              </DialogHeader>
-
-                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <div className="rounded-md border p-3">
-                                    <div className="text-xs text-muted-foreground">Customer</div>
-                                    <div className="font-medium">{s.customer_name}</div>
-                                    <div className="text-sm text-muted-foreground">{s.customer_email}</div>
-                                    {s.customer_phone && <div className="text-sm text-muted-foreground">{s.customer_phone}</div>}
-                                    {s.customer_address && <div className="text-sm text-muted-foreground">{s.customer_address}</div>}
-                                  </div>
-
-                                  <div className="rounded-md border p-3">
-                                    <div className="text-xs text-muted-foreground">Pricing</div>
-                                    <div className="text-sm">Subtotal: {formatMoney(s.subtotal)}</div>
-                                    <div className="text-sm">Tax: {formatMoney(s.tax_amount)}</div>
-                                    <div className="text-sm">Rebates: {formatMoney(s.rebates)}</div>
-                                    <div className="text-sm font-medium">Total: {formatMoney(s.final_total)}</div>
-                                  </div>
-
-                                  <div className="rounded-md border p-3 space-y-2">
-                                    <div className="text-xs text-muted-foreground">Notes</div>
-                                    <Textarea
-                                      value={s.notes || ""}
-                                      onChange={(e) => updateSubmissionMutation.mutate({ id: s.id, notes: e.target.value })}
-                                      placeholder="Internal notes..."
-                                    />
-                                    <p className="text-xs text-muted-foreground">Notes save automatically.</p>
-                                  </div>
-                                </div>
-
-                                <div className="rounded-md border p-3">
-                                  <div className="text-xs text-muted-foreground mb-2">Estimator payload</div>
-                                  <pre className="text-xs whitespace-pre-wrap break-words max-h-[420px] overflow-auto">
-                                    {JSON.stringify(
-                                      {
-                                        selected_rooms: s.selected_rooms,
-                                        selected_addons: s.selected_addons,
-                                        unit_type: unit?.display_name || null,
-                                        system_tier: tier?.display_name || null,
-                                      },
-                                      null,
-                                      2
-                                    )}
-                                  </pre>
-                                </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-
-                  {submissionsQuery.isLoading && (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-sm text-muted-foreground">Loading...</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
