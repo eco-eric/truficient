@@ -27,13 +27,13 @@ const sizingFactors = [
 ];
 
 const tonageGuide = [
-  { sqft: "800-1,200", tons: "1.5 Ton", note: "Small homes, apartments" },
-  { sqft: "1,200-1,600", tons: "2 Ton", note: "Average starter homes" },
-  { sqft: "1,600-2,100", tons: "2.5 Ton", note: "Most common size" },
-  { sqft: "2,100-2,700", tons: "3 Ton", note: "Larger family homes" },
-  { sqft: "2,700-3,300", tons: "3.5 Ton", note: "Large homes" },
-  { sqft: "3,300-4,000", tons: "4 Ton", note: "Very large homes" },
-  { sqft: "4,000+", tons: "5+ Ton", note: "May need multiple systems" },
+  { sqft: "700-900", tons: "2 Ton", note: "Small homes, apartments" },
+  { sqft: "800-1,200", tons: "2.5 Ton", note: "Smaller 2 bedroom homes" },
+  { sqft: "1,200-1,400", tons: "3 Ton", note: "Common 2 to 3 bedroom home" },
+  { sqft: "1,600-1,800", tons: "3.5 Ton", note: "Most common size" },
+  { sqft: "1,800-2,100", tons: "4 Ton", note: "Most common size" },
+  { sqft: "2,100-2,500", tons: "5+ Ton", note: "Typical Ranch Style homes" },
+  { sqft: "2,500+", tons: "—", note: "May need multiple systems" },
 ];
 
 const SizingCalculator = () => {
@@ -189,6 +189,15 @@ const SizingCalculator = () => {
                   <p className="text-sm text-muted-foreground mt-4 flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                     These are estimates only. A proper Manual J load calculation is required for accurate sizing.
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-3">
+                    Every home is unique—there's no one-size-fits-all solution. Construction quality, 
+                    efficiency upgrades, and age all influence cooling requirements. Homes built within 
+                    the last 10 to 15 years typically require less capacity than those constructed 50 
+                    years ago due to improved building standards and insulation. Additionally, multi-story 
+                    homes or those with complex floor plans may require multiple systems for optimal comfort. 
+                    That's why we always perform a thorough assessment of your home's specific requirements 
+                    before recommending a solution.
                   </p>
                 </CardContent>
               </Card>
