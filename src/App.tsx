@@ -66,6 +66,8 @@ import BlogPost from "./pages/BlogPost";
 // Public pages
 import Gallery from "./pages/Gallery";
 import Scanner from "./pages/scanner/Scanner";
+import EquipmentLibrary from "./pages/equipment/EquipmentLibrary";
+import EquipmentDetail from "./pages/equipment/EquipmentDetail";
 
 const queryClient = new QueryClient();
 
@@ -110,6 +112,8 @@ const router = createBrowserRouter([
       { path: "/blog/:slug", element: <BlogPost /> },
       { path: "/gallery", element: <Gallery /> },
       { path: "/scanner", element: <Scanner /> },
+      { path: "/equipment", element: <EquipmentLibrary /> },
+      { path: "/equipment/:brand/:model", element: <EquipmentDetail /> },
       
       // Admin Routes
       { path: "/admin/login", element: <AdminLogin /> },

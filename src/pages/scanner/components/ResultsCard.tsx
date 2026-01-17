@@ -9,8 +9,11 @@ import {
   Gauge,
   Factory,
   Info,
+  ExternalLink,
 } from 'lucide-react';
 import { useScanner } from '../context/ScannerContext';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
 interface SpecRowProps {
   icon: React.ReactNode;
@@ -125,6 +128,18 @@ export function ResultsCard() {
           Actual installation date may differ.
         </p>
       </div>
+
+      {/* View Full Equipment Page Link */}
+      {specs.brand && specs.model_number && (
+        <div className="pt-2">
+          <Button asChild variant="outline" className="w-full">
+            <Link to={`/equipment/${specs.brand.toLowerCase().replace(/\s+/g, '-')}/${specs.model_number.toLowerCase()}`}>
+              <ExternalLink className="w-4 h-4 mr-2" />
+              View Full Equipment Page
+            </Link>
+          </Button>
+        </div>
+      )}
     </Card>
   );
 }
