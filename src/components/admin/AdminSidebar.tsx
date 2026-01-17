@@ -23,7 +23,8 @@ import {
   MessageSquare,
   AirVent,
   Images,
-  CreditCard
+  CreditCard,
+  Library
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -78,6 +79,7 @@ const navSections: NavSection[] = [
       { label: 'GHL Conversations', href: '/admin/ghl-conversations', icon: MessageSquare, adminOnly: true },
       { label: 'Landing Pages', href: '/admin/landing-pages', icon: FileInput, adminOnly: true },
       { label: 'Gallery', href: '/admin/gallery', icon: Images, adminOnly: true },
+      { label: 'Equipment Library', href: '/admin/equipment-library', icon: Library, adminOnly: true },
       { label: 'Button Clicks', href: '/admin/button-clicks', icon: MousePointer, adminOnly: true },
       { label: 'Analytics', href: '/admin/analytics', icon: BarChart3, adminOnly: true },
       { label: 'Social Media', href: '/admin/social-media', icon: Share2, adminOnly: true },

@@ -11,6 +11,7 @@ import { EmailCapture } from './components/EmailCapture';
 import { ContextualMessages } from './components/ContextualMessages';
 import { EstimatorLinks } from './components/EstimatorLinks';
 import { DFWCallToAction } from './components/DFWCallToAction';
+import { DocumentationSearch } from './components/DocumentationSearch';
 import { TrustElements } from './components/TrustElements';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -53,6 +54,7 @@ function ScannerContent() {
         return (
           <div className="space-y-6">
             <ResultsCard />
+            <DocumentationSearch />
             <EmailCapture />
             <ContextualMessages />
             <DFWCallToAction />
