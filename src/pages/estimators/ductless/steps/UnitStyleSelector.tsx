@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { StepContainer } from "../components/StepContainer";
 import { CTAButton } from "../components/CTAButton";
 import { SelectableCard } from "../components/SelectableCard";
 import { useQuote } from "../context/QuoteContext";
 import { usePricing, formatMoney, getPriceRange } from "../hooks/usePricing";
-import { Loader2, CheckCircle, ImageIcon } from "lucide-react";
+import { Loader2, CheckCircle, ImageIcon, ZoomIn } from "lucide-react";
+import { ImageLightbox } from "@/components/ui/image-lightbox";
 
 export const UnitStyleSelector = () => {
   const { state, setUnitTypeId, nextStep, prevStep } = useQuote();
+  const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
 
   const { unitTypes, tiers, isLoading } = usePricing({
     rooms: state.selectedRooms,
@@ -52,12 +55,23 @@ export const UnitStyleSelector = () => {
                   <div className="flex gap-4 w-full">
                     {/* Unit Image */}
                     {unit.image_url ? (
-                      <img
-                        src={unit.image_url}
-                        alt={unit.display_name}
-                        className="w-20 h-20 md:w-24 md:h-24 object-cover rounded-lg flex-shrink-0"
-                        loading="lazy"
-                      />
+                      <div 
+                        className="relative group cursor-zoom-in flex-shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLightboxImage({ src: unit.image_url!, alt: unit.display_name });
+                        }}
+                      >
+                        <img
+                          src={unit.image_url}
+                          alt={unit.display_name}
+                          className="w-20 h-20 md:w-24 md:h-24 object-cover rounded-lg"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                          <ZoomIn className="h-6 w-6 text-white" />
+                        </div>
+                      </div>
                     ) : (
                       <div className="w-20 h-20 md:w-24 md:h-24 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
                         <ImageIcon className="h-8 w-8 text-muted-foreground" />
@@ -115,6 +129,14 @@ export const UnitStyleSelector = () => {
           </CTAButton>
         </div>
       </div>
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        src={lightboxImage?.src || ""}
+        alt={lightboxImage?.alt || ""}
+        open={!!lightboxImage}
+        onOpenChange={(open) => !open && setLightboxImage(null)}
+      />
     </StepContainer>
   );
 };
