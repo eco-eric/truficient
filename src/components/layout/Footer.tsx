@@ -122,6 +122,9 @@ const Footer = () => {
                 );
               })}
             </div>
+            <p className="text-xs opacity-70 mt-3 text-center sm:text-left">
+              Texas HVAC License - TACLB77247C
+            </p>
           </div>
 
           {/* Company Links */}
@@ -129,34 +132,34 @@ const Footer = () => {
             <h4 className="font-bold mb-4 text-lg">COMPANY</h4>
             <ul className="space-y-1 text-sm opacity-80">
               <li>
-                <Link to="/about" className="hover:text-secondary transition-colors inline-block touch-target">
+                <Link to="/about" className="hover:text-secondary transition-colors inline-block">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link to="/reviews" className="hover:text-secondary transition-colors inline-block touch-target">
+                <Link to="/reviews" className="hover:text-secondary transition-colors inline-block">
                   Reviews
                 </Link>
               </li>
               <li>
-                <Link to="/careers" className="hover:text-secondary transition-colors inline-block touch-target">
+                <Link to="/careers" className="hover:text-secondary transition-colors inline-block">
                   Careers
                 </Link>
               </li>
               <li>
-                <Link to="/blog" className="hover:text-secondary transition-colors inline-block touch-target">
+                <Link to="/blog" className="hover:text-secondary transition-colors inline-block">
                   Blog
                 </Link>
               </li>
               <li>
-                <Link to="/privacy-policy" className="hover:text-secondary transition-colors inline-block touch-target">
+                <Link to="/privacy-policy" className="hover:text-secondary transition-colors inline-block">
                   Privacy Policy
                 </Link>
               </li>
               <li>
                 <Link
                   to="/terms-of-service"
-                  className="hover:text-secondary transition-colors inline-block touch-target"
+                  className="hover:text-secondary transition-colors inline-block"
                 >
                   Terms of Service
                 </Link>
@@ -171,7 +174,7 @@ const Footer = () => {
               <li>
                 <Link
                   to="/services/residential"
-                  className="hover:text-secondary transition-colors inline-block touch-target"
+                  className="hover:text-secondary transition-colors inline-block"
                 >
                   Residential Services
                 </Link>
@@ -179,7 +182,7 @@ const Footer = () => {
               <li>
                 <Link
                   to="/services/commercial"
-                  className="hover:text-secondary transition-colors inline-block touch-target"
+                  className="hover:text-secondary transition-colors inline-block"
                 >
                   Commercial Services
                 </Link>
@@ -187,7 +190,7 @@ const Footer = () => {
               <li>
                 <Link
                   to="/services/residential#cooling"
-                  className="hover:text-secondary transition-colors inline-block touch-target"
+                  className="hover:text-secondary transition-colors inline-block"
                 >
                   AC Installation
                 </Link>
@@ -195,7 +198,7 @@ const Footer = () => {
               <li>
                 <Link
                   to="/services/residential#cooling"
-                  className="hover:text-secondary transition-colors inline-block touch-target"
+                  className="hover:text-secondary transition-colors inline-block"
                 >
                   AC Repair
                 </Link>
@@ -203,7 +206,7 @@ const Footer = () => {
               <li>
                 <Link
                   to="/services/ductless"
-                  className="hover:text-secondary transition-colors inline-block touch-target"
+                  className="hover:text-secondary transition-colors inline-block"
                 >
                   Ductless Systems
                 </Link>
