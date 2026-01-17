@@ -104,6 +104,13 @@ export interface CustomerInfo {
   email: string;
   phone: string;
   address: string;
+  // Extended address fields from Google Places
+  formattedAddress?: string;
+  city?: string;
+  county?: string;
+  state?: string;
+  zipCode?: string;
+  placeId?: string;
 }
 
 // Pricing totals

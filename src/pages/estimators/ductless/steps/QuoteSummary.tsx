@@ -3,14 +3,12 @@ import { StepContainer } from "../components/StepContainer";
 import { CTAButton } from "../components/CTAButton";
 import { useQuote } from "../context/QuoteContext";
 import { usePricing, formatMoney } from "../hooks/usePricing";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { CheckCircle, Mail, Phone, MapPin, User, Zap, Loader2 } from "lucide-react";
+import { CheckCircle, Zap, Loader2, User, Mail, Phone, MapPin, Edit2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const QuoteSummary = () => {
-  const { state, setCustomerInfo, prevStep, nextStep } = useQuote();
+  const { state, prevStep, nextStep, goToStep } = useQuote();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Use the pricing engine
@@ -21,13 +19,8 @@ export const QuoteSummary = () => {
     selectedAddonIds: state.selectedAddonIds,
   });
 
-  const isFormValid =
-    state.customerInfo.name.trim().length > 0 &&
-    state.customerInfo.email.trim().length > 0 &&
-    state.customerInfo.phone.trim().length > 0;
-
   const handleSubmit = async () => {
-    if (!isFormValid || isSubmitting) return;
+    if (isSubmitting) return;
 
     setIsSubmitting(true);
 
@@ -37,7 +30,12 @@ export const QuoteSummary = () => {
         customer_name: state.customerInfo.name.trim(),
         customer_email: state.customerInfo.email.trim(),
         customer_phone: state.customerInfo.phone.trim() || null,
-        customer_address: state.customerInfo.address.trim() || null,
+        customer_address: state.customerInfo.formattedAddress || state.customerInfo.address.trim() || null,
+        customer_city: state.customerInfo.city || null,
+        customer_county: state.customerInfo.county || null,
+        customer_state: state.customerInfo.state || null,
+        customer_zip: state.customerInfo.zipCode || null,
+        google_place_id: state.customerInfo.placeId || null,
         zone_count: state.selectedRooms.length,
         selected_rooms: state.selectedRooms.map((room) => ({
           id: room.id,
@@ -96,7 +94,41 @@ export const QuoteSummary = () => {
     <StepContainer className="px-4 pb-28">
       <div className="max-w-lg mx-auto w-full">
         <h2 className="text-2xl font-bold text-[#1e3a5f] mb-2">Your Estimate</h2>
-        <p className="text-muted-foreground mb-6">Review your selections and provide your contact info to receive your detailed quote.</p>
+        <p className="text-muted-foreground mb-6">Review your selections and submit to receive your detailed quote.</p>
+
+        {/* Customer Info Summary */}
+        <div className="rounded-xl border p-4 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-semibold text-foreground">Your Information</h4>
+            <button
+              onClick={() => goToStep(1)}
+              className="text-sm text-[#1e3a5f] hover:underline flex items-center gap-1"
+            >
+              <Edit2 className="h-3 w-3" />
+              Edit
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <User className="h-4 w-4" />
+              <span>{state.customerInfo.name}</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Mail className="h-4 w-4" />
+              <span>{state.customerInfo.email}</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Phone className="h-4 w-4" />
+              <span>{state.customerInfo.phone}</span>
+            </div>
+            {state.customerInfo.address && (
+              <div className="flex items-start gap-2 text-muted-foreground sm:col-span-2">
+                <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span className="break-words">{state.customerInfo.formattedAddress || state.customerInfo.address}</span>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* System summary card */}
         <div className="rounded-xl bg-[#1e3a5f] text-white p-5 mb-6">
@@ -210,72 +242,12 @@ export const QuoteSummary = () => {
           )}
         </div>
 
-        {/* Lead capture form */}
-        <div className="rounded-xl border p-4 mb-8">
-          <h4 className="font-semibold text-foreground mb-4">Get Your Detailed Quote</h4>
-          <div className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name" className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                Full Name
-              </Label>
-              <Input
-                id="name"
-                value={state.customerInfo.name}
-                onChange={(e) => setCustomerInfo({ name: e.target.value })}
-                placeholder="John Smith"
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="email" className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={state.customerInfo.email}
-                onChange={(e) => setCustomerInfo({ email: e.target.value })}
-                placeholder="john@example.com"
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="phone" className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                Phone
-              </Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={state.customerInfo.phone}
-                onChange={(e) => setCustomerInfo({ phone: e.target.value })}
-                placeholder="(555) 123-4567"
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="address" className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                Installation Address (optional)
-              </Label>
-              <Input
-                id="address"
-                value={state.customerInfo.address}
-                onChange={(e) => setCustomerInfo({ address: e.target.value })}
-                placeholder="123 Main St, Dallas, TX"
-              />
-            </div>
-          </div>
-        </div>
-
         {/* Navigation */}
         <div className="flex gap-3">
           <CTAButton variant="outline" onClick={prevStep} disabled={isSubmitting} className="flex-1">
             Back
           </CTAButton>
-          <CTAButton onClick={handleSubmit} disabled={!isFormValid || isSubmitting} className="flex-1">
+          <CTAButton onClick={handleSubmit} disabled={isSubmitting} className="flex-1">
             {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
