@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { StepContainer } from "../components/StepContainer";
 import { CTAButton } from "../components/CTAButton";
 import { useQuote } from "../context/QuoteContext";
@@ -5,9 +6,12 @@ import { usePricing, formatMoney } from "../hooks/usePricing";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle, Mail, Phone, MapPin, User, Zap, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const QuoteSummary = () => {
   const { state, setCustomerInfo, prevStep, nextStep } = useQuote();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Use the pricing engine
   const { pricing, selectedUnit, selectedTier, isLoading } = usePricing({
@@ -22,9 +26,62 @@ export const QuoteSummary = () => {
     state.customerInfo.email.trim().length > 0 &&
     state.customerInfo.phone.trim().length > 0;
 
-  const handleSubmit = () => {
-    // Will be implemented in Phase 5
-    nextStep();
+  const handleSubmit = async () => {
+    if (!isFormValid || isSubmitting) return;
+
+    setIsSubmitting(true);
+
+    try {
+      // Prepare the submission data
+      const submissionData = {
+        customer_name: state.customerInfo.name.trim(),
+        customer_email: state.customerInfo.email.trim(),
+        customer_phone: state.customerInfo.phone.trim() || null,
+        customer_address: state.customerInfo.address.trim() || null,
+        zone_count: state.selectedRooms.length,
+        selected_rooms: state.selectedRooms.map((room) => ({
+          id: room.id,
+          label: room.label,
+          roomType: room.roomType,
+          size: room.size,
+          ceilingHeight: room.ceilingHeight,
+          sunExposure: room.sunExposure,
+          recommendedBtu: room.recommendedBtu,
+        })),
+        unit_type_id: state.unitTypeId,
+        system_tier_id: state.systemTierId,
+        selected_addons: pricing.addonsBreakdown.map((addon) => ({
+          id: addon.id,
+          name: addon.name,
+          price: addon.price,
+          priceType: addon.priceType,
+          total: addon.total,
+        })),
+        subtotal: pricing.subtotal,
+        tax_amount: pricing.taxAmount,
+        rebates: pricing.rebates,
+        final_total: pricing.finalTotal,
+        status: "new",
+      };
+
+      const { error } = await supabase
+        .from("ductless_estimate_submissions")
+        .insert(submissionData);
+
+      if (error) {
+        console.error("Submission error:", error);
+        toast.error("Failed to submit estimate. Please try again.");
+        return;
+      }
+
+      toast.success("Estimate submitted successfully!");
+      nextStep();
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading) {
@@ -215,11 +272,18 @@ export const QuoteSummary = () => {
 
         {/* Navigation */}
         <div className="flex gap-3">
-          <CTAButton variant="outline" onClick={prevStep} className="flex-1">
+          <CTAButton variant="outline" onClick={prevStep} disabled={isSubmitting} className="flex-1">
             Back
           </CTAButton>
-          <CTAButton onClick={handleSubmit} disabled={!isFormValid} className="flex-1">
-            Get My Quote
+          <CTAButton onClick={handleSubmit} disabled={!isFormValid || isSubmitting} className="flex-1">
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Submitting...
+              </>
+            ) : (
+              "Get My Quote"
+            )}
           </CTAButton>
         </div>
       </div>
