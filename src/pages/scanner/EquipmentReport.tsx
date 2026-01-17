@@ -543,7 +543,7 @@ export default function EquipmentReport() {
                         </Button>
                       </a>
                       <Link to="/contact" className="block">
-                        <Button variant="outline" className="w-full border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
+                        <Button variant="outline" className="w-full border-primary-foreground/30 text-navy bg-white hover:bg-primary-foreground/10">
                           Request a Quote
                         </Button>
                       </Link>
