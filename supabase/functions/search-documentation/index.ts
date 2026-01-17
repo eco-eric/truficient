@@ -103,6 +103,21 @@ Deno.serve(async (req) => {
     if (cachedDocs && cachedDocs.length > 0) {
       console.log(`Cache hit! Found ${cachedDocs.length} cached documents`);
       
+      // Update documentation_count on equipment_pages (count ALL docs for this model)
+      const { count: totalDocs } = await supabase
+        .from('equipment_documentation')
+        .select('*', { count: 'exact', head: true })
+        .ilike('model_number', model_number)
+        .eq('verified_working', true);
+
+      if (totalDocs !== null && totalDocs > 0) {
+        await supabase
+          .from('equipment_pages')
+          .update({ documentation_count: totalDocs })
+          .ilike('model_number', model_number);
+        console.log(`Updated equipment_pages documentation_count to ${totalDocs}`);
+      }
+      
       // Log the search
       const duration = Date.now() - startTime;
       await supabase.from('documentation_search_log').insert({
@@ -227,15 +242,25 @@ Deno.serve(async (req) => {
         console.error('Error caching documents:', insertError);
       } else {
         console.log(`Cached ${docsToCache.length} documents`);
-        
-        // Update documentation_count on equipment_pages
+      }
+      
+      // Count ALL docs for this model (including newly cached ones)
+      const { count: totalDocs } = await supabase
+        .from('equipment_documentation')
+        .select('*', { count: 'exact', head: true })
+        .ilike('model_number', model_number)
+        .eq('verified_working', true);
+
+      if (totalDocs !== null && totalDocs > 0) {
         const { error: updateError } = await supabase
           .from('equipment_pages')
-          .update({ documentation_count: uniqueResults.length })
+          .update({ documentation_count: totalDocs })
           .ilike('model_number', model_number);
         
         if (updateError) {
           console.error('Error updating equipment page doc count:', updateError);
+        } else {
+          console.log(`Updated equipment_pages documentation_count to ${totalDocs}`);
         }
       }
     }
