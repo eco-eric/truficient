@@ -676,6 +676,8 @@ export type Database = {
           equipment_type: string | null
           factory_charge: string | null
           fan_motor_info: string | null
+          ghl_contact_id: string | null
+          ghl_sync_status: string
           id: string
           is_dfw: boolean | null
           manufactured_year: number | null
@@ -702,6 +704,8 @@ export type Database = {
           equipment_type?: string | null
           factory_charge?: string | null
           fan_motor_info?: string | null
+          ghl_contact_id?: string | null
+          ghl_sync_status?: string
           id?: string
           is_dfw?: boolean | null
           manufactured_year?: number | null
@@ -728,6 +732,8 @@ export type Database = {
           equipment_type?: string | null
           factory_charge?: string | null
           fan_motor_info?: string | null
+          ghl_contact_id?: string | null
+          ghl_sync_status?: string
           id?: string
           is_dfw?: boolean | null
           manufactured_year?: number | null

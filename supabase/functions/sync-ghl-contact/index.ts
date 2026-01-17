@@ -5,6 +5,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface EquipmentData {
+  brand?: string;
+  age?: number;
+  tonnage?: string;
+  refrigerant?: string;
+  seerRating?: number;
+  equipmentType?: string;
+}
+
 interface ContactData {
   firstName: string;
   lastName: string;
@@ -15,6 +24,15 @@ interface ContactData {
   tags?: string[];
   source?: string;
   equipmentReportUrl?: string;
+  zipCode?: string;
+  isDfw?: boolean;
+  equipment?: EquipmentData;
+}
+
+interface GHLResponse {
+  contact?: {
+    id: string;
+  };
 }
 
 serve(async (req) => {
@@ -74,6 +92,69 @@ serve(async (req) => {
       });
     }
 
+    // Add zip code
+    if (contactData.zipCode) {
+      customFields.push({
+        key: 'zip_code',
+        field_value: contactData.zipCode,
+      });
+    }
+
+    // Add DFW flag
+    if (contactData.isDfw !== undefined) {
+      customFields.push({
+        key: 'is_dfw',
+        field_value: contactData.isDfw ? 'Yes' : 'No',
+      });
+    }
+
+    // Add equipment-specific fields
+    if (contactData.equipment) {
+      const equip = contactData.equipment;
+      
+      if (equip.brand) {
+        customFields.push({
+          key: 'equipment_brand',
+          field_value: equip.brand,
+        });
+      }
+
+      if (equip.age !== undefined && equip.age !== null) {
+        customFields.push({
+          key: 'equipment_age',
+          field_value: String(equip.age),
+        });
+      }
+
+      if (equip.tonnage) {
+        customFields.push({
+          key: 'equipment_tonnage',
+          field_value: equip.tonnage,
+        });
+      }
+
+      if (equip.refrigerant) {
+        customFields.push({
+          key: 'equipment_refrigerant',
+          field_value: equip.refrigerant,
+        });
+      }
+
+      if (equip.seerRating !== undefined && equip.seerRating !== null) {
+        customFields.push({
+          key: 'equipment_seer',
+          field_value: String(equip.seerRating),
+        });
+      }
+
+      if (equip.equipmentType) {
+        customFields.push({
+          key: 'equipment_type',
+          field_value: equip.equipmentType,
+        });
+      }
+    }
+
     if (customFields.length > 0) {
       ghlPayload.customFields = customFields;
     }
@@ -100,7 +181,7 @@ serve(async (req) => {
       throw new Error(`GHL API error: ${ghlResponse.status} - ${responseText}`);
     }
 
-    const ghlData = JSON.parse(responseText);
+    const ghlData: GHLResponse = JSON.parse(responseText);
     console.log('Contact synced successfully. GHL Contact ID:', ghlData.contact?.id);
 
     return new Response(
