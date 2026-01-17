@@ -283,6 +283,359 @@ export type Database = {
         }
         Relationships: []
       }
+      ducted_addons: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon_name: string | null
+          id: string
+          is_active: boolean
+          is_popular: boolean
+          name: string
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean
+          is_popular?: boolean
+          name: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean
+          is_popular?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ducted_efficiency_tiers: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_name: string
+          features: Json | null
+          id: string
+          is_active: boolean
+          name: string
+          seer_max: number
+          seer_min: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_name: string
+          features?: Json | null
+          id?: string
+          is_active?: boolean
+          name: string
+          seer_max: number
+          seer_min: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          features?: Json | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          seer_max?: number
+          seer_min?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ducted_equipment: {
+        Row: {
+          afue_rating: number | null
+          brand: string
+          created_at: string
+          display_order: number
+          efficiency_tier_id: string | null
+          equipment_cost: number
+          features: Json | null
+          hspf_rating: number | null
+          id: string
+          installation_labor: number
+          is_active: boolean
+          is_best_value: boolean
+          is_energy_star: boolean
+          model_number: string | null
+          seer_rating: number
+          system_type: string
+          tonnage: number
+          updated_at: string
+          warranty_years: number
+        }
+        Insert: {
+          afue_rating?: number | null
+          brand: string
+          created_at?: string
+          display_order?: number
+          efficiency_tier_id?: string | null
+          equipment_cost?: number
+          features?: Json | null
+          hspf_rating?: number | null
+          id?: string
+          installation_labor?: number
+          is_active?: boolean
+          is_best_value?: boolean
+          is_energy_star?: boolean
+          model_number?: string | null
+          seer_rating: number
+          system_type: string
+          tonnage: number
+          updated_at?: string
+          warranty_years?: number
+        }
+        Update: {
+          afue_rating?: number | null
+          brand?: string
+          created_at?: string
+          display_order?: number
+          efficiency_tier_id?: string | null
+          equipment_cost?: number
+          features?: Json | null
+          hspf_rating?: number | null
+          id?: string
+          installation_labor?: number
+          is_active?: boolean
+          is_best_value?: boolean
+          is_energy_star?: boolean
+          model_number?: string | null
+          seer_rating?: number
+          system_type?: string
+          tonnage?: number
+          updated_at?: string
+          warranty_years?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ducted_equipment_efficiency_tier_id_fkey"
+            columns: ["efficiency_tier_id"]
+            isOneToOne: false
+            referencedRelation: "ducted_efficiency_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ducted_estimate_submissions: {
+        Row: {
+          addons_cost: number | null
+          best_time_to_call: string | null
+          coverage: string
+          created_at: string
+          customer_address: string | null
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          efficiency_tier_id: string | null
+          equipment_cost: number | null
+          equipment_id: string | null
+          final_total: number | null
+          ghl_contact_id: string | null
+          heating_type: string
+          home_layout: string
+          home_type: string
+          hot_cold_spots: string | null
+          id: string
+          installation_cost: number | null
+          notes: string | null
+          recommended_tonnage: number | null
+          selected_addons: Json | null
+          square_footage: string
+          status: string
+          summer_temp: string | null
+          system_count: number
+          tax_amount: number | null
+          updated_at: string
+          wants_backup_quote: boolean | null
+          winter_temp: string | null
+        }
+        Insert: {
+          addons_cost?: number | null
+          best_time_to_call?: string | null
+          coverage: string
+          created_at?: string
+          customer_address?: string | null
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          efficiency_tier_id?: string | null
+          equipment_cost?: number | null
+          equipment_id?: string | null
+          final_total?: number | null
+          ghl_contact_id?: string | null
+          heating_type: string
+          home_layout: string
+          home_type: string
+          hot_cold_spots?: string | null
+          id?: string
+          installation_cost?: number | null
+          notes?: string | null
+          recommended_tonnage?: number | null
+          selected_addons?: Json | null
+          square_footage: string
+          status?: string
+          summer_temp?: string | null
+          system_count?: number
+          tax_amount?: number | null
+          updated_at?: string
+          wants_backup_quote?: boolean | null
+          winter_temp?: string | null
+        }
+        Update: {
+          addons_cost?: number | null
+          best_time_to_call?: string | null
+          coverage?: string
+          created_at?: string
+          customer_address?: string | null
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string
+          efficiency_tier_id?: string | null
+          equipment_cost?: number | null
+          equipment_id?: string | null
+          final_total?: number | null
+          ghl_contact_id?: string | null
+          heating_type?: string
+          home_layout?: string
+          home_type?: string
+          hot_cold_spots?: string | null
+          id?: string
+          installation_cost?: number | null
+          notes?: string | null
+          recommended_tonnage?: number | null
+          selected_addons?: Json | null
+          square_footage?: string
+          status?: string
+          summer_temp?: string | null
+          system_count?: number
+          tax_amount?: number | null
+          updated_at?: string
+          wants_backup_quote?: boolean | null
+          winter_temp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ducted_estimate_submissions_efficiency_tier_id_fkey"
+            columns: ["efficiency_tier_id"]
+            isOneToOne: false
+            referencedRelation: "ducted_efficiency_tiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ducted_estimate_submissions_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "ducted_equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ducted_pricing_modifiers: {
+        Row: {
+          amount: number | null
+          calculation_base: string | null
+          conditions: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          modifier_type: string
+          name: string
+          percentage: number | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          calculation_base?: string | null
+          conditions?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          modifier_type: string
+          name: string
+          percentage?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          calculation_base?: string | null
+          conditions?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          modifier_type?: string
+          name?: string
+          percentage?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ducted_tonnage_sizing_rules: {
+        Row: {
+          created_at: string
+          home_type: string
+          id: string
+          is_active: boolean
+          layout: string
+          notes: string | null
+          recommended_tonnage: number
+          sq_ft_max: number
+          sq_ft_min: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          home_type: string
+          id?: string
+          is_active?: boolean
+          layout: string
+          notes?: string | null
+          recommended_tonnage: number
+          sq_ft_max: number
+          sq_ft_min: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          home_type?: string
+          id?: string
+          is_active?: boolean
+          layout?: string
+          notes?: string | null
+          recommended_tonnage?: number
+          sq_ft_max?: number
+          sq_ft_min?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ductless_addons: {
         Row: {
           created_at: string
