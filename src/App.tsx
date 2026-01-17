@@ -12,6 +12,7 @@ import HvacEstimate from "./pages/HvacEstimate";
 import SizingCalculator from "./pages/estimators/SizingCalculator";
 import CostEstimator from "./pages/estimators/CostEstimator";
 import SavingsCalculator from "./pages/estimators/SavingsCalculator";
+import DuctlessEstimator from "./pages/estimators/ductless/DuctlessEstimator";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -94,6 +95,7 @@ const router = createBrowserRouter([
       { path: "/estimators/sizing", element: <SizingCalculator /> },
       { path: "/estimators/cost", element: <CostEstimator /> },
       { path: "/estimators/savings", element: <SavingsCalculator /> },
+      { path: "/estimate/ductless", element: <DuctlessEstimator /> },
       { path: "/careers", element: <Careers /> },
       { path: "/privacy-policy", element: <PrivacyPolicy /> },
       { path: "/terms-of-service", element: <TermsOfService /> },
