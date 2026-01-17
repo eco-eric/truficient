@@ -685,6 +685,7 @@ export type Database = {
           refrigerant: string | null
           seer_rating: number | null
           serial_number: string | null
+          status: string
           tonnage: string | null
           voltage_info: string | null
           zip_code: string
@@ -710,6 +711,7 @@ export type Database = {
           refrigerant?: string | null
           seer_rating?: number | null
           serial_number?: string | null
+          status?: string
           tonnage?: string | null
           voltage_info?: string | null
           zip_code: string
@@ -735,6 +737,7 @@ export type Database = {
           refrigerant?: string | null
           seer_rating?: number | null
           serial_number?: string | null
+          status?: string
           tonnage?: string | null
           voltage_info?: string | null
           zip_code?: string

@@ -14,12 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Mail, Phone, Calendar, MapPin } from "lucide-react";
+import { Mail, Phone, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { UnifiedSubmission, SubmissionSource } from "@/pages/admin/UnifiedSubmissions";
 import { ContactSubmissionDetail } from "./ContactSubmissionDetail";
 import { LandingPageSubmissionDetail } from "./LandingPageSubmissionDetail";
 import { DuctlessSubmissionDetail } from "./DuctlessSubmissionDetail";
+import { ScannerSubmissionDetail } from "./ScannerSubmissionDetail";
 
 interface SubmissionDetailSheetProps {
   submission: UnifiedSubmission | null;
@@ -32,12 +33,14 @@ const sourceLabels: Record<SubmissionSource, string> = {
   contact: "Contact Form",
   landing_page: "Landing Page Form",
   ductless: "Ductless Estimator",
+  scanner: "Equipment Scanner",
 };
 
 const sourceColors: Record<SubmissionSource, string> = {
   contact: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
   landing_page: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
   ductless: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+  scanner: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
 };
 
 export const SubmissionDetailSheet = ({
@@ -147,6 +150,9 @@ export const SubmissionDetailSheet = ({
           )}
           {submission.source === "ductless" && (
             <DuctlessSubmissionDetail metadata={submission.metadata} />
+          )}
+          {submission.source === "scanner" && (
+            <ScannerSubmissionDetail metadata={submission.metadata} />
           )}
         </div>
       </SheetContent>

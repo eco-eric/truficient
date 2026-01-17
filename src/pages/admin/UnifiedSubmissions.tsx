@@ -25,7 +25,7 @@ import { Loader2, Search, X, Eye, Inbox } from "lucide-react";
 import { format } from "date-fns";
 import { SubmissionDetailSheet } from "@/components/admin/submissions/SubmissionDetailSheet";
 
-export type SubmissionSource = "contact" | "landing_page" | "ductless";
+export type SubmissionSource = "contact" | "landing_page" | "ductless" | "scanner";
 
 export interface UnifiedSubmission {
   id: string;
@@ -42,12 +42,14 @@ const sourceLabels: Record<SubmissionSource, string> = {
   contact: "Contact",
   landing_page: "Landing Page",
   ductless: "Ductless",
+  scanner: "Scanner",
 };
 
 const sourceColors: Record<SubmissionSource, string> = {
   contact: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
   landing_page: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
   ductless: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+  scanner: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
 };
 
 const UnifiedSubmissions = () => {
@@ -88,6 +90,19 @@ const UnifiedSubmissions = () => {
       const { data, error } = await supabase
         .from("ductless_estimate_submissions")
         .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const scannerQuery = useQuery({
+    queryKey: ["scanner_submissions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("equipment_scans")
+        .select("*")
+        .not("email", "is", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -171,9 +186,36 @@ const UnifiedSubmissions = () => {
       });
     });
 
+    // Scanner submissions (only those with email)
+    (scannerQuery.data || []).forEach((s) => {
+      unified.push({
+        id: s.id,
+        source: "scanner",
+        customerName: s.customer_name || "Unknown",
+        customerEmail: s.email!,
+        customerPhone: s.customer_phone,
+        status: s.status || "new",
+        createdAt: s.created_at!,
+        metadata: {
+          zipCode: s.zip_code,
+          isDfw: s.is_dfw,
+          brand: s.brand,
+          modelNumber: s.model_number,
+          serialNumber: s.serial_number,
+          manufacturedYear: s.manufactured_year,
+          tonnage: s.tonnage,
+          refrigerant: s.refrigerant,
+          seerRating: s.seer_rating,
+          equipmentType: s.equipment_type,
+          marketingOptIn: s.marketing_opt_in,
+          customerAddress: s.customer_address,
+        },
+      });
+    });
+
     // Sort by date descending
     return unified.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [contactQuery.data, landingPageQuery.data, ductlessQuery.data]);
+  }, [contactQuery.data, landingPageQuery.data, ductlessQuery.data, scannerQuery.data]);
 
   // Apply filters
   const filteredSubmissions = useMemo(() => {
@@ -227,6 +269,14 @@ const UnifiedSubmissions = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ductless_estimate_submissions"] }),
   });
 
+  const updateScannerStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase.from("equipment_scans").update({ status }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["scanner_submissions"] }),
+  });
+
   const handleStatusChange = (submission: UnifiedSubmission, newStatus: string) => {
     switch (submission.source) {
       case "contact":
@@ -238,10 +288,13 @@ const UnifiedSubmissions = () => {
       case "ductless":
         updateDuctlessStatus.mutate({ id: submission.id, status: newStatus });
         break;
+      case "scanner":
+        updateScannerStatus.mutate({ id: submission.id, status: newStatus });
+        break;
     }
   };
 
-  const isLoading = contactQuery.isLoading || landingPageQuery.isLoading || ductlessQuery.isLoading;
+  const isLoading = contactQuery.isLoading || landingPageQuery.isLoading || ductlessQuery.isLoading || scannerQuery.isLoading;
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -268,7 +321,7 @@ const UnifiedSubmissions = () => {
 
   // Count submissions by source
   const sourceCounts = useMemo(() => {
-    const counts = { all: allSubmissions.length, contact: 0, landing_page: 0, ductless: 0 };
+    const counts = { all: allSubmissions.length, contact: 0, landing_page: 0, ductless: 0, scanner: 0 };
     allSubmissions.forEach((s) => counts[s.source]++);
     return counts;
   }, [allSubmissions]);
@@ -288,11 +341,12 @@ const UnifiedSubmissions = () => {
       <div className="space-y-4">
         {/* Source Tabs */}
         <Tabs value={sourceFilter} onValueChange={(v) => setSourceFilter(v as SubmissionSource | "all")}>
-          <TabsList>
+          <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="all">All ({sourceCounts.all})</TabsTrigger>
             <TabsTrigger value="contact">Contact ({sourceCounts.contact})</TabsTrigger>
             <TabsTrigger value="landing_page">Landing Page ({sourceCounts.landing_page})</TabsTrigger>
             <TabsTrigger value="ductless">Ductless ({sourceCounts.ductless})</TabsTrigger>
+            <TabsTrigger value="scanner">Scanner ({sourceCounts.scanner})</TabsTrigger>
           </TabsList>
         </Tabs>
 
