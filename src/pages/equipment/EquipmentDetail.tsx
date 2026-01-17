@@ -69,27 +69,26 @@ function SpecRow({ icon, label, value }: SpecRowProps) {
 }
 
 export default function EquipmentDetail() {
-  const { brand, model } = useParams<{ brand: string; model: string }>();
+  const { "*": slug } = useParams();
   const [documents, setDocuments] = useState<DocumentResult[]>([]);
   const [isLoadingDocs, setIsLoadingDocs] = useState(false);
 
   const { data: equipment, isLoading } = useQuery({
-    queryKey: ['equipment-detail', brand, model],
+    queryKey: ['equipment-detail', slug],
     queryFn: async () => {
-      if (!brand || !model) return null;
+      if (!slug) return null;
 
       const { data, error } = await supabase
         .from('equipment_pages')
         .select('*')
-        .ilike('brand', brand)
-        .ilike('model_number', model)
+        .eq('slug', slug)
         .eq('published', true)
         .single();
 
       if (error) throw error;
       return data;
     },
-    enabled: !!brand && !!model,
+    enabled: !!slug,
   });
 
   const specs = equipment?.specs as Record<string, unknown> | undefined;
@@ -100,7 +99,7 @@ export default function EquipmentDetail() {
   const isR22 = refrigerant?.toLowerCase().includes('r-22') || refrigerant?.toLowerCase().includes('r22');
 
   // Set page title manually since usePageSEO expects a path
-  usePageSEO(`/equipment/${brand}/${model}`);
+  usePageSEO(`/equipment/${slug}`);
 
   // Load documentation
   useEffect(() => {

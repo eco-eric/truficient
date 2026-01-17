@@ -117,7 +117,7 @@ const router = createBrowserRouter([
       { path: "/scanner", element: <Scanner /> },
       { path: "/scanner/report", element: <EquipmentReport /> },
       { path: "/equipment", element: <EquipmentLibrary /> },
-      { path: "/equipment/:brand/:model", element: <EquipmentDetail /> },
+      { path: "/equipment/*", element: <EquipmentDetail /> },
       
       // Admin Routes
       { path: "/admin/login", element: <AdminLogin /> },
