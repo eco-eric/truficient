@@ -1,6 +1,8 @@
 import { AnimatePresence } from "framer-motion";
 import { QuoteProvider, useQuote } from "./context/QuoteContext";
 import { ProgressIndicator } from "./components/ProgressIndicator";
+import { PriceBar } from "./components/PriceBar";
+import { usePricing } from "./hooks/usePricing";
 import { WelcomeHero } from "./steps/WelcomeHero";
 import { RoomSelector } from "./steps/RoomSelector";
 import { RoomDetails } from "./steps/RoomDetails";
@@ -27,6 +29,14 @@ const EstimatorContent = () => {
   const { state } = useQuote();
   const { currentStep } = state;
 
+  // Get pricing for the price bar
+  const { pricing, tiers, selectedUnit } = usePricing({
+    rooms: state.selectedRooms,
+    unitTypeId: state.unitTypeId,
+    systemTierId: state.systemTierId,
+    selectedAddonIds: state.selectedAddonIds,
+  });
+
   const renderStep = () => {
     switch (currentStep) {
       case 0:
@@ -51,6 +61,21 @@ const EstimatorContent = () => {
   };
 
   const showProgress = currentStep > 0 && currentStep < 7;
+  
+  // Show price bar on steps 3-6 (unit selection through summary)
+  const showPriceBar = currentStep >= 3 && currentStep <= 6;
+  
+  // Determine if we should show a range (before tier is selected)
+  const showRange = !state.systemTierId && tiers.length > 1;
+  const zoneCount = state.selectedRooms.length;
+  const baseEquipmentCost = (selectedUnit?.base_price || 0) * zoneCount;
+  
+  // Calculate range based on tier multipliers
+  const multipliers = tiers.map((t) => t.price_multiplier);
+  const minMultiplier = multipliers.length > 0 ? Math.min(...multipliers) : 1;
+  const maxMultiplier = multipliers.length > 0 ? Math.max(...multipliers) : 1;
+  const lowTotal = Math.round((baseEquipmentCost * minMultiplier + pricing.addonsTotal) * 1.0825);
+  const highTotal = Math.round((baseEquipmentCost * maxMultiplier + pricing.addonsTotal) * 1.0825);
 
   return (
     <div className="min-h-screen bg-background">
@@ -78,6 +103,17 @@ const EstimatorContent = () => {
       <main className="pb-6">
         <AnimatePresence mode="wait">{renderStep()}</AnimatePresence>
       </main>
+
+      {/* Price bar */}
+      {showPriceBar && state.unitTypeId && (
+        <PriceBar
+          label="Estimated Total"
+          amount={pricing.finalTotal}
+          showRange={showRange}
+          lowAmount={lowTotal}
+          highAmount={highTotal}
+        />
+      )}
     </div>
   );
 };

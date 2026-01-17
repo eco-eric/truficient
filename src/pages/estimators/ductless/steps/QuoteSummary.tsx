@@ -1,67 +1,21 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { StepContainer } from "../components/StepContainer";
 import { CTAButton } from "../components/CTAButton";
 import { useQuote } from "../context/QuoteContext";
+import { usePricing, formatMoney } from "../hooks/usePricing";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, CheckCircle, Mail, Phone, MapPin, User } from "lucide-react";
-import type { DuctlessUnitType, DuctlessSystemTier, DuctlessAddon } from "../types";
-
-const formatMoney = (n: number) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
+import { CheckCircle, Mail, Phone, MapPin, User, Zap, Loader2 } from "lucide-react";
 
 export const QuoteSummary = () => {
   const { state, setCustomerInfo, prevStep, nextStep } = useQuote();
 
-  // Fetch data for display
-  const { data: unitTypes = [] } = useQuery({
-    queryKey: ["ductless_unit_types_active"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("ductless_unit_types").select("*").eq("is_active", true);
-      if (error) throw error;
-      return data as DuctlessUnitType[];
-    },
+  // Use the pricing engine
+  const { pricing, selectedUnit, selectedTier, isLoading } = usePricing({
+    rooms: state.selectedRooms,
+    unitTypeId: state.unitTypeId,
+    systemTierId: state.systemTierId,
+    selectedAddonIds: state.selectedAddonIds,
   });
-
-  const { data: tiers = [] } = useQuery({
-    queryKey: ["ductless_system_tiers_active"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("ductless_system_tiers").select("*").eq("is_active", true);
-      if (error) throw error;
-      return data as DuctlessSystemTier[];
-    },
-  });
-
-  const { data: addons = [] } = useQuery({
-    queryKey: ["ductless_addons_active"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("ductless_addons").select("*").eq("is_active", true);
-      if (error) throw error;
-      return data as DuctlessAddon[];
-    },
-  });
-
-  const selectedUnit = unitTypes.find((u) => u.id === state.unitTypeId);
-  const selectedTier = tiers.find((t) => t.id === state.systemTierId);
-  const selectedAddons = addons.filter((a) => state.selectedAddonIds.includes(a.id));
-
-  // Simple placeholder pricing (will be replaced in Phase 3)
-  const zoneCount = state.selectedRooms.length;
-  const basePrice = (selectedUnit?.base_price || 0) * zoneCount;
-  const tierMultiplier = selectedTier?.price_multiplier || 1;
-  const equipmentTotal = basePrice * tierMultiplier;
-
-  const addonsTotal = selectedAddons.reduce((sum, a) => {
-    return sum + (a.price_type === "per_zone" ? a.price * zoneCount : a.price);
-  }, 0);
-
-  const subtotal = equipmentTotal + addonsTotal;
-  const taxRate = 0.0825;
-  const taxAmount = subtotal * taxRate;
-  const rebates = 0; // Placeholder
-  const finalTotal = subtotal + taxAmount - rebates;
 
   const isFormValid =
     state.customerInfo.name.trim().length > 0 &&
@@ -72,6 +26,14 @@ export const QuoteSummary = () => {
     // Will be implemented in Phase 5
     nextStep();
   };
+
+  if (isLoading) {
+    return (
+      <StepContainer className="px-4 pb-28 flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#1e3a5f]" />
+      </StepContainer>
+    );
+  }
 
   return (
     <StepContainer className="px-4 pb-28">
@@ -86,7 +48,11 @@ export const QuoteSummary = () => {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-white/70">Zones</span>
-              <span className="font-medium">{zoneCount}</span>
+              <span className="font-medium">{pricing.zoneCount}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/70">Total Capacity</span>
+              <span className="font-medium">{pricing.totalBtu.toLocaleString()} BTU</span>
             </div>
             <div className="flex justify-between">
               <span className="text-white/70">Unit Style</span>
@@ -96,25 +62,27 @@ export const QuoteSummary = () => {
               <span className="text-white/70">System Tier</span>
               <span className="font-medium">{selectedTier?.display_name || "—"}</span>
             </div>
-            {selectedAddons.length > 0 && (
+            {pricing.addonsBreakdown.length > 0 && (
               <div className="flex justify-between">
                 <span className="text-white/70">Add-ons</span>
-                <span className="font-medium">{selectedAddons.length} selected</span>
+                <span className="font-medium">{pricing.addonsBreakdown.length} selected</span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Rooms list */}
+        {/* Rooms list with BTU */}
         <div className="rounded-xl border p-4 mb-6">
           <h4 className="font-semibold text-foreground mb-3">Configured Zones</h4>
           <ul className="space-y-2">
             {state.selectedRooms.map((room) => (
-              <li key={room.id} className="flex items-center gap-2 text-sm">
-                <CheckCircle className="h-4 w-4 text-[#a5a983]" />
-                <span>{room.label}</span>
-                <span className="text-muted-foreground">
-                  • {room.size} • {room.ceilingHeight}ft ceiling
+              <li key={room.id} className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-[#a5a983]" />
+                  <span>{room.label}</span>
+                </div>
+                <span className="text-muted-foreground font-medium">
+                  {room.recommendedBtu.toLocaleString()} BTU
                 </span>
               </li>
             ))}
@@ -126,30 +94,63 @@ export const QuoteSummary = () => {
           <h4 className="font-semibold text-foreground mb-3">Investment Summary</h4>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Equipment & Installation</span>
-              <span>{formatMoney(equipmentTotal)}</span>
+              <span className="text-muted-foreground">
+                Equipment ({pricing.zoneCount} zones × {formatMoney(selectedUnit?.base_price || 0)})
+              </span>
+              <span>{formatMoney(pricing.baseEquipmentCost)}</span>
             </div>
-            {addonsTotal > 0 && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Add-ons</span>
-                <span>{formatMoney(addonsTotal)}</span>
+            {pricing.tierMultiplier !== 1 && (
+              <div className="flex justify-between text-muted-foreground text-xs">
+                <span className="pl-3">× {selectedTier?.display_name} tier ({pricing.tierMultiplier}×)</span>
+                <span>{formatMoney(pricing.equipmentTotal)}</span>
               </div>
             )}
+            
+            {pricing.addonsBreakdown.length > 0 && (
+              <>
+                <div className="border-t my-2" />
+                {pricing.addonsBreakdown.map((addon) => (
+                  <div key={addon.id} className="flex justify-between">
+                    <span className="text-muted-foreground">
+                      {addon.name}
+                      {addon.priceType === "per_zone" && ` (${formatMoney(addon.price)} × ${pricing.zoneCount} zones)`}
+                    </span>
+                    <span>{formatMoney(addon.total)}</span>
+                  </div>
+                ))}
+              </>
+            )}
+            
+            <div className="border-t my-2" />
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span>{formatMoney(pricing.subtotal)}</span>
+            </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Estimated Tax (8.25%)</span>
-              <span>{formatMoney(taxAmount)}</span>
+              <span>{formatMoney(pricing.taxAmount)}</span>
             </div>
-            {rebates > 0 && (
+            {pricing.rebates > 0 && (
               <div className="flex justify-between text-[#d4a84b]">
                 <span>Available Rebates</span>
-                <span>-{formatMoney(rebates)}</span>
+                <span>-{formatMoney(pricing.rebates)}</span>
               </div>
             )}
             <div className="border-t pt-2 mt-2 flex justify-between font-semibold text-base">
               <span>Estimated Total</span>
-              <span className="text-[#1e3a5f]">{formatMoney(finalTotal)}</span>
+              <span className="text-[#1e3a5f]">{formatMoney(pricing.finalTotal)}</span>
             </div>
           </div>
+          
+          {/* Financing callout */}
+          {pricing.monthlyFinancing > 0 && (
+            <div className="mt-4 p-3 rounded-lg bg-[#d4a84b]/10 border border-[#d4a84b]/30 flex items-center gap-2">
+              <Zap className="h-4 w-4 text-[#d4a84b]" />
+              <span className="text-sm">
+                Or as low as <strong className="text-[#d4a84b]">{formatMoney(pricing.monthlyFinancing)}/mo</strong> with financing
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Lead capture form */}

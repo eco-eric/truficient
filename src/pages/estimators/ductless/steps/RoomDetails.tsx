@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { StepContainer } from "../components/StepContainer";
 import { CTAButton } from "../components/CTAButton";
 import { SelectableCard } from "../components/SelectableCard";
 import { useQuote } from "../context/QuoteContext";
 import { ROOM_SIZE_OPTIONS, SUN_EXPOSURE_OPTIONS, RoomSize, SunExposure } from "../types";
-import { Minus, Plus, Lightbulb } from "lucide-react";
+import { calculateRoomBtu, getBtuBreakdown, formatMoney } from "../hooks/usePricing";
+import { Minus, Plus, Lightbulb, Thermometer } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const RoomDetails = () => {
@@ -13,6 +14,16 @@ export const RoomDetails = () => {
 
   const rooms = state.selectedRooms;
   const room = rooms[currentRoomIndex];
+
+  // Calculate BTU whenever room details change
+  useEffect(() => {
+    if (room) {
+      const recommendedBtu = calculateRoomBtu(room.size, room.ceilingHeight, room.sunExposure);
+      if (room.recommendedBtu !== recommendedBtu) {
+        updateRoom(room.id, { recommendedBtu });
+      }
+    }
+  }, [room?.size, room?.ceilingHeight, room?.sunExposure, room?.id, updateRoom]);
 
   if (!room) {
     // No rooms selected, go back
@@ -42,8 +53,9 @@ export const RoomDetails = () => {
   const setExposure = (sunExposure: SunExposure) => updateRoom(room.id, { sunExposure });
   const setCeilingHeight = (h: number) => updateRoom(room.id, { ceilingHeight: Math.max(7, Math.min(16, h)) });
 
-  // Placeholder BTU calculation (will be replaced in Phase 3)
-  const estimatedBtu = room.size === "small" ? 9000 : room.size === "medium" ? 12000 : 18000;
+  // Get BTU breakdown for display
+  const btuBreakdown = getBtuBreakdown(room);
+  const recommendedBtu = btuBreakdown.recommendedBtu;
 
   return (
     <StepContainer className="px-4 pb-28">
@@ -94,6 +106,12 @@ export const RoomDetails = () => {
               <Plus className="h-4 w-4" />
             </button>
           </div>
+          {btuBreakdown.ceilingAdjustmentPercent !== 0 && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {btuBreakdown.ceilingAdjustmentPercent > 0 ? "+" : ""}
+              {btuBreakdown.ceilingAdjustmentPercent}% BTU adjustment for ceiling height
+            </p>
+          )}
         </div>
 
         {/* Sun exposure */}
@@ -116,16 +134,33 @@ export const RoomDetails = () => {
               </button>
             ))}
           </div>
+          {btuBreakdown.sunAdjustmentPercent !== 0 && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {btuBreakdown.sunAdjustmentPercent > 0 ? "+" : ""}
+              {btuBreakdown.sunAdjustmentPercent}% BTU adjustment for {room.sunExposure} exposure
+            </p>
+          )}
         </div>
 
-        {/* Engineer recommendation */}
-        <div className="rounded-xl bg-[#a5a983]/10 border border-[#a5a983]/30 p-4 mb-8 flex gap-3">
-          <Lightbulb className="h-5 w-5 text-[#a5a983] flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-foreground">Our Recommendation</p>
-            <p className="text-sm text-muted-foreground">
-              Based on your inputs, we recommend a <strong>{estimatedBtu.toLocaleString()} BTU</strong> unit for this room.
-            </p>
+        {/* Engineer recommendation with breakdown */}
+        <div className="rounded-xl bg-[#a5a983]/10 border border-[#a5a983]/30 p-4 mb-8">
+          <div className="flex gap-3">
+            <Thermometer className="h-5 w-5 text-[#a5a983] flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground">Recommended System Size</p>
+              <p className="text-2xl font-bold text-[#1e3a5f] my-1">
+                {recommendedBtu.toLocaleString()} BTU
+              </p>
+              <div className="text-xs text-muted-foreground space-y-0.5">
+                <p>Base: ~{btuBreakdown.baseSqft} sq ft × 25 BTU/sq ft = {btuBreakdown.baseBtu.toLocaleString()} BTU</p>
+                {btuBreakdown.ceilingAdjustmentPercent !== 0 && (
+                  <p>Ceiling adjustment: {btuBreakdown.ceilingAdjustmentPercent > 0 ? "+" : ""}{btuBreakdown.ceilingAdjustmentPercent}%</p>
+                )}
+                {btuBreakdown.sunAdjustmentPercent !== 0 && (
+                  <p>Sun exposure adjustment: {btuBreakdown.sunAdjustmentPercent > 0 ? "+" : ""}{btuBreakdown.sunAdjustmentPercent}%</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
