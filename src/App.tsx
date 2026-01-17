@@ -5,8 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 import Index from "./pages/Index";
 import About from "./pages/About";
-import ResidentialServices from "./pages/ResidentialServices";
-import CommercialServices from "./pages/CommercialServices";
+import ResidentialServices from "./pages/services/ResidentialServices";
+import CommercialServices from "./pages/services/CommercialServices";
+import DuctlessServices from "./pages/services/DuctlessServices";
 import HvacEstimate from "./pages/HvacEstimate";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
@@ -73,6 +74,10 @@ const router = createBrowserRouter([
     children: [
       { path: "/", element: <Index /> },
       { path: "/about", element: <About /> },
+      { path: "/services/residential", element: <ResidentialServices /> },
+      { path: "/services/commercial", element: <CommercialServices /> },
+      { path: "/services/ductless", element: <DuctlessServices /> },
+      // Legacy redirects - keep old URLs working
       { path: "/residential-services", element: <ResidentialServices /> },
       { path: "/commercial-services", element: <CommercialServices /> },
       { path: "/contact", element: <Contact /> },
