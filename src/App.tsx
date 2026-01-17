@@ -54,12 +54,16 @@ import AdminTemplateBuilder from "./pages/admin/TemplateBuilder";
 import AdminGHLConversations from "./pages/admin/GHLConversations";
 import AdminButtonClicks from "./pages/admin/ButtonClicks";
 import AdminDuctlessConfig from "./pages/admin/DuctlessConfig";
+import AdminGallery from "./pages/admin/Gallery";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
 
 // Blog imports
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
+
+// Public pages
+import Gallery from "./pages/Gallery";
 
 const queryClient = new QueryClient();
 
@@ -102,6 +106,7 @@ const router = createBrowserRouter([
       // Blog Routes
       { path: "/blog", element: <Blog /> },
       { path: "/blog/:slug", element: <BlogPost /> },
+      { path: "/gallery", element: <Gallery /> },
       
       // Admin Routes
       { path: "/admin/login", element: <AdminLogin /> },
@@ -132,6 +137,7 @@ const router = createBrowserRouter([
       { path: "/admin/landing-pages/submissions", element: <ProtectedRoute><AdminUnifiedSubmissions /></ProtectedRoute> },
       { path: "/admin/landing-pages/:id", element: <ProtectedRoute><AdminLandingPageFormEditor /></ProtectedRoute> },
       { path: "/admin/ductless-config", element: <ProtectedRoute><AdminDuctlessConfig /></ProtectedRoute> },
+      { path: "/admin/gallery", element: <ProtectedRoute><AdminGallery /></ProtectedRoute> },
       { path: "/admin/settings", element: <ProtectedRoute><AdminSettings /></ProtectedRoute> },
       { path: "/admin/button-clicks", element: <ProtectedRoute><AdminButtonClicks /></ProtectedRoute> },
       
