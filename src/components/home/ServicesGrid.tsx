@@ -1,59 +1,71 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Link } from 'react-router-dom';
+import { useButtonTracking } from '@/hooks/useButtonTracking';
 
 const services = [
   {
     title: 'AC Repair',
     description: 'AC running harder than it should be? Lower your utility costs and avoid further costly repairs by scheduling a service call with Truficient today.',
     image: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400&h=300&fit=crop',
-    link: '/services/ac-repair',
+    link: '/residential-services#ac-repair',
   },
   {
     title: 'AC Replacement',
     description: 'Is your heating and air conditioning unit decades old and about to kick the bucket? Call Truficient today and see if AC replacement is right for you.',
     image: 'https://images.unsplash.com/photo-1631545806609-a81784a80d37?w=400&h=300&fit=crop',
-    link: '/services/ac-replacement',
+    link: '/residential-services#ac-replacement',
   },
   {
     title: 'AC Installation',
     description: 'Your HVAC system bit the dust? Truficient offers full HVAC installation for all private, commercial, and residential customers.',
     image: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=400&h=300&fit=crop',
-    link: '/services/ac-installation',
+    link: '/residential-services#ac-installation',
   },
   {
     title: 'Heating Repair',
     description: 'Having your heater go out in the middle of winter is not something we want families to have to go through. Call Truficient to schedule a heating repair appointment today.',
     image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&h=300&fit=crop',
-    link: '/services/heating-repair',
+    link: '/residential-services#heating-repair',
   },
   {
     title: 'Heating Installation',
     description: 'Keep your energy bill low in the winter by having Truficient Service install a high-efficiency heating system.',
     image: 'https://images.unsplash.com/photo-1513467535987-fd81bc7d62f8?w=400&h=300&fit=crop',
-    link: '/services/heating-installation',
+    link: '/residential-services#heating-installation',
   },
   {
     title: 'Indoor Air Quality',
     description: 'Our customers\' comfort is one of our top concerns. That\'s why we offer air quality services such as air purification, humidifiers, and dehumidifiers.',
     image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop',
-    link: '/services/air-quality',
+    link: '/residential-services#air-quality',
   },
   {
     title: 'Ductless Systems',
     description: 'Our HVAC technicians can repair, replace, or install a ductless air conditioning unit and ductless split systems.',
     image: 'https://images.unsplash.com/photo-1585129777188-94600bc7b4e3?w=400&h=300&fit=crop',
-    link: '/services/ductless',
+    link: '/residential-services#ductless',
   },
   {
     title: 'Commercial Services',
     description: 'Expert Heating & Cooling Solutions for Small to Mid-Sized Commercial Buildings.',
     image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=300&fit=crop',
-    link: '/services/commercial',
+    link: '/commercial-services',
   },
 ];
 
 const ServicesGrid = () => {
+  const { trackButtonClick } = useButtonTracking();
+
+  const handleServiceClick = (serviceTitle: string, link: string) => {
+    trackButtonClick({
+      buttonName: `Learn More - ${serviceTitle}`,
+      buttonLocation: 'Services Grid',
+      destinationUrl: link,
+    });
+  };
+
   return (
     <section id="services" className="py-16 lg:py-24 bg-background">
       <div className="container mx-auto px-4">
@@ -96,12 +108,17 @@ const ServicesGrid = () => {
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
                     {service.description}
                   </p>
-                  <Button
-                    variant="default" 
-                    className="w-full bg-primary hover:bg-navy-dark text-primary-foreground"
+                  <Link 
+                    to={service.link}
+                    onClick={() => handleServiceClick(service.title, service.link)}
                   >
-                    Learn More
-                  </Button>
+                    <Button
+                      variant="default" 
+                      className="w-full bg-primary hover:bg-navy-dark text-primary-foreground"
+                    >
+                      Learn More
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
             </motion.div>

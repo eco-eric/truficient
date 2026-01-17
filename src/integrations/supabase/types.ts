@@ -98,6 +98,36 @@ export type Database = {
         }
         Relationships: []
       }
+      button_clicks: {
+        Row: {
+          button_location: string
+          button_name: string
+          clicked_at: string
+          destination_url: string | null
+          id: string
+          referrer: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          button_location: string
+          button_name: string
+          clicked_at?: string
+          destination_url?: string | null
+          id?: string
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          button_location?: string
+          button_name?: string
+          clicked_at?: string
+          destination_url?: string | null
+          id?: string
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       calculator_configs: {
         Row: {
           calculator_type: string

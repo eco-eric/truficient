@@ -2,8 +2,27 @@ import { motion } from 'framer-motion';
 import { Phone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useButtonTracking } from '@/hooks/useButtonTracking';
 
 const CTASection = () => {
+  const { trackButtonClick } = useButtonTracking();
+
+  const handleScheduleClick = () => {
+    trackButtonClick({
+      buttonName: 'Schedule Service Now',
+      buttonLocation: 'CTA Section',
+      destinationUrl: '/contact',
+    });
+  };
+
+  const handleCallClick = () => {
+    trackButtonClick({
+      buttonName: 'Call 214-238-4349',
+      buttonLocation: 'CTA Section',
+      destinationUrl: 'tel:214-238-4349',
+    });
+  };
+
   return (
     <section 
       className="py-20 lg:py-28 relative bg-cover bg-center"
@@ -33,7 +52,7 @@ const CTASection = () => {
             Serving: Dallas Area • North Dallas Area • Frisco-McKinney Area • Mid-Cities Area • South Dallas Area
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/contact">
+            <Link to="/contact" onClick={handleScheduleClick}>
               <Button 
                 size="lg" 
                 className="bg-secondary hover:bg-gold-dark text-secondary-foreground font-semibold text-lg px-8"
@@ -41,7 +60,7 @@ const CTASection = () => {
                 Schedule Service Now
               </Button>
             </Link>
-            <a href="tel:214-238-4349">
+            <a href="tel:214-238-4349" onClick={handleCallClick}>
               <Button 
                 size="lg" 
                 variant="outline" 

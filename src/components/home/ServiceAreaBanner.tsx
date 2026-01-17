@@ -1,8 +1,20 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useButtonTracking } from '@/hooks/useButtonTracking';
 
 const ServiceAreaBanner = () => {
+  const { trackButtonClick } = useButtonTracking();
+
+  const handleEstimateClick = () => {
+    trackButtonClick({
+      buttonName: 'Request an Estimate',
+      buttonLocation: 'Service Area Banner',
+      destinationUrl: '/contact',
+    });
+  };
+
   return (
     <section className="bg-secondary py-6">
       <div className="container mx-auto px-4">
@@ -21,12 +33,14 @@ const ServiceAreaBanner = () => {
               Looking for a reliable mini split or ductless AC solution? Truficient specializes in energy-efficient installations throughout the Dallas-Fort Worth Metroplex.
             </p>
           </div>
-          <Button 
-            className="bg-primary hover:bg-navy-dark text-primary-foreground font-semibold whitespace-nowrap"
-          >
-            Request an Estimate
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
+          <Link to="/contact" onClick={handleEstimateClick}>
+            <Button 
+              className="bg-primary hover:bg-navy-dark text-primary-foreground font-semibold whitespace-nowrap"
+            >
+              Request an Estimate
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </Link>
         </motion.div>
       </div>
     </section>
