@@ -70,23 +70,12 @@ function ScannerContent() {
             <EstimatorLinks />
             
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              {canScanMore && (
-                <Button
-                  variant="default"
-                  size="lg"
-                  onClick={() => dispatch({ type: 'SCAN_ANOTHER' })}
-                  className="flex-1 bg-secondary hover:bg-secondary/90 touch-target"
-                >
-                  <Camera className="w-4 h-4 mr-2" />
-                  Scan Another Unit ({state.results.length}/{MAX_SCANS})
-                </Button>
-              )}
+            <div className="pt-4">
               <Button
                 variant="outline"
                 size="lg"
                 onClick={() => dispatch({ type: 'RESET' })}
-                className="flex-1 touch-target"
+                className="w-full touch-target"
               >
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Start Over

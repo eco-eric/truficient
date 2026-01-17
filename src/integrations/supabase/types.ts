@@ -669,6 +669,9 @@ export type Database = {
           breaker_size: string | null
           compressor_info: string | null
           created_at: string | null
+          customer_address: string | null
+          customer_name: string | null
+          customer_phone: string | null
           email: string | null
           equipment_type: string | null
           factory_charge: string | null
@@ -676,6 +679,7 @@ export type Database = {
           id: string
           is_dfw: boolean | null
           manufactured_year: number | null
+          marketing_opt_in: boolean | null
           model_number: string
           raw_ai_response: Json | null
           refrigerant: string | null
@@ -690,6 +694,9 @@ export type Database = {
           breaker_size?: string | null
           compressor_info?: string | null
           created_at?: string | null
+          customer_address?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           email?: string | null
           equipment_type?: string | null
           factory_charge?: string | null
@@ -697,6 +704,7 @@ export type Database = {
           id?: string
           is_dfw?: boolean | null
           manufactured_year?: number | null
+          marketing_opt_in?: boolean | null
           model_number: string
           raw_ai_response?: Json | null
           refrigerant?: string | null
@@ -711,6 +719,9 @@ export type Database = {
           breaker_size?: string | null
           compressor_info?: string | null
           created_at?: string | null
+          customer_address?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           email?: string | null
           equipment_type?: string | null
           factory_charge?: string | null
@@ -718,6 +729,7 @@ export type Database = {
           id?: string
           is_dfw?: boolean | null
           manufactured_year?: number | null
+          marketing_opt_in?: boolean | null
           model_number?: string
           raw_ai_response?: Json | null
           refrigerant?: string | null
