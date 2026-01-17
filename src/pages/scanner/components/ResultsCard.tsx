@@ -18,10 +18,14 @@ import {
   GitBranch,
   Beaker,
   Plug,
+  Plus,
+  Check,
 } from 'lucide-react';
 import { useScanner } from '../context/ScannerContext';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+
+const MAX_SCANS = 5;
 
 const EQUIPMENT_TYPE_ICONS: Record<string, React.ReactNode> = {
   'Air Conditioner': <Snowflake className="w-4 h-4" />,
@@ -56,8 +60,12 @@ function SpecRow({ icon, label, value }: SpecRowProps) {
 }
 
 export function ResultsCard() {
-  const { state } = useScanner();
-  const { result } = state;
+  const { state, dispatch } = useScanner();
+  const { result, results } = state;
+  
+  const isAlreadyAdded = result?.id ? results.some(s => s.id === result.id) : false;
+  const canAddMore = results.length < MAX_SCANS;
+  const scanNumber = results.length + 1;
 
   if (!result?.specs) {
     return null;
@@ -168,6 +176,32 @@ export function ResultsCard() {
               <ExternalLink className="w-4 h-4 mr-2" />
               View Full Equipment Page
             </Link>
+          </Button>
+        </div>
+      )}
+
+      {/* Add to List Button */}
+      {canAddMore && !isAlreadyAdded && (
+        <div className="pt-2">
+          <Button 
+            onClick={() => dispatch({ type: 'ADD_TO_RESULTS' })}
+            className="w-full bg-secondary hover:bg-secondary/90"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add to My List ({scanNumber}/{MAX_SCANS})
+          </Button>
+        </div>
+      )}
+      
+      {isAlreadyAdded && (
+        <div className="pt-2">
+          <Button 
+            disabled
+            variant="outline"
+            className="w-full border-green-500 text-green-600"
+          >
+            <Check className="w-4 h-4 mr-2" />
+            Added to List
           </Button>
         </div>
       )}
