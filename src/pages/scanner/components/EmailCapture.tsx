@@ -78,7 +78,10 @@ export function EmailCapture() {
       }
 
       // Update all scan records with the email and contact info
-      const { error } = await supabase
+      console.log('Updating scan IDs:', scanIds);
+      console.log('Update data:', { email, name, phone, address, city: state.city, stateVal: state.state });
+      
+      const { data: updateData, error } = await supabase
         .from('equipment_scans')
         .update({ 
           email,
@@ -90,9 +93,16 @@ export function EmailCapture() {
           state: state.state,
           ghl_sync_status: 'pending'
         })
-        .in('id', scanIds);
+        .in('id', scanIds)
+        .select();
 
+      console.log('Update result:', { data: updateData, error });
+      
       if (error) throw error;
+      
+      if (!updateData || updateData.length === 0) {
+        console.warn('No rows were updated - scan IDs may not exist:', scanIds);
+      }
 
       dispatch({ type: 'SET_EMAIL', payload: email });
       
