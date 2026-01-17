@@ -388,7 +388,11 @@ const AdminEquipmentLibrary = () => {
                         <TableCell>
                           <Badge variant="secondary">{page.times_searched || 0}</Badge>
                         </TableCell>
-                        <TableCell>{page.documentation_count || 0}</TableCell>
+                        <TableCell>
+                          {documentation.filter(d => 
+                            d.model_number?.toLowerCase() === page.model_number.toLowerCase()
+                          ).length}
+                        </TableCell>
                         <TableCell>
                           <Switch
                             checked={page.published ?? false}
