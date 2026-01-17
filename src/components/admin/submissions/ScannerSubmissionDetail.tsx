@@ -1,5 +1,18 @@
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Thermometer, Calendar, Wrench, CheckCircle, XCircle, ExternalLink } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { MapPin, Thermometer, Calendar, Wrench, CheckCircle, XCircle, ExternalLink, Package } from "lucide-react";
+
+interface EquipmentItem {
+  id: string;
+  brand: string | null;
+  modelNumber: string | null;
+  serialNumber: string | null;
+  tonnage: string | null;
+  manufacturedYear: number | null;
+  equipmentType: string | null;
+  refrigerant: string | null;
+  seerRating: number | null;
+}
 
 interface ScannerSubmissionDetailProps {
   metadata: Record<string, unknown>;
@@ -7,9 +20,9 @@ interface ScannerSubmissionDetailProps {
 
 export const ScannerSubmissionDetail = ({ metadata }: ScannerSubmissionDetailProps) => {
   const currentYear = new Date().getFullYear();
-  const manufacturedYear = metadata.manufacturedYear as number | null;
-  const equipmentAge = manufacturedYear ? currentYear - manufacturedYear : null;
-
+  const equipmentCount = (metadata.equipmentCount as number) || 1;
+  const allEquipment = (metadata.allEquipment as EquipmentItem[]) || [];
+  
   const ghlSyncStatus = metadata.ghlSyncStatus as string | undefined;
   const ghlContactId = metadata.ghlContactId as string | undefined;
 
@@ -28,6 +41,16 @@ export const ScannerSubmissionDetail = ({ metadata }: ScannerSubmissionDetailPro
       default:
         return <Badge variant="outline">{ghlSyncStatus || 'N/A'}</Badge>;
     }
+  };
+
+  const getAgeBadge = (manufacturedYear: number | null) => {
+    if (!manufacturedYear) return null;
+    const age = currentYear - manufacturedYear;
+    return (
+      <Badge variant={age >= 15 ? "destructive" : age >= 10 ? "secondary" : "outline"}>
+        {age} years old
+      </Badge>
+    );
   };
 
   return (
@@ -66,93 +89,100 @@ export const ScannerSubmissionDetail = ({ metadata }: ScannerSubmissionDetailPro
         </div>
       </div>
 
-      {/* Equipment Info */}
+      {/* Equipment Summary */}
       <div>
         <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-          <Wrench className="h-4 w-4" />
-          Equipment Information
+          <Package className="h-4 w-4" />
+          Scanned Equipment ({equipmentCount} unit{equipmentCount !== 1 ? 's' : ''})
         </h4>
-        <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
-          {metadata.brand && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Brand:</span>
-              <span className="font-medium">{metadata.brand as string}</span>
-            </div>
-          )}
-          {metadata.modelNumber && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Model:</span>
-              <span className="font-mono text-xs">{metadata.modelNumber as string}</span>
-            </div>
-          )}
-          {metadata.serialNumber && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Serial:</span>
-              <span className="font-mono text-xs">{metadata.serialNumber as string}</span>
-            </div>
-          )}
-          {metadata.equipmentType && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Type:</span>
-              <span className="font-medium capitalize">{metadata.equipmentType as string}</span>
-            </div>
-          )}
-        </div>
+        
+        {allEquipment.length > 0 ? (
+          <div className="space-y-2">
+            {allEquipment.map((equip, idx) => (
+              <Card key={equip.id || idx} className="p-3">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                      #{idx + 1}
+                    </span>
+                    <span className="font-medium">
+                      {equip.brand || 'Unknown Brand'} - {equip.equipmentType || 'HVAC'}
+                    </span>
+                  </div>
+                  {getAgeBadge(equip.manufacturedYear)}
+                </div>
+                
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                  {equip.modelNumber && (
+                    <div className="flex justify-between col-span-2">
+                      <span className="text-muted-foreground">Model:</span>
+                      <span className="font-mono text-xs">{equip.modelNumber}</span>
+                    </div>
+                  )}
+                  {equip.serialNumber && (
+                    <div className="flex justify-between col-span-2">
+                      <span className="text-muted-foreground">Serial:</span>
+                      <span className="font-mono text-xs">{equip.serialNumber}</span>
+                    </div>
+                  )}
+                  {equip.tonnage && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Tonnage:</span>
+                      <span className="font-medium">{equip.tonnage}</span>
+                    </div>
+                  )}
+                  {equip.manufacturedYear && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Year:</span>
+                      <span className="font-medium">{equip.manufacturedYear}</span>
+                    </div>
+                  )}
+                  {equip.refrigerant && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Refrigerant:</span>
+                      <span className="font-medium">{equip.refrigerant}</span>
+                    </div>
+                  )}
+                  {equip.seerRating && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">SEER:</span>
+                      <span className="font-medium">{equip.seerRating}</span>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          // Fallback for legacy single-equipment data format
+          <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
+            {metadata.brand && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Brand:</span>
+                <span className="font-medium">{metadata.brand as string}</span>
+              </div>
+            )}
+            {metadata.modelNumber && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Model:</span>
+                <span className="font-mono text-xs">{metadata.modelNumber as string}</span>
+              </div>
+            )}
+            {metadata.serialNumber && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Serial:</span>
+                <span className="font-mono text-xs">{metadata.serialNumber as string}</span>
+              </div>
+            )}
+            {metadata.equipmentType && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Type:</span>
+                <span className="font-medium capitalize">{metadata.equipmentType as string}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-
-      {/* Age & Year */}
-      {manufacturedYear && (
-        <div>
-          <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Equipment Age
-          </h4>
-          <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Manufactured:</span>
-              <span className="font-medium">{manufacturedYear}</span>
-            </div>
-            {equipmentAge !== null && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Age:</span>
-                <Badge variant={equipmentAge >= 15 ? "destructive" : equipmentAge >= 10 ? "secondary" : "outline"}>
-                  {equipmentAge} years old
-                </Badge>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Technical Specs */}
-      {(metadata.tonnage || metadata.refrigerant || metadata.seerRating) && (
-        <div>
-          <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-            <Thermometer className="h-4 w-4" />
-            Technical Specifications
-          </h4>
-          <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
-            {metadata.tonnage && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tonnage:</span>
-                <span className="font-medium">{metadata.tonnage as string}</span>
-              </div>
-            )}
-            {metadata.refrigerant && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Refrigerant:</span>
-                <span className="font-medium">{metadata.refrigerant as string}</span>
-              </div>
-            )}
-            {metadata.seerRating && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">SEER Rating:</span>
-                <span className="font-medium">{metadata.seerRating as number}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* GHL Sync Status */}
       <div>
