@@ -1,14 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import { format, subDays, startOfDay } from "date-fns";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { MousePointer, TrendingUp, MapPin, Clock } from "lucide-react";
+import { MousePointer, TrendingUp, Clock } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { HomepageHeatmap } from "@/components/admin/dashboard/HomepageHeatmap";
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
 
@@ -175,6 +175,16 @@ const ButtonClicks = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Homepage Heatmap */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Homepage Section Heatmap</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <HomepageHeatmap locationData={locationSummary} totalClicks={totalClicks} />
+          </CardContent>
+        </Card>
 
         {/* Trend Chart */}
         <Card>
