@@ -65,6 +65,7 @@ import BlogPost from "./pages/BlogPost";
 
 // Public pages
 import Gallery from "./pages/Gallery";
+import Scanner from "./pages/scanner/Scanner";
 
 const queryClient = new QueryClient();
 
@@ -108,6 +109,7 @@ const router = createBrowserRouter([
       { path: "/blog", element: <Blog /> },
       { path: "/blog/:slug", element: <BlogPost /> },
       { path: "/gallery", element: <Gallery /> },
+      { path: "/scanner", element: <Scanner /> },
       
       // Admin Routes
       { path: "/admin/login", element: <AdminLogin /> },

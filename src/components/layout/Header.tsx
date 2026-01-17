@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import truficientLogo from "@/assets/truficient-logo.png";
-import { Phone, Mail, Menu, ChevronDown, Search, ChevronRight } from "lucide-react";
+import { Phone, Mail, Menu, ChevronDown, Search, ChevronRight, ScanLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -211,6 +211,16 @@ const Header = () => {
                       onClick={() => handleTrackClick('Commercial', 'Header - Main Nav', '/services/commercial')}
                     >
                       Commercial
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/scanner" 
+                      className="cursor-pointer flex items-center gap-2"
+                      onClick={() => handleTrackClick('Equipment Scanner', 'Header - Main Nav', '/scanner')}
+                    >
+                      <ScanLine className="w-4 h-4 text-secondary" />
+                      Equipment Scanner
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>

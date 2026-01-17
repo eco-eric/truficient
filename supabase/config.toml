@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.get-ghl-conversations]
 verify_jwt = false
+
+[functions.decode-equipment]
+verify_jwt = false
