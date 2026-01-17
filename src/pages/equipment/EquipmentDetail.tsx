@@ -30,6 +30,7 @@ import {
   LayoutGrid,
   GitBranch,
   Beaker,
+  Plug,
 } from 'lucide-react';
 import { usePageSEO } from '@/hooks/usePageSEO';
 
@@ -265,6 +266,11 @@ export default function EquipmentDetail() {
                     icon={<Beaker className="w-5 h-5" />}
                     label="Factory Charge"
                     value={specs?.factory_charge as string}
+                  />
+                  <SpecRow
+                    icon={<Plug className="w-5 h-5" />}
+                    label="Voltage/Phase"
+                    value={specs?.voltage_info as string}
                   />
                 </div>
 

@@ -682,6 +682,7 @@ export type Database = {
           seer_rating: number | null
           serial_number: string | null
           tonnage: string | null
+          voltage_info: string | null
           zip_code: string
         }
         Insert: {
@@ -702,6 +703,7 @@ export type Database = {
           seer_rating?: number | null
           serial_number?: string | null
           tonnage?: string | null
+          voltage_info?: string | null
           zip_code: string
         }
         Update: {
@@ -722,6 +724,7 @@ export type Database = {
           seer_rating?: number | null
           serial_number?: string | null
           tonnage?: string | null
+          voltage_info?: string | null
           zip_code?: string
         }
         Relationships: []

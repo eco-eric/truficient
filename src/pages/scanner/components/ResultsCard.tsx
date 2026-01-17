@@ -17,6 +17,7 @@ import {
   LayoutGrid,
   GitBranch,
   Beaker,
+  Plug,
 } from 'lucide-react';
 import { useScanner } from '../context/ScannerContext';
 import { Button } from '@/components/ui/button';
@@ -142,6 +143,11 @@ export function ResultsCard() {
           icon={<Beaker className="w-5 h-5" />}
           label="Factory Charge"
           value={specs.factory_charge}
+        />
+        <SpecRow
+          icon={<Plug className="w-5 h-5" />}
+          label="Voltage/Phase"
+          value={specs.voltage_info}
         />
       </div>
 
