@@ -1,11 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { StepContainer } from "../components/StepContainer";
 import { CTAButton } from "../components/CTAButton";
 import { SelectableCard } from "../components/SelectableCard";
 import { useQuote } from "../context/QuoteContext";
-import { Loader2, CheckCircle, Star, Lightbulb } from "lucide-react";
-import type { DuctlessSystemTier } from "../types";
+import { usePricing, formatMoney } from "../hooks/usePricing";
+import { Loader2, CheckCircle, Lightbulb } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tierLevelLabel: Record<string, string> = {
@@ -17,18 +15,15 @@ const tierLevelLabel: Record<string, string> = {
 export const SystemTierComparison = () => {
   const { state, setSystemTierId, nextStep, prevStep } = useQuote();
 
-  const { data: tiers = [], isLoading } = useQuery({
-    queryKey: ["ductless_system_tiers_active"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ductless_system_tiers")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order");
-      if (error) throw error;
-      return data as DuctlessSystemTier[];
-    },
+  const { tiers, selectedUnit, isLoading } = usePricing({
+    rooms: state.selectedRooms,
+    unitTypeId: state.unitTypeId,
+    systemTierId: state.systemTierId,
+    selectedAddonIds: state.selectedAddonIds,
   });
+
+  const zoneCount = state.selectedRooms.length;
+  const baseEquipmentCost = (selectedUnit?.base_price || 0) * zoneCount;
 
   const handleSelect = (id: string) => {
     setSystemTierId(id);
@@ -52,6 +47,7 @@ export const SystemTierComparison = () => {
           <div className="space-y-4 mb-6">
             {tiers.map((tier) => {
               const features: string[] = Array.isArray(tier.features) ? tier.features : [];
+              const tierPrice = Math.round(baseEquipmentCost * tier.price_multiplier);
 
               return (
                 <SelectableCard
@@ -62,20 +58,30 @@ export const SystemTierComparison = () => {
                   className={cn("w-full", tier.is_featured && "mt-4")}
                 >
                   <div className="w-full">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span
-                        className={cn(
-                          "text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full",
-                          tier.tier_level === "good" && "bg-blue-100 text-blue-700",
-                          tier.tier_level === "better" && "bg-amber-100 text-amber-700",
-                          tier.tier_level === "best" && "bg-emerald-100 text-emerald-700"
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span
+                          className={cn(
+                            "text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full",
+                            tier.tier_level === "good" && "bg-blue-100 text-blue-700",
+                            tier.tier_level === "better" && "bg-amber-100 text-amber-700",
+                            tier.tier_level === "best" && "bg-emerald-100 text-emerald-700"
+                          )}
+                        >
+                          {tierLevelLabel[tier.tier_level]}
+                        </span>
+                        {tier.seer_rating && (
+                          <span className="text-xs text-muted-foreground">{tier.seer_rating} SEER</span>
                         )}
-                      >
-                        {tierLevelLabel[tier.tier_level]}
-                      </span>
-                      {tier.seer_rating && (
-                        <span className="text-xs text-muted-foreground">{tier.seer_rating} SEER</span>
-                      )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-[#1e3a5f]">{formatMoney(tierPrice)}</div>
+                        {tier.price_multiplier !== 1 && (
+                          <div className="text-xs text-muted-foreground">
+                            {tier.price_multiplier}× base price
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <h3 className="font-semibold text-foreground text-lg">{tier.display_name}</h3>

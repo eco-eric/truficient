@@ -1,12 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { StepContainer } from "../components/StepContainer";
 import { CTAButton } from "../components/CTAButton";
 import { useQuote } from "../context/QuoteContext";
+import { usePricing, formatMoney } from "../hooks/usePricing";
 import { Loader2, Check } from "lucide-react";
 import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { DuctlessAddon } from "../types";
 
 const getIcon = (name: string | null) => {
   if (!name) return Icons.Plus;
@@ -14,23 +12,14 @@ const getIcon = (name: string | null) => {
   return IconComp || Icons.Plus;
 };
 
-const formatMoney = (n: number) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
-
 export const AddOnsSelector = () => {
   const { state, toggleAddon, nextStep, prevStep } = useQuote();
 
-  const { data: addons = [], isLoading } = useQuery({
-    queryKey: ["ductless_addons_active"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ductless_addons")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order");
-      if (error) throw error;
-      return data as DuctlessAddon[];
-    },
+  const { addons, pricing, isLoading } = usePricing({
+    rooms: state.selectedRooms,
+    unitTypeId: state.unitTypeId,
+    systemTierId: state.systemTierId,
+    selectedAddonIds: state.selectedAddonIds,
   });
 
   const selectedCount = state.selectedAddonIds.length;
@@ -53,6 +42,11 @@ export const AddOnsSelector = () => {
             {addons.map((addon) => {
               const isSelected = state.selectedAddonIds.includes(addon.id);
               const IconComp = getIcon(addon.icon_name);
+
+              const addonTotal =
+                addon.price_type === "per_zone"
+                  ? addon.price * zoneCount
+                  : addon.price;
 
               const priceDisplay =
                 addon.price_type === "per_zone"
@@ -97,6 +91,11 @@ export const AddOnsSelector = () => {
                   {/* Price */}
                   <div className="text-right">
                     <span className="font-semibold text-[#1e3a5f]">{priceDisplay}</span>
+                    {addon.price_type === "per_zone" && zoneCount > 1 && (
+                      <div className="text-xs text-muted-foreground">
+                        {formatMoney(addonTotal)} total
+                      </div>
+                    )}
                   </div>
                 </button>
               );
@@ -104,12 +103,17 @@ export const AddOnsSelector = () => {
           </div>
         )}
 
-        {/* Selected summary */}
+        {/* Selected summary with running total */}
         {selectedCount > 0 && (
           <div className="rounded-xl bg-[#1e3a5f]/5 border border-[#1e3a5f]/20 p-4 mb-6">
-            <p className="text-sm font-semibold text-[#1e3a5f]">
-              {selectedCount} upgrade{selectedCount !== 1 ? "s" : ""} selected
-            </p>
+            <div className="flex justify-between items-center">
+              <p className="text-sm font-semibold text-[#1e3a5f]">
+                {selectedCount} upgrade{selectedCount !== 1 ? "s" : ""} selected
+              </p>
+              <p className="text-sm font-bold text-[#1e3a5f]">
+                +{formatMoney(pricing.addonsTotal)}
+              </p>
+            </div>
           </div>
         )}
 

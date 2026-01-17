@@ -1,33 +1,25 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { StepContainer } from "../components/StepContainer";
 import { CTAButton } from "../components/CTAButton";
 import { SelectableCard } from "../components/SelectableCard";
 import { useQuote } from "../context/QuoteContext";
+import { usePricing, formatMoney, getPriceRange } from "../hooks/usePricing";
 import { Loader2, CheckCircle } from "lucide-react";
-import type { DuctlessUnitType } from "../types";
 
 export const UnitStyleSelector = () => {
   const { state, setUnitTypeId, nextStep, prevStep } = useQuote();
 
-  const { data: unitTypes = [], isLoading } = useQuery({
-    queryKey: ["ductless_unit_types_active"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ductless_unit_types")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order");
-      if (error) throw error;
-      return data as DuctlessUnitType[];
-    },
+  const { unitTypes, tiers, isLoading } = usePricing({
+    rooms: state.selectedRooms,
+    unitTypeId: state.unitTypeId,
+    systemTierId: state.systemTierId,
+    selectedAddonIds: state.selectedAddonIds,
   });
+
+  const zoneCount = state.selectedRooms.length;
 
   const handleSelect = (id: string) => {
     setUnitTypeId(id);
   };
-
-  const selectedUnit = unitTypes.find((u) => u.id === state.unitTypeId);
 
   return (
     <StepContainer className="px-4 pb-28">
@@ -45,6 +37,10 @@ export const UnitStyleSelector = () => {
           <div className="space-y-4 mb-8">
             {unitTypes.map((unit) => {
               const benefits: string[] = Array.isArray(unit.benefits) ? unit.benefits : [];
+              
+              // Calculate price range for this unit type
+              const baseTotal = unit.base_price * zoneCount;
+              const priceRange = getPriceRange(baseTotal, tiers);
 
               return (
                 <SelectableCard
@@ -55,9 +51,22 @@ export const UnitStyleSelector = () => {
                 >
                   <div className="w-full">
                     <div className="flex items-start justify-between mb-2">
-                      <div>
+                      <div className="flex-1">
                         <h3 className="font-semibold text-foreground text-lg">{unit.display_name}</h3>
                         <p className="text-sm text-muted-foreground">{unit.description}</p>
+                      </div>
+                      <div className="text-right ml-4">
+                        <div className="text-lg font-bold text-[#1e3a5f]">
+                          {formatMoney(priceRange.low)}
+                          {priceRange.high !== priceRange.low && (
+                            <span className="text-sm font-normal text-muted-foreground">
+                              {" "}– {formatMoney(priceRange.high)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatMoney(unit.base_price)}/zone × {zoneCount}
+                        </div>
                       </div>
                     </div>
 
