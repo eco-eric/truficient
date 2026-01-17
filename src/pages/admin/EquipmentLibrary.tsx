@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { documentationApi } from "@/lib/api/documentation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -248,6 +249,32 @@ const AdminEquipmentLibrary = () => {
     },
   });
 
+  // Refresh documentation mutation
+  const refreshDocsMutation = useMutation({
+    mutationFn: async ({ brand, modelNumber }: { brand: string; modelNumber: string }) => {
+      // Clear existing cache for this model to force fresh search
+      await supabase
+        .from("equipment_documentation")
+        .delete()
+        .ilike("model_number", modelNumber);
+      
+      // Trigger new search
+      const result = await documentationApi.searchDocumentation(brand, modelNumber);
+      if (!result.success) {
+        throw new Error(result.error || "Search failed");
+      }
+      return result;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-equipment-documentation"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-equipment-pages"] });
+      toast.success(`Found ${data.documents?.length || 0} documents`);
+    },
+    onError: (error) => {
+      toast.error("Failed to refresh: " + error.message);
+    },
+  });
+
   const formatDocType = (type: string) => {
     return type
       .replace(/_/g, " ")
@@ -408,6 +435,18 @@ const AdminEquipmentLibrary = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-2 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => refreshDocsMutation.mutate({ 
+                                brand: page.brand, 
+                                modelNumber: page.model_number 
+                              })}
+                              disabled={refreshDocsMutation.isPending}
+                              title="Refresh documentation"
+                            >
+                              <RefreshCw className={`w-4 h-4 ${refreshDocsMutation.isPending ? 'animate-spin' : ''}`} />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="icon"
