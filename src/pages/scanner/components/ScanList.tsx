@@ -2,6 +2,7 @@ import { useScanner } from '../context/ScannerContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
 import { 
   X, 
   Snowflake, 
@@ -17,7 +18,8 @@ import {
   Plug,
   Beaker,
   Factory,
-  Thermometer
+  Thermometer,
+  ExternalLink
 } from 'lucide-react';
 import { AccumulatedScan } from '../types';
 
@@ -166,6 +168,18 @@ function ScanItem({ scan, onRemove }: { scan: AccumulatedScan; onRemove: () => v
             />
           )}
         </div>
+
+        {/* View Full Equipment Page Link */}
+        {specs.brand && specs.model_number && (
+          <div className="pt-2 border-t border-border">
+            <Button asChild variant="outline" size="sm" className="w-full">
+              <Link to={`/equipment/${specs.brand.toLowerCase().replace(/\s+/g, '-')}/${specs.model_number.toLowerCase()}`}>
+                <ExternalLink className="w-4 h-4 mr-2" />
+                View Full Equipment Page
+              </Link>
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
