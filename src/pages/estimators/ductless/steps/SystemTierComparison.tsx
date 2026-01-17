@@ -15,15 +15,18 @@ const tierLevelLabel: Record<string, string> = {
 export const SystemTierComparison = () => {
   const { state, setSystemTierId, nextStep, prevStep } = useQuote();
 
-  const { tiers, selectedUnit, isLoading } = usePricing({
+  const { tiers, unitTypes, isLoading } = usePricing({
     rooms: state.selectedRooms,
     unitTypeId: state.unitTypeId,
     systemTierId: state.systemTierId,
     selectedAddonIds: state.selectedAddonIds,
   });
 
-  const zoneCount = state.selectedRooms.length;
-  const baseEquipmentCost = (selectedUnit?.base_price || 0) * zoneCount;
+  // Calculate base equipment cost from per-room unit type selections
+  const baseEquipmentCost = state.selectedRooms.reduce((sum, room) => {
+    const roomUnitType = unitTypes.find(u => u.id === room.unitTypeId);
+    return sum + (roomUnitType?.base_price || 0);
+  }, 0);
 
   const handleSelect = (id: string) => {
     setSystemTierId(id);
