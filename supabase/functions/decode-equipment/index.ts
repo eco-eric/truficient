@@ -322,7 +322,7 @@ IMPORTANT:
 
     // Auto-generate equipment page if it doesn't exist
     if (specs.brand && typeof specs.brand === 'string') {
-      const brandSlug = specs.brand.toLowerCase().replace(/\s+/g, '-');
+      const brandSlug = specs.brand.toLowerCase().replace(/[\s\/]+/g, '-');
       const modelSlug = specs.model_number.toLowerCase().replace(/\s+/g, '-');
       const slug = `${brandSlug}/${modelSlug}`;
       
