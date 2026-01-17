@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Download, Camera, Phone, Mail, MapPin, User, Calendar, Gauge, Thermometer, Zap, CheckCircle2, Award, Shield, Clock } from 'lucide-react';
+import { Download, Camera, Phone, Mail, MapPin, User, Calendar, Gauge, Thermometer, Zap, CheckCircle2, Award, Shield, Clock, DollarSign, TrendingUp, Ruler, Snowflake, AlertTriangle, Leaf } from 'lucide-react';
 import { generateEquipmentReportPDF } from '@/utils/generateEquipmentReportPDF';
 import type { AccumulatedScan } from './types';
 import { trackReportPageView, trackPDFDownload } from '@/utils/conversionTracking';
@@ -117,6 +117,51 @@ export default function EquipmentReport() {
     const age = currentYear - year;
     return age;
   };
+
+  // Equipment analysis helpers
+  const getOverallStatus = () => {
+    const ages = scans.map(s => getEquipmentAge(s.manufactured_year)).filter(a => a !== null) as number[];
+    if (ages.length === 0) return { status: 'unknown', label: 'Unknown Age', color: 'muted' };
+    const maxAge = Math.max(...ages);
+    if (maxAge > 15) return { status: 'old', label: 'Consider Replacement', color: 'red' };
+    if (maxAge > 10) return { status: 'aging', label: 'Aging Equipment', color: 'amber' };
+    return { status: 'good', label: 'Good Condition', color: 'green' };
+  };
+
+  const hasR22Refrigerant = scans.some(s => s.refrigerant?.toLowerCase().includes('r-22') || s.refrigerant?.toLowerCase().includes('r22'));
+  const hasLowSeer = scans.some(s => s.seer_rating !== null && s.seer_rating < 14);
+  const overallStatus = getOverallStatus();
+
+  const estimatorLinks = [
+    {
+      title: 'Cost Estimator',
+      description: 'Get an instant replacement cost estimate',
+      icon: DollarSign,
+      href: '/estimators/cost',
+      color: 'bg-green-500'
+    },
+    {
+      title: 'Savings Calculator',
+      description: 'See how much you could save with a new system',
+      icon: TrendingUp,
+      href: '/estimators/savings',
+      color: 'bg-blue-500'
+    },
+    {
+      title: 'Sizing Guide',
+      description: 'Find the right size system for your home',
+      icon: Ruler,
+      href: '/estimators/sizing',
+      color: 'bg-purple-500'
+    },
+    {
+      title: 'Ductless Quote',
+      description: 'Get a mini-split system estimate',
+      icon: Snowflake,
+      href: '/estimate/ductless',
+      color: 'bg-cyan-500'
+    }
+  ];
 
   if (isLoading) {
     return (
@@ -380,6 +425,105 @@ export default function EquipmentReport() {
                     </Card>
                   );
                 })}
+
+                {/* Equipment Analysis Section */}
+                <Card className="border-2 border-dashed border-primary/30 bg-primary/5">
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                      <Gauge className="w-5 h-5 text-primary" />
+                      Equipment Analysis
+                    </h3>
+                    
+                    {/* Overall Status */}
+                    <div className="flex items-center gap-3 p-4 rounded-lg bg-background mb-4">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        overallStatus.color === 'red' ? 'bg-red-100 dark:bg-red-900/30' :
+                        overallStatus.color === 'amber' ? 'bg-amber-100 dark:bg-amber-900/30' :
+                        overallStatus.color === 'green' ? 'bg-green-100 dark:bg-green-900/30' :
+                        'bg-muted'
+                      }`}>
+                        {overallStatus.color === 'red' ? (
+                          <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                        ) : overallStatus.color === 'amber' ? (
+                          <Clock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                        ) : overallStatus.color === 'green' ? (
+                          <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />
+                        ) : (
+                          <Gauge className="w-6 h-6 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">{overallStatus.label}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {scans.length} {scans.length === 1 ? 'unit' : 'units'} analyzed
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Warnings/Recommendations */}
+                    <div className="space-y-3">
+                      {hasR22Refrigerant && (
+                        <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                          <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-medium text-amber-800 dark:text-amber-300 text-sm">R-22 Refrigerant Detected</p>
+                            <p className="text-xs text-amber-700 dark:text-amber-400">R-22 has been phased out. Replacement parts and refrigerant are increasingly expensive.</p>
+                          </div>
+                        </div>
+                      )}
+                      {hasLowSeer && (
+                        <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+                          <Leaf className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-medium text-blue-800 dark:text-blue-300 text-sm">Efficiency Opportunity</p>
+                            <p className="text-xs text-blue-700 dark:text-blue-400">Newer systems (16+ SEER) can reduce energy costs by 30-50%.</p>
+                          </div>
+                        </div>
+                      )}
+                      {overallStatus.status === 'old' && (
+                        <div className="flex items-start gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
+                          <Clock className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-medium text-red-800 dark:text-red-300 text-sm">Equipment Approaching End of Life</p>
+                            <p className="text-xs text-red-700 dark:text-red-400">Systems over 15 years old typically cost more to repair than replace. Consider your options now.</p>
+                          </div>
+                        </div>
+                      )}
+                      {overallStatus.status === 'good' && !hasR22Refrigerant && !hasLowSeer && (
+                        <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                          <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-medium text-green-800 dark:text-green-300 text-sm">Equipment in Good Condition</p>
+                            <p className="text-xs text-green-700 dark:text-green-400">Regular maintenance will help maximize the lifespan of your system.</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Estimator Links Section */}
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-bold text-foreground mb-2">Explore Your Options</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Use our online tools to estimate costs and savings for a new system.
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {estimatorLinks.map((link) => (
+                        <Link key={link.href} to={link.href}>
+                          <div className="p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/50 transition-colors group cursor-pointer h-full">
+                            <div className={`w-10 h-10 rounded-lg ${link.color} flex items-center justify-center mb-3`}>
+                              <link.icon className="w-5 h-5 text-white" />
+                            </div>
+                            <p className="font-medium text-foreground text-sm group-hover:text-primary transition-colors">{link.title}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{link.description}</p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Sidebar */}
