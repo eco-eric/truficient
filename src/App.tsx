@@ -9,6 +9,9 @@ import ResidentialServices from "./pages/services/ResidentialServices";
 import CommercialServices from "./pages/services/CommercialServices";
 import DuctlessServices from "./pages/services/DuctlessServices";
 import HvacEstimate from "./pages/HvacEstimate";
+import SizingCalculator from "./pages/estimators/SizingCalculator";
+import CostEstimator from "./pages/estimators/CostEstimator";
+import SavingsCalculator from "./pages/estimators/SavingsCalculator";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -87,6 +90,9 @@ const router = createBrowserRouter([
       { path: "/service-areas/mid-cities-area", element: <MidCitiesArea /> },
       { path: "/service-areas/south-dallas-area", element: <SouthDallasArea /> },
       { path: "/hvac-estimate", element: <HvacEstimate /> },
+      { path: "/estimators/sizing", element: <SizingCalculator /> },
+      { path: "/estimators/cost", element: <CostEstimator /> },
+      { path: "/estimators/savings", element: <SavingsCalculator /> },
       { path: "/careers", element: <Careers /> },
       { path: "/privacy-policy", element: <PrivacyPolicy /> },
       { path: "/terms-of-service", element: <TermsOfService /> },
