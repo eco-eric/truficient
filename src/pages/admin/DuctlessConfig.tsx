@@ -11,8 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { UnitSizePricingTable } from "./components/UnitSizePricingTable";
 
 type JsonArrayStrings = string[];
 
@@ -104,6 +106,19 @@ const DuctlessConfig = () => {
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<"unitTypes" | "tiers" | "addons" | "submissions">("unitTypes");
+  const [expandedUnitIds, setExpandedUnitIds] = useState<Set<string>>(new Set());
+
+  const toggleUnitExpanded = (id: string) => {
+    setExpandedUnitIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   // -------- Unit Types --------
   const unitTypesQuery = useQuery({
@@ -592,53 +607,76 @@ const DuctlessConfig = () => {
               </Dialog>
             </div>
 
-            <div className="rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Display</TableHead>
-                    <TableHead>Base price</TableHead>
-                    <TableHead>Active</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(unitTypesQuery.data || []).map((u) => (
-                    <TableRow key={u.id}>
-                      <TableCell>
-                        <div className="font-medium">{u.display_name}</div>
-                        <div className="text-xs text-muted-foreground">{u.name}</div>
-                      </TableCell>
-                      <TableCell>{formatMoney(u.base_price)}</TableCell>
-                      <TableCell>{u.is_active ? "Yes" : "No"}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="sm" onClick={() => openEditUnit(u)}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => {
-                              if (confirm(`Delete ${u.display_name}?`)) deleteUnitMutation.mutate(u.id);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+            <div className="space-y-2">
+              {(unitTypesQuery.data || []).map((u) => (
+                <Collapsible
+                  key={u.id}
+                  open={expandedUnitIds.has(u.id)}
+                  onOpenChange={() => toggleUnitExpanded(u.id)}
+                >
+                  <div className="rounded-lg border">
+                    <CollapsibleTrigger asChild>
+                      <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center justify-center w-6 h-6">
+                            {expandedUnitIds.has(u.id) ? (
+                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-medium">{u.display_name}</div>
+                            <div className="text-xs text-muted-foreground">{u.name}</div>
+                          </div>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        <div className="flex items-center gap-6">
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">Base: </span>
+                            <span className="font-medium">{formatMoney(u.base_price)}</span>
+                          </div>
+                          <div className="text-sm">
+                            {u.is_active ? (
+                              <span className="text-green-600">Active</span>
+                            ) : (
+                              <span className="text-muted-foreground">Inactive</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            <Button variant="outline" size="sm" onClick={() => openEditUnit(u)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                if (confirm(`Delete ${u.display_name}?`)) deleteUnitMutation.mutate(u.id);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="border-t bg-muted/30 p-4">
+                        <UnitSizePricingTable
+                          unitTypeId={u.id}
+                          unitTypeName={u.display_name}
+                          basePrice={u.base_price}
+                        />
+                      </div>
+                    </CollapsibleContent>
+                  </div>
+                </Collapsible>
+              ))}
 
-                  {unitTypesQuery.isLoading && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-sm text-muted-foreground">
-                        Loading...
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+              {unitTypesQuery.isLoading && (
+                <div className="p-4 text-sm text-muted-foreground border rounded-lg">
+                  Loading...
+                </div>
+              )}
             </div>
           </TabsContent>
 
