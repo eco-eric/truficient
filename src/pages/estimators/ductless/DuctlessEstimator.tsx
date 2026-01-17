@@ -4,6 +4,7 @@ import { ProgressIndicator } from "./components/ProgressIndicator";
 import { PriceBar } from "./components/PriceBar";
 import { usePricing } from "./hooks/usePricing";
 import { WelcomeHero } from "./steps/WelcomeHero";
+import { CustomerInfoStep } from "./steps/CustomerInfoStep";
 import { RoomSelector } from "./steps/RoomSelector";
 import { RoomDetails } from "./steps/RoomDetails";
 import { UnitStyleSelector } from "./steps/UnitStyleSelector";
@@ -16,6 +17,7 @@ import truficientLogo from "@/assets/truficient-logo.png";
 
 const STEP_LABELS = [
   "Welcome",
+  "Your Info",
   "Select Rooms",
   "Room Details",
   "Unit Style",
@@ -42,28 +44,30 @@ const EstimatorContent = () => {
       case 0:
         return <WelcomeHero />;
       case 1:
-        return <RoomSelector />;
+        return <CustomerInfoStep />;
       case 2:
-        return <RoomDetails />;
+        return <RoomSelector />;
       case 3:
-        return <UnitStyleSelector />;
+        return <RoomDetails />;
       case 4:
-        return <SystemTierComparison />;
+        return <UnitStyleSelector />;
       case 5:
-        return <AddOnsSelector />;
+        return <SystemTierComparison />;
       case 6:
-        return <QuoteSummary />;
+        return <AddOnsSelector />;
       case 7:
+        return <QuoteSummary />;
+      case 8:
         return <ThankYou />;
       default:
         return <WelcomeHero />;
     }
   };
 
-  const showProgress = currentStep > 0 && currentStep < 7;
+  const showProgress = currentStep > 0 && currentStep < 8;
   
-  // Show price bar on steps 3-6 (unit selection through summary)
-  const showPriceBar = currentStep >= 3 && currentStep <= 6;
+  // Show price bar on steps 4-7 (unit selection through summary)
+  const showPriceBar = currentStep >= 4 && currentStep <= 7;
   
   // Determine if we should show a range (before tier is selected)
   const showRange = !state.systemTierId && tiers.length > 1;
@@ -94,8 +98,8 @@ const EstimatorContent = () => {
       {showProgress && (
         <ProgressIndicator
           currentStep={currentStep}
-          totalSteps={6}
-          labels={STEP_LABELS.slice(1, 7)}
+          totalSteps={7}
+          labels={STEP_LABELS.slice(1, 8)}
         />
       )}
 

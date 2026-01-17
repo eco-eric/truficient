@@ -6,6 +6,12 @@ const INITIAL_CUSTOMER_INFO: CustomerInfo = {
   email: "",
   phone: "",
   address: "",
+  formattedAddress: "",
+  city: "",
+  county: "",
+  state: "",
+  zipCode: "",
+  placeId: "",
 };
 
 const INITIAL_TOTALS: PricingTotals = {
