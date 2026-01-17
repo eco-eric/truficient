@@ -13,6 +13,7 @@ import SizingCalculator from "./pages/estimators/SizingCalculator";
 import CostEstimator from "./pages/estimators/CostEstimator";
 import SavingsCalculator from "./pages/estimators/SavingsCalculator";
 import DuctlessEstimator from "./pages/estimators/ductless/DuctlessEstimator";
+import DuctedEstimator from "./pages/estimators/ducted/DuctedEstimator";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -108,6 +109,7 @@ const router = createBrowserRouter([
       { path: "/estimators/cost", element: <CostEstimator /> },
       { path: "/estimators/savings", element: <SavingsCalculator /> },
       { path: "/estimate/ductless", element: <DuctlessEstimator /> },
+      { path: "/estimate/ducted", element: <DuctedEstimator /> },
       { path: "/careers", element: <Careers /> },
       { path: "/privacy-policy", element: <PrivacyPolicy /> },
       { path: "/terms-of-service", element: <TermsOfService /> },
