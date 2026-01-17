@@ -212,27 +212,27 @@ const Header = () => {
                 <DropdownMenuContent className="bg-background border-border">
                   <DropdownMenuItem asChild>
                     <Link 
-                      to="/hvac-estimate" 
+                      to="/estimators/sizing" 
                       className="cursor-pointer"
-                      onClick={() => handleTrackClick('Sizing Calculator', 'Header - Main Nav', '/hvac-estimate')}
+                      onClick={() => handleTrackClick('Sizing Calculator', 'Header - Main Nav', '/estimators/sizing')}
                     >
                       Sizing Calculator
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link 
-                      to="/hvac-estimate" 
+                      to="/estimators/cost" 
                       className="cursor-pointer"
-                      onClick={() => handleTrackClick('Cost Estimator', 'Header - Main Nav', '/hvac-estimate')}
+                      onClick={() => handleTrackClick('Cost Estimator', 'Header - Main Nav', '/estimators/cost')}
                     >
                       Cost Estimator
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link 
-                      to="/hvac-estimate" 
+                      to="/estimators/savings" 
                       className="cursor-pointer"
-                      onClick={() => handleTrackClick('Savings Calculator', 'Header - Main Nav', '/hvac-estimate')}
+                      onClick={() => handleTrackClick('Savings Calculator', 'Header - Main Nav', '/estimators/savings')}
                     >
                       Savings Calculator
                     </Link>
@@ -386,30 +386,30 @@ const Header = () => {
                     </CollapsibleTrigger>
                     <CollapsibleContent className="pl-4 space-y-2">
                       <Link
-                        to="/hvac-estimate"
+                        to="/estimators/sizing"
                         className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
                         onClick={() => {
-                          handleTrackClick('Sizing Calculator', 'Header - Mobile Menu', '/hvac-estimate');
+                          handleTrackClick('Sizing Calculator', 'Header - Mobile Menu', '/estimators/sizing');
                           setIsOpen(false);
                         }}
                       >
                         Sizing Calculator
                       </Link>
                       <Link
-                        to="/hvac-estimate"
+                        to="/estimators/cost"
                         className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
                         onClick={() => {
-                          handleTrackClick('Cost Estimator', 'Header - Mobile Menu', '/hvac-estimate');
+                          handleTrackClick('Cost Estimator', 'Header - Mobile Menu', '/estimators/cost');
                           setIsOpen(false);
                         }}
                       >
                         Cost Estimator
                       </Link>
                       <Link
-                        to="/hvac-estimate"
+                        to="/estimators/savings"
                         className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
                         onClick={() => {
-                          handleTrackClick('Savings Calculator', 'Header - Mobile Menu', '/hvac-estimate');
+                          handleTrackClick('Savings Calculator', 'Header - Mobile Menu', '/estimators/savings');
                           setIsOpen(false);
                         }}
                       >
