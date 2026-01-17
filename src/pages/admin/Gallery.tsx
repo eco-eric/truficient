@@ -27,7 +27,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ImageUpload } from '@/components/admin/ImageUpload';
-import { Plus, Pencil, Trash2, Star, Image as ImageIcon, Tag, Loader2 } from 'lucide-react';
+import { BulkImageUpload } from '@/components/admin/BulkImageUpload';
+import { Plus, Pencil, Trash2, Star, Image as ImageIcon, Tag, Loader2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface GalleryTag {
@@ -61,6 +62,7 @@ const AdminGallery = () => {
   
   // Image dialog state
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [editingImage, setEditingImage] = useState<GalleryImage | null>(null);
   const [imageForm, setImageForm] = useState({
     title: '',
@@ -390,16 +392,21 @@ const AdminGallery = () => {
           </TabsList>
 
           {activeTab === 'images' && (
-            <Dialog open={imageDialogOpen} onOpenChange={(open) => {
-              setImageDialogOpen(open);
-              if (!open) resetImageForm();
-            }}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Image
-                </Button>
-              </DialogTrigger>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setBulkUploadOpen(true)}>
+                <Upload className="w-4 h-4 mr-2" />
+                Bulk Upload
+              </Button>
+              <Dialog open={imageDialogOpen} onOpenChange={(open) => {
+                setImageDialogOpen(open);
+                if (!open) resetImageForm();
+              }}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Image
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>{editingImage ? 'Edit Image' : 'Add New Image'}</DialogTitle>
@@ -494,6 +501,17 @@ const AdminGallery = () => {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            
+            <BulkImageUpload
+              open={bulkUploadOpen}
+              onOpenChange={setBulkUploadOpen}
+              tags={tags}
+              onComplete={() => {
+                queryClient.invalidateQueries({ queryKey: ['gallery-images-admin'] });
+                queryClient.invalidateQueries({ queryKey: ['gallery-image-tags-admin'] });
+              }}
+            />
+            </div>
           )}
 
           {activeTab === 'tags' && (
