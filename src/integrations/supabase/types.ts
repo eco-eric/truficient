@@ -439,6 +439,50 @@ export type Database = {
         }
         Relationships: []
       }
+      ductless_unit_size_pricing: {
+        Row: {
+          created_at: string
+          id: string
+          is_available: boolean
+          price: number
+          size_btu: number
+          size_tons: number
+          sort_order: number
+          unit_type_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          price?: number
+          size_btu: number
+          size_tons: number
+          sort_order?: number
+          unit_type_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          price?: number
+          size_btu?: number
+          size_tons?: number
+          sort_order?: number
+          unit_type_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ductless_unit_size_pricing_unit_type_id_fkey"
+            columns: ["unit_type_id"]
+            isOneToOne: false
+            referencedRelation: "ductless_unit_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ductless_unit_types: {
         Row: {
           base_price: number
