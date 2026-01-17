@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { ScannerState, ScannerAction, isDfwZipCode, AccumulatedScan } from '../types';
+import { ScannerState, ScannerAction, isDfwZipCode, AccumulatedScan, BulkUploadProgress } from '../types';
 
 const MAX_SCANS = 5;
 
@@ -18,6 +18,8 @@ const initialState: ScannerState = {
   result: null,
   results: [],
   error: null,
+  bulkImages: [],
+  bulkProgress: null,
 };
 
 function scannerReducer(state: ScannerState, action: ScannerAction): ScannerState {
@@ -91,6 +93,22 @@ function scannerReducer(state: ScannerState, action: ScannerAction): ScannerStat
       };
     case 'RESET':
       return initialState;
+    case 'SET_BULK_IMAGES':
+      return { ...state, bulkImages: action.payload };
+    case 'SET_BULK_PROGRESS':
+      return { ...state, bulkProgress: action.payload };
+    case 'ADD_BULK_RESULT':
+      if (state.results.length >= MAX_SCANS) {
+        return state;
+      }
+      // Check if this scan is already in results
+      if (state.results.some(s => s.id === action.payload.id)) {
+        return state;
+      }
+      return { 
+        ...state, 
+        results: [...state.results, action.payload],
+      };
     default:
       return state;
   }
