@@ -149,7 +149,8 @@ Return ONLY a valid JSON object with these fields:
   "breaker_size": "Recommended circuit breaker size in amps (e.g., '20', '30', '40')",
   "fan_motor_info": "Fan motor details if available (e.g., 'Variable Speed', 'Single Stage', 'ECM')",
   "compressor_info": "Compressor details if available (e.g., 'Single Stage', 'Two Stage', 'Variable Speed')",
-  "factory_charge": "Factory refrigerant charge in ounces or pounds if decodable (e.g., '106 oz', '8 lbs 10 oz')"
+  "factory_charge": "Factory refrigerant charge in ounces or pounds if decodable (e.g., '106 oz', '8 lbs 10 oz')",
+  "voltage_info": "Electrical specifications (e.g., '208-230V/1PH/60Hz', '460V/3PH/60Hz')"
 }
 
 IMPORTANT: 
@@ -160,6 +161,7 @@ IMPORTANT:
 - For Goodman/Amana: First 4 digits are year/month
 - For Rheem: Look at first 4 characters for week/year
 - Factory charge is typically encoded in model numbers or found on data plates
+- Voltage info format: Voltage/Phase/Frequency (e.g., 208-230V/1PH/60Hz)
 - Return ONLY the JSON object, no additional text`;
 
     // Call the Lovable AI Gateway for decoding
@@ -193,6 +195,7 @@ IMPORTANT:
                   fan_motor_info: { type: 'string', description: 'Fan motor details' },
                   compressor_info: { type: 'string', description: 'Compressor details' },
                   factory_charge: { type: 'string', description: 'Factory refrigerant charge' },
+                  voltage_info: { type: 'string', description: 'Electrical specifications (voltage/phase/frequency)' },
                 },
                 required: ['brand'],
               },
@@ -280,6 +283,7 @@ IMPORTANT:
       fan_motor_info: decodedSpecs.fan_motor_info || null,
       compressor_info: decodedSpecs.compressor_info || null,
       factory_charge: decodedSpecs.factory_charge || null,
+      voltage_info: decodedSpecs.voltage_info || null,
     };
 
     console.log('Final decoded specs:', specs);
