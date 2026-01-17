@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { useButtonTracking } from '@/hooks/useButtonTracking';
 import heatPumpImage from '@/assets/heat-pump-installation.png';
 import acRepairImage from '@/assets/ac-repair.jpg';
+import designInstallImage from '@/assets/design-and-install.jpg';
 
 const services = [
   {
@@ -28,7 +29,7 @@ const services = [
   {
     title: 'Design and Install Services',
     description: 'Your HVAC system bit the dust? Truficient offers full HVAC design and installation for all private, commercial, and residential customers.',
-    image: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=400&h=300&fit=crop',
+    image: designInstallImage,
     link: '/residential-services#ac-installation',
   },
   {
