@@ -212,6 +212,15 @@ const Header = () => {
                 <DropdownMenuContent className="bg-background border-border">
                   <DropdownMenuItem asChild>
                     <Link 
+                      to="/estimate/ductless" 
+                      className="cursor-pointer"
+                      onClick={() => handleTrackClick('Ductless Estimator', 'Header - Main Nav', '/estimate/ductless')}
+                    >
+                      Ductless Estimator
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link 
                       to="/estimators/sizing" 
                       className="cursor-pointer"
                       onClick={() => handleTrackClick('Sizing Calculator', 'Header - Main Nav', '/estimators/sizing')}
@@ -385,6 +394,16 @@ const Header = () => {
                       <ChevronRight className={`w-4 h-4 transition-transform ${openMobileMenus.estimators ? 'rotate-90' : ''}`} />
                     </CollapsibleTrigger>
                     <CollapsibleContent className="pl-4 space-y-2">
+                      <Link
+                        to="/estimate/ductless"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                        onClick={() => {
+                          handleTrackClick('Ductless Estimator', 'Header - Mobile Menu', '/estimate/ductless');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Ductless Estimator
+                      </Link>
                       <Link
                         to="/estimators/sizing"
                         className="block text-base text-muted-foreground hover:text-primary transition-colors py-1"
