@@ -20,6 +20,7 @@ import {
   Plug,
   Plus,
   Check,
+  Camera,
 } from 'lucide-react';
 import { useScanner } from '../context/ScannerContext';
 import { Button } from '@/components/ui/button';
@@ -65,6 +66,7 @@ export function ResultsCard() {
   
   const isAlreadyAdded = result?.id ? results.some(s => s.id === result.id) : false;
   const canAddMore = results.length < MAX_SCANS;
+  const canScanMore = results.length < MAX_SCANS || (results.length === 0 && result);
   const scanNumber = results.length + 1;
 
   if (!result?.specs) {
@@ -180,31 +182,37 @@ export function ResultsCard() {
         </div>
       )}
 
-      {/* Add to List Button */}
-      {canAddMore && !isAlreadyAdded && (
-        <div className="pt-2">
+      {/* Side-by-side action buttons */}
+      <div className="grid grid-cols-2 gap-3 pt-4">
+        {canAddMore && !isAlreadyAdded ? (
           <Button 
             onClick={() => dispatch({ type: 'ADD_TO_RESULTS' })}
-            className="w-full bg-secondary hover:bg-secondary/90"
+            className="bg-secondary hover:bg-secondary/90 h-12"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Add to My List ({scanNumber}/{MAX_SCANS})
+            Add ({scanNumber}/5)
           </Button>
-        </div>
-      )}
-      
-      {isAlreadyAdded && (
-        <div className="pt-2">
+        ) : (
           <Button 
             disabled
             variant="outline"
-            className="w-full border-green-500 text-green-600"
+            className="border-green-500 text-green-600 h-12"
           >
             <Check className="w-4 h-4 mr-2" />
-            Added to List
+            Added
           </Button>
-        </div>
-      )}
+        )}
+        
+        {canScanMore && (
+          <Button
+            onClick={() => dispatch({ type: 'SCAN_ANOTHER' })}
+            className="bg-primary hover:bg-primary/90 font-semibold h-12"
+          >
+            <Camera className="w-4 h-4 mr-2" />
+            Scan Another
+          </Button>
+        )}
+      </div>
     </Card>
   );
 }
