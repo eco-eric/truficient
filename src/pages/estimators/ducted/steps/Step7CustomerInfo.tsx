@@ -106,6 +106,11 @@ export const Step7CustomerInfo = () => {
     setIsSubmitting(true);
 
     try {
+      // Parse name into first/last
+      const nameParts = state.customerInfo.name.trim().split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
       const submissionData = {
         // Customer info
         customer_name: state.customerInfo.name,
@@ -118,7 +123,7 @@ export const Step7CustomerInfo = () => {
         // Home details
         home_type: state.homeType || "single_family",
         home_layout: state.homeLayout || "1_story",
-        square_footage: state.squareFootage || "1500_2000",
+        square_footage: state.squareFootage || "1600_2000",
         hot_cold_spots: state.hotColdSpots || null,
         winter_temp: state.winterTemp || null,
         summer_temp: state.summerTemp || null,
@@ -145,13 +150,59 @@ export const Step7CustomerInfo = () => {
         
         // Status
         status: "new",
+        ghl_sync_status: "pending",
       };
 
-      const { error } = await supabase
+      // Insert to database
+      const { data: insertedData, error } = await supabase
         .from("ducted_estimate_submissions")
-        .insert(submissionData);
+        .insert(submissionData)
+        .select("id")
+        .single();
 
       if (error) throw error;
+
+      // Sync to GoHighLevel (non-blocking)
+      const systemTypeLabel = state.heatingType === "gas_system" ? "Gas Furnace + AC" : "Heat Pump";
+      const tierName = pricing.selectedTier?.display_name || "Standard";
+      
+      supabase.functions.invoke("sync-ghl-contact", {
+        body: {
+          firstName,
+          lastName,
+          email: state.customerInfo.email,
+          phone: state.customerInfo.phone || undefined,
+          source: "Ducted HVAC Estimator",
+          tags: ["ducted-estimator", "hvac-lead", state.heatingType || "hvac"],
+          message: `Ducted HVAC Estimate Request:
+• System: ${systemTypeLabel} - ${tierName} Tier
+• Size: ${pricing.recommendedTonnage} Ton
+• Home: ${state.homeType}, ${state.homeLayout}, ${state.squareFootage} sq ft
+• Estimate: $${pricing.finalTotal.toLocaleString()}
+• Address: ${state.customerInfo.formattedAddress || state.customerInfo.address || "Not provided"}`,
+          zipCode: state.customerInfo.zipCode || undefined,
+          isDfw: !addressError || continueAnyway,
+        },
+      }).then(async (response) => {
+        // Update GHL sync status
+        if (response.data?.contactId) {
+          await supabase
+            .from("ducted_estimate_submissions")
+            .update({ 
+              ghl_contact_id: response.data.contactId,
+              ghl_sync_status: "synced" 
+            })
+            .eq("id", insertedData.id);
+        } else if (response.error) {
+          console.error("GHL sync failed:", response.error);
+          await supabase
+            .from("ducted_estimate_submissions")
+            .update({ ghl_sync_status: "failed" })
+            .eq("id", insertedData.id);
+        }
+      }).catch((err) => {
+        console.error("GHL sync error:", err);
+      });
 
       toast.success("Your estimate request has been submitted!");
       nextStep();

@@ -453,6 +453,7 @@ export type Database = {
           equipment_id: string | null
           final_total: number | null
           ghl_contact_id: string | null
+          ghl_sync_status: string | null
           heating_type: string
           home_layout: string
           home_type: string
@@ -485,6 +486,7 @@ export type Database = {
           equipment_id?: string | null
           final_total?: number | null
           ghl_contact_id?: string | null
+          ghl_sync_status?: string | null
           heating_type: string
           home_layout: string
           home_type: string
@@ -517,6 +519,7 @@ export type Database = {
           equipment_id?: string | null
           final_total?: number | null
           ghl_contact_id?: string | null
+          ghl_sync_status?: string | null
           heating_type?: string
           home_layout?: string
           home_type?: string
