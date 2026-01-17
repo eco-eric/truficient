@@ -54,6 +54,8 @@ interface WarmLead {
   id: string;
   created_at: string | null;
   zip_code: string;
+  city: string | null;
+  state: string | null;
   brand: string | null;
   model_number: string;
   serial_number: string | null;
@@ -431,7 +433,7 @@ export default function DFWWatchList() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
-                  <TableHead>Zip Code</TableHead>
+                  <TableHead>Location</TableHead>
                   <TableHead>Brand / Model</TableHead>
                   <TableHead>Age</TableHead>
                   <TableHead>Contact</TableHead>
@@ -466,7 +468,12 @@ export default function DFWWatchList() {
                             : "-"}
                         </TableCell>
                         <TableCell onClick={() => handleViewLead(lead)}>
-                          {lead.zip_code}
+                          <div>
+                            <span className="font-medium">{lead.city || lead.zip_code}</span>
+                            {lead.city && (
+                              <p className="text-xs text-muted-foreground">{lead.zip_code}</p>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell onClick={() => handleViewLead(lead)}>
                           <div>

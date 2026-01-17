@@ -39,6 +39,14 @@ export const ScannerSubmissionDetail = ({ metadata }: ScannerSubmissionDetailPro
           Location
         </h4>
         <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
+          {(metadata.city || metadata.state) && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">City/State:</span>
+              <span className="font-medium">
+                {metadata.city as string}{metadata.city && metadata.state ? ', ' : ''}{metadata.state as string}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-muted-foreground">ZIP Code:</span>
             <span className="font-medium">{metadata.zipCode as string || "N/A"}</span>

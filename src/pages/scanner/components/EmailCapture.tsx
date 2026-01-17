@@ -86,6 +86,8 @@ export function EmailCapture() {
           customer_phone: phone || null,
           customer_address: address || null,
           marketing_opt_in: marketingOptIn,
+          city: state.city,
+          state: state.state,
           ghl_sync_status: 'pending'
         })
         .in('id', scanIds);
