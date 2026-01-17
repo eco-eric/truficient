@@ -14,6 +14,7 @@ interface ContactData {
   message?: string;
   tags?: string[];
   source?: string;
+  equipmentReportUrl?: string;
 }
 
 serve(async (req) => {
@@ -63,6 +64,13 @@ serve(async (req) => {
       customFields.push({
         key: 'message',
         field_value: contactData.message,
+      });
+    }
+
+    if (contactData.equipmentReportUrl) {
+      customFields.push({
+        key: 'equipment_report_url',
+        field_value: contactData.equipmentReportUrl,
       });
     }
 

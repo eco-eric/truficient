@@ -72,9 +72,34 @@ export function EmailCapture() {
 
       dispatch({ type: 'SET_EMAIL', payload: email });
       
-      // Navigate to the report page with scan IDs
+      // Build the report URL for GHL
       const scanIdsParam = scanIds.join(',');
-      navigate(`/scanner/report?scans=${scanIdsParam}&email=${encodeURIComponent(email)}`);
+      const reportUrl = `${window.location.origin}/scanner/report?scans=${scanIdsParam}&email=${encodeURIComponent(email)}`;
+      
+      // Sync contact to GHL for email automation
+      const nameParts = name?.trim().split(' ') || [];
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
+      try {
+        await supabase.functions.invoke('sync-ghl-contact', {
+          body: {
+            firstName,
+            lastName,
+            email,
+            phone: phone || undefined,
+            tags: ['equipment-scanner', marketingOptIn ? 'marketing-opted-in' : 'marketing-opted-out'],
+            source: 'Equipment Scanner',
+            equipmentReportUrl: reportUrl,
+          }
+        });
+      } catch (ghlError) {
+        // Don't block navigation if GHL sync fails - just log it
+        console.error('GHL sync failed:', ghlError);
+      }
+      
+      // Navigate to the report page
+      navigate(reportUrl.replace(window.location.origin, ''));
       
     } catch (err) {
       console.error('Failed to save email:', err);
