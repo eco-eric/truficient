@@ -20,7 +20,8 @@ import {
   Receipt,
   ClipboardList,
   LayoutTemplate,
-  MessageSquare
+  MessageSquare,
+  AirVent
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -69,6 +70,7 @@ const navSections: NavSection[] = [
       { label: 'SEO', href: '/admin/seo', icon: Search, adminOnly: true },
       { label: 'Calculators', href: '/admin/calculators', icon: Calculator, adminOnly: true },
       { label: 'System Pricing', href: '/admin/system-pricing', icon: DollarSign, adminOnly: true },
+      { label: 'Ductless Config', href: '/admin/ductless-config', icon: AirVent, adminOnly: true },
       { label: 'GHL Tags', href: '/admin/ghl-tags', icon: Tag, adminOnly: true },
       { label: 'GHL Conversations', href: '/admin/ghl-conversations', icon: MessageSquare, adminOnly: true },
       { label: 'Landing Pages', href: '/admin/landing-pages', icon: FileInput, adminOnly: true },

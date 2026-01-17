@@ -253,6 +253,219 @@ export type Database = {
         }
         Relationships: []
       }
+      ductless_addons: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon_name: string | null
+          id: string
+          is_active: boolean
+          is_popular: boolean
+          name: string
+          price: number
+          price_type: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean
+          is_popular?: boolean
+          name: string
+          price?: number
+          price_type?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean
+          is_popular?: boolean
+          name?: string
+          price?: number
+          price_type?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ductless_estimate_submissions: {
+        Row: {
+          created_at: string
+          customer_address: string | null
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          final_total: number
+          id: string
+          notes: string | null
+          rebates: number
+          selected_addons: Json | null
+          selected_rooms: Json | null
+          status: string
+          subtotal: number
+          system_tier_id: string | null
+          tax_amount: number
+          unit_type_id: string | null
+          updated_at: string
+          zone_count: number
+        }
+        Insert: {
+          created_at?: string
+          customer_address?: string | null
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          final_total?: number
+          id?: string
+          notes?: string | null
+          rebates?: number
+          selected_addons?: Json | null
+          selected_rooms?: Json | null
+          status?: string
+          subtotal?: number
+          system_tier_id?: string | null
+          tax_amount?: number
+          unit_type_id?: string | null
+          updated_at?: string
+          zone_count?: number
+        }
+        Update: {
+          created_at?: string
+          customer_address?: string | null
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          final_total?: number
+          id?: string
+          notes?: string | null
+          rebates?: number
+          selected_addons?: Json | null
+          selected_rooms?: Json | null
+          status?: string
+          subtotal?: number
+          system_tier_id?: string | null
+          tax_amount?: number
+          unit_type_id?: string | null
+          updated_at?: string
+          zone_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ductless_estimate_submissions_system_tier_id_fkey"
+            columns: ["system_tier_id"]
+            isOneToOne: false
+            referencedRelation: "ductless_system_tiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ductless_estimate_submissions_unit_type_id_fkey"
+            columns: ["unit_type_id"]
+            isOneToOne: false
+            referencedRelation: "ductless_unit_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ductless_system_tiers: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_name: string
+          features: Json | null
+          id: string
+          is_active: boolean
+          is_featured: boolean
+          name: string
+          price_multiplier: number
+          seer_rating: number | null
+          sort_order: number
+          tier_level: string
+          updated_at: string
+          warranty_years: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_name: string
+          features?: Json | null
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          name: string
+          price_multiplier?: number
+          seer_rating?: number | null
+          sort_order?: number
+          tier_level: string
+          updated_at?: string
+          warranty_years?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          features?: Json | null
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          name?: string
+          price_multiplier?: number
+          seer_rating?: number | null
+          sort_order?: number
+          tier_level?: string
+          updated_at?: string
+          warranty_years?: number
+        }
+        Relationships: []
+      }
+      ductless_unit_types: {
+        Row: {
+          base_price: number
+          benefits: Json | null
+          created_at: string
+          description: string | null
+          display_name: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          base_price?: number
+          benefits?: Json | null
+          created_at?: string
+          description?: string | null
+          display_name: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number
+          benefits?: Json | null
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       equipment_systems: {
         Row: {
           ahri_number: string | null
