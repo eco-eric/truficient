@@ -20,8 +20,8 @@ const STEP_LABELS = [
   "Your Info",
   "Select Rooms",
   "Room Details",
-  "Unit Style",
   "System Tier",
+  "Unit Style",
   "Add-ons",
   "Your Quote",
   "Thank You",
@@ -50,9 +50,9 @@ const EstimatorContent = () => {
       case 3:
         return <RoomDetails />;
       case 4:
-        return <UnitStyleSelector />;
-      case 5:
         return <SystemTierComparison />;
+      case 5:
+        return <UnitStyleSelector />;
       case 6:
         return <AddOnsSelector />;
       case 7:
@@ -66,20 +66,17 @@ const EstimatorContent = () => {
 
   const showProgress = currentStep > 0 && currentStep < 8;
   
-  // Show price bar on steps 4-7 (unit selection through summary)
+  // Show price bar on steps 4-7 (tier selection through summary)
   const showPriceBar = currentStep >= 4 && currentStep <= 7;
   
-  // Determine if we should show a range (before tier is selected)
-  const showRange = !state.systemTierId && tiers.length > 1;
-  const zoneCount = state.selectedRooms.length;
-  const baseEquipmentCost = (selectedUnit?.base_price || 0) * zoneCount;
+  // Check if all rooms have unit types assigned
+  const allRoomsHaveUnits = state.selectedRooms.every(room => room.unitTypeId);
   
-  // Calculate range based on tier multipliers
-  const multipliers = tiers.map((t) => t.price_multiplier);
-  const minMultiplier = multipliers.length > 0 ? Math.min(...multipliers) : 1;
-  const maxMultiplier = multipliers.length > 0 ? Math.max(...multipliers) : 1;
-  const lowTotal = Math.round((baseEquipmentCost * minMultiplier + pricing.addonsTotal) * 1.0825);
-  const highTotal = Math.round((baseEquipmentCost * maxMultiplier + pricing.addonsTotal) * 1.0825);
+  // Show range when tier is selected but not all rooms have units yet
+  const showRange = state.systemTierId && !allRoomsHaveUnits;
+  
+  // Calculate base equipment cost from per-room unit selections
+  const baseEquipmentCost = pricing.baseEquipmentCost;
 
   return (
     <div className="min-h-screen bg-background">
@@ -109,13 +106,13 @@ const EstimatorContent = () => {
       </main>
 
       {/* Price bar */}
-      {showPriceBar && state.unitTypeId && (
+      {showPriceBar && state.systemTierId && (
         <PriceBar
           label="Estimated Total"
           amount={pricing.finalTotal}
           showRange={showRange}
-          lowAmount={lowTotal}
-          highAmount={highTotal}
+          lowAmount={pricing.finalTotal}
+          highAmount={pricing.finalTotal}
         />
       )}
     </div>

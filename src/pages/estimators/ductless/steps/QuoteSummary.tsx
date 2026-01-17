@@ -12,12 +12,18 @@ export const QuoteSummary = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Use the pricing engine
-  const { pricing, selectedUnit, selectedTier, isLoading } = usePricing({
+  const { pricing, selectedUnit, selectedTier, unitTypes, isLoading } = usePricing({
     rooms: state.selectedRooms,
     unitTypeId: state.unitTypeId,
     systemTierId: state.systemTierId,
     selectedAddonIds: state.selectedAddonIds,
   });
+
+  // Helper to get unit type name for a room
+  const getUnitTypeName = (room: typeof state.selectedRooms[0]) => {
+    const unitType = unitTypes.find(u => u.id === room.unitTypeId);
+    return unitType?.display_name || selectedUnit?.display_name || "—";
+  };
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
@@ -45,8 +51,10 @@ export const QuoteSummary = () => {
           ceilingHeight: room.ceilingHeight,
           sunExposure: room.sunExposure,
           recommendedBtu: room.recommendedBtu,
+          unitTypeId: room.unitTypeId,
+          unitTypeName: unitTypes.find(u => u.id === room.unitTypeId)?.display_name,
         })),
-        unit_type_id: state.unitTypeId,
+        unit_type_id: state.selectedRooms[0]?.unitTypeId || state.unitTypeId,
         system_tier_id: state.systemTierId,
         selected_addons: pricing.addonsBreakdown.map((addon) => ({
           id: addon.id,
@@ -145,7 +153,11 @@ export const QuoteSummary = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-white/70">Unit Style</span>
-              <span className="font-medium">{selectedUnit?.display_name || "—"}</span>
+              <span className="font-medium">
+                {state.selectedRooms.length === 1 
+                  ? getUnitTypeName(state.selectedRooms[0])
+                  : `${new Set(state.selectedRooms.map(r => r.unitTypeId)).size} style(s)`}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-white/70">System Tier</span>
@@ -160,19 +172,24 @@ export const QuoteSummary = () => {
           </div>
         </div>
 
-        {/* Rooms list with BTU */}
+        {/* Rooms list with BTU and unit type */}
         <div className="rounded-xl border p-4 mb-6">
           <h4 className="font-semibold text-foreground mb-3">Configured Zones</h4>
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {state.selectedRooms.map((room) => (
-              <li key={room.id} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-[#a5a983]" />
-                  <span>{room.label}</span>
+              <li key={room.id} className="text-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-[#a5a983]" />
+                    <span className="font-medium">{room.label}</span>
+                  </div>
+                  <span className="text-muted-foreground">
+                    {room.recommendedBtu.toLocaleString()} BTU
+                  </span>
                 </div>
-                <span className="text-muted-foreground font-medium">
-                  {room.recommendedBtu.toLocaleString()} BTU
-                </span>
+                <div className="ml-6 text-xs text-muted-foreground">
+                  {getUnitTypeName(room)}
+                </div>
               </li>
             ))}
           </ul>
@@ -184,7 +201,7 @@ export const QuoteSummary = () => {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">
-                Equipment ({pricing.zoneCount} zones × {formatMoney(selectedUnit?.base_price || 0)})
+                Equipment ({pricing.zoneCount} zone{pricing.zoneCount !== 1 ? "s" : ""})
               </span>
               <span>{formatMoney(pricing.baseEquipmentCost)}</span>
             </div>
