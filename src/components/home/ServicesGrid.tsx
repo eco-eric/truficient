@@ -9,6 +9,7 @@ import designInstallImage from '@/assets/design-and-install.jpg';
 import commercialServicesImage from '@/assets/commercial-services.jpg';
 import ductlessServicesImage from '@/assets/ductless-services.jpg';
 import heatingRepairImage from '@/assets/heating-repair.jpg';
+import acReplacementImage from '@/assets/ac-replacement.jpg';
 
 const services = [
   {
@@ -26,7 +27,7 @@ const services = [
   {
     title: 'AC Replacement',
     description: 'Is your heating and air conditioning unit decades old and about to kick the bucket? Call Truficient today and see if AC replacement is right for you.',
-    image: 'https://images.unsplash.com/photo-1631545806609-a81784a80d37?w=400&h=300&fit=crop',
+    image: acReplacementImage,
     link: '/residential-services#ac-replacement',
   },
   {
