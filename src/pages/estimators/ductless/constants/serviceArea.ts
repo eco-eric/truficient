@@ -7,11 +7,7 @@ export const SERVICE_AREA_COUNTIES = [
   "Ellis",
   "Rockwall",
   "Kaufman",
-  "Johnson",
-  "Parker",
   "Hunt",
-  "Wise",
-  "Henderson",
 ] as const;
 
 export type ServiceAreaCounty = (typeof SERVICE_AREA_COUNTIES)[number];
