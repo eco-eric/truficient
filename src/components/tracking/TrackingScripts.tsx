@@ -105,11 +105,13 @@ export const TrackingScripts = () => {
     initializedRef.current.ga = true;
   }, [googleAnalytics?.is_enabled, googleAnalytics?.setting_value, cookieConsent?.analytics]);
 
-  // Initialize/Remove GHL Chat Widget based on settings
+  // Initialize/Remove GHL Chat Widget based on settings (hide on admin pages)
   useEffect(() => {
+    const isAdminPage = location.pathname.startsWith('/admin');
     const shouldLoad = ghlChatWidget?.is_enabled && 
                        ghlChatWidget.setting_value && 
-                       cookieConsent?.marketing;
+                       cookieConsent?.marketing &&
+                       !isAdminPage;
 
     if (shouldLoad && !initializedRef.current.ghl) {
       // Load the widget
@@ -140,7 +142,7 @@ export const TrackingScripts = () => {
       
       initializedRef.current.ghl = false;
     }
-  }, [ghlChatWidget?.is_enabled, ghlChatWidget?.setting_value, cookieConsent?.marketing]);
+  }, [location.pathname, ghlChatWidget?.is_enabled, ghlChatWidget?.setting_value, cookieConsent?.marketing]);
 
   // Track page views on route change
   useEffect(() => {
