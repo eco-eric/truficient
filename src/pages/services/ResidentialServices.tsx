@@ -31,7 +31,7 @@ const trustBadges = [
 const coolingServices = {
   repair: {
     title: "AC Repair",
-    body: "Is your AC running constantly but not keeping up? Making strange noises? Driving up your electric bill? These are signs something's wrong—but it doesn't always mean you need a new system. We diagnose the actual problem before recommending solutions. Sometimes it's a $350 capacitor, not a $12,000 system. We'll tell you the truth either way.",
+    body: "Is your AC running constantly but not keeping up? Making strange noises? Driving up your electric bill? These are signs something's wrong—but it doesn't always mean you need a new system. We diagnose the actual problem before recommending solutions. Sometimes it's a $200 capacitor, not a $12,000 system. We'll tell you the truth either way.",
     features: [
       "Same-day and next-day appointments available",
       "Upfront pricing before we start work",
@@ -48,7 +48,7 @@ const coolingServices = {
       "Rebate and financing assistance",
       "Quality installation by our own crews—no subcontractors",
     ],
-    brands: "Trane, Amana, Mitsubishi, and other major manufacturers",
+    brands: "Mitsubishi, Goodman Trane, and other major manufacturers",
   },
 };
 
