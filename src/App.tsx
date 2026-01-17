@@ -57,6 +57,7 @@ import AdminDuctlessConfig from "./pages/admin/DuctlessConfig";
 import AdminGallery from "./pages/admin/Gallery";
 import AdminFinancingOptions from "./pages/admin/FinancingOptions";
 import AdminEquipmentLibrary from "./pages/admin/EquipmentLibrary";
+import AdminDFWWatchList from "./pages/admin/DFWWatchList";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
 
@@ -122,6 +123,7 @@ const router = createBrowserRouter([
       { path: "/admin/login", element: <AdminLogin /> },
       { path: "/admin", element: <ProtectedRoute><AdminDashboard /></ProtectedRoute> },
       { path: "/admin/submissions", element: <ProtectedRoute><AdminUnifiedSubmissions /></ProtectedRoute> },
+      { path: "/admin/dfw-watchlist", element: <ProtectedRoute><AdminDFWWatchList /></ProtectedRoute> },
       { path: "/admin/blog", element: <ProtectedRoute><AdminBlogPosts /></ProtectedRoute> },
       { path: "/admin/blog/:id", element: <ProtectedRoute><AdminBlogPostEditor /></ProtectedRoute> },
       { path: "/admin/seo", element: <ProtectedRoute><AdminSEOManagement /></ProtectedRoute> },
