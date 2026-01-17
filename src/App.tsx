@@ -28,8 +28,7 @@ import Careers from "./pages/Careers";
 // Admin imports
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
-import AdminSubmissions from "./pages/admin/Submissions";
-import AdminSubmissionDetail from "./pages/admin/SubmissionDetail";
+import AdminUnifiedSubmissions from "./pages/admin/UnifiedSubmissions";
 import AdminSettings from "./pages/admin/Settings";
 import AdminBlogPosts from "./pages/admin/BlogPosts";
 import AdminBlogPostEditor from "./pages/admin/BlogPostEditor";
@@ -43,7 +42,7 @@ import AdminAnalyticsTracking from "./pages/admin/AnalyticsTracking";
 import AdminGHLTags from "./pages/admin/GHLTags";
 import AdminLandingPageForms from "./pages/admin/LandingPageForms";
 import AdminLandingPageFormEditor from "./pages/admin/LandingPageFormEditor";
-import AdminLandingPageSubmissions from "./pages/admin/LandingPageSubmissions";
+// AdminLandingPageSubmissions removed - now handled by UnifiedSubmissions
 import AdminSystemPricing from "./pages/admin/SystemPricing";
 import AdminMaterials from "./pages/admin/Materials";
 import AdminLaborRates from "./pages/admin/LaborRates";
@@ -107,8 +106,7 @@ const router = createBrowserRouter([
       // Admin Routes
       { path: "/admin/login", element: <AdminLogin /> },
       { path: "/admin", element: <ProtectedRoute><AdminDashboard /></ProtectedRoute> },
-      { path: "/admin/submissions", element: <ProtectedRoute><AdminSubmissions /></ProtectedRoute> },
-      { path: "/admin/submissions/:id", element: <ProtectedRoute><AdminSubmissionDetail /></ProtectedRoute> },
+      { path: "/admin/submissions", element: <ProtectedRoute><AdminUnifiedSubmissions /></ProtectedRoute> },
       { path: "/admin/blog", element: <ProtectedRoute><AdminBlogPosts /></ProtectedRoute> },
       { path: "/admin/blog/:id", element: <ProtectedRoute><AdminBlogPostEditor /></ProtectedRoute> },
       { path: "/admin/seo", element: <ProtectedRoute><AdminSEOManagement /></ProtectedRoute> },
@@ -130,7 +128,8 @@ const router = createBrowserRouter([
       { path: "/admin/ghl-conversations", element: <ProtectedRoute><AdminGHLConversations /></ProtectedRoute> },
       { path: "/admin/landing-pages", element: <ProtectedRoute><AdminLandingPageForms /></ProtectedRoute> },
       { path: "/admin/landing-pages/new", element: <ProtectedRoute><AdminLandingPageFormEditor /></ProtectedRoute> },
-      { path: "/admin/landing-pages/submissions", element: <ProtectedRoute><AdminLandingPageSubmissions /></ProtectedRoute> },
+      // Redirect old landing page submissions route to unified submissions
+      { path: "/admin/landing-pages/submissions", element: <ProtectedRoute><AdminUnifiedSubmissions /></ProtectedRoute> },
       { path: "/admin/landing-pages/:id", element: <ProtectedRoute><AdminLandingPageFormEditor /></ProtectedRoute> },
       { path: "/admin/ductless-config", element: <ProtectedRoute><AdminDuctlessConfig /></ProtectedRoute> },
       { path: "/admin/settings", element: <ProtectedRoute><AdminSettings /></ProtectedRoute> },
