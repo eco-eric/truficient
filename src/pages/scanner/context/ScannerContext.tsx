@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { ScannerState, ScannerAction, isDfwZipCode } from '../types';
+import { ScannerState, ScannerAction, isDfwZipCode, AccumulatedScan } from '../types';
+
+const MAX_SCANS = 5;
 
 const initialState: ScannerState = {
   step: 'zip',
@@ -12,6 +14,7 @@ const initialState: ScannerState = {
   isDfw: false,
   isProcessing: false,
   result: null,
+  results: [],
   error: null,
 };
 
@@ -43,6 +46,41 @@ function scannerReducer(state: ScannerState, action: ScannerAction): ScannerStat
       return { ...state, step: 'results', isProcessing: false, result: action.payload };
     case 'SET_ERROR':
       return { ...state, isProcessing: false, error: action.payload };
+    case 'ADD_TO_RESULTS':
+      if (!state.result || state.results.length >= MAX_SCANS) {
+        return state;
+      }
+      // Check if this scan is already in results
+      if (state.results.some(s => s.id === state.result?.id)) {
+        return state;
+      }
+      const accumulatedScan: AccumulatedScan = {
+        ...state.result,
+        scannedAt: new Date(),
+      };
+      return { 
+        ...state, 
+        results: [...state.results, accumulatedScan],
+      };
+    case 'REMOVE_FROM_RESULTS':
+      return {
+        ...state,
+        results: state.results.filter(s => s.id !== action.payload),
+      };
+    case 'SCAN_ANOTHER':
+      // Keep zipCode, email, isDfw, and accumulated results
+      // Clear current scan data and go to input-method
+      return {
+        ...state,
+        step: 'input-method',
+        modelNumber: '',
+        serialNumber: '',
+        imageBase64: null,
+        inputMethod: null,
+        isProcessing: false,
+        result: null,
+        error: null,
+      };
     case 'RESET':
       return initialState;
     default:

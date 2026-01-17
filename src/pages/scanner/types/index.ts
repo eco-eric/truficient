@@ -22,6 +22,10 @@ export interface ScanResult {
   raw_ai_response?: Record<string, unknown>;
 }
 
+export interface AccumulatedScan extends ScanResult {
+  scannedAt: Date;
+}
+
 export interface DocumentationResult {
   id: string;
   brand: string;
@@ -45,6 +49,7 @@ export interface ScannerState {
   isDfw: boolean;
   isProcessing: boolean;
   result: ScanResult | null;
+  results: AccumulatedScan[];
   error: string | null;
 }
 
@@ -60,6 +65,9 @@ export type ScannerAction =
   | { type: 'START_PROCESSING' }
   | { type: 'SET_RESULT'; payload: ScanResult }
   | { type: 'SET_ERROR'; payload: string }
+  | { type: 'ADD_TO_RESULTS' }
+  | { type: 'REMOVE_FROM_RESULTS'; payload: string }
+  | { type: 'SCAN_ANOTHER' }
   | { type: 'RESET' };
 
 // DFW zip code prefixes

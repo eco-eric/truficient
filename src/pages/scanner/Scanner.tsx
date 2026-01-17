@@ -13,12 +13,15 @@ import { EstimatorLinks } from './components/EstimatorLinks';
 import { DFWCallToAction } from './components/DFWCallToAction';
 import { DocumentationSearch } from './components/DocumentationSearch';
 import { TrustElements } from './components/TrustElements';
+import { ScanList } from './components/ScanList';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { RotateCcw, ScanLine, Info } from 'lucide-react';
+import { RotateCcw, ScanLine, Info, Camera } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { useEffect } from 'react';
+
+const MAX_SCANS = 5;
 
 function ScannerContent() {
   const { state, dispatch } = useScanner();
@@ -33,6 +36,8 @@ function ScannerContent() {
       metaDesc.setAttribute('content', 'Scan your AC or heating unit\'s data plate to instantly get specs, age, refrigerant type, and downloadable manuals. Free tool from Truficient Energy Solutions.');
     }
   }, []);
+
+  const canScanMore = state.results.length < MAX_SCANS;
 
   const renderStep = () => {
     switch (state.step) {
@@ -55,21 +60,36 @@ function ScannerContent() {
           <div className="space-y-6">
             <ResultsCard />
             <DocumentationSearch />
+            
+            {/* Scan List - show accumulated scans */}
+            <ScanList />
+            
             <EmailCapture />
             <ContextualMessages />
             <DFWCallToAction />
             <EstimatorLinks />
             
-            {/* Scan Another Button */}
-            <div className="text-center pt-4">
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              {canScanMore && (
+                <Button
+                  variant="default"
+                  size="lg"
+                  onClick={() => dispatch({ type: 'SCAN_ANOTHER' })}
+                  className="flex-1 bg-secondary hover:bg-secondary/90 touch-target"
+                >
+                  <Camera className="w-4 h-4 mr-2" />
+                  Scan Another Unit ({state.results.length}/{MAX_SCANS})
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="lg"
                 onClick={() => dispatch({ type: 'RESET' })}
-                className="touch-target"
+                className="flex-1 touch-target"
               >
                 <RotateCcw className="w-4 h-4 mr-2" />
-                Scan Another Unit
+                Start Over
               </Button>
             </div>
           </div>

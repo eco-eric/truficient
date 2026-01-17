@@ -14,6 +14,25 @@ export function EmailCapture() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  // Get all scan IDs (current result + accumulated results)
+  const getAllScanIds = (): string[] => {
+    const ids: string[] = [];
+    
+    // Add accumulated results
+    state.results.forEach(scan => {
+      if (scan.id) ids.push(scan.id);
+    });
+    
+    // Add current result if not already in results
+    if (state.result?.id && !ids.includes(state.result.id)) {
+      ids.push(state.result.id);
+    }
+    
+    return ids;
+  };
+
+  const totalScans = getAllScanIds().length;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -22,22 +41,30 @@ export function EmailCapture() {
       return;
     }
 
+    const scanIds = getAllScanIds();
+    if (scanIds.length === 0) {
+      toast.error('No scans to save');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // Update the scan record with the email
-      if (state.result?.id) {
-        const { error } = await supabase
-          .from('equipment_scans')
-          .update({ email })
-          .eq('id', state.result.id);
+      // Update all scan records with the email
+      const { error } = await supabase
+        .from('equipment_scans')
+        .update({ email })
+        .in('id', scanIds);
 
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       dispatch({ type: 'SET_EMAIL', payload: email });
       setIsSubmitted(true);
-      toast.success('Email saved! We\'ll send your results shortly.');
+      toast.success(
+        totalScans > 1 
+          ? `Email saved! We'll send your ${totalScans} equipment reports shortly.`
+          : 'Email saved! We\'ll send your results shortly.'
+      );
     } catch (err) {
       console.error('Failed to save email:', err);
       toast.error('Failed to save email. Please try again.');
@@ -56,7 +83,10 @@ export function EmailCapture() {
           <div>
             <p className="font-medium text-green-800 dark:text-green-200">Email saved!</p>
             <p className="text-sm text-green-600 dark:text-green-400">
-              We'll send your equipment report to {email}
+              {totalScans > 1 
+                ? `We'll send your ${totalScans} equipment reports to ${email}`
+                : `We'll send your equipment report to ${email}`
+              }
             </p>
           </div>
         </CardContent>
@@ -75,7 +105,10 @@ export function EmailCapture() {
             <div className="flex-1">
               <h3 className="font-semibold text-foreground">Get your results emailed</h3>
               <p className="text-sm text-muted-foreground">
-                We'll send a copy of this report with downloadable PDFs
+                {totalScans > 1 
+                  ? `We'll send a report with all ${totalScans} scanned units and downloadable PDFs`
+                  : 'We\'ll send a copy of this report with downloadable PDFs'
+                }
               </p>
             </div>
           </div>
