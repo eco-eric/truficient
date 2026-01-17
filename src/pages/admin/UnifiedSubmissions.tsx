@@ -105,7 +105,21 @@ const UnifiedSubmissions = () => {
         .not("email", "is", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      
+      // Group scans by email to consolidate equipment per customer
+      const groupedByEmail = new Map<string, typeof data>();
+      data?.forEach(scan => {
+        const email = scan.email?.toLowerCase();
+        if (!email) return;
+        
+        if (!groupedByEmail.has(email)) {
+          groupedByEmail.set(email, [scan]);
+        } else {
+          groupedByEmail.get(email)!.push(scan);
+        }
+      });
+      
+      return groupedByEmail;
     },
   });
 
@@ -186,29 +200,44 @@ const UnifiedSubmissions = () => {
       });
     });
 
-    // Scanner submissions (only those with email)
-    (scannerQuery.data || []).forEach((s) => {
+    // Scanner submissions (grouped by email - one entry per customer)
+    const scannerData = scannerQuery.data as Map<string, any[]> | undefined;
+    scannerData?.forEach((scans, email) => {
+      // Use the most recent scan for primary data
+      const primaryScan = scans[0]; // Already sorted by created_at desc
+      
       unified.push({
-        id: s.id,
+        id: primaryScan.id,
         source: "scanner",
-        customerName: s.customer_name || "Unknown",
-        customerEmail: s.email!,
-        customerPhone: s.customer_phone,
-        status: s.status || "new",
-        createdAt: s.created_at!,
+        customerName: primaryScan.customer_name || "Unknown",
+        customerEmail: email,
+        customerPhone: primaryScan.customer_phone,
+        status: primaryScan.status || "new",
+        createdAt: primaryScan.created_at!,
         metadata: {
-          zipCode: s.zip_code,
-          isDfw: s.is_dfw,
-          brand: s.brand,
-          modelNumber: s.model_number,
-          serialNumber: s.serial_number,
-          manufacturedYear: s.manufactured_year,
-          tonnage: s.tonnage,
-          refrigerant: s.refrigerant,
-          seerRating: s.seer_rating,
-          equipmentType: s.equipment_type,
-          marketingOptIn: s.marketing_opt_in,
-          customerAddress: s.customer_address,
+          // Include count of equipment scanned
+          equipmentCount: scans.length,
+          // Include array of all scanned equipment
+          allEquipment: scans.map(s => ({
+            id: s.id,
+            brand: s.brand,
+            modelNumber: s.model_number,
+            serialNumber: s.serial_number,
+            tonnage: s.tonnage,
+            manufacturedYear: s.manufactured_year,
+            equipmentType: s.equipment_type,
+            refrigerant: s.refrigerant,
+            seerRating: s.seer_rating,
+          })),
+          // Primary scan details for location info
+          zipCode: primaryScan.zip_code,
+          isDfw: primaryScan.is_dfw,
+          marketingOptIn: primaryScan.marketing_opt_in,
+          customerAddress: primaryScan.customer_address,
+          city: primaryScan.city,
+          state: primaryScan.state,
+          ghlSyncStatus: primaryScan.ghl_sync_status,
+          ghlContactId: primaryScan.ghl_contact_id,
         },
       });
     });
@@ -270,8 +299,13 @@ const UnifiedSubmissions = () => {
   });
 
   const updateScannerStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("equipment_scans").update({ status }).eq("id", id);
+    mutationFn: async ({ id, status, allEquipmentIds }: { id: string; status: string; allEquipmentIds?: string[] }) => {
+      // Update all equipment scans for this customer if we have the list
+      const idsToUpdate = allEquipmentIds || [id];
+      const { error } = await supabase
+        .from("equipment_scans")
+        .update({ status })
+        .in("id", idsToUpdate);
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["scanner_submissions"] }),
@@ -289,7 +323,10 @@ const UnifiedSubmissions = () => {
         updateDuctlessStatus.mutate({ id: submission.id, status: newStatus });
         break;
       case "scanner":
-        updateScannerStatus.mutate({ id: submission.id, status: newStatus });
+        // Get all equipment IDs from metadata to update them all
+        const allEquipment = submission.metadata.allEquipment as Array<{ id: string }> | undefined;
+        const allEquipmentIds = allEquipment?.map(e => e.id) || [submission.id];
+        updateScannerStatus.mutate({ id: submission.id, status: newStatus, allEquipmentIds });
         break;
     }
   };
@@ -406,7 +443,14 @@ const UnifiedSubmissions = () => {
                   className="bg-card border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="font-medium text-foreground">{submission.customerName}</div>
+                    <div className="font-medium text-foreground flex items-center gap-2">
+                      {submission.customerName}
+                      {submission.source === "scanner" && (submission.metadata.equipmentCount as number) > 1 && (
+                        <Badge variant="outline" className="text-xs">
+                          {submission.metadata.equipmentCount as number} units
+                        </Badge>
+                      )}
+                    </div>
                     <Badge className={sourceColors[submission.source]} variant="secondary">
                       {sourceLabels[submission.source]}
                     </Badge>
@@ -451,7 +495,16 @@ const UnifiedSubmissions = () => {
                           {sourceLabels[submission.source]}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-medium">{submission.customerName}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {submission.customerName}
+                          {submission.source === "scanner" && (submission.metadata.equipmentCount as number) > 1 && (
+                            <Badge variant="outline" className="text-xs">
+                              {submission.metadata.equipmentCount as number} units
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="hidden lg:table-cell text-muted-foreground">
                         {submission.customerEmail}
                       </TableCell>
