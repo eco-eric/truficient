@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { Upload, X, Loader2, ImageIcon, Check, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { compressImage } from "@/utils/imageCompression";
 
 interface GalleryTag {
   id: string;
@@ -54,6 +55,7 @@ export const BulkImageUpload = ({
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const [applyToAllTags, setApplyToAllTags] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -80,8 +82,16 @@ export const BulkImageUpload = ({
 
     if (fileArray.length === 0) return;
 
+    // Compress images before adding to state
+    setIsCompressing(true);
+    toast.info(`Optimizing ${fileArray.length} image${fileArray.length > 1 ? 's' : ''}...`);
+    
+    const compressedFiles = await Promise.all(
+      fileArray.map(file => compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.85 }))
+    );
+
     // Create preview URLs and add to state
-    const newImages: UploadedImage[] = fileArray.map(file => ({
+    const newImages: UploadedImage[] = compressedFiles.map(file => ({
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       file,
       url: URL.createObjectURL(file),
@@ -92,6 +102,18 @@ export const BulkImageUpload = ({
     }));
 
     setImages(prev => [...prev, ...newImages]);
+    setIsCompressing(false);
+    
+    // Calculate total savings
+    const originalSize = fileArray.reduce((sum, f) => sum + f.size, 0);
+    const compressedSize = compressedFiles.reduce((sum, f) => sum + f.size, 0);
+    const savedMB = ((originalSize - compressedSize) / 1024 / 1024).toFixed(1);
+    
+    if (originalSize > compressedSize) {
+      toast.success(`Images optimized! Saved ${savedMB}MB`);
+    } else {
+      toast.success('Images ready for upload');
+    }
   }, []);
 
   const uploadAllImages = async () => {
@@ -298,22 +320,34 @@ export const BulkImageUpload = ({
                 isDragging
                   ? "border-primary bg-primary/5"
                   : "border-muted-foreground/25 hover:border-primary/50",
-                isUploading && "pointer-events-none opacity-50"
+                (isUploading || isCompressing) && "pointer-events-none opacity-50"
               )}
               onClick={() => fileInputRef.current?.click()}
               onDrop={handleDrop}
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
               onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
             >
-              <div className="flex flex-col items-center gap-3">
-                <Upload className="h-12 w-12 text-muted-foreground" />
-                <div>
-                  <p className="text-lg font-medium">Drop images here or click to browse</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    JPEG, PNG, WebP, or GIF (max 10MB each)
-                  </p>
+              {isCompressing ? (
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-12 w-12 text-muted-foreground animate-spin" />
+                  <div>
+                    <p className="text-lg font-medium">Optimizing images...</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Compressing for faster uploads
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <Upload className="h-12 w-12 text-muted-foreground" />
+                  <div>
+                    <p className="text-lg font-medium">Drop images here or click to browse</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      JPEG, PNG, WebP, or GIF (max 10MB each, auto-optimized)
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <input
