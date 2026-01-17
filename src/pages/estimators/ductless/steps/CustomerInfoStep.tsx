@@ -5,14 +5,21 @@ import { useQuote } from "../context/QuoteContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AddressAutocomplete, AddressComponents } from "@/components/AddressAutocomplete";
-import { isInServiceArea, getServiceAreaDisplay } from "../constants/serviceArea";
-import { Mail, Phone, MapPin, User, AlertCircle, Shield, Clock } from "lucide-react";
+import { MapPreview } from "@/components/MapPreview";
+import { isInServiceArea, getServiceAreaDisplay, SERVICE_AREA_COUNTIES } from "../constants/serviceArea";
+import { Mail, Phone, MapPin, User, AlertCircle, Shield, Clock, MapPinOff } from "lucide-react";
 
 export const CustomerInfoStep = () => {
   const { state, setCustomerInfo, nextStep, prevStep } = useQuote();
   const [addressError, setAddressError] = useState<string | null>(null);
   const [isAddressValidated, setIsAddressValidated] = useState(false);
   const [continueAnyway, setContinueAnyway] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{
+    lat: number;
+    lng: number;
+    address: string;
+    county: string;
+  } | null>(null);
 
   // Email validation
   const isValidEmail = (email: string) => {
@@ -43,14 +50,22 @@ export const CustomerInfoStep = () => {
       placeId: components.placeId,
     });
 
+    // Set location for map preview
+    if (components.lat && components.lng) {
+      setSelectedLocation({
+        lat: components.lat,
+        lng: components.lng,
+        address: components.formattedAddress,
+        county: components.county,
+      });
+    }
+
     setIsAddressValidated(true);
     setContinueAnyway(false);
 
     // Check service area
     if (!isInServiceArea(components.county)) {
-      setAddressError(
-        `We currently serve the ${getServiceAreaDisplay()} in the DFW Metroplex. Your address appears to be outside our primary service area.`
-      );
+      setAddressError(components.county);
     } else {
       setAddressError(null);
     }
@@ -63,11 +78,16 @@ export const CustomerInfoStep = () => {
       setIsAddressValidated(false);
       setAddressError(null);
       setContinueAnyway(false);
+      setSelectedLocation(null);
     }
   };
 
   // All fields optional for testing
   const isFormValid = !addressError || continueAnyway;
+
+  // Format service area counties for display
+  const serviceAreaList = SERVICE_AREA_COUNTIES.slice(0, -1).join(", ") + 
+    ", and " + SERVICE_AREA_COUNTIES[SERVICE_AREA_COUNTIES.length - 1];
 
   const handleContinue = () => {
     if (isFormValid) {
@@ -159,37 +179,58 @@ export const CustomerInfoStep = () => {
               placeholder="Start typing your address..."
             />
             
-            {/* Service area error */}
+            {/* Service area error - Enhanced UI */}
             {addressError && (
-              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 mt-2">
-                <div className="flex gap-2">
-                  <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-amber-800">
-                    <p>{addressError}</p>
-                    {!continueAnyway && (
+              <div className="rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-4 mt-3 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-amber-100 rounded-full">
+                    <MapPinOff className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-amber-900 mb-1">
+                      Outside Our Service Area
+                    </h4>
+                    <p className="text-sm text-amber-800 mb-3">
+                      Your location ({addressError} County) is outside our primary coverage. 
+                      We currently service <span className="font-medium">{serviceAreaList}</span> counties in the DFW Metroplex.
+                    </p>
+                    
+                    {!continueAnyway ? (
                       <button
                         type="button"
                         onClick={() => setContinueAnyway(true)}
-                        className="mt-2 text-[#1e3a5f] font-medium underline hover:no-underline"
+                        className="w-full py-2.5 px-4 bg-[#1e3a5f] text-white rounded-lg font-medium hover:bg-[#2a4a6f] transition-colors text-sm"
                       >
-                        Continue anyway – I'd like to be contacted
+                        Request a Callback Anyway
                       </button>
+                    ) : (
+                      <div className="flex items-center gap-2 p-2.5 bg-green-100 rounded-lg text-green-800 text-sm">
+                        <span className="text-green-600">✓</span>
+                        <span className="font-medium">We'll reach out to discuss service options for your area.</span>
+                      </div>
                     )}
-                    {continueAnyway && (
-                      <p className="mt-2 text-amber-700 font-medium">
-                        ✓ We'll reach out to discuss service options for your area.
-                      </p>
-                    )}
+                    
+                    <p className="text-xs text-amber-700 mt-2 text-center">
+                      Or call us directly: <a href="tel:9724020184" className="font-medium underline">(972) 402-0184</a>
+                    </p>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Success indicator */}
-            {isAddressValidated && !addressError && (
-              <p className="text-xs text-[#a5a983] flex items-center gap-1">
-                ✓ Address verified – we service your area!
-              </p>
+            {/* Map preview and success indicator */}
+            {isAddressValidated && !addressError && selectedLocation && (
+              <div className="mt-3 space-y-2">
+                <p className="text-xs text-[#a5a983] flex items-center gap-1 font-medium">
+                  ✓ Address verified – we service your area!
+                </p>
+                <MapPreview
+                  lat={selectedLocation.lat}
+                  lng={selectedLocation.lng}
+                  address={selectedLocation.address}
+                  county={selectedLocation.county}
+                />
+              </div>
             )}
           </div>
         </div>

@@ -17,6 +17,8 @@ export interface AddressComponents {
   state: string;
   zipCode: string;
   placeId: string;
+  lat: number | null;
+  lng: number | null;
 }
 
 interface AddressAutocompleteProps {
@@ -94,7 +96,7 @@ export function AddressAutocomplete({
         inputRef.current,
         {
           componentRestrictions: { country: "us" },
-          fields: ["address_components", "formatted_address", "place_id"],
+          fields: ["address_components", "formatted_address", "place_id", "geometry"],
           types: ["address"],
         }
       );
@@ -133,6 +135,8 @@ export function AddressAutocomplete({
         state: getComponent("administrative_area_level_1", true),
         zipCode: getComponent("postal_code"),
         placeId: place.place_id || "",
+        lat: place.geometry?.location?.lat() ?? null,
+        lng: place.geometry?.location?.lng() ?? null,
       };
     },
     []
