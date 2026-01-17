@@ -7,6 +7,7 @@ import heatPumpImage from '@/assets/heat-pump-installation.png';
 import acRepairImage from '@/assets/ac-repair.jpg';
 import designInstallImage from '@/assets/design-and-install.jpg';
 import commercialServicesImage from '@/assets/commercial-services.jpg';
+import ductlessServicesImage from '@/assets/ductless-services.jpg';
 
 const services = [
   {
@@ -48,7 +49,7 @@ const services = [
   {
     title: 'Ductless Systems',
     description: 'Our HVAC technicians can repair, replace, or install a ductless air conditioning unit and ductless split systems.',
-    image: 'https://images.unsplash.com/photo-1585129777188-94600bc7b4e3?w=400&h=300&fit=crop',
+    image: ductlessServicesImage,
     link: '/residential-services#ductless',
   },
   {
