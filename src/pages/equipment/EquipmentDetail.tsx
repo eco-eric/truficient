@@ -31,6 +31,7 @@ import {
   GitBranch,
   Beaker,
   Plug,
+  ShieldCheck,
 } from 'lucide-react';
 import { usePageSEO } from '@/hooks/usePageSEO';
 
@@ -365,6 +366,35 @@ export default function EquipmentDetail() {
                   </div>
                 )}
               </Card>
+
+              {/* Warranty Notice */}
+              {age && age <= 10 && (
+                <Card className="p-6 border-green-500/50 bg-green-500/10">
+                  <div className="flex gap-4">
+                    <ShieldCheck className="w-6 h-6 text-green-600 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-bold text-green-700 dark:text-green-400 mb-2">Warranty Information</h3>
+                      {age < 5 ? (
+                        <p className="text-green-700/80 dark:text-green-400/80">
+                          At {age} years old, all parts should still be covered under the manufacturer 
+                          warranty if this unit was registered for residential use.
+                        </p>
+                      ) : (
+                        <p className="text-green-700/80 dark:text-green-400/80">
+                          At {age} years old, this equipment may still have partial warranty coverage. 
+                          Verify with your serial number at the manufacturer's website.
+                        </p>
+                      )}
+                      <Button variant="outline" size="sm" className="mt-3" asChild>
+                        <a href={getBrandSupportUrl(equipment.brand)} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          Check {equipment.brand} Warranty Status
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              )}
 
               {/* Alerts */}
               {isR22 && (

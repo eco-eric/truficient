@@ -22,6 +22,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { AccumulatedScan } from '../types';
+import { WarrantyNotice } from './WarrantyNotice';
 
 const EQUIPMENT_TYPE_ICONS: Record<string, React.ElementType> = {
   'Air Conditioner': Snowflake,
@@ -168,6 +169,9 @@ function ScanItem({ scan, onRemove }: { scan: AccumulatedScan; onRemove: () => v
             />
           )}
         </div>
+
+        {/* Warranty Notice */}
+        <WarrantyNotice age={age} brand={brand} />
 
       </CardContent>
     </Card>

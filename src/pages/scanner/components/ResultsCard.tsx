@@ -25,6 +25,7 @@ import {
 import { useScanner } from '../context/ScannerContext';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { WarrantyNotice } from './WarrantyNotice';
 
 const MAX_SCANS = 5;
 
@@ -160,6 +161,9 @@ export function ResultsCard() {
           value={specs.voltage_info}
         />
       </div>
+
+      {/* Warranty Notice */}
+      <WarrantyNotice age={age} brand={specs.brand || ''} />
 
       {/* Disclaimer */}
       <div className="flex gap-2 p-3 bg-muted/50 rounded-lg text-sm">
