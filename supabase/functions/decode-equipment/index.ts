@@ -13,16 +13,22 @@ serve(async (req) => {
   }
 
   try {
-    const { modelNumber, serialNumber, zipCode, email, isDfw } = await req.json();
+    const { modelNumber, serialNumber, zipCode, email, isDfw, imageBase64 } = await req.json();
 
-    if (!modelNumber) {
+    // Either model number or image is required
+    if (!modelNumber && !imageBase64) {
       return new Response(
-        JSON.stringify({ error: 'Model number is required' }),
+        JSON.stringify({ error: 'Model number or image is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Decoding equipment:', { modelNumber, serialNumber, zipCode });
+    console.log('Decoding equipment:', { 
+      hasModelNumber: !!modelNumber, 
+      hasSerial: !!serialNumber, 
+      hasImage: !!imageBase64,
+      zipCode 
+    });
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -33,11 +39,102 @@ serve(async (req) => {
       );
     }
 
-    // Build the prompt for the AI
-    const prompt = `You are an expert HVAC equipment decoder. Given the following model number and serial number, decode as much information as possible about this HVAC equipment.
+    let extractedModelNumber = modelNumber;
+    let extractedSerialNumber = serialNumber;
+    let imageAnalysisResult: Record<string, unknown> | null = null;
 
-Model Number: ${modelNumber}
-Serial Number: ${serialNumber || 'Not provided'}
+    // If image is provided, use vision to extract model/serial first
+    if (imageBase64) {
+      console.log('Processing image with vision model...');
+      
+      const visionPrompt = `You are an expert HVAC technician analyzing a data plate image. 
+
+Extract the following information from this HVAC equipment data plate image:
+1. Model Number - Look for "MODEL", "MOD", "M/N" labels
+2. Serial Number - Look for "SERIAL", "SER", "S/N" labels
+3. Any other visible specs (tonnage, refrigerant, voltage, etc.)
+
+Return ONLY a valid JSON object with these fields:
+{
+  "model_number": "The model number found on the plate",
+  "serial_number": "The serial number found on the plate",
+  "brand": "The manufacturer if visible",
+  "tonnage": "Capacity if visible (e.g., '3 Ton')",
+  "refrigerant": "Refrigerant type if visible (e.g., 'R-410A')",
+  "voltage": "Voltage if visible",
+  "additional_specs": "Any other important specs visible"
+}
+
+If you cannot read a value clearly, return null for that field.
+Return ONLY the JSON object, no additional text.`;
+
+      const visionResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: visionPrompt },
+                { 
+                  type: 'image_url', 
+                  image_url: { url: imageBase64 }
+                }
+              ]
+            }
+          ],
+        }),
+      });
+
+      if (!visionResponse.ok) {
+        const errorText = await visionResponse.text();
+        console.error('Vision API error:', visionResponse.status, errorText);
+        return new Response(
+          JSON.stringify({ error: 'Failed to analyze image. Please try manual entry.' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const visionData = await visionResponse.json();
+      console.log('Vision response:', JSON.stringify(visionData, null, 2));
+
+      // Parse the vision result
+      const visionContent = visionData.choices?.[0]?.message?.content;
+      if (visionContent) {
+        try {
+          const jsonMatch = visionContent.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            imageAnalysisResult = JSON.parse(jsonMatch[0]);
+            extractedModelNumber = imageAnalysisResult?.model_number || modelNumber;
+            extractedSerialNumber = imageAnalysisResult?.serial_number || serialNumber;
+            console.log('Extracted from image:', { extractedModelNumber, extractedSerialNumber });
+          }
+        } catch (e) {
+          console.error('Failed to parse vision result:', e);
+        }
+      }
+
+      if (!extractedModelNumber) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Could not read model number from image. Please enter it manually.',
+            partial_result: imageAnalysisResult
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // Build the prompt for decoding
+    const decodePrompt = `You are an expert HVAC equipment decoder. Given the following model number and serial number, decode as much information as possible about this HVAC equipment.
+
+Model Number: ${extractedModelNumber}
+Serial Number: ${extractedSerialNumber || 'Not provided'}
 
 Please analyze this equipment and provide the following information. If you cannot determine a value with reasonable confidence, return null for that field.
 
@@ -63,7 +160,7 @@ IMPORTANT:
 - For Rheem: Look at first 4 characters for week/year
 - Return ONLY the JSON object, no additional text`;
 
-    // Call the Lovable AI Gateway using tool calling for structured output
+    // Call the Lovable AI Gateway for decoding
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -73,7 +170,7 @@ IMPORTANT:
       body: JSON.stringify({
         model: 'google/gemini-3-flash-preview',
         messages: [
-          { role: 'user', content: prompt }
+          { role: 'user', content: decodePrompt }
         ],
         tools: [
           {
@@ -128,7 +225,7 @@ IMPORTANT:
     }
 
     const aiData = await aiResponse.json();
-    console.log('AI response:', JSON.stringify(aiData, null, 2));
+    console.log('AI decode response:', JSON.stringify(aiData, null, 2));
 
     // Extract the tool call result
     let decodedSpecs: Record<string, unknown> = {};
@@ -152,11 +249,25 @@ IMPORTANT:
       }
     }
 
+    // Merge image analysis results if available
+    if (imageAnalysisResult) {
+      // Prefer image-extracted values for certain fields if decoded specs don't have them
+      if (!decodedSpecs.refrigerant && imageAnalysisResult.refrigerant) {
+        decodedSpecs.refrigerant = imageAnalysisResult.refrigerant;
+      }
+      if (!decodedSpecs.tonnage && imageAnalysisResult.tonnage) {
+        decodedSpecs.tonnage = imageAnalysisResult.tonnage;
+      }
+      if (!decodedSpecs.brand && imageAnalysisResult.brand) {
+        decodedSpecs.brand = imageAnalysisResult.brand;
+      }
+    }
+
     // Build the full specs object
     const specs = {
       brand: decodedSpecs.brand || null,
-      model_number: modelNumber,
-      serial_number: serialNumber || null,
+      model_number: extractedModelNumber,
+      serial_number: extractedSerialNumber || null,
       manufactured_year: decodedSpecs.manufactured_year || null,
       tonnage: decodedSpecs.tonnage || null,
       refrigerant: decodedSpecs.refrigerant || null,
@@ -167,7 +278,7 @@ IMPORTANT:
       compressor_info: decodedSpecs.compressor_info || null,
     };
 
-    console.log('Decoded specs:', specs);
+    console.log('Final decoded specs:', specs);
 
     // Save to database
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -190,7 +301,7 @@ IMPORTANT:
         equipment_type: specs.equipment_type,
         fan_motor_info: specs.fan_motor_info,
         compressor_info: specs.compressor_info,
-        raw_ai_response: aiData,
+        raw_ai_response: { decode: aiData, vision: imageAnalysisResult },
         is_dfw: isDfw || false,
       })
       .select('id')
@@ -240,7 +351,7 @@ IMPORTANT:
         success: true,
         scanId: scanData?.id,
         specs,
-        raw_ai_response: aiData,
+        raw_ai_response: { decode: aiData, vision: imageAnalysisResult },
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

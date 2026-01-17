@@ -1,9 +1,13 @@
 import { ScannerProvider, useScanner } from './context/ScannerContext';
 import { ZipCodeGate } from './components/ZipCodeGate';
 import { ExampleDataPlates } from './components/ExampleDataPlates';
+import { InputMethodSelector } from './components/InputMethodSelector';
+import { CameraScanner } from './components/CameraScanner';
+import { ImageUpload } from './components/ImageUpload';
 import { ManualEntry } from './components/ManualEntry';
 import { ProcessingState } from './components/ProcessingState';
 import { ResultsCard } from './components/ResultsCard';
+import { EmailCapture } from './components/EmailCapture';
 import { ContextualMessages } from './components/ContextualMessages';
 import { EstimatorLinks } from './components/EstimatorLinks';
 import { DFWCallToAction } from './components/DFWCallToAction';
@@ -35,7 +39,13 @@ function ScannerContent() {
         return <ZipCodeGate />;
       case 'examples':
         return <ExampleDataPlates />;
+      case 'input-method':
+        return <InputMethodSelector />;
       case 'scan':
+        return <CameraScanner />;
+      case 'upload':
+        return <ImageUpload />;
+      case 'manual':
         return <ManualEntry />;
       case 'processing':
         return <ProcessingState />;
@@ -43,6 +53,7 @@ function ScannerContent() {
         return (
           <div className="space-y-6">
             <ResultsCard />
+            <EmailCapture />
             <ContextualMessages />
             <DFWCallToAction />
             <EstimatorLinks />
@@ -111,7 +122,7 @@ function ScannerContent() {
         </section>
 
         {/* Trust Elements - Show on initial steps */}
-        {(state.step === 'zip' || state.step === 'examples') && (
+        {(state.step === 'zip' || state.step === 'examples' || state.step === 'input-method') && (
           <section className="py-8 md:py-12 bg-muted/20">
             <div className="container mx-auto px-4 max-w-3xl">
               <TrustElements />

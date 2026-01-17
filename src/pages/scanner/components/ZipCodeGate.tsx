@@ -2,14 +2,13 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MapPin, Mail, ArrowRight } from 'lucide-react';
+import { MapPin, ArrowRight } from 'lucide-react';
 import { useScanner } from '../context/ScannerContext';
 import { isDfwZipCode } from '../types';
 
 export function ZipCodeGate() {
   const { state, dispatch } = useScanner();
   const [localZip, setLocalZip] = useState(state.zipCode);
-  const [localEmail, setLocalEmail] = useState(state.email);
   const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -23,7 +22,6 @@ export function ZipCodeGate() {
     }
 
     dispatch({ type: 'SET_ZIP_CODE', payload: cleanZip });
-    dispatch({ type: 'SET_EMAIL', payload: localEmail });
     dispatch({ type: 'GO_TO_STEP', payload: 'examples' });
   };
 
@@ -64,23 +62,6 @@ export function ZipCodeGate() {
               ✓ Great! You're in our service area.
             </p>
           )}
-        </div>
-
-        {/* Email Input (Optional) */}
-        <div className="space-y-2">
-          <Label htmlFor="email" className="text-base font-medium flex items-center gap-2">
-            <Mail className="w-4 h-4 text-muted-foreground" />
-            Want your results emailed to you? (optional)
-          </Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="your@email.com"
-            value={localEmail}
-            onChange={(e) => setLocalEmail(e.target.value)}
-            className="text-lg h-12 touch-target"
-            autoComplete="email"
-          />
         </div>
 
         {/* Submit Button */}

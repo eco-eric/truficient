@@ -8,6 +8,7 @@ const initialState: ScannerState = {
   modelNumber: '',
   serialNumber: '',
   imageBase64: null,
+  inputMethod: null,
   isDfw: false,
   isProcessing: false,
   result: null,
@@ -30,6 +31,8 @@ function scannerReducer(state: ScannerState, action: ScannerAction): ScannerStat
       return { ...state, serialNumber: action.payload };
     case 'SET_IMAGE':
       return { ...state, imageBase64: action.payload };
+    case 'SET_INPUT_METHOD':
+      return { ...state, inputMethod: action.payload };
     case 'SET_IS_DFW':
       return { ...state, isDfw: action.payload };
     case 'GO_TO_STEP':
