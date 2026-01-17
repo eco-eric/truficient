@@ -53,6 +53,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, adminOnly: false },
       { label: 'Submissions', href: '/admin/submissions', icon: FileText, adminOnly: false },
+      { label: 'Ducted Submissions', href: '/admin/ducted-submissions', icon: AirVent, adminOnly: false },
       { label: 'DFW Watch List', href: '/admin/dfw-watchlist', icon: Target, adminOnly: true },
       { label: 'Blog', href: '/admin/blog', icon: PenSquare, adminOnly: false },
     ],
@@ -75,6 +76,7 @@ const navSections: NavSection[] = [
       { label: 'SEO', href: '/admin/seo', icon: Search, adminOnly: true },
       { label: 'Calculators', href: '/admin/calculators', icon: Calculator, adminOnly: true },
       { label: 'System Pricing', href: '/admin/system-pricing', icon: DollarSign, adminOnly: true },
+      { label: 'Customer Equipment', href: '/admin/customer-equipment', icon: Package, adminOnly: true },
       { label: 'Ductless Config', href: '/admin/ductless-config', icon: AirVent, adminOnly: true },
       { label: 'Financing', href: '/admin/financing', icon: CreditCard, adminOnly: true },
       { label: 'GHL Tags', href: '/admin/ghl-tags', icon: Tag, adminOnly: true },
