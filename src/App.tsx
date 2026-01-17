@@ -58,6 +58,8 @@ import AdminGallery from "./pages/admin/Gallery";
 import AdminFinancingOptions from "./pages/admin/FinancingOptions";
 import AdminEquipmentLibrary from "./pages/admin/EquipmentLibrary";
 import AdminDFWWatchList from "./pages/admin/DFWWatchList";
+import AdminCustomerEquipment from "./pages/admin/CustomerEquipment";
+import AdminDuctedSubmissions from "./pages/admin/DuctedSubmissions";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
 
@@ -149,6 +151,8 @@ const router = createBrowserRouter([
       { path: "/admin/landing-pages/submissions", element: <ProtectedRoute><AdminUnifiedSubmissions /></ProtectedRoute> },
       { path: "/admin/landing-pages/:id", element: <ProtectedRoute><AdminLandingPageFormEditor /></ProtectedRoute> },
       { path: "/admin/ductless-config", element: <ProtectedRoute><AdminDuctlessConfig /></ProtectedRoute> },
+      { path: "/admin/customer-equipment", element: <ProtectedRoute><AdminCustomerEquipment /></ProtectedRoute> },
+      { path: "/admin/ducted-submissions", element: <ProtectedRoute><AdminDuctedSubmissions /></ProtectedRoute> },
       { path: "/admin/financing", element: <ProtectedRoute><AdminFinancingOptions /></ProtectedRoute> },
       { path: "/admin/gallery", element: <ProtectedRoute><AdminGallery /></ProtectedRoute> },
       { path: "/admin/equipment-library", element: <ProtectedRoute><AdminEquipmentLibrary /></ProtectedRoute> },
