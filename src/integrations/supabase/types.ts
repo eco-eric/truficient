@@ -1409,6 +1409,7 @@ export type Database = {
           name: string
           rate: number
           rate_type: Database["public"]["Enums"]["labor_rate_type"]
+          sort_order: number
           updated_at: string
         }
         Insert: {
@@ -1419,6 +1420,7 @@ export type Database = {
           name: string
           rate?: number
           rate_type?: Database["public"]["Enums"]["labor_rate_type"]
+          sort_order?: number
           updated_at?: string
         }
         Update: {
@@ -1429,6 +1431,7 @@ export type Database = {
           name?: string
           rate?: number
           rate_type?: Database["public"]["Enums"]["labor_rate_type"]
+          sort_order?: number
           updated_at?: string
         }
         Relationships: []

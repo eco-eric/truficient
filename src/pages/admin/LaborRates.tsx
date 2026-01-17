@@ -30,8 +30,25 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Users, Copy } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, Copy, GripVertical } from 'lucide-react';
 import { format } from 'date-fns';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 type LaborRateType = 'hourly' | 'daily' | 'flat';
 
@@ -42,6 +59,7 @@ interface LaborRate {
   rate: number;
   description: string | null;
   is_active: boolean;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }
@@ -51,6 +69,92 @@ const RATE_TYPES: { value: LaborRateType; label: string; suffix: string }[] = [
   { value: 'daily', label: 'Daily', suffix: '/day' },
   { value: 'flat', label: 'Flat Rate', suffix: '' },
 ];
+
+// Sortable row component
+interface SortableRowProps {
+  rate: LaborRate;
+  formatRate: (rate: number, type: LaborRateType) => string;
+  onClone: (rate: LaborRate) => void;
+  onEdit: (rate: LaborRate) => void;
+  onDelete: (id: string, name: string) => void;
+}
+
+const SortableRow = ({ rate, formatRate, onClone, onEdit, onDelete }: SortableRowProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: rate.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style} className={isDragging ? 'bg-muted' : ''}>
+      <TableCell className="w-10">
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </TableCell>
+      <TableCell className="font-medium">{rate.name}</TableCell>
+      <TableCell className="text-right font-mono text-lg">
+        {formatRate(rate.rate, rate.rate_type)}
+      </TableCell>
+      <TableCell className="text-muted-foreground max-w-xs truncate">
+        {rate.description || '—'}
+      </TableCell>
+      <TableCell>
+        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+          rate.is_active 
+            ? 'bg-green-100 text-green-800' 
+            : 'bg-gray-100 text-gray-800'
+        }`}>
+          {rate.is_active ? 'Active' : 'Inactive'}
+        </span>
+      </TableCell>
+      <TableCell className="text-muted-foreground text-sm">
+        {format(new Date(rate.updated_at), 'MMM d, yyyy')}
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onClone(rate)}
+            title="Duplicate"
+          >
+            <Copy className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onEdit(rate)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onDelete(rate.id, rate.name)}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+};
 
 const LaborRates = () => {
   const queryClient = useQueryClient();
@@ -64,6 +168,18 @@ const LaborRates = () => {
     is_active: true,
   });
 
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   // Fetch labor rates
   const { data: laborRates = [], isLoading } = useQuery({
     queryKey: ['labor-rates'],
@@ -72,7 +188,7 @@ const LaborRates = () => {
         .from('labor_rates')
         .select('*')
         .order('rate_type')
-        .order('name');
+        .order('sort_order');
       
       if (error) throw error;
       return data as LaborRate[];
@@ -81,10 +197,15 @@ const LaborRates = () => {
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: async (data: Omit<LaborRate, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (data: Omit<LaborRate, 'id' | 'created_at' | 'updated_at' | 'sort_order'>) => {
+      // Get max sort_order for the rate type
+      const maxOrder = laborRates
+        .filter(r => r.rate_type === data.rate_type)
+        .reduce((max, r) => Math.max(max, r.sort_order || 0), 0);
+      
       const { error } = await supabase
         .from('labor_rates')
-        .insert(data);
+        .insert({ ...data, sort_order: maxOrder + 1 });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -133,6 +254,97 @@ const LaborRates = () => {
       toast.error('Failed to delete labor rate: ' + error.message);
     },
   });
+
+  // Clone mutation
+  const cloneMutation = useMutation({
+    mutationFn: async (rate: LaborRate) => {
+      const originalOrder = rate.sort_order || 0;
+      
+      // Get all items in the same rate type that need to shift down
+      const itemsToShift = laborRates.filter(
+        r => r.rate_type === rate.rate_type && (r.sort_order || 0) > originalOrder
+      );
+      
+      // Shift items down by 1
+      for (const item of itemsToShift) {
+        const { error } = await supabase
+          .from('labor_rates')
+          .update({ sort_order: (item.sort_order || 0) + 1 })
+          .eq('id', item.id);
+        if (error) throw error;
+      }
+      
+      // Insert clone right after the original
+      const { error } = await supabase
+        .from('labor_rates')
+        .insert({
+          name: `${rate.name} (Copy)`,
+          rate_type: rate.rate_type,
+          rate: rate.rate,
+          description: rate.description,
+          is_active: rate.is_active,
+          sort_order: originalOrder + 1,
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['labor-rates'] });
+      toast.success('Labor rate cloned successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to clone labor rate: ' + error.message);
+    },
+  });
+
+  // Reorder mutation
+  const reorderMutation = useMutation({
+    mutationFn: async (updates: { id: string; sort_order: number }[]) => {
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('labor_rates')
+          .update({ sort_order: update.sort_order })
+          .eq('id', update.id);
+        if (error) throw error;
+      }
+    },
+    onError: (error) => {
+      toast.error('Failed to reorder labor rates: ' + error.message);
+      queryClient.invalidateQueries({ queryKey: ['labor-rates'] });
+    },
+  });
+
+  const handleDragEnd = (event: DragEndEvent, rateType: LaborRateType) => {
+    const { active, over } = event;
+    const rates = groupedRates[rateType] || [];
+
+    if (over && active.id !== over.id) {
+      const oldIndex = rates.findIndex(r => r.id === active.id);
+      const newIndex = rates.findIndex(r => r.id === over.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newOrder = arrayMove(rates, oldIndex, newIndex);
+        
+        // Optimistically update the cache
+        const updatedRates = laborRates.map(r => {
+          const newPosition = newOrder.findIndex(nr => nr.id === r.id);
+          if (newPosition !== -1) {
+            return { ...r, sort_order: newPosition + 1 };
+          }
+          return r;
+        });
+        
+        queryClient.setQueryData(['labor-rates'], updatedRates);
+        
+        // Persist the new order
+        const updates = newOrder.map((r, index) => ({
+          id: r.id,
+          sort_order: index + 1,
+        }));
+        
+        reorderMutation.mutate(updates);
+      }
+    }
+  };
 
   const handleOpenDialog = (rate?: LaborRate) => {
     if (rate) {
@@ -187,22 +399,14 @@ const LaborRates = () => {
   };
 
   const handleClone = (rate: LaborRate) => {
-    setEditingRate(null);
-    setFormData({
-      name: `${rate.name} (Copy)`,
-      rate_type: rate.rate_type,
-      rate: rate.rate.toString(),
-      description: rate.description || '',
-      is_active: rate.is_active,
-    });
-    setIsDialogOpen(true);
+    cloneMutation.mutate(rate);
   };
 
   const getRateSuffix = (type: LaborRateType) => {
     return RATE_TYPES.find(t => t.value === type)?.suffix || '';
   };
 
-  const formatRate = (rate: number, type: LaborRateType) => {
+  const formatRateValue = (rate: number, type: LaborRateType) => {
     return `$${rate.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${getRateSuffix(type)}`;
   };
 
@@ -223,7 +427,7 @@ const LaborRates = () => {
             <Users className="h-8 w-8 text-primary" />
             <div>
               <h1 className="text-2xl font-bold text-foreground">Labor Rates</h1>
-              <p className="text-muted-foreground">Manage labor rates for estimates</p>
+              <p className="text-muted-foreground">Manage labor rates for estimates. Drag to reorder.</p>
             </div>
           </div>
           <Button onClick={() => handleOpenDialog()}>
@@ -250,70 +454,42 @@ const LaborRates = () => {
                     {rateType.label} Rates
                   </h3>
                   <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead className="text-right">Rate</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Updated</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {rates.map((rate) => (
-                          <TableRow key={rate.id}>
-                            <TableCell className="font-medium">{rate.name}</TableCell>
-                            <TableCell className="text-right font-mono text-lg">
-                              {formatRate(rate.rate, rate.rate_type)}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground max-w-xs truncate">
-                              {rate.description || '—'}
-                            </TableCell>
-                            <TableCell>
-                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                rate.is_active 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-gray-100 text-gray-800'
-                              }`}>
-                                {rate.is_active ? 'Active' : 'Inactive'}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground text-sm">
-                              {format(new Date(rate.updated_at), 'MMM d, yyyy')}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleClone(rate)}
-                                  title="Duplicate"
-                                >
-                                  <Copy className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleOpenDialog(rate)}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleDelete(rate.id, rate.name)}
-                                  className="text-destructive hover:text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={(event) => handleDragEnd(event, rateType.value)}
+                    >
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-10"></TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead className="text-right">Rate</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Updated</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          <SortableContext
+                            items={rates.map(r => r.id)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            {rates.map((rate) => (
+                              <SortableRow
+                                key={rate.id}
+                                rate={rate}
+                                formatRate={formatRateValue}
+                                onClone={handleClone}
+                                onEdit={handleOpenDialog}
+                                onDelete={handleDelete}
+                              />
+                            ))}
+                          </SortableContext>
+                        </TableBody>
+                      </Table>
+                    </DndContext>
                   </div>
                 </div>
               );
