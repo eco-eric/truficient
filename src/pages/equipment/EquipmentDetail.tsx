@@ -185,15 +185,17 @@ export default function EquipmentDetail() {
               <Card className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <Badge variant="secondary" className="capitalize mb-2">
-                      {equipment.brand}
-                    </Badge>
-                    <h1 className="text-3xl font-bold font-mono mb-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="secondary" className="capitalize">
+                        {equipment.brand}
+                      </Badge>
+                      {equipment.equipment_type && (
+                        <Badge variant="outline">{equipment.equipment_type}</Badge>
+                      )}
+                    </div>
+                    <h1 className="text-3xl font-bold font-mono">
                       {equipment.model_number}
                     </h1>
-                    {equipment.equipment_type && (
-                      <p className="text-muted-foreground">{equipment.equipment_type}</p>
-                    )}
                   </div>
                 </div>
               </Card>
