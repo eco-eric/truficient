@@ -1,7 +1,7 @@
 import { useScanner } from '../context/ScannerContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Camera, Upload, Keyboard, ArrowLeft } from 'lucide-react';
+import { Camera, Upload, Keyboard, ArrowLeft, Images } from 'lucide-react';
 import { InputMethod } from '../types';
 
 interface MethodOption {
@@ -10,6 +10,8 @@ interface MethodOption {
   title: string;
   description: string;
 }
+
+const MAX_SCANS = 5;
 
 const methods: MethodOption[] = [
   {
@@ -25,6 +27,12 @@ const methods: MethodOption[] = [
     description: 'Select an existing photo from your device',
   },
   {
+    id: 'bulk-upload',
+    icon: <Images className="w-8 h-8" />,
+    title: 'Upload Multiple',
+    description: 'Upload up to 5 data plate photos at once',
+  },
+  {
     id: 'manual',
     icon: <Keyboard className="w-8 h-8" />,
     title: 'Enter Manually',
@@ -33,7 +41,14 @@ const methods: MethodOption[] = [
 ];
 
 export function InputMethodSelector() {
-  const { dispatch } = useScanner();
+  const { state, dispatch } = useScanner();
+  
+  const remainingSlots = MAX_SCANS - state.results.length;
+  
+  // Filter out bulk-upload if only 1 slot remains (single upload is better)
+  const availableMethods = remainingSlots <= 1 
+    ? methods.filter(m => m.id !== 'bulk-upload')
+    : methods;
 
   const handleSelect = (method: InputMethod) => {
     dispatch({ type: 'SET_INPUT_METHOD', payload: method });
@@ -51,8 +66,8 @@ export function InputMethodSelector() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        {methods.map((method) => (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {availableMethods.map((method) => (
           <Card
             key={method.id}
             className="cursor-pointer hover:border-secondary hover:bg-secondary/5 transition-all duration-200 group"

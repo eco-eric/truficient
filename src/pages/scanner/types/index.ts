@@ -36,10 +36,17 @@ export interface DocumentationResult {
   source_url: string | null;
 }
 
-export type InputMethod = 'scan' | 'upload' | 'manual';
+export type InputMethod = 'scan' | 'upload' | 'manual' | 'bulk-upload';
+
+export interface BulkUploadProgress {
+  current: number;
+  total: number;
+  currentImage: string | null;
+  results: { success: boolean; brand?: string; error?: string }[];
+}
 
 export interface ScannerState {
-  step: 'zip' | 'examples' | 'input-method' | 'scan' | 'upload' | 'manual' | 'processing' | 'results';
+  step: 'zip' | 'examples' | 'input-method' | 'scan' | 'upload' | 'manual' | 'bulk-upload' | 'processing' | 'results';
   zipCode: string;
   city: string | null;
   state: string | null;
@@ -53,6 +60,8 @@ export interface ScannerState {
   result: ScanResult | null;
   results: AccumulatedScan[];
   error: string | null;
+  bulkImages: string[];
+  bulkProgress: BulkUploadProgress | null;
 }
 
 export type ScannerAction =
@@ -71,7 +80,10 @@ export type ScannerAction =
   | { type: 'ADD_TO_RESULTS' }
   | { type: 'REMOVE_FROM_RESULTS'; payload: string }
   | { type: 'SCAN_ANOTHER' }
-  | { type: 'RESET' };
+  | { type: 'RESET' }
+  | { type: 'SET_BULK_IMAGES'; payload: string[] }
+  | { type: 'SET_BULK_PROGRESS'; payload: BulkUploadProgress | null }
+  | { type: 'ADD_BULK_RESULT'; payload: AccumulatedScan };
 
 // DFW cities for more accurate detection
 export const DFW_CITIES = [

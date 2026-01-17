@@ -4,6 +4,7 @@ import { ExampleDataPlates } from './components/ExampleDataPlates';
 import { InputMethodSelector } from './components/InputMethodSelector';
 import { CameraScanner } from './components/CameraScanner';
 import { ImageUpload } from './components/ImageUpload';
+import { BulkImageUpload } from './components/BulkImageUpload';
 import { ManualEntry } from './components/ManualEntry';
 import { ProcessingState } from './components/ProcessingState';
 import { ResultsCard } from './components/ResultsCard';
@@ -16,7 +17,7 @@ import { TrustElements } from './components/TrustElements';
 import { ScanList } from './components/ScanList';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { RotateCcw, ScanLine, Info, Camera } from 'lucide-react';
+import { RotateCcw, ScanLine, Info } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { useEffect } from 'react';
@@ -51,6 +52,8 @@ function ScannerContent() {
         return <CameraScanner />;
       case 'upload':
         return <ImageUpload />;
+      case 'bulk-upload':
+        return <BulkImageUpload />;
       case 'manual':
         return <ManualEntry />;
       case 'processing':
