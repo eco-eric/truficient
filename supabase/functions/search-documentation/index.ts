@@ -56,6 +56,11 @@ function generateModelPattern(brand: string, modelNumber: string): string {
   return patternFn(modelNumber.toUpperCase());
 }
 
+function normalizeBrandName(brand: string): string {
+  // Capitalize first letter of each word
+  return brand.toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -82,12 +87,13 @@ Deno.serve(async (req) => {
 
     // Generate model pattern for broader cache hits
     const modelPattern = generateModelPattern(brand, model_number);
+    const normalizedBrand = normalizeBrandName(brand);
 
-    // Check cache first - try exact match then pattern match
+    // Check cache first - try exact match then pattern match (case-insensitive)
     const { data: cachedDocs, error: cacheError } = await supabase
       .from('equipment_documentation')
       .select('*')
-      .eq('brand', brand.toLowerCase())
+      .ilike('brand', brand)
       .or(`model_number.eq.${model_number},model_pattern.eq.${modelPattern}`);
 
     if (cacheError) {
@@ -100,7 +106,7 @@ Deno.serve(async (req) => {
       // Log the search
       const duration = Date.now() - startTime;
       await supabase.from('documentation_search_log').insert({
-        brand: brand.toLowerCase(),
+        brand: normalizedBrand,
         model_number,
         cache_hit: true,
         documents_found: cachedDocs.length,
@@ -198,7 +204,7 @@ Deno.serve(async (req) => {
     // Cache the results
     if (uniqueResults.length > 0) {
       const docsToCache = uniqueResults.map(doc => ({
-        brand: brand.toLowerCase(),
+        brand: normalizedBrand,
         model_number,
         model_pattern: modelPattern,
         document_type: doc.document_type,
@@ -221,13 +227,23 @@ Deno.serve(async (req) => {
         console.error('Error caching documents:', insertError);
       } else {
         console.log(`Cached ${docsToCache.length} documents`);
+        
+        // Update documentation_count on equipment_pages
+        const { error: updateError } = await supabase
+          .from('equipment_pages')
+          .update({ documentation_count: uniqueResults.length })
+          .ilike('model_number', model_number);
+        
+        if (updateError) {
+          console.error('Error updating equipment page doc count:', updateError);
+        }
       }
     }
 
     // Log the search
     const duration = Date.now() - startTime;
     await supabase.from('documentation_search_log').insert({
-      brand: brand.toLowerCase(),
+      brand: normalizedBrand,
       model_number,
       cache_hit: false,
       documents_found: uniqueResults.length,
