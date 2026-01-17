@@ -55,6 +55,7 @@ import AdminGHLConversations from "./pages/admin/GHLConversations";
 import AdminButtonClicks from "./pages/admin/ButtonClicks";
 import AdminDuctlessConfig from "./pages/admin/DuctlessConfig";
 import AdminGallery from "./pages/admin/Gallery";
+import AdminFinancingOptions from "./pages/admin/FinancingOptions";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
 
@@ -137,6 +138,7 @@ const router = createBrowserRouter([
       { path: "/admin/landing-pages/submissions", element: <ProtectedRoute><AdminUnifiedSubmissions /></ProtectedRoute> },
       { path: "/admin/landing-pages/:id", element: <ProtectedRoute><AdminLandingPageFormEditor /></ProtectedRoute> },
       { path: "/admin/ductless-config", element: <ProtectedRoute><AdminDuctlessConfig /></ProtectedRoute> },
+      { path: "/admin/financing", element: <ProtectedRoute><AdminFinancingOptions /></ProtectedRoute> },
       { path: "/admin/gallery", element: <ProtectedRoute><AdminGallery /></ProtectedRoute> },
       { path: "/admin/settings", element: <ProtectedRoute><AdminSettings /></ProtectedRoute> },
       { path: "/admin/button-clicks", element: <ProtectedRoute><AdminButtonClicks /></ProtectedRoute> },
