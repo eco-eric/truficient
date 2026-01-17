@@ -71,8 +71,8 @@ export const BulkImageUpload = ({
         toast.error(`${file.name} is not an image file`);
         return false;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error(`${file.name} is larger than 5MB`);
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`${file.name} is larger than 10MB`);
         return false;
       }
       return true;
@@ -310,7 +310,7 @@ export const BulkImageUpload = ({
                 <div>
                   <p className="text-lg font-medium">Drop images here or click to browse</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    JPEG, PNG, WebP, or GIF (max 5MB each)
+                    JPEG, PNG, WebP, or GIF (max 10MB each)
                   </p>
                 </div>
               </div>
