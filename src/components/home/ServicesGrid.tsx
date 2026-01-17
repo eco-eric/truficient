@@ -6,6 +6,7 @@ import { useButtonTracking } from '@/hooks/useButtonTracking';
 import heatPumpImage from '@/assets/heat-pump-installation.png';
 import acRepairImage from '@/assets/ac-repair.jpg';
 import designInstallImage from '@/assets/design-and-install.jpg';
+import commercialServicesImage from '@/assets/commercial-services.jpg';
 
 const services = [
   {
@@ -53,7 +54,7 @@ const services = [
   {
     title: 'Commercial Services',
     description: 'Expert Heating & Cooling Solutions for Small to Mid-Sized Commercial Buildings.',
-    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=300&fit=crop',
+    image: commercialServicesImage,
     link: '/commercial-services',
   },
 ];
