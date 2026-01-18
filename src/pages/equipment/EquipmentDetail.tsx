@@ -36,6 +36,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { usePageSEO } from '@/hooks/usePageSEO';
+import { useButtonTracking } from '@/hooks/useButtonTracking';
 
 const EQUIPMENT_TYPE_ICONS: Record<string, React.ReactNode> = {
   'Air Conditioner': <Snowflake className="w-4 h-4" />,
@@ -75,6 +76,7 @@ export default function EquipmentDetail() {
   const { "*": slug } = useParams();
   const [documents, setDocuments] = useState<DocumentResult[]>([]);
   const [isLoadingDocs, setIsLoadingDocs] = useState(false);
+  const { trackButtonClick } = useButtonTracking();
 
   const { data: equipment, isLoading } = useQuery({
     queryKey: ['equipment-detail', slug],
@@ -367,6 +369,11 @@ export default function EquipmentDetail() {
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
+                    onClick={() => trackButtonClick({
+                      buttonName: 'Workedge Pro Banner',
+                      buttonLocation: 'Equipment Detail - Documentation',
+                      destinationUrl: 'https://workedge.pro',
+                    })}
                   >
                     <img 
                       src={workedgeProLogo} 
