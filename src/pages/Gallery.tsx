@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -8,10 +8,13 @@ import { Button } from '@/components/ui/button';
 import { ImageLightbox } from '@/components/ui/image-lightbox';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { usePageSEO } from '@/hooks/usePageSEO';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { motion } from 'framer-motion';
 import { Loader2, ChevronLeft, ChevronRight, Grid2X2, Grid3X3, LayoutGrid } from 'lucide-react';
 
 type ThumbnailSize = 'small' | 'medium' | 'large';
+
+const PAGE_SIZE = 48;
 
 interface GalleryTag {
   id: string;
@@ -25,6 +28,7 @@ interface GalleryImage {
   description: string | null;
   image_url: string;
   alt_text: string | null;
+  sort_order: number | null;
 }
 
 const Gallery = () => {
@@ -33,6 +37,19 @@ const Gallery = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [thumbnailSize, setThumbnailSize] = useState<ThumbnailSize>('medium');
+
+  // Fetch total count for display
+  const { data: totalCount = 0 } = useQuery({
+    queryKey: ['gallery-images-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('gallery_images')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+      if (error) throw error;
+      return count || 0;
+    },
+  });
 
   // Fetch tags
   const { data: tags = [] } = useQuery({
@@ -48,21 +65,7 @@ const Gallery = () => {
     },
   });
 
-  // Fetch images
-  const { data: images = [], isLoading } = useQuery({
-    queryKey: ['gallery-images'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('gallery_images')
-        .select('id, title, description, image_url, alt_text')
-        .eq('is_active', true)
-        .order('sort_order');
-      if (error) throw error;
-      return data as GalleryImage[];
-    },
-  });
-
-  // Fetch image-tag relations
+  // Fetch image-tag relations (needed for filtering)
   const { data: imageTagRelations = [] } = useQuery({
     queryKey: ['gallery-image-tags'],
     queryFn: async () => {
@@ -74,20 +77,76 @@ const Gallery = () => {
     },
   });
 
-  // Filter images based on selected tags
-  const filteredImages = selectedTags.length === 0
-    ? images
-    : images.filter(image => {
-        const imageTags = imageTagRelations
-          .filter(r => r.image_id === image.id)
-          .map(r => r.tag_id);
-        return selectedTags.some(tagId => imageTags.includes(tagId));
-      });
+  // Get image IDs that match selected tags
+  const filteredImageIds = useMemo(() => {
+    if (selectedTags.length === 0) return null;
+    const matchingIds = new Set<string>();
+    imageTagRelations.forEach(r => {
+      if (selectedTags.includes(r.tag_id)) {
+        matchingIds.add(r.image_id);
+      }
+    });
+    return Array.from(matchingIds);
+  }, [selectedTags, imageTagRelations]);
 
-  const getImageTags = (imageId: string) => {
+  // Infinite query for images
+  const {
+    data: imagesData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfiniteQuery({
+    queryKey: ['gallery-images-infinite', filteredImageIds],
+    queryFn: async ({ pageParam = 0 }) => {
+      let query = supabase
+        .from('gallery_images')
+        .select('id, title, description, image_url, alt_text, sort_order')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: false })
+        .range(pageParam * PAGE_SIZE, (pageParam + 1) * PAGE_SIZE - 1);
+
+      // If filtering by tags, only get matching images
+      if (filteredImageIds && filteredImageIds.length > 0) {
+        query = query.in('id', filteredImageIds);
+      } else if (filteredImageIds && filteredImageIds.length === 0) {
+        // No matches for selected tags
+        return { images: [], nextPage: null };
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      
+      return {
+        images: data as GalleryImage[],
+        nextPage: data.length === PAGE_SIZE ? pageParam + 1 : null,
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 0,
+  });
+
+  // Flatten all pages into a single array
+  const images = useMemo(() => {
+    return imagesData?.pages.flatMap(page => page.images) || [];
+  }, [imagesData]);
+
+  // Calculate filtered count
+  const filteredCount = selectedTags.length > 0 
+    ? (filteredImageIds?.length || 0)
+    : totalCount;
+
+  const { loadMoreRef } = useInfiniteScroll({
+    onLoadMore: () => fetchNextPage(),
+    hasMore: !!hasNextPage,
+    isLoading: isFetchingNextPage,
+  });
+
+  const getImageTags = useCallback((imageId: string) => {
     const tagIds = imageTagRelations.filter(r => r.image_id === imageId).map(r => r.tag_id);
     return tags.filter(t => tagIds.includes(t.id));
-  };
+  }, [imageTagRelations, tags]);
 
   const toggleTag = (tagId: string) => {
     setSelectedTags(prev =>
@@ -102,13 +161,13 @@ const Gallery = () => {
 
   const navigateLightbox = (direction: 'prev' | 'next') => {
     if (direction === 'prev') {
-      setSelectedImageIndex(prev => (prev === 0 ? filteredImages.length - 1 : prev - 1));
+      setSelectedImageIndex(prev => (prev === 0 ? images.length - 1 : prev - 1));
     } else {
-      setSelectedImageIndex(prev => (prev === filteredImages.length - 1 ? 0 : prev + 1));
+      setSelectedImageIndex(prev => (prev === images.length - 1 ? 0 : prev + 1));
     }
   };
 
-  const currentImage = filteredImages[selectedImageIndex];
+  const currentImage = images[selectedImageIndex];
 
   return (
     <div className="min-h-screen bg-background">
@@ -163,10 +222,10 @@ const Gallery = () => {
             {/* Right side - Photo count and thumbnail size */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <span className="text-lg font-bold">{filteredImages.length.toLocaleString()}</span>
+                <span className="text-lg font-bold">{filteredCount.toLocaleString()}</span>
                 <span className="text-sm text-muted-foreground">
-                  {selectedTags.length > 0 && images.length !== filteredImages.length
-                    ? `of ${images.length.toLocaleString()} Photos`
+                  {selectedTags.length > 0 && totalCount !== filteredCount
+                    ? `of ${totalCount.toLocaleString()} Photos`
                     : 'Photos'}
                 </span>
               </div>
@@ -200,7 +259,7 @@ const Gallery = () => {
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
             </div>
-          ) : filteredImages.length === 0 ? (
+          ) : images.length === 0 ? (
             <div className="text-center py-20">
               <p className="text-lg text-muted-foreground">
                 {selectedTags.length > 0
@@ -214,44 +273,62 @@ const Gallery = () => {
               )}
             </div>
           ) : (
-            <div className={`grid gap-4 ${
-              thumbnailSize === 'small' 
-                ? 'grid-cols-4 md:grid-cols-6 lg:grid-cols-8' 
-                : thumbnailSize === 'large' 
-                  ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
-                  : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
-            }`}>
-              {filteredImages.map((image, index) => (
-                <motion.div
-                  key={image.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                  className="group cursor-pointer"
-                  onClick={() => openLightbox(index)}
-                >
-                  <div className="aspect-square overflow-hidden rounded-lg bg-muted relative">
-                    <img
-                      src={image.image_url}
-                      alt={image.alt_text || image.title}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end">
-                      <div className="p-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <h3 className="font-medium text-sm">{image.title}</h3>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {getImageTags(image.id).slice(0, 2).map(tag => (
-                            <span key={tag.id} className="text-xs bg-white/20 px-2 py-0.5 rounded">
-                              {tag.name}
-                            </span>
-                          ))}
+            <>
+              <div className={`grid gap-4 ${
+                thumbnailSize === 'small' 
+                  ? 'grid-cols-4 md:grid-cols-6 lg:grid-cols-8' 
+                  : thumbnailSize === 'large' 
+                    ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
+                    : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+              }`}>
+                {images.map((image, index) => (
+                  <motion.div
+                    key={image.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: Math.min(index % PAGE_SIZE, 12) * 0.03 }}
+                    className="group cursor-pointer"
+                    onClick={() => openLightbox(index)}
+                  >
+                    <div className="aspect-square overflow-hidden rounded-lg bg-muted relative">
+                      <img
+                        src={image.image_url}
+                        alt={image.alt_text || image.title}
+                        loading="lazy"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end">
+                        <div className="p-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <h3 className="font-medium text-sm">{image.title}</h3>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {getImageTags(image.id).slice(0, 2).map(tag => (
+                              <span key={tag.id} className="text-xs bg-white/20 px-2 py-0.5 rounded">
+                                {tag.name}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Infinite scroll trigger */}
+              <div ref={loadMoreRef} className="h-20 flex items-center justify-center mt-8">
+                {isFetchingNextPage && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Loading more photos...</span>
                   </div>
-                </motion.div>
-              ))}
-            </div>
+                )}
+                {!hasNextPage && images.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    You've seen all {images.length.toLocaleString()} photos
+                  </p>
+                )}
+              </div>
+            </>
           )}
         </div>
       </section>
@@ -267,7 +344,7 @@ const Gallery = () => {
       )}
 
       {/* Custom lightbox overlay for navigation when open */}
-      {lightboxOpen && filteredImages.length > 1 && (
+      {lightboxOpen && images.length > 1 && (
         <>
           <Button
             variant="ghost"
@@ -292,7 +369,7 @@ const Gallery = () => {
             <ChevronRight className="w-6 h-6" />
           </Button>
           <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[60] bg-background/80 px-4 py-2 rounded-full text-sm">
-            {selectedImageIndex + 1} / {filteredImages.length}
+            {selectedImageIndex + 1} / {images.length}
           </div>
         </>
       )}
