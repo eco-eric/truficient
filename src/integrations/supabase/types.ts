@@ -385,6 +385,7 @@ export type Database = {
           is_active: boolean
           is_best_value: boolean
           is_energy_star: boolean
+          refrigerant: string | null
           seer2_rating: number | null
           system_name: string | null
           system_type: string
@@ -413,6 +414,7 @@ export type Database = {
           is_active?: boolean
           is_best_value?: boolean
           is_energy_star?: boolean
+          refrigerant?: string | null
           seer2_rating?: number | null
           system_name?: string | null
           system_type: string
@@ -441,6 +443,7 @@ export type Database = {
           is_active?: boolean
           is_best_value?: boolean
           is_energy_star?: boolean
+          refrigerant?: string | null
           seer2_rating?: number | null
           system_name?: string | null
           system_type?: string
