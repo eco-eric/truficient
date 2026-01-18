@@ -236,7 +236,7 @@ export default function EquipmentLibrary() {
                 return (
                   <Link
                     key={item.id}
-                    to={`/equipment/${item.brand.toLowerCase()}/${item.model_number.toLowerCase()}`}
+                    to={`/equipment/${item.slug}`}
                   >
                     <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer h-full">
                       <div className="flex items-start justify-between mb-3">
