@@ -33,6 +33,8 @@ type DuctedEquipment = {
   heat_kit_model: string | null;
   // Thermostat
   thermostat_name: string | null;
+  // Refrigerant
+  refrigerant: string | null;
   // Efficiency Ratings
   seer2_rating: number | null;
   eer2_rating: number | null;
@@ -189,6 +191,8 @@ const CustomerEquipment = () => {
     heat_kit_model: "",
     // Thermostat
     thermostat_name: "",
+    // Refrigerant
+    refrigerant: "",
     // Efficiency Ratings
     seer2_rating: "",
     eer2_rating: "",
@@ -219,6 +223,7 @@ const CustomerEquipment = () => {
       air_handler_model: "",
       heat_kit_model: "",
       thermostat_name: "",
+      refrigerant: "",
       seer2_rating: "",
       eer2_rating: "",
       hspf2_rating: "",
@@ -253,6 +258,7 @@ const CustomerEquipment = () => {
       air_handler_model: e.air_handler_model || "",
       heat_kit_model: e.heat_kit_model || "",
       thermostat_name: e.thermostat_name || "",
+      refrigerant: e.refrigerant || "",
       seer2_rating: e.seer2_rating?.toString() || "",
       eer2_rating: e.eer2_rating?.toString() || "",
       hspf2_rating: e.hspf2_rating?.toString() || "",
@@ -286,6 +292,8 @@ const CustomerEquipment = () => {
         heat_kit_model: equipForm.heat_kit_model.trim() || null,
         // Thermostat
         thermostat_name: equipForm.thermostat_name.trim() || null,
+        // Refrigerant
+        refrigerant: equipForm.refrigerant.trim() || null,
         // Efficiency Ratings
         seer2_rating: equipForm.seer2_rating ? Number(equipForm.seer2_rating) : null,
         eer2_rating: equipForm.eer2_rating ? Number(equipForm.eer2_rating) : null,
@@ -629,6 +637,7 @@ const CustomerEquipment = () => {
         "Air Handler Model": "",
         "Heat Kit Model": "",
         "Thermostat Name": "Honeywell T6 Pro",
+        "Refrigerant": "R-410A",
         "SEER2": 15.2,
         "EER2": 12.5,
         "HSPF2": "",
@@ -691,6 +700,8 @@ const CustomerEquipment = () => {
         "heat_kit_model": "heat_kit_model",
         "Thermostat Name": "thermostat_name",
         "thermostat_name": "thermostat_name",
+        "Refrigerant": "refrigerant",
+        "refrigerant": "refrigerant",
         "SEER2": "seer2_rating",
         "seer2_rating": "seer2_rating",
         "EER2": "eer2_rating",
@@ -780,6 +791,7 @@ const CustomerEquipment = () => {
           air_handler_model: mapped.air_handler_model ? String(mapped.air_handler_model).trim() : null,
           heat_kit_model: mapped.heat_kit_model ? String(mapped.heat_kit_model).trim() : null,
           thermostat_name: mapped.thermostat_name ? String(mapped.thermostat_name).trim() : null,
+          refrigerant: mapped.refrigerant ? String(mapped.refrigerant).trim() : null,
           seer2_rating: parseNumber(mapped.seer2_rating),
           eer2_rating: parseNumber(mapped.eer2_rating),
           hspf2_rating: parseNumber(mapped.hspf2_rating),
@@ -974,10 +986,16 @@ const CustomerEquipment = () => {
                       )}
                     </div>
 
-                    {/* Thermostat */}
-                    <div className="grid gap-2">
-                      <Label>Thermostat Name</Label>
-                      <Input value={equipForm.thermostat_name} onChange={(e) => setEquipForm((p) => ({ ...p, thermostat_name: e.target.value }))} placeholder="Honeywell T6 Pro" />
+                    {/* Thermostat & Refrigerant */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label>Thermostat Name</Label>
+                        <Input value={equipForm.thermostat_name} onChange={(e) => setEquipForm((p) => ({ ...p, thermostat_name: e.target.value }))} placeholder="Honeywell T6 Pro" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Refrigerant</Label>
+                        <Input value={equipForm.refrigerant} onChange={(e) => setEquipForm((p) => ({ ...p, refrigerant: e.target.value }))} placeholder="R-410A" />
+                      </div>
                     </div>
 
                     {/* Efficiency Ratings */}
