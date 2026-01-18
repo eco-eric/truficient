@@ -112,9 +112,6 @@ export default function EquipmentDetail() {
   });
 
   const specs = equipment?.specs as Record<string, unknown> | undefined;
-  const currentYear = new Date().getFullYear();
-  const manufacturedYear = specs?.manufactured_year as number | undefined;
-  const age = manufacturedYear ? currentYear - manufacturedYear : null;
   const refrigerant = specs?.refrigerant as string | undefined;
   const isR22 = refrigerant?.toLowerCase().includes('r-22') || refrigerant?.toLowerCase().includes('r22');
 
@@ -247,11 +244,6 @@ export default function EquipmentDetail() {
                 <h2 className="text-xl font-bold mb-4">Equipment Specifications</h2>
                 <div className="space-y-1">
                   <SpecRow
-                    icon={<Calendar className="w-5 h-5" />}
-                    label="Manufactured"
-                    value={manufacturedYear ? `${manufacturedYear}${age ? ` (${age} years old)` : ''}` : undefined}
-                  />
-                  <SpecRow
                     icon={<Thermometer className="w-5 h-5" />}
                     label="Tonnage"
                     value={specs?.tonnage as string}
@@ -367,35 +359,6 @@ export default function EquipmentDetail() {
                 )}
               </Card>
 
-              {/* Warranty Notice */}
-              {age && age <= 10 && (
-                <Card className="p-6 border-green-500/50 bg-green-500/10">
-                  <div className="flex gap-4">
-                    <ShieldCheck className="w-6 h-6 text-green-600 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-bold text-green-700 dark:text-green-400 mb-2">Warranty Information</h3>
-                      {age < 5 ? (
-                        <p className="text-green-700/80 dark:text-green-400/80">
-                          At {age} years old, all parts should still be covered under the manufacturer 
-                          warranty if this unit was registered for residential use.
-                        </p>
-                      ) : (
-                        <p className="text-green-700/80 dark:text-green-400/80">
-                          At {age} years old, this equipment may still have partial warranty coverage. 
-                          Verify with your serial number at the manufacturer's website.
-                        </p>
-                      )}
-                      <Button variant="outline" size="sm" className="mt-3" asChild>
-                        <a href={getBrandSupportUrl(equipment.brand)} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          Check {equipment.brand} Warranty Status
-                        </a>
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              )}
-
               {/* Alerts */}
               {isR22 && (
                 <Card className="p-6 border-amber-500/50 bg-amber-500/10">
@@ -407,22 +370,6 @@ export default function EquipmentDetail() {
                         This system uses R-22 refrigerant, which was fully phased out in 2020.
                         Repairs requiring refrigerant are extremely costly due to limited supply. Consider
                         upgrading to a modern system using R-454B or R-32.
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              )}
-
-              {age && age > 12 && (
-                <Card className="p-6 border-blue-500/50 bg-blue-500/10">
-                  <div className="flex gap-4">
-                    <Info className="w-6 h-6 text-blue-500 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-bold text-blue-700 mb-2">System Age Consideration</h3>
-                      <p className="text-blue-700/80">
-                        HVAC systems typically last 15-20 years. At {age} years old, your system may
-                        be approaching the age where replacement becomes more cost-effective than repair.
-                        Modern systems offer significantly improved efficiency.
                       </p>
                     </div>
                   </div>

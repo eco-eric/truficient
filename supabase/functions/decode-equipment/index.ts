@@ -269,12 +269,12 @@ IMPORTANT:
       }
     }
 
-    // Build PUBLIC specs for equipment_pages (NO private data like serial numbers)
+    // Build PUBLIC specs for equipment_pages (NO private/scan-specific data)
+    // NOTE: serial_number and manufactured_year are excluded - they belong in equipment_scans only
+    // manufactured_year varies per unit of the same model, so it's not appropriate for model-level pages
     const publicSpecs = {
       brand: decodedSpecs.brand || null,
       model_number: extractedModelNumber,
-      // NOTE: serial_number is intentionally excluded - it stays in equipment_scans only
-      manufactured_year: decodedSpecs.manufactured_year || null,
       tonnage: decodedSpecs.tonnage || null,
       refrigerant: decodedSpecs.refrigerant || null,
       breaker_size: decodedSpecs.breaker_size || null,
@@ -286,10 +286,11 @@ IMPORTANT:
       voltage_info: decodedSpecs.voltage_info || null,
     };
 
-    // Build PRIVATE specs for equipment_scans (includes all data)
+    // Build PRIVATE specs for equipment_scans (includes all data including scan-specific info)
     const privateSpecs = {
       ...publicSpecs,
       serial_number: extractedSerialNumber || null,
+      manufactured_year: decodedSpecs.manufactured_year || null,
     };
 
     console.log('Public specs (for equipment_pages):', publicSpecs);
