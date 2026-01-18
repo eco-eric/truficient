@@ -233,25 +233,44 @@ export default function EquipmentLibrary() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {equipment.map((item) => {
                 const specs = item.specs as Record<string, unknown>;
+                const getEquipmentTypeIcon = (type: string | null) => {
+                  const iconClass = "w-4 h-4";
+                  switch (type?.toLowerCase()) {
+                    case 'furnace':
+                      return <Flame className={iconClass} />;
+                    case 'air handler':
+                      return <Fan className={iconClass} />;
+                    case 'condenser':
+                    case 'air conditioner':
+                      return <Snowflake className={iconClass} />;
+                    case 'heat pump':
+                      return <Thermometer className={iconClass} />;
+                    case 'evaporator coil':
+                      return <Droplets className={iconClass} />;
+                    case 'mini split':
+                      return <Wind className={iconClass} />;
+                    default:
+                      return <Factory className={iconClass} />;
+                  }
+                };
                 return (
                   <Link
                     key={item.id}
                     to={`/equipment/${item.slug}`}
                   >
                     <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer h-full">
-                      <div className="flex items-start justify-between mb-3">
-                        <Badge variant="secondary" className="capitalize">
-                          {item.brand}
-                        </Badge>
-                        {item.equipment_type && (
-                          <Badge variant="outline" className="text-xs">
-                            {item.equipment_type}
-                          </Badge>
-                        )}
-                      </div>
-                      <h3 className="text-xl font-bold text-foreground mb-3 font-mono">
+                      <Badge variant="secondary" className="capitalize mb-3">
+                        {item.brand}
+                      </Badge>
+                      <h3 className="text-xl font-bold text-foreground mb-2 font-mono">
                         {item.model_number}
                       </h3>
+                      {item.equipment_type && (
+                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
+                          {getEquipmentTypeIcon(item.equipment_type)}
+                          <span className="capitalize">{item.equipment_type}</span>
+                        </div>
+                      )}
                       <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                         {specs?.tonnage && (
                           <div className="flex items-center gap-1">
