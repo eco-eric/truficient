@@ -466,8 +466,8 @@ export default function EquipmentReport() {
                         <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                           <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                           <div>
-                            <p className="font-medium text-amber-800 dark:text-amber-300 text-sm">R-22 Refrigerant Detected</p>
-                            <p className="text-xs text-amber-700 dark:text-amber-400">R-22 has been phased out. Replacement parts and refrigerant are increasingly expensive.</p>
+                            <p className="font-medium text-amber-800 dark:text-amber-300 text-sm">R-22 Refrigerant (Legacy)</p>
+                            <p className="text-xs text-amber-700 dark:text-amber-400">R-22 was fully phased out in 2020. Consider upgrading to a system using R-454B or R-32.</p>
                           </div>
                         </div>
                       )}

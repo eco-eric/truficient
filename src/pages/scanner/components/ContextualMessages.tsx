@@ -51,13 +51,13 @@ export function ContextualMessages() {
 
   const messages: MessageCardProps[] = [];
 
-  // R-22 refrigerant warning
+  // R-22 refrigerant warning (fully phased out in 2020)
   if (specs.refrigerant?.toUpperCase().includes('R-22') || specs.refrigerant?.toUpperCase().includes('R22')) {
     messages.push({
       icon: <AlertTriangle className="w-5 h-5" />,
-      title: 'R-22 Refrigerant Phase-Out',
+      title: 'R-22 Refrigerant (Legacy)',
       description:
-        'This system uses R-22 refrigerant, which has been phased out of production. Replacement parts and refrigerant are increasingly expensive and difficult to find.',
+        'This system uses R-22 refrigerant, which was fully phased out in 2020. Repairs requiring refrigerant are extremely costly. Consider upgrading to a system using R-454B or R-32.',
       variant: 'warning',
     });
   }
