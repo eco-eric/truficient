@@ -402,11 +402,11 @@ export default function EquipmentDetail() {
                   <div className="flex gap-4">
                     <AlertTriangle className="w-6 h-6 text-amber-500 flex-shrink-0" />
                     <div>
-                      <h3 className="font-bold text-amber-700 mb-2">R-22 Refrigerant Notice</h3>
+                      <h3 className="font-bold text-amber-700 mb-2">R-22 Refrigerant (Legacy)</h3>
                       <p className="text-amber-700/80">
-                        This system uses R-22 refrigerant, which has been phased out of production.
-                        Repairs requiring refrigerant may be costly due to limited supply. Consider
-                        upgrading to a modern system using R-410A or R-32.
+                        This system uses R-22 refrigerant, which was fully phased out in 2020.
+                        Repairs requiring refrigerant are extremely costly due to limited supply. Consider
+                        upgrading to a modern system using R-454B or R-32.
                       </p>
                     </div>
                   </div>
