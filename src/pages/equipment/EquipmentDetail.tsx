@@ -1,4 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
+import workedgeProLogo from '@/assets/workedge-pro-logo.png';
 import { EstimatorLinks } from '@/pages/scanner/components/EstimatorLinks';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -358,6 +359,27 @@ export default function EquipmentDetail() {
                     </Button>
                   </div>
                 )}
+
+                {/* Workedge Pro Attribution Banner */}
+                <div className="mt-6 pt-4 border-t">
+                  <a 
+                    href="https://workedge.pro" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
+                  >
+                    <img 
+                      src={workedgeProLogo} 
+                      alt="Workedge Pro" 
+                      className="w-12 h-12 object-contain flex-shrink-0"
+                    />
+                    <p className="text-sm">
+                      <span className="text-muted-foreground">The Document Library is powered by </span>
+                      <span className="font-bold text-primary">Workedge Pro</span>
+                      <span className="text-muted-foreground"> – A Field Documentation App for Service Pros.</span>
+                    </p>
+                  </a>
+                </div>
               </Card>
 
               {/* Alerts */}
