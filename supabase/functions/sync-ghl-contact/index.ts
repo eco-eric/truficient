@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,6 +43,37 @@ serve(async (req) => {
   }
 
   try {
+    // ========== AUTHENTICATION CHECK ==========
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('No authorization header provided');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized - No authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify the user is authenticated
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    
+    if (authError || !user) {
+      console.error('Authentication failed:', authError?.message || 'No user found');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized - Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Authenticated user:', user.email);
+    // ========== END AUTHENTICATION CHECK ==========
+
     const GHL_API_KEY = Deno.env.get('GHL_API_Key_Contact');
     const GHL_LOCATION_ID = Deno.env.get('GHL_LOCATION_ID');
 
@@ -51,7 +83,7 @@ serve(async (req) => {
     }
 
     const contactData: ContactData = await req.json();
-    console.log('Syncing contact to GHL:', contactData.email);
+    console.log('Syncing contact to GHL:', contactData.email, 'by user:', user.email);
 
     // Build the GHL contact payload
     const ghlPayload: Record<string, unknown> = {
