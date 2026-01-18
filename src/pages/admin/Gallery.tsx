@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useMemo, useCallback } from 'react';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -29,8 +29,11 @@ import {
 } from '@/components/ui/table';
 import { ImageUpload } from '@/components/admin/ImageUpload';
 import { BulkImageUpload } from '@/components/admin/BulkImageUpload';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { Plus, Pencil, Trash2, Star, Image as ImageIcon, Tag, Loader2, Upload, Grid2X2, Grid3X3, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
+
+const PAGE_SIZE = 48;
 
 interface GalleryTag {
   id: string;
@@ -102,17 +105,54 @@ const AdminGallery = () => {
     },
   });
 
-  // Fetch images with their tags
-  const { data: images = [], isLoading: imagesLoading } = useQuery({
-    queryKey: ['gallery-images-admin'],
+  // Fetch total count for display
+  const { data: totalCount = 0 } = useQuery({
+    queryKey: ['gallery-images-count-admin'],
     queryFn: async () => {
+      const { count, error } = await supabase
+        .from('gallery_images')
+        .select('*', { count: 'exact', head: true });
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  // Infinite query for images
+  const {
+    data: imagesData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: imagesLoading,
+  } = useInfiniteQuery({
+    queryKey: ['gallery-images-admin-infinite'],
+    queryFn: async ({ pageParam = 0 }) => {
       const { data, error } = await supabase
         .from('gallery_images')
         .select('*')
-        .order('sort_order');
+        .order('sort_order', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: false })
+        .range(pageParam * PAGE_SIZE, (pageParam + 1) * PAGE_SIZE - 1);
       if (error) throw error;
-      return data as GalleryImage[];
+      
+      return {
+        images: data as GalleryImage[],
+        nextPage: data.length === PAGE_SIZE ? pageParam + 1 : null,
+      };
     },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 0,
+  });
+
+  // Flatten all pages into a single array
+  const images = useMemo(() => {
+    return imagesData?.pages.flatMap(page => page.images) || [];
+  }, [imagesData]);
+
+  const { loadMoreRef } = useInfiniteScroll({
+    onLoadMore: () => fetchNextPage(),
+    hasMore: !!hasNextPage,
+    isLoading: isFetchingNextPage,
   });
 
   // Fetch image-tag relations
@@ -156,7 +196,8 @@ const AdminGallery = () => {
       return newImage;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['gallery-images-admin'] });
+      queryClient.invalidateQueries({ queryKey: ['gallery-images-admin-infinite'] });
+      queryClient.invalidateQueries({ queryKey: ['gallery-images-count-admin'] });
       queryClient.invalidateQueries({ queryKey: ['gallery-image-tags-admin'] });
       setImageDialogOpen(false);
       resetImageForm();
@@ -193,7 +234,7 @@ const AdminGallery = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['gallery-images-admin'] });
+      queryClient.invalidateQueries({ queryKey: ['gallery-images-admin-infinite'] });
       queryClient.invalidateQueries({ queryKey: ['gallery-image-tags-admin'] });
       setImageDialogOpen(false);
       resetImageForm();
@@ -210,7 +251,8 @@ const AdminGallery = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['gallery-images-admin'] });
+      queryClient.invalidateQueries({ queryKey: ['gallery-images-admin-infinite'] });
+      queryClient.invalidateQueries({ queryKey: ['gallery-images-count-admin'] });
       toast.success('Image deleted successfully');
     },
     onError: (error) => {
@@ -610,7 +652,7 @@ const AdminGallery = () => {
           {activeTab === 'images' && (
             <div className="flex items-center justify-between border-t pt-4">
               <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold">{images.length.toLocaleString()}</span>
+                <span className="text-2xl font-bold">{totalCount.toLocaleString()}</span>
                 <span className="text-muted-foreground">Photos</span>
               </div>
               <div className="flex items-center gap-2">
@@ -654,69 +696,87 @@ const AdminGallery = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className={`grid gap-4 ${
-              thumbnailSize === 'small' 
-                ? 'grid-cols-4 md:grid-cols-6 lg:grid-cols-8' 
-                : thumbnailSize === 'large' 
-                  ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
-                  : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
-            }`}>
-              {images.map((image) => (
-                <Card key={image.id} className="overflow-hidden group">
-                  <div className="aspect-square relative">
-                    <img
-                      src={image.image_url}
-                      alt={image.alt_text || image.title}
-                      className="w-full h-full object-cover"
-                    />
-                    {image.is_featured && (
-                      <div className="absolute top-2 left-2">
-                        <Badge className="bg-secondary text-secondary-foreground">
-                          <Star className="w-3 h-3 mr-1" />
-                          Featured
-                        </Badge>
-                      </div>
-                    )}
-                    {!image.is_active && (
-                      <div className="absolute top-2 right-2">
-                        <Badge variant="secondary">Hidden</Badge>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <Button size="sm" variant="secondary" onClick={() => openEditImage(image)}>
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="destructive" 
-                        onClick={() => {
-                          if (confirm('Are you sure you want to delete this image?')) {
-                            deleteImageMutation.mutate(image.id);
-                          }
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <CardContent className="p-3">
-                    <h4 className="font-medium text-sm truncate">{image.title}</h4>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {getImageTags(image.id).slice(0, 2).map(tag => (
-                        <Badge key={tag.id} variant="outline" className="text-xs">
-                          {tag.name}
-                        </Badge>
-                      ))}
-                      {getImageTags(image.id).length > 2 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{getImageTags(image.id).length - 2}
-                        </Badge>
+            <>
+              <div className={`grid gap-4 ${
+                thumbnailSize === 'small' 
+                  ? 'grid-cols-4 md:grid-cols-6 lg:grid-cols-8' 
+                  : thumbnailSize === 'large' 
+                    ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
+                    : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+              }`}>
+                {images.map((image) => (
+                  <Card key={image.id} className="overflow-hidden group">
+                    <div className="aspect-square relative">
+                      <img
+                        src={image.image_url}
+                        alt={image.alt_text || image.title}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                      />
+                      {image.is_featured && (
+                        <div className="absolute top-2 left-2">
+                          <Badge className="bg-secondary text-secondary-foreground">
+                            <Star className="w-3 h-3 mr-1" />
+                            Featured
+                          </Badge>
+                        </div>
                       )}
+                      {!image.is_active && (
+                        <div className="absolute top-2 right-2">
+                          <Badge variant="secondary">Hidden</Badge>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <Button size="sm" variant="secondary" onClick={() => openEditImage(image)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="destructive" 
+                          onClick={() => {
+                            if (confirm('Are you sure you want to delete this image?')) {
+                              deleteImageMutation.mutate(image.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    <CardContent className="p-3">
+                      <h4 className="font-medium text-sm truncate">{image.title}</h4>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {getImageTags(image.id).slice(0, 2).map(tag => (
+                          <Badge key={tag.id} variant="outline" className="text-xs">
+                            {tag.name}
+                          </Badge>
+                        ))}
+                        {getImageTags(image.id).length > 2 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{getImageTags(image.id).length - 2}
+                          </Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              
+              {/* Infinite scroll trigger */}
+              <div ref={loadMoreRef} className="h-16 flex items-center justify-center mt-6">
+                {isFetchingNextPage && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Loading more photos...</span>
+                  </div>
+                )}
+                {!hasNextPage && images.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Showing all {images.length.toLocaleString()} photos
+                  </p>
+                )}
+              </div>
+            </>
           )}
         </TabsContent>
 
