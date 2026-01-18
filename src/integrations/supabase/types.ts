@@ -388,6 +388,7 @@ export type Database = {
           seer2_rating: number | null
           system_name: string | null
           system_type: string
+          thermostat_name: string | null
           tonnage: number
           updated_at: string
           warranty_years: number
@@ -415,6 +416,7 @@ export type Database = {
           seer2_rating?: number | null
           system_name?: string | null
           system_type: string
+          thermostat_name?: string | null
           tonnage: number
           updated_at?: string
           warranty_years?: number
@@ -442,6 +444,7 @@ export type Database = {
           seer2_rating?: number | null
           system_name?: string | null
           system_type?: string
+          thermostat_name?: string | null
           tonnage?: number
           updated_at?: string
           warranty_years?: number

@@ -30,6 +30,8 @@ type DuctedEquipment = {
   heat_pump_model: string | null;
   air_handler_model: string | null;
   heat_kit_model: string | null;
+  // Thermostat
+  thermostat_name: string | null;
   // Efficiency Ratings
   seer2_rating: number | null;
   eer2_rating: number | null;
@@ -183,6 +185,8 @@ const CustomerEquipment = () => {
     heat_pump_model: "",
     air_handler_model: "",
     heat_kit_model: "",
+    // Thermostat
+    thermostat_name: "",
     // Efficiency Ratings
     seer2_rating: "",
     eer2_rating: "",
@@ -212,6 +216,7 @@ const CustomerEquipment = () => {
       heat_pump_model: "",
       air_handler_model: "",
       heat_kit_model: "",
+      thermostat_name: "",
       seer2_rating: "",
       eer2_rating: "",
       hspf2_rating: "",
@@ -245,6 +250,7 @@ const CustomerEquipment = () => {
       heat_pump_model: e.heat_pump_model || "",
       air_handler_model: e.air_handler_model || "",
       heat_kit_model: e.heat_kit_model || "",
+      thermostat_name: e.thermostat_name || "",
       seer2_rating: e.seer2_rating?.toString() || "",
       eer2_rating: e.eer2_rating?.toString() || "",
       hspf2_rating: e.hspf2_rating?.toString() || "",
@@ -276,6 +282,8 @@ const CustomerEquipment = () => {
         heat_pump_model: equipForm.heat_pump_model.trim() || null,
         air_handler_model: equipForm.air_handler_model.trim() || null,
         heat_kit_model: equipForm.heat_kit_model.trim() || null,
+        // Thermostat
+        thermostat_name: equipForm.thermostat_name.trim() || null,
         // Efficiency Ratings
         seer2_rating: equipForm.seer2_rating ? Number(equipForm.seer2_rating) : null,
         eer2_rating: equipForm.eer2_rating ? Number(equipForm.eer2_rating) : null,
@@ -739,6 +747,12 @@ const CustomerEquipment = () => {
                           </div>
                         </div>
                       )}
+                    </div>
+
+                    {/* Thermostat */}
+                    <div className="grid gap-2">
+                      <Label>Thermostat Name</Label>
+                      <Input value={equipForm.thermostat_name} onChange={(e) => setEquipForm((p) => ({ ...p, thermostat_name: e.target.value }))} placeholder="Honeywell T6 Pro" />
                     </div>
 
                     {/* Efficiency Ratings */}
