@@ -4,7 +4,7 @@ import { ArrowRight, Check, Wind, Home } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import ductlessImage from '@/assets/ductless-services.jpg';
-import ductedImage from '@/assets/design-and-install.jpg';
+import ductedImage from '@/assets/ducted-air-handler.png';
 
 const estimators = [
   {
