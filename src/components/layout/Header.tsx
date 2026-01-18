@@ -286,11 +286,11 @@ const Header = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link 
-                      to="/estimators/cost" 
+                      to="/estimate/ducted" 
                       className="cursor-pointer"
-                      onClick={() => handleTrackClick('Cost Estimator', 'Header - Main Nav', '/estimators/cost')}
+                      onClick={() => handleTrackClick('Ducted Estimator', 'Header - Main Nav', '/estimate/ducted')}
                     >
-                      Cost Estimator
+                      Ducted Estimator
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -510,14 +510,14 @@ const Header = () => {
                         Sizing Calculator
                       </Link>
                       <Link
-                        to="/estimators/cost"
+                        to="/estimate/ducted"
                         className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
-                          handleTrackClick('Cost Estimator', 'Header - Mobile Menu', '/estimators/cost');
+                          handleTrackClick('Ducted Estimator', 'Header - Mobile Menu', '/estimate/ducted');
                           setIsOpen(false);
                         }}
                       >
-                        Cost Estimator
+                        Ducted Estimator
                       </Link>
                       <Link
                         to="/estimators/savings"

@@ -134,10 +134,10 @@ export default function EquipmentReport() {
 
   const estimatorLinks = [
     {
-      title: 'Cost Estimator',
+      title: 'Ducted Estimator',
       description: 'Get an instant replacement cost estimate',
       icon: DollarSign,
-      href: '/estimators/cost',
+      href: '/estimate/ducted',
       color: 'bg-green-500'
     },
     {

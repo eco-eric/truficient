@@ -418,9 +418,9 @@ export default function EquipmentDetail() {
                       Ductless Estimator
                     </Button>
                   </Link>
-                  <Link to="/estimators/cost" className="block">
+                  <Link to="/estimate/ducted" className="block">
                     <Button className="w-full" variant="outline">
-                      Cost Calculator
+                      Ducted Estimator
                     </Button>
                   </Link>
                 </div>
