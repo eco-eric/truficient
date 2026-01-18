@@ -408,7 +408,7 @@ export default function EquipmentDetail() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Replacement CTA with Product Images */}
-              <EstimatorLinks />
+              <EstimatorLinks stacked />
 
               {/* DFW CTA */}
               <Card className="p-6 bg-gradient-to-br from-[#1e3a5f] to-[#0f1f33] text-white">

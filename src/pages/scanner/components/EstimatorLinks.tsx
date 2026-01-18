@@ -6,6 +6,10 @@ import { motion } from 'framer-motion';
 import ductlessImage from '@/assets/ductless-wall-mount.png';
 import ductedImage from '@/assets/ducted-air-handler-svz.png';
 
+interface EstimatorLinksProps {
+  stacked?: boolean;
+}
+
 const estimators = [
   {
     title: 'Ductless Systems',
@@ -31,13 +35,13 @@ const estimators = [
   },
 ];
 
-export function EstimatorLinks() {
+export function EstimatorLinks({ stacked = false }: EstimatorLinksProps) {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="bg-gradient-to-br from-primary/5 via-background to-secondary/5 rounded-2xl p-6 sm:p-8 border border-primary/10 shadow-lg"
+      className={`bg-gradient-to-br from-primary/5 via-background to-secondary/5 rounded-2xl border border-primary/10 shadow-lg ${stacked ? 'p-4 sm:p-6' : 'p-6 sm:p-8'}`}
     >
       {/* Section Header */}
       <div className="text-center mb-6">
@@ -51,7 +55,7 @@ export function EstimatorLinks() {
       </div>
       
       {/* Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className={stacked ? "grid grid-cols-1 gap-6" : "grid grid-cols-1 md:grid-cols-2 gap-6"}>
         {estimators.map((estimator, index) => {
           const Icon = estimator.icon;
           return (
