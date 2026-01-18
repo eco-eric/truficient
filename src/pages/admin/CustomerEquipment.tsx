@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2, Award, Zap, Flame, Snowflake, Ruler } from "lucide-react";
+import { Pencil, Plus, Trash2, Award, Zap, Flame, Snowflake, Ruler, Download, Upload } from "lucide-react";
+import * as XLSX from "xlsx";
 
 type JsonArrayStrings = string[];
 
@@ -116,6 +117,7 @@ const TONNAGES = [1.5, 2, 2.5, 3, 3.5, 4, 5];
 const CustomerEquipment = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"equipment" | "tiers" | "addons" | "sizing">("equipment");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // -------- Equipment --------
   const equipmentQuery = useQuery({
@@ -612,6 +614,213 @@ const CustomerEquipment = () => {
     return tier?.display_name || "—";
   };
 
+  // Import/Export Functions
+  const handleDownloadTemplate = () => {
+    const templateData = [
+      {
+        "System Name": "Premium Comfort Plus 3-Ton",
+        "Brand": "Goodman",
+        "Tonnage": 3,
+        "System Type": "gas_system",
+        "Condenser Model": "GSX140361",
+        "Furnace Model": "GMVC960803BN",
+        "Evap Coil Model": "CAPF3636B6",
+        "Heat Pump Model": "",
+        "Air Handler Model": "",
+        "Heat Kit Model": "",
+        "Thermostat Name": "Honeywell T6 Pro",
+        "SEER2": 15.2,
+        "EER2": 12.5,
+        "HSPF2": "",
+        "Equipment Cost": 3500,
+        "Installation Labor": 1500,
+        "Warranty Years": 10,
+        "Is Best Value": "FALSE",
+        "Is Energy Star": "TRUE",
+        "Is Active": "TRUE",
+        "Efficiency Tier": "Better",
+        "Features": "10-Year Warranty|Quiet Operation|Variable Speed",
+        "Display Order": 1,
+      },
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Equipment Template");
+    XLSX.writeFile(wb, "customer_equipment_template.xlsx");
+    toast.success("Template downloaded");
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet) as Record<string, unknown>[];
+
+      if (jsonData.length === 0) {
+        toast.error("No data found in file");
+        return;
+      }
+
+      // Column mapping (handles both human-readable and snake_case)
+      const columnMap: Record<string, string> = {
+        "System Name": "system_name",
+        "system_name": "system_name",
+        "Brand": "brand",
+        "brand": "brand",
+        "Tonnage": "tonnage",
+        "tonnage": "tonnage",
+        "System Type": "system_type",
+        "system_type": "system_type",
+        "Condenser Model": "condenser_model",
+        "condenser_model": "condenser_model",
+        "Furnace Model": "furnace_model",
+        "furnace_model": "furnace_model",
+        "Evap Coil Model": "evap_coil_model",
+        "evap_coil_model": "evap_coil_model",
+        "Heat Pump Model": "heat_pump_model",
+        "heat_pump_model": "heat_pump_model",
+        "Air Handler Model": "air_handler_model",
+        "air_handler_model": "air_handler_model",
+        "Heat Kit Model": "heat_kit_model",
+        "heat_kit_model": "heat_kit_model",
+        "Thermostat Name": "thermostat_name",
+        "thermostat_name": "thermostat_name",
+        "SEER2": "seer2_rating",
+        "seer2_rating": "seer2_rating",
+        "EER2": "eer2_rating",
+        "eer2_rating": "eer2_rating",
+        "HSPF2": "hspf2_rating",
+        "hspf2_rating": "hspf2_rating",
+        "Equipment Cost": "equipment_cost",
+        "equipment_cost": "equipment_cost",
+        "Installation Labor": "installation_labor",
+        "installation_labor": "installation_labor",
+        "Warranty Years": "warranty_years",
+        "warranty_years": "warranty_years",
+        "Is Best Value": "is_best_value",
+        "is_best_value": "is_best_value",
+        "Is Energy Star": "is_energy_star",
+        "is_energy_star": "is_energy_star",
+        "Is Active": "is_active",
+        "is_active": "is_active",
+        "Efficiency Tier": "efficiency_tier",
+        "efficiency_tier": "efficiency_tier",
+        "Features": "features",
+        "features": "features",
+        "Display Order": "display_order",
+        "display_order": "display_order",
+      };
+
+      // Parse boolean helper
+      const parseBoolean = (val: unknown): boolean => {
+        if (typeof val === "boolean") return val;
+        if (typeof val === "string") {
+          return val.toLowerCase() === "true" || val === "1" || val.toLowerCase() === "yes";
+        }
+        return Boolean(val);
+      };
+
+      // Parse number helper
+      const parseNumber = (val: unknown): number | null => {
+        if (val === null || val === undefined || val === "") return null;
+        const num = Number(val);
+        return isNaN(num) ? null : num;
+      };
+
+      // Normalize system type
+      const normalizeSystemType = (val: unknown): string => {
+        const strVal = String(val || "").toLowerCase().trim();
+        if (strVal.includes("heat") && strVal.includes("pump")) return "heat_pump";
+        if (strVal === "heat_pump" || strVal === "heatpump") return "heat_pump";
+        return "gas_system";
+      };
+
+      // Map rows to database format
+      const mappedRows = jsonData.map((row) => {
+        const mapped: Record<string, unknown> = {};
+        
+        for (const [key, value] of Object.entries(row)) {
+          const dbKey = columnMap[key];
+          if (dbKey) {
+            mapped[dbKey] = value;
+          }
+        }
+
+        // Resolve efficiency tier ID by name
+        let tierIdValue: string | null = null;
+        if (mapped.efficiency_tier) {
+          const tierName = String(mapped.efficiency_tier).toLowerCase().trim();
+          const tier = tiersQuery.data?.find(
+            (t) => t.name.toLowerCase() === tierName || t.display_name.toLowerCase() === tierName
+          );
+          tierIdValue = tier?.id || null;
+        }
+
+        // Parse features from pipe-separated string
+        let featuresArray: string[] = [];
+        if (mapped.features && typeof mapped.features === "string") {
+          featuresArray = mapped.features.split("|").map((s: string) => s.trim()).filter(Boolean);
+        }
+
+        return {
+          system_name: mapped.system_name ? String(mapped.system_name).trim() : null,
+          brand: String(mapped.brand || "").trim(),
+          tonnage: parseNumber(mapped.tonnage) || 3,
+          system_type: normalizeSystemType(mapped.system_type),
+          condenser_model: mapped.condenser_model ? String(mapped.condenser_model).trim() : null,
+          furnace_model: mapped.furnace_model ? String(mapped.furnace_model).trim() : null,
+          evap_coil_model: mapped.evap_coil_model ? String(mapped.evap_coil_model).trim() : null,
+          heat_pump_model: mapped.heat_pump_model ? String(mapped.heat_pump_model).trim() : null,
+          air_handler_model: mapped.air_handler_model ? String(mapped.air_handler_model).trim() : null,
+          heat_kit_model: mapped.heat_kit_model ? String(mapped.heat_kit_model).trim() : null,
+          thermostat_name: mapped.thermostat_name ? String(mapped.thermostat_name).trim() : null,
+          seer2_rating: parseNumber(mapped.seer2_rating),
+          eer2_rating: parseNumber(mapped.eer2_rating),
+          hspf2_rating: parseNumber(mapped.hspf2_rating),
+          equipment_cost: parseNumber(mapped.equipment_cost) || 0,
+          installation_labor: parseNumber(mapped.installation_labor) || 0,
+          warranty_years: parseNumber(mapped.warranty_years) || 10,
+          is_best_value: parseBoolean(mapped.is_best_value),
+          is_energy_star: parseBoolean(mapped.is_energy_star),
+          is_active: mapped.is_active !== undefined ? parseBoolean(mapped.is_active) : true,
+          efficiency_tier_id: tierIdValue,
+          features: featuresArray,
+          display_order: parseNumber(mapped.display_order) || 0,
+        };
+      });
+
+      // Filter out rows without brand (required field)
+      const validRows = mappedRows.filter((row) => row.brand);
+
+      if (validRows.length === 0) {
+        toast.error("No valid rows found (brand is required)");
+        return;
+      }
+
+      // Bulk insert
+      const { error } = await supabase.from("ducted_equipment").insert(validRows);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ["ducted_equipment"] });
+      toast.success(`Imported ${validRows.length} equipment records`);
+    } catch (err) {
+      console.error("Import error:", err);
+      toast.error(err instanceof Error ? err.message : "Failed to import file");
+    } finally {
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   return (
     <AdminLayout title="Customer Equipment">
       <div className="space-y-6">
@@ -639,13 +848,29 @@ const CustomerEquipment = () => {
           <TabsContent value="equipment" className="space-y-4">
             <div className="flex items-center justify-between gap-3">
               <div className="text-sm text-muted-foreground">{equipmentQuery.data?.length || 0} records</div>
-              <Dialog open={equipDialogOpen} onOpenChange={(open) => { if (!open) resetEquipForm(); setEquipDialogOpen(open); }}>
-                <DialogTrigger asChild>
-                  <Button onClick={openCreateEquip}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Equipment
-                  </Button>
-                </DialogTrigger>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={handleDownloadTemplate}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Template
+                </Button>
+                <input
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleImportExcel}
+                />
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import Excel
+                </Button>
+                <Dialog open={equipDialogOpen} onOpenChange={(open) => { if (!open) resetEquipForm(); setEquipDialogOpen(open); }}>
+                  <DialogTrigger asChild>
+                    <Button onClick={openCreateEquip}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Equipment
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>{editingEquip ? "Edit System" : "Add System"}</DialogTitle>
@@ -823,6 +1048,7 @@ const CustomerEquipment = () => {
                   </div>
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
 
             <div className="rounded-md border overflow-x-auto">
