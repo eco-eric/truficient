@@ -16,6 +16,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useButtonTracking } from "@/hooks/useButtonTracking";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -104,6 +105,10 @@ const Header = () => {
             </Link>
           </div>
           <div className="flex items-center gap-4 ml-auto">
+            <ThemeToggle 
+              className="text-white hover:text-secondary hover:bg-transparent" 
+              iconClassName="text-white"
+            />
             <button 
               className="text-white hover:text-secondary transition-colors"
               onClick={() => handleTrackClick('Search', 'Header - Top Bar')}
@@ -671,6 +676,12 @@ const Header = () => {
                       </div>
                     </a>
                   </div>
+                  {/* Theme Toggle */}
+                  <div className="flex items-center justify-between py-3 border-t border-border">
+                    <span className="text-muted-foreground">Theme</span>
+                    <ThemeToggle />
+                  </div>
+                  
                   <Link 
                     to="/contact" 
                     onClick={() => {
