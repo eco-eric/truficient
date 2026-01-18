@@ -1,4 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
+import { EstimatorLinks } from '@/pages/scanner/components/EstimatorLinks';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/layout/Header';
@@ -406,25 +407,8 @@ export default function EquipmentDetail() {
 
             {/* Sidebar */}
             <div className="space-y-6">
-              {/* Replacement CTA */}
-              <Card className="p-6">
-                <h3 className="font-bold mb-4">Thinking About Replacement?</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Get an instant estimate for a new system - no appointment needed
-                </p>
-                <div className="space-y-3">
-                  <Link to="/estimate/ductless" className="block">
-                    <Button className="w-full" variant="default">
-                      Ductless Estimator
-                    </Button>
-                  </Link>
-                  <Link to="/estimate/ducted" className="block">
-                    <Button className="w-full" variant="outline">
-                      Ducted Estimator
-                    </Button>
-                  </Link>
-                </div>
-              </Card>
+              {/* Replacement CTA with Product Images */}
+              <EstimatorLinks />
 
               {/* DFW CTA */}
               <Card className="p-6 bg-gradient-to-br from-[#1e3a5f] to-[#0f1f33] text-white">
