@@ -2,6 +2,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import HeroSection from '@/components/home/HeroSection';
 import FeaturesBar from '@/components/home/FeaturesBar';
+import EstimatorCards from '@/components/home/EstimatorCards';
 import ServiceAreaBanner from '@/components/home/ServiceAreaBanner';
 import MitsubishiSection from '@/components/home/MitsubishiSection';
 import ServicesOverview from '@/components/home/ServicesOverview';
@@ -20,6 +21,7 @@ const Index = () => {
       <main>
         <HeroSection />
         <FeaturesBar />
+        <EstimatorCards />
         <ServiceAreaBanner />
         <MitsubishiSection />
         <ServicesOverview />
