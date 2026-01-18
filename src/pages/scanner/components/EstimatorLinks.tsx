@@ -1,16 +1,37 @@
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Home, Snowflake, Zap, Clock, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Home, Snowflake, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import ductlessImage from '@/assets/ductless-wall-mount.png';
+import ductedImage from '@/assets/ducted-air-handler-svz.png';
+
+const estimators = [
+  {
+    title: 'Ductless Systems',
+    subtitle: 'Mini-splits for targeted comfort',
+    image: ductlessImage,
+    badge: 'MOST EFFICIENT',
+    badgeColor: 'bg-emerald-500',
+    icon: Snowflake,
+    benefits: ['No ductwork needed', 'Zone-by-zone control', 'Up to 40% energy savings'],
+    cta: 'Get Ductless Quote',
+    link: '/estimate/ductless',
+  },
+  {
+    title: 'Ducted Systems',
+    subtitle: 'Central AC & heat pump replacement',
+    image: ductedImage,
+    badge: 'WHOLE HOME',
+    badgeColor: 'bg-blue-600',
+    icon: Home,
+    benefits: ['Works with existing ducts', 'Even temperature throughout', 'Quiet operation'],
+    cta: 'Get Ducted Quote',
+    link: '/estimate/ducted',
+  },
+];
 
 export function EstimatorLinks() {
-  const benefits = [
-    "No appointment needed",
-    "Instant pricing",
-    "Save with rebates"
-  ];
-
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -18,94 +39,77 @@ export function EstimatorLinks() {
       transition={{ duration: 0.4 }}
       className="bg-gradient-to-br from-primary/5 via-background to-secondary/5 rounded-2xl p-6 sm:p-8 border border-primary/10 shadow-lg"
     >
-      {/* Badge */}
-      <div className="flex justify-center mb-4">
-        <div className="inline-flex items-center gap-2 rounded-full bg-[#d4a84b]/15 px-4 py-1.5 text-sm font-semibold text-[#d4a84b]">
-          <Zap className="h-4 w-4" />
-          GET A HASSLE-FREE QUOTE
-        </div>
+      {/* Section Header */}
+      <div className="text-center mb-6">
+        <h3 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+          Ready for a New System?
+        </h3>
+        <p className="text-muted-foreground max-w-md mx-auto">
+          Get an instant estimate in <span className="font-semibold text-foreground">under 5 minutes</span>. 
+          No salesperson, no pressure — just transparent pricing.
+        </p>
       </div>
-
-      {/* Headline */}
-      <h3 className="text-2xl sm:text-3xl font-bold text-foreground text-center mb-2">
-        Ready for a New System?
-      </h3>
-      
-      {/* Subheadline */}
-      <p className="text-muted-foreground text-center mb-6 max-w-md mx-auto">
-        Get an instant estimate in <span className="font-semibold text-foreground">under 5 minutes</span>. 
-        No salesperson, no pressure — just transparent pricing.
-      </p>
       
       {/* Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        {/* Ducted System Card */}
-        <Card className="p-5 hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-primary/20 bg-card">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Home className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h4 className="font-bold text-foreground text-lg">Ducted System</h4>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="w-3 h-3" />
-                  <span>~3 min</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {estimators.map((estimator, index) => {
+          const Icon = estimator.icon;
+          return (
+            <motion.div
+              key={estimator.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: index * 0.1 }}
+            >
+              <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-primary/20 bg-card h-full flex flex-col">
+                {/* Image Container */}
+                <div className="relative aspect-[16/10] bg-gradient-to-br from-muted/50 to-muted overflow-hidden">
+                  <img
+                    src={estimator.image}
+                    alt={estimator.title}
+                    className="w-full h-full object-contain p-4"
+                  />
+                  {/* Badge */}
+                  <div className={`absolute top-3 right-3 ${estimator.badgeColor} text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg`}>
+                    {estimator.badge}
+                  </div>
                 </div>
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Central AC & heat pump options for whole-home comfort.
-            </p>
-            <Button asChild className="w-full touch-target bg-primary hover:bg-primary/90">
-              <Link to="/estimate/ducted">
-                Get My Quote
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
-          </div>
-        </Card>
 
-        {/* Ductless System Card */}
-        <Card className="p-5 hover:shadow-xl transition-all duration-300 border-2 border-[#d4a84b]/30 hover:border-[#d4a84b]/50 bg-card relative overflow-hidden">
-          {/* Popular badge */}
-          <div className="absolute top-0 right-0 bg-[#d4a84b] text-white text-xs font-semibold px-3 py-1 rounded-bl-lg">
-            POPULAR
-          </div>
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-[#d4a84b]/15 flex items-center justify-center">
-                <Snowflake className="w-6 h-6 text-[#d4a84b]" />
-              </div>
-              <div>
-                <h4 className="font-bold text-foreground text-lg">Ductless System</h4>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="w-3 h-3" />
-                  <span>~4 min</span>
+                {/* Content */}
+                <div className="p-5 flex flex-col flex-1">
+                  {/* Title Row */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-foreground text-lg leading-tight">{estimator.title}</h4>
+                      <p className="text-sm text-muted-foreground">{estimator.subtitle}</p>
+                    </div>
+                  </div>
+
+                  {/* Benefits */}
+                  <ul className="space-y-2 mb-4 flex-1">
+                    {estimator.benefits.map((benefit) => (
+                      <li key={benefit} className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                        <span>{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* CTA Button */}
+                  <Button asChild className="w-full touch-target bg-primary hover:bg-primary/90">
+                    <Link to={estimator.link}>
+                      {estimator.cta}
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Link>
+                  </Button>
                 </div>
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Mini-split & multi-zone solutions without ductwork.
-            </p>
-            <Button asChild className="w-full touch-target bg-[#d4a84b] hover:bg-[#d4a84b]/90 text-white">
-              <Link to="/estimate/ductless">
-                Get My Quote
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
-          </div>
-        </Card>
-      </div>
-
-      {/* Trust Strip */}
-      <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
-        {benefits.map((benefit) => (
-          <div key={benefit} className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <CheckCircle2 className="w-4 h-4 text-green-500" />
-            <span>{benefit}</span>
-          </div>
-        ))}
+              </Card>
+            </motion.div>
+          );
+        })}
       </div>
     </motion.div>
   );
