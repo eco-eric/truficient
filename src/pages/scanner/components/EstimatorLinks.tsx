@@ -61,16 +61,16 @@ export function EstimatorLinks() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
             >
-              <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-primary/20 bg-card h-full flex flex-col">
+              <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-primary/20 bg-card h-full flex flex-col group hover:-translate-y-1">
                 {/* Image Container */}
                 <div className="relative aspect-[16/10] bg-gradient-to-br from-muted/50 to-muted overflow-hidden">
                   <img
                     src={estimator.image}
                     alt={estimator.title}
-                    className="w-full h-full object-contain p-4"
+                    className="w-full h-full object-contain p-4 transition-transform duration-500 ease-out group-hover:scale-110"
                   />
                   {/* Badge */}
-                  <div className={`absolute top-3 right-3 ${estimator.badgeColor} text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg`}>
+                  <div className={`absolute top-3 right-3 ${estimator.badgeColor} text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg transition-transform duration-300 group-hover:scale-105`}>
                     {estimator.badge}
                   </div>
                 </div>
