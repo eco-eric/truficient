@@ -230,6 +230,54 @@ const Header = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {/* Estimators Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger 
+                  className="flex items-center gap-1 text-foreground hover:text-primary font-medium transition-colors"
+                  onClick={() => handleTrackClick('Estimators Menu', 'Header - Main Nav')}
+                >
+                  Estimators <ChevronDown className="w-4 h-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-background border-border">
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/estimate/ducted" 
+                      className="cursor-pointer"
+                      onClick={() => handleTrackClick('Ducted Estimator', 'Header - Main Nav', '/estimate/ducted')}
+                    >
+                      Ducted Estimator
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/estimate/ductless" 
+                      className="cursor-pointer"
+                      onClick={() => handleTrackClick('Ductless Estimator', 'Header - Main Nav', '/estimate/ductless')}
+                    >
+                      Ductless Estimator
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/estimators/sizing" 
+                      className="cursor-pointer"
+                      onClick={() => handleTrackClick('Sizing Calculator', 'Header - Main Nav', '/estimators/sizing')}
+                    >
+                      Sizing Calculator
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/estimators/savings" 
+                      className="cursor-pointer"
+                      onClick={() => handleTrackClick('Savings Calculator', 'Header - Main Nav', '/estimators/savings')}
+                    >
+                      Savings Calculator
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               {/* Resources Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger 
@@ -257,54 +305,6 @@ const Header = () => {
                     >
                       <Library className="w-4 h-4 text-primary" />
                       Equipment Library
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Estimators Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger 
-                  className="flex items-center gap-1 text-foreground hover:text-primary font-medium transition-colors"
-                  onClick={() => handleTrackClick('Estimators Menu', 'Header - Main Nav')}
-                >
-                  Estimators <ChevronDown className="w-4 h-4" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-background border-border">
-                  <DropdownMenuItem asChild>
-                    <Link 
-                      to="/estimate/ductless" 
-                      className="cursor-pointer"
-                      onClick={() => handleTrackClick('Ductless Estimator', 'Header - Main Nav', '/estimate/ductless')}
-                    >
-                      Ductless Estimator
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link 
-                      to="/estimators/sizing" 
-                      className="cursor-pointer"
-                      onClick={() => handleTrackClick('Sizing Calculator', 'Header - Main Nav', '/estimators/sizing')}
-                    >
-                      Sizing Calculator
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link 
-                      to="/estimate/ducted" 
-                      className="cursor-pointer"
-                      onClick={() => handleTrackClick('Ducted Estimator', 'Header - Main Nav', '/estimate/ducted')}
-                    >
-                      Ducted Estimator
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link 
-                      to="/estimators/savings" 
-                      className="cursor-pointer"
-                      onClick={() => handleTrackClick('Savings Calculator', 'Header - Main Nav', '/estimators/savings')}
-                    >
-                      Savings Calculator
                     </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -457,6 +457,56 @@ const Header = () => {
                     </CollapsibleContent>
                   </Collapsible>
 
+                  {/* Estimators Collapsible */}
+                  <Collapsible open={openMobileMenus.estimators} onOpenChange={() => toggleMobileMenu('estimators')}>
+                    <CollapsibleTrigger className="flex items-center justify-between w-full text-lg font-medium text-foreground hover:text-primary transition-colors py-3 touch-target">
+                      Estimators
+                      <ChevronRight className={`w-4 h-4 transition-transform ${openMobileMenus.estimators ? 'rotate-90' : ''}`} />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pl-4 space-y-1 pb-2">
+                      <Link
+                        to="/estimate/ducted"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
+                        onClick={() => {
+                          handleTrackClick('Ducted Estimator', 'Header - Mobile Menu', '/estimate/ducted');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Ducted Estimator
+                      </Link>
+                      <Link
+                        to="/estimate/ductless"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
+                        onClick={() => {
+                          handleTrackClick('Ductless Estimator', 'Header - Mobile Menu', '/estimate/ductless');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Ductless Estimator
+                      </Link>
+                      <Link
+                        to="/estimators/sizing"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
+                        onClick={() => {
+                          handleTrackClick('Sizing Calculator', 'Header - Mobile Menu', '/estimators/sizing');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Sizing Calculator
+                      </Link>
+                      <Link
+                        to="/estimators/savings"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
+                        onClick={() => {
+                          handleTrackClick('Savings Calculator', 'Header - Mobile Menu', '/estimators/savings');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Savings Calculator
+                      </Link>
+                    </CollapsibleContent>
+                  </Collapsible>
+
                   {/* Resources Collapsible */}
                   <Collapsible open={openMobileMenus.resources} onOpenChange={() => toggleMobileMenu('resources')}>
                     <CollapsibleTrigger className="flex items-center justify-between w-full text-lg font-medium text-foreground hover:text-primary transition-colors py-3 touch-target">
@@ -483,56 +533,6 @@ const Header = () => {
                         }}
                       >
                         Equipment Library
-                      </Link>
-                    </CollapsibleContent>
-                  </Collapsible>
-
-                  {/* Estimators Collapsible */}
-                  <Collapsible open={openMobileMenus.estimators} onOpenChange={() => toggleMobileMenu('estimators')}>
-                    <CollapsibleTrigger className="flex items-center justify-between w-full text-lg font-medium text-foreground hover:text-primary transition-colors py-3 touch-target">
-                      Estimators
-                      <ChevronRight className={`w-4 h-4 transition-transform ${openMobileMenus.estimators ? 'rotate-90' : ''}`} />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="pl-4 space-y-1 pb-2">
-                      <Link
-                        to="/estimate/ductless"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
-                        onClick={() => {
-                          handleTrackClick('Ductless Estimator', 'Header - Mobile Menu', '/estimate/ductless');
-                          setIsOpen(false);
-                        }}
-                      >
-                        Ductless Estimator
-                      </Link>
-                      <Link
-                        to="/estimators/sizing"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
-                        onClick={() => {
-                          handleTrackClick('Sizing Calculator', 'Header - Mobile Menu', '/estimators/sizing');
-                          setIsOpen(false);
-                        }}
-                      >
-                        Sizing Calculator
-                      </Link>
-                      <Link
-                        to="/estimate/ducted"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
-                        onClick={() => {
-                          handleTrackClick('Ducted Estimator', 'Header - Mobile Menu', '/estimate/ducted');
-                          setIsOpen(false);
-                        }}
-                      >
-                        Ducted Estimator
-                      </Link>
-                      <Link
-                        to="/estimators/savings"
-                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
-                        onClick={() => {
-                          handleTrackClick('Savings Calculator', 'Header - Mobile Menu', '/estimators/savings');
-                          setIsOpen(false);
-                        }}
-                      >
-                        Savings Calculator
                       </Link>
                     </CollapsibleContent>
                   </Collapsible>
