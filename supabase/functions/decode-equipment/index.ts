@@ -269,11 +269,11 @@ IMPORTANT:
       }
     }
 
-    // Build the full specs object
-    const specs = {
+    // Build PUBLIC specs for equipment_pages (NO private data like serial numbers)
+    const publicSpecs = {
       brand: decodedSpecs.brand || null,
       model_number: extractedModelNumber,
-      serial_number: extractedSerialNumber || null,
+      // NOTE: serial_number is intentionally excluded - it stays in equipment_scans only
       manufactured_year: decodedSpecs.manufactured_year || null,
       tonnage: decodedSpecs.tonnage || null,
       refrigerant: decodedSpecs.refrigerant || null,
@@ -286,29 +286,37 @@ IMPORTANT:
       voltage_info: decodedSpecs.voltage_info || null,
     };
 
-    console.log('Final decoded specs:', specs);
+    // Build PRIVATE specs for equipment_scans (includes all data)
+    const privateSpecs = {
+      ...publicSpecs,
+      serial_number: extractedSerialNumber || null,
+    };
+
+    console.log('Public specs (for equipment_pages):', publicSpecs);
+    console.log('Private specs (for equipment_scans):', privateSpecs);
 
     // Save to database
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Save to equipment_scans with PRIVATE specs (includes serial number)
     const { data: scanData, error: scanError } = await supabase
       .from('equipment_scans')
       .insert({
         zip_code: zipCode,
         email: email || null,
-        brand: specs.brand,
-        model_number: specs.model_number,
-        serial_number: specs.serial_number,
-        manufactured_year: specs.manufactured_year,
-        tonnage: specs.tonnage,
-        refrigerant: specs.refrigerant,
-        breaker_size: specs.breaker_size,
-        seer_rating: specs.seer_rating,
-        equipment_type: specs.equipment_type,
-        fan_motor_info: specs.fan_motor_info,
-        compressor_info: specs.compressor_info,
+        brand: privateSpecs.brand,
+        model_number: privateSpecs.model_number,
+        serial_number: privateSpecs.serial_number,
+        manufactured_year: privateSpecs.manufactured_year,
+        tonnage: privateSpecs.tonnage,
+        refrigerant: privateSpecs.refrigerant,
+        breaker_size: privateSpecs.breaker_size,
+        seer_rating: privateSpecs.seer_rating,
+        equipment_type: privateSpecs.equipment_type,
+        fan_motor_info: privateSpecs.fan_motor_info,
+        compressor_info: privateSpecs.compressor_info,
         raw_ai_response: { decode: aiData, vision: imageAnalysisResult },
         is_dfw: isDfw || false,
       })
@@ -322,9 +330,9 @@ IMPORTANT:
 
     // Auto-generate equipment page if it doesn't exist
     // Check for duplicates by model number to avoid creating multiple pages for same equipment
-    if (specs.brand && typeof specs.brand === 'string') {
-      const brandSlug = specs.brand.toLowerCase().replace(/[\s\/]+/g, '-');
-      const modelSlug = specs.model_number.toLowerCase().replace(/\s+/g, '-');
+    if (publicSpecs.brand && typeof publicSpecs.brand === 'string') {
+      const brandSlug = publicSpecs.brand.toLowerCase().replace(/[\s\/]+/g, '-');
+      const modelSlug = publicSpecs.model_number.toLowerCase().replace(/\s+/g, '-');
       const slug = `${brandSlug}/${modelSlug}`;
       
       // First check if exact slug exists
@@ -345,29 +353,29 @@ IMPORTANT:
         const { data: duplicatePage } = await supabase
           .from('equipment_pages')
           .select('id, times_searched, slug, brand')
-          .ilike('model_number', specs.model_number)
+          .ilike('model_number', publicSpecs.model_number)
           .limit(1)
           .single();
 
         if (duplicatePage) {
           // Increment search count on existing page instead of creating duplicate
-          console.log(`Duplicate detected: ${specs.model_number} already exists as ${duplicatePage.slug}`);
+          console.log(`Duplicate detected: ${publicSpecs.model_number} already exists as ${duplicatePage.slug}`);
           await supabase
             .from('equipment_pages')
             .update({ times_searched: (duplicatePage.times_searched || 0) + 1 })
             .eq('id', duplicatePage.id);
         } else {
-          // No duplicates found - create new equipment page
+          // No duplicates found - create new equipment page with PUBLIC specs only
           await supabase
             .from('equipment_pages')
             .insert({
               slug,
-              brand: specs.brand,
-              model_number: specs.model_number,
-              model_pattern: specs.model_number.substring(0, 8),
-              specs: specs,
-              seo_title: `${specs.brand} ${specs.model_number} Specifications, Manuals & Documentation | Truficient`,
-              seo_description: `Complete specs for ${specs.brand} ${specs.model_number} including tonnage, refrigerant type, SEER rating, and downloadable manuals. Free resource from Truficient Energy Solutions.`,
+              brand: publicSpecs.brand,
+              model_number: publicSpecs.model_number,
+              model_pattern: publicSpecs.model_number.substring(0, 8),
+              specs: publicSpecs, // PUBLIC specs - no serial number
+              seo_title: `${publicSpecs.brand} ${publicSpecs.model_number} Specifications, Manuals & Documentation | Truficient`,
+              seo_description: `Complete specs for ${publicSpecs.brand} ${publicSpecs.model_number} including tonnage, refrigerant type, SEER rating, and downloadable manuals. Free resource from Truficient Energy Solutions.`,
             });
         }
       }
@@ -377,7 +385,7 @@ IMPORTANT:
       JSON.stringify({
         success: true,
         scanId: scanData?.id,
-        specs,
+        specs: privateSpecs, // Return full specs to the user who scanned
         raw_ai_response: { decode: aiData, vision: imageAnalysisResult },
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
