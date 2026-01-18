@@ -366,63 +366,81 @@ export type Database = {
       }
       ducted_equipment: {
         Row: {
-          afue_rating: number | null
+          air_handler_model: string | null
           brand: string
+          condenser_model: string | null
           created_at: string
           display_order: number
+          eer2_rating: number | null
           efficiency_tier_id: string | null
           equipment_cost: number
+          evap_coil_model: string | null
           features: Json | null
-          hspf_rating: number | null
+          furnace_model: string | null
+          heat_kit_model: string | null
+          heat_pump_model: string | null
+          hspf2_rating: number | null
           id: string
           installation_labor: number
           is_active: boolean
           is_best_value: boolean
           is_energy_star: boolean
-          model_number: string | null
-          seer_rating: number
+          seer2_rating: number | null
+          system_name: string | null
           system_type: string
           tonnage: number
           updated_at: string
           warranty_years: number
         }
         Insert: {
-          afue_rating?: number | null
+          air_handler_model?: string | null
           brand: string
+          condenser_model?: string | null
           created_at?: string
           display_order?: number
+          eer2_rating?: number | null
           efficiency_tier_id?: string | null
           equipment_cost?: number
+          evap_coil_model?: string | null
           features?: Json | null
-          hspf_rating?: number | null
+          furnace_model?: string | null
+          heat_kit_model?: string | null
+          heat_pump_model?: string | null
+          hspf2_rating?: number | null
           id?: string
           installation_labor?: number
           is_active?: boolean
           is_best_value?: boolean
           is_energy_star?: boolean
-          model_number?: string | null
-          seer_rating: number
+          seer2_rating?: number | null
+          system_name?: string | null
           system_type: string
           tonnage: number
           updated_at?: string
           warranty_years?: number
         }
         Update: {
-          afue_rating?: number | null
+          air_handler_model?: string | null
           brand?: string
+          condenser_model?: string | null
           created_at?: string
           display_order?: number
+          eer2_rating?: number | null
           efficiency_tier_id?: string | null
           equipment_cost?: number
+          evap_coil_model?: string | null
           features?: Json | null
-          hspf_rating?: number | null
+          furnace_model?: string | null
+          heat_kit_model?: string | null
+          heat_pump_model?: string | null
+          hspf2_rating?: number | null
           id?: string
           installation_labor?: number
           is_active?: boolean
           is_best_value?: boolean
           is_energy_star?: boolean
-          model_number?: string | null
-          seer_rating?: number
+          seer2_rating?: number | null
+          system_name?: string | null
           system_type?: string
           tonnage?: number
           updated_at?: string
