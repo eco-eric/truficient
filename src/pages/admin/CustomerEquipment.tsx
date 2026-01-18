@@ -18,10 +18,23 @@ type JsonArrayStrings = string[];
 
 type DuctedEquipment = {
   id: string;
+  system_name: string | null;
   brand: string;
   tonnage: number;
-  seer_rating: number;
   system_type: string;
+  // Gas System Components
+  condenser_model: string | null;
+  furnace_model: string | null;
+  evap_coil_model: string | null;
+  // Heat Pump Components
+  heat_pump_model: string | null;
+  air_handler_model: string | null;
+  heat_kit_model: string | null;
+  // Efficiency Ratings
+  seer2_rating: number | null;
+  eer2_rating: number | null;
+  hspf2_rating: number | null;
+  // Pricing & metadata
   equipment_cost: number;
   installation_labor: number;
   warranty_years: number;
@@ -30,9 +43,6 @@ type DuctedEquipment = {
   is_active: boolean;
   efficiency_tier_id: string | null;
   features: JsonArrayStrings | null;
-  model_number: string | null;
-  afue_rating: number | null;
-  hspf_rating: number | null;
   display_order: number;
 };
 
@@ -161,13 +171,23 @@ const CustomerEquipment = () => {
   const [equipDialogOpen, setEquipDialogOpen] = useState(false);
   const [editingEquip, setEditingEquip] = useState<DuctedEquipment | null>(null);
   const [equipForm, setEquipForm] = useState({
+    system_name: "",
     brand: "",
-    model_number: "",
     tonnage: 3,
-    seer_rating: 14,
-    afue_rating: "",
-    hspf_rating: "",
-    system_type: "gas_furnace_ac",
+    system_type: "gas_system",
+    // Gas System Components
+    condenser_model: "",
+    furnace_model: "",
+    evap_coil_model: "",
+    // Heat Pump Components
+    heat_pump_model: "",
+    air_handler_model: "",
+    heat_kit_model: "",
+    // Efficiency Ratings
+    seer2_rating: "",
+    eer2_rating: "",
+    hspf2_rating: "",
+    // Pricing
     equipment_cost: 0,
     installation_labor: 0,
     warranty_years: 10,
@@ -182,13 +202,19 @@ const CustomerEquipment = () => {
   const resetEquipForm = () => {
     setEditingEquip(null);
     setEquipForm({
+      system_name: "",
       brand: "",
-      model_number: "",
       tonnage: 3,
-      seer_rating: 14,
-      afue_rating: "",
-      hspf_rating: "",
-      system_type: "gas_furnace_ac",
+      system_type: "gas_system",
+      condenser_model: "",
+      furnace_model: "",
+      evap_coil_model: "",
+      heat_pump_model: "",
+      air_handler_model: "",
+      heat_kit_model: "",
+      seer2_rating: "",
+      eer2_rating: "",
+      hspf2_rating: "",
       equipment_cost: 0,
       installation_labor: 0,
       warranty_years: 10,
@@ -209,13 +235,19 @@ const CustomerEquipment = () => {
   const openEditEquip = (e: DuctedEquipment) => {
     setEditingEquip(e);
     setEquipForm({
+      system_name: e.system_name || "",
       brand: e.brand,
-      model_number: e.model_number || "",
       tonnage: e.tonnage,
-      seer_rating: e.seer_rating,
-      afue_rating: e.afue_rating?.toString() || "",
-      hspf_rating: e.hspf_rating?.toString() || "",
       system_type: e.system_type,
+      condenser_model: e.condenser_model || "",
+      furnace_model: e.furnace_model || "",
+      evap_coil_model: e.evap_coil_model || "",
+      heat_pump_model: e.heat_pump_model || "",
+      air_handler_model: e.air_handler_model || "",
+      heat_kit_model: e.heat_kit_model || "",
+      seer2_rating: e.seer2_rating?.toString() || "",
+      eer2_rating: e.eer2_rating?.toString() || "",
+      hspf2_rating: e.hspf2_rating?.toString() || "",
       equipment_cost: e.equipment_cost,
       installation_labor: e.installation_labor,
       warranty_years: e.warranty_years,
@@ -232,13 +264,23 @@ const CustomerEquipment = () => {
   const saveEquipMutation = useMutation({
     mutationFn: async () => {
       const payload = {
+        system_name: equipForm.system_name.trim() || null,
         brand: equipForm.brand.trim(),
-        model_number: equipForm.model_number.trim() || null,
         tonnage: Number(equipForm.tonnage),
-        seer_rating: Number(equipForm.seer_rating),
-        afue_rating: equipForm.afue_rating ? Number(equipForm.afue_rating) : null,
-        hspf_rating: equipForm.hspf_rating ? Number(equipForm.hspf_rating) : null,
         system_type: equipForm.system_type,
+        // Gas System Components
+        condenser_model: equipForm.condenser_model.trim() || null,
+        furnace_model: equipForm.furnace_model.trim() || null,
+        evap_coil_model: equipForm.evap_coil_model.trim() || null,
+        // Heat Pump Components
+        heat_pump_model: equipForm.heat_pump_model.trim() || null,
+        air_handler_model: equipForm.air_handler_model.trim() || null,
+        heat_kit_model: equipForm.heat_kit_model.trim() || null,
+        // Efficiency Ratings
+        seer2_rating: equipForm.seer2_rating ? Number(equipForm.seer2_rating) : null,
+        eer2_rating: equipForm.eer2_rating ? Number(equipForm.eer2_rating) : null,
+        hspf2_rating: equipForm.hspf2_rating ? Number(equipForm.hspf2_rating) : null,
+        // Pricing & metadata
         equipment_cost: Number(equipForm.equipment_cost),
         installation_labor: Number(equipForm.installation_labor),
         warranty_years: Number(equipForm.warranty_years),
@@ -262,7 +304,7 @@ const CustomerEquipment = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ducted_equipment"] });
-      toast.success(editingEquip ? "Equipment updated" : "Equipment created");
+      toast.success(editingEquip ? "System updated" : "System created");
       setEquipDialogOpen(false);
       resetEquipForm();
     },
@@ -598,28 +640,30 @@ const CustomerEquipment = () => {
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>{editingEquip ? "Edit Equipment" : "Add Equipment"}</DialogTitle>
+                    <DialogTitle>{editingEquip ? "Edit System" : "Add System"}</DialogTitle>
                   </DialogHeader>
 
                   <div className="grid gap-4">
+                    {/* System Name & Brand */}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
-                        <Label>Brand *</Label>
-                        <Input value={equipForm.brand} onChange={(e) => setEquipForm((p) => ({ ...p, brand: e.target.value }))} placeholder="Carrier" />
+                        <Label>System Name</Label>
+                        <Input value={equipForm.system_name} onChange={(e) => setEquipForm((p) => ({ ...p, system_name: e.target.value }))} placeholder="Premium Comfort Plus 3-Ton" />
                       </div>
                       <div className="grid gap-2">
-                        <Label>Model Number</Label>
-                        <Input value={equipForm.model_number} onChange={(e) => setEquipForm((p) => ({ ...p, model_number: e.target.value }))} placeholder="24ACC636A003" />
+                        <Label>Brand *</Label>
+                        <Input value={equipForm.brand} onChange={(e) => setEquipForm((p) => ({ ...p, brand: e.target.value }))} placeholder="Goodman" />
                       </div>
                     </div>
 
+                    {/* System Type, Tonnage, Tier */}
                     <div className="grid grid-cols-3 gap-4">
                       <div className="grid gap-2">
                         <Label>System Type</Label>
                         <Select value={equipForm.system_type} onValueChange={(v) => setEquipForm((p) => ({ ...p, system_type: v }))}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="gas_furnace_ac">Gas Furnace + AC</SelectItem>
+                            <SelectItem value="gas_system">Gas System</SelectItem>
                             <SelectItem value="heat_pump">Heat Pump</SelectItem>
                           </SelectContent>
                         </Select>
@@ -648,21 +692,72 @@ const CustomerEquipment = () => {
                       </div>
                     </div>
 
+                    {/* Component Model Numbers - Conditional */}
+                    <div className="border rounded-lg p-4 bg-muted/30">
+                      <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
+                        {equipForm.system_type === "gas_system" ? (
+                          <>
+                            <Flame className="h-4 w-4 text-orange-500" />
+                            Gas System Components
+                          </>
+                        ) : (
+                          <>
+                            <Snowflake className="h-4 w-4 text-blue-500" />
+                            Heat Pump Components
+                          </>
+                        )}
+                      </h4>
+                      
+                      {equipForm.system_type === "gas_system" ? (
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="grid gap-2">
+                            <Label className="text-xs">Condenser Model #</Label>
+                            <Input value={equipForm.condenser_model} onChange={(e) => setEquipForm((p) => ({ ...p, condenser_model: e.target.value }))} placeholder="GSX160361" />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-xs">Furnace Model #</Label>
+                            <Input value={equipForm.furnace_model} onChange={(e) => setEquipForm((p) => ({ ...p, furnace_model: e.target.value }))} placeholder="GMVC960603BN" />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-xs">Evap Coil Model #</Label>
+                            <Input value={equipForm.evap_coil_model} onChange={(e) => setEquipForm((p) => ({ ...p, evap_coil_model: e.target.value }))} placeholder="CAPF3642C6" />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="grid gap-2">
+                            <Label className="text-xs">Heat Pump Model #</Label>
+                            <Input value={equipForm.heat_pump_model} onChange={(e) => setEquipForm((p) => ({ ...p, heat_pump_model: e.target.value }))} placeholder="GSZH503010" />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-xs">Air Handler Model #</Label>
+                            <Input value={equipForm.air_handler_model} onChange={(e) => setEquipForm((p) => ({ ...p, air_handler_model: e.target.value }))} placeholder="ARUF37C14" />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-xs">Heat Kit Model #</Label>
+                            <Input value={equipForm.heat_kit_model} onChange={(e) => setEquipForm((p) => ({ ...p, heat_kit_model: e.target.value }))} placeholder="HKR-10C" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Efficiency Ratings */}
                     <div className="grid grid-cols-3 gap-4">
                       <div className="grid gap-2">
-                        <Label>SEER Rating</Label>
-                        <Input type="number" value={equipForm.seer_rating} onChange={(e) => setEquipForm((p) => ({ ...p, seer_rating: Number(e.target.value) }))} />
+                        <Label>SEER2 Rating</Label>
+                        <Input type="number" step="0.1" value={equipForm.seer2_rating} onChange={(e) => setEquipForm((p) => ({ ...p, seer2_rating: e.target.value }))} placeholder="15.2" />
                       </div>
                       <div className="grid gap-2">
-                        <Label>AFUE Rating</Label>
-                        <Input type="number" value={equipForm.afue_rating} onChange={(e) => setEquipForm((p) => ({ ...p, afue_rating: e.target.value }))} placeholder="96" />
+                        <Label>EER2 Rating</Label>
+                        <Input type="number" step="0.1" value={equipForm.eer2_rating} onChange={(e) => setEquipForm((p) => ({ ...p, eer2_rating: e.target.value }))} placeholder="12.0" />
                       </div>
                       <div className="grid gap-2">
-                        <Label>HSPF Rating</Label>
-                        <Input type="number" value={equipForm.hspf_rating} onChange={(e) => setEquipForm((p) => ({ ...p, hspf_rating: e.target.value }))} placeholder="9.5" />
+                        <Label>HSPF2 Rating</Label>
+                        <Input type="number" step="0.1" value={equipForm.hspf2_rating} onChange={(e) => setEquipForm((p) => ({ ...p, hspf2_rating: e.target.value }))} placeholder="8.5" />
                       </div>
                     </div>
 
+                    {/* Pricing */}
                     <div className="grid grid-cols-3 gap-4">
                       <div className="grid gap-2">
                         <Label>Equipment Cost</Label>
@@ -720,11 +815,11 @@ const CustomerEquipment = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Brand</TableHead>
-                    <TableHead>Model</TableHead>
+                    <TableHead>System Name</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Tonnage</TableHead>
-                    <TableHead>SEER</TableHead>
+                    <TableHead>SEER2</TableHead>
+                    <TableHead>EER2</TableHead>
                     <TableHead>Tier</TableHead>
                     <TableHead>Cost</TableHead>
                     <TableHead>Labor</TableHead>
@@ -738,24 +833,25 @@ const CustomerEquipment = () => {
                     <TableRow key={eq.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
-                          {eq.brand}
-                          {eq.is_best_value && <Award className="h-3.5 w-3.5 text-yellow-500" />}
-                          {eq.is_energy_star && <Zap className="h-3.5 w-3.5 text-green-500" />}
+                          <span className="max-w-[200px] truncate">{eq.system_name || `${eq.brand} ${eq.tonnage}T`}</span>
+                          {eq.is_best_value && <Award className="h-3.5 w-3.5 text-yellow-500 shrink-0" />}
+                          {eq.is_energy_star && <Zap className="h-3.5 w-3.5 text-green-500 shrink-0" />}
                         </div>
+                        <span className="text-xs text-muted-foreground">{eq.brand}</span>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{eq.model_number || "—"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          {eq.system_type === "gas_furnace_ac" ? (
+                          {eq.system_type === "gas_system" ? (
                             <Flame className="h-3.5 w-3.5 text-orange-500" />
                           ) : (
                             <Snowflake className="h-3.5 w-3.5 text-blue-500" />
                           )}
-                          <span className="text-xs">{eq.system_type === "gas_furnace_ac" ? "Gas" : "HP"}</span>
+                          <span className="text-xs">{eq.system_type === "gas_system" ? "Gas" : "HP"}</span>
                         </div>
                       </TableCell>
                       <TableCell>{eq.tonnage}T</TableCell>
-                      <TableCell>{eq.seer_rating}</TableCell>
+                      <TableCell>{eq.seer2_rating || "—"}</TableCell>
+                      <TableCell>{eq.eer2_rating || "—"}</TableCell>
                       <TableCell className="text-xs">{getTierName(eq.efficiency_tier_id)}</TableCell>
                       <TableCell className="text-xs">{formatMoney(eq.equipment_cost)}</TableCell>
                       <TableCell className="text-xs">{formatMoney(eq.installation_labor)}</TableCell>

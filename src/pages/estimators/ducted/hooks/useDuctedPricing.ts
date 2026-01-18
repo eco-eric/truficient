@@ -12,10 +12,23 @@ const FINANCING_APR = 0.0599; // 5.99% APR
 
 interface DuctedEquipment {
   id: string;
+  system_name: string | null;
   brand: string;
   tonnage: number;
-  seer_rating: number;
   system_type: string;
+  // Gas System Components
+  condenser_model: string | null;
+  furnace_model: string | null;
+  evap_coil_model: string | null;
+  // Heat Pump Components
+  heat_pump_model: string | null;
+  air_handler_model: string | null;
+  heat_kit_model: string | null;
+  // Efficiency Ratings
+  seer2_rating: number | null;
+  eer2_rating: number | null;
+  hspf2_rating: number | null;
+  // Pricing & metadata
   equipment_cost: number;
   installation_labor: number;
   warranty_years: number;
@@ -23,7 +36,6 @@ interface DuctedEquipment {
   is_energy_star: boolean;
   efficiency_tier_id: string | null;
   features: string[] | null;
-  model_number: string | null;
 }
 
 interface DuctedAddon {

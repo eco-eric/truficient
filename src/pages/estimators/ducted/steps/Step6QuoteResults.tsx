@@ -81,8 +81,8 @@ export const Step6QuoteResults = () => {
             <div className="bg-white/10 rounded-xl p-4 mb-4">
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <p className="font-medium">{pricing.selectedEquipment.brand}</p>
-                  <p className="text-sm text-white/70">{pricing.selectedEquipment.model_number}</p>
+                  <p className="font-medium">{pricing.selectedEquipment.system_name || `${pricing.selectedEquipment.brand} ${pricing.selectedEquipment.tonnage}T System`}</p>
+                  <p className="text-sm text-white/70">{pricing.selectedEquipment.brand}</p>
                 </div>
                 <div className="flex gap-2">
                   {pricing.selectedEquipment.is_best_value && (
@@ -101,8 +101,8 @@ export const Step6QuoteResults = () => {
               </div>
               <div className="grid grid-cols-3 gap-4 text-center text-sm mt-3">
                 <div>
-                  <p className="text-white/60">SEER</p>
-                  <p className="font-semibold">{pricing.selectedEquipment.seer_rating}</p>
+                  <p className="text-white/60">SEER2</p>
+                  <p className="font-semibold">{pricing.selectedEquipment.seer2_rating || "—"}</p>
                 </div>
                 <div>
                   <p className="text-white/60">Tonnage</p>
