@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   Dialog,
   DialogContent,
@@ -28,7 +29,7 @@ import {
 } from '@/components/ui/table';
 import { ImageUpload } from '@/components/admin/ImageUpload';
 import { BulkImageUpload } from '@/components/admin/BulkImageUpload';
-import { Plus, Pencil, Trash2, Star, Image as ImageIcon, Tag, Loader2, Upload } from 'lucide-react';
+import { Plus, Pencil, Trash2, Star, Image as ImageIcon, Tag, Loader2, Upload, Grid2X2, Grid3X3, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface GalleryTag {
@@ -56,9 +57,12 @@ interface ImageTagRelation {
   tag_id: string;
 }
 
+type ThumbnailSize = 'small' | 'medium' | 'large';
+
 const AdminGallery = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('images');
+  const [thumbnailSize, setThumbnailSize] = useState<ThumbnailSize>('medium');
   
   // Image dialog state
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
@@ -379,20 +383,21 @@ const AdminGallery = () => {
   return (
     <AdminLayout title="Gallery Management">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex items-center justify-between mb-6">
-          <TabsList>
-            <TabsTrigger value="images" className="gap-2">
-              <ImageIcon className="w-4 h-4" />
-              Images
-            </TabsTrigger>
-            <TabsTrigger value="tags" className="gap-2">
-              <Tag className="w-4 h-4" />
-              Tags
-            </TabsTrigger>
-          </TabsList>
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex items-center justify-between">
+            <TabsList>
+              <TabsTrigger value="images" className="gap-2">
+                <ImageIcon className="w-4 h-4" />
+                Images
+              </TabsTrigger>
+              <TabsTrigger value="tags" className="gap-2">
+                <Tag className="w-4 h-4" />
+                Tags
+              </TabsTrigger>
+            </TabsList>
 
-          {activeTab === 'images' && (
-            <div className="flex gap-2">
+            {activeTab === 'images' && (
+              <div className="flex gap-2">
               <Button variant="outline" onClick={() => setBulkUploadOpen(true)}>
                 <Upload className="w-4 h-4 mr-2" />
                 Bulk Upload
@@ -511,10 +516,10 @@ const AdminGallery = () => {
                 queryClient.invalidateQueries({ queryKey: ['gallery-image-tags-admin'] });
               }}
             />
-            </div>
-          )}
+              </div>
+            )}
 
-          {activeTab === 'tags' && (
+            {activeTab === 'tags' && (
             <Dialog open={tagDialogOpen} onOpenChange={(open) => {
               setTagDialogOpen(open);
               if (!open) resetTagForm();
@@ -597,7 +602,37 @@ const AdminGallery = () => {
                   </Button>
                 </DialogFooter>
               </DialogContent>
-            </Dialog>
+              </Dialog>
+            )}
+          </div>
+          
+          {/* Photo Count and Thumbnail Size Toggle */}
+          {activeTab === 'images' && (
+            <div className="flex items-center justify-between border-t pt-4">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold">{images.length.toLocaleString()}</span>
+                <span className="text-muted-foreground">Photos</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">View:</span>
+                <ToggleGroup 
+                  type="single" 
+                  value={thumbnailSize} 
+                  onValueChange={(value) => value && setThumbnailSize(value as ThumbnailSize)}
+                  className="border rounded-md"
+                >
+                  <ToggleGroupItem value="small" aria-label="Small thumbnails" className="px-3">
+                    <Grid3X3 className="w-4 h-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="medium" aria-label="Medium thumbnails" className="px-3">
+                    <Grid2X2 className="w-4 h-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="large" aria-label="Large thumbnails" className="px-3">
+                    <LayoutGrid className="w-4 h-4" />
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
+            </div>
           )}
         </div>
 
@@ -619,7 +654,13 @@ const AdminGallery = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className={`grid gap-4 ${
+              thumbnailSize === 'small' 
+                ? 'grid-cols-4 md:grid-cols-6 lg:grid-cols-8' 
+                : thumbnailSize === 'large' 
+                  ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
+                  : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+            }`}>
               {images.map((image) => (
                 <Card key={image.id} className="overflow-hidden group">
                   <div className="aspect-square relative">

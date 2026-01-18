@@ -6,9 +6,12 @@ import Footer from '@/components/layout/Footer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ImageLightbox } from '@/components/ui/image-lightbox';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { usePageSEO } from '@/hooks/usePageSEO';
 import { motion } from 'framer-motion';
-import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Grid2X2, Grid3X3, LayoutGrid } from 'lucide-react';
+
+type ThumbnailSize = 'small' | 'medium' | 'large';
 
 interface GalleryTag {
   id: string;
@@ -29,6 +32,7 @@ const Gallery = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [thumbnailSize, setThumbnailSize] = useState<ThumbnailSize>('medium');
 
   // Fetch tags
   const { data: tags = [] } = useQuery({
@@ -126,33 +130,68 @@ const Gallery = () => {
         </div>
       </section>
 
-      {/* Filter Bar */}
-      {tags.length > 0 && (
-        <section className="border-b bg-muted/50">
-          <div className="container mx-auto px-4 py-4">
+      {/* Filter Bar and Photo Count */}
+      <section className="border-b bg-muted/50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            {/* Left side - Filters */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-muted-foreground mr-2">Filter by:</span>
-              <Badge
-                variant={selectedTags.length === 0 ? 'default' : 'outline'}
-                className="cursor-pointer"
-                onClick={() => setSelectedTags([])}
-              >
-                All
-              </Badge>
-              {tags.map(tag => (
-                <Badge
-                  key={tag.id}
-                  variant={selectedTags.includes(tag.id) ? 'default' : 'outline'}
-                  className="cursor-pointer"
-                  onClick={() => toggleTag(tag.id)}
+              {tags.length > 0 && (
+                <>
+                  <span className="text-sm text-muted-foreground mr-2">Filter by:</span>
+                  <Badge
+                    variant={selectedTags.length === 0 ? 'default' : 'outline'}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedTags([])}
+                  >
+                    All
+                  </Badge>
+                  {tags.map(tag => (
+                    <Badge
+                      key={tag.id}
+                      variant={selectedTags.includes(tag.id) ? 'default' : 'outline'}
+                      className="cursor-pointer"
+                      onClick={() => toggleTag(tag.id)}
+                    >
+                      {tag.name}
+                    </Badge>
+                  ))}
+                </>
+              )}
+            </div>
+            
+            {/* Right side - Photo count and thumbnail size */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold">{filteredImages.length.toLocaleString()}</span>
+                <span className="text-sm text-muted-foreground">
+                  {selectedTags.length > 0 && images.length !== filteredImages.length
+                    ? `of ${images.length.toLocaleString()} Photos`
+                    : 'Photos'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ToggleGroup 
+                  type="single" 
+                  value={thumbnailSize} 
+                  onValueChange={(value) => value && setThumbnailSize(value as ThumbnailSize)}
+                  className="border rounded-md bg-background"
                 >
-                  {tag.name}
-                </Badge>
-              ))}
+                  <ToggleGroupItem value="small" aria-label="Small thumbnails" className="px-2 h-8">
+                    <Grid3X3 className="w-4 h-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="medium" aria-label="Medium thumbnails" className="px-2 h-8">
+                    <Grid2X2 className="w-4 h-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="large" aria-label="Large thumbnails" className="px-2 h-8">
+                    <LayoutGrid className="w-4 h-4" />
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
             </div>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* Gallery Grid */}
       <section className="py-12 lg:py-16">
@@ -175,7 +214,13 @@ const Gallery = () => {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className={`grid gap-4 ${
+              thumbnailSize === 'small' 
+                ? 'grid-cols-4 md:grid-cols-6 lg:grid-cols-8' 
+                : thumbnailSize === 'large' 
+                  ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
+                  : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+            }`}>
               {filteredImages.map((image, index) => (
                 <motion.div
                   key={image.id}
