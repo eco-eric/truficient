@@ -374,6 +374,7 @@ IMPORTANT:
               brand: publicSpecs.brand,
               model_number: publicSpecs.model_number,
               model_pattern: publicSpecs.model_number.substring(0, 8),
+              equipment_type: publicSpecs.equipment_type,
               specs: publicSpecs, // PUBLIC specs - no serial number
               seo_title: `${publicSpecs.brand} ${publicSpecs.model_number} Specifications, Manuals & Documentation | Truficient`,
               seo_description: `Complete specs for ${publicSpecs.brand} ${publicSpecs.model_number} including tonnage, refrigerant type, SEER rating, and downloadable manuals. Free resource from Truficient Energy Solutions.`,
