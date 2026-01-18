@@ -21,7 +21,7 @@ const estimators = [
   },
   {
     id: 'ducted',
-    title: 'Ducted Systems',
+    title: 'AC | Heat Pump',
     subtitle: 'Central AC & heat pump replacement',
     image: ductedImage,
     badge: 'WHOLE HOME',
@@ -29,7 +29,7 @@ const estimators = [
     icon: Home,
     benefits: ['Works with existing ducts', 'Even temperature throughout', 'Quiet operation'],
     href: '/estimate/ducted',
-    cta: 'Get Ducted Quote',
+    cta: 'Get AC/Heat Pump Quote',
   },
 ];
 

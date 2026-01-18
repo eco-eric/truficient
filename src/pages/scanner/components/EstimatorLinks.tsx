@@ -19,14 +19,14 @@ const estimators = [
     link: '/estimate/ductless',
   },
   {
-    title: 'Ducted Systems',
+    title: 'AC | Heat Pump',
     subtitle: 'Central AC & heat pump replacement',
     image: ductedImage,
     badge: 'WHOLE HOME',
     badgeColor: 'bg-blue-600',
     icon: Home,
     benefits: ['Works with existing ducts', 'Even temperature throughout', 'Quiet operation'],
-    cta: 'Get Ducted Quote',
+    cta: 'Get AC/Heat Pump Quote',
     link: '/estimate/ducted',
   },
 ];

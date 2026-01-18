@@ -243,9 +243,9 @@ const Header = () => {
                     <Link 
                       to="/estimate/ducted" 
                       className="cursor-pointer"
-                      onClick={() => handleTrackClick('Ducted Estimator', 'Header - Main Nav', '/estimate/ducted')}
+                      onClick={() => handleTrackClick('AC | Heat Pump Estimator', 'Header - Main Nav', '/estimate/ducted')}
                     >
-                      Ducted Estimator
+                      AC | Heat Pump Estimator
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -468,11 +468,11 @@ const Header = () => {
                         to="/estimate/ducted"
                         className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
-                          handleTrackClick('Ducted Estimator', 'Header - Mobile Menu', '/estimate/ducted');
+                          handleTrackClick('AC | Heat Pump Estimator', 'Header - Mobile Menu', '/estimate/ducted');
                           setIsOpen(false);
                         }}
                       >
-                        Ducted Estimator
+                        AC | Heat Pump Estimator
                       </Link>
                       <Link
                         to="/estimate/ductless"

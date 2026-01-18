@@ -773,7 +773,7 @@ const SystemPricing = () => {
                               ? 'bg-blue-100 text-blue-800' 
                               : 'bg-green-100 text-green-800'
                           }`}>
-                            {system.system_type === 'mini_split' ? 'Mini Split' : 'Ducted'}
+                            {system.system_type === 'mini_split' ? 'Mini Split' : 'AC/Heat Pump'}
                           </span>
                         </TableCell>
                         <TableCell>{system.tonnage ?? '-'}</TableCell>
