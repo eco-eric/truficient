@@ -21,6 +21,7 @@ import { ContactSubmissionDetail } from "./ContactSubmissionDetail";
 import { LandingPageSubmissionDetail } from "./LandingPageSubmissionDetail";
 import { DuctlessSubmissionDetail } from "./DuctlessSubmissionDetail";
 import { ScannerSubmissionDetail } from "./ScannerSubmissionDetail";
+import { DuctedSubmissionDetail } from "./DuctedSubmissionDetail";
 
 interface SubmissionDetailSheetProps {
   submission: UnifiedSubmission | null;
@@ -30,6 +31,7 @@ interface SubmissionDetailSheetProps {
 }
 
 const sourceLabels: Record<SubmissionSource, string> = {
+  ducted: "Ducted Estimator",
   contact: "Contact Form",
   landing_page: "Landing Page Form",
   ductless: "Ductless Estimator",
@@ -37,6 +39,7 @@ const sourceLabels: Record<SubmissionSource, string> = {
 };
 
 const sourceColors: Record<SubmissionSource, string> = {
+  ducted: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300",
   contact: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
   landing_page: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
   ductless: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
@@ -142,6 +145,9 @@ export const SubmissionDetailSheet = ({
           <Separator />
 
           {/* Type-specific Details */}
+          {submission.source === "ducted" && (
+            <DuctedSubmissionDetail metadata={submission.metadata} />
+          )}
           {submission.source === "contact" && (
             <ContactSubmissionDetail metadata={submission.metadata} />
           )}

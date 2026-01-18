@@ -43,7 +43,6 @@ export const navSections: NavSection[] = [
     items: [
       { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, adminOnly: false },
       { label: 'Submissions', href: '/admin/submissions', icon: FileText, adminOnly: false },
-      { label: 'Ducted Submissions', href: '/admin/ducted-submissions', icon: AirVent, adminOnly: false },
       { label: 'DFW Watch List', href: '/admin/dfw-watchlist', icon: Target, adminOnly: true },
       { label: 'Blog', href: '/admin/blog', icon: PenSquare, adminOnly: false },
     ],
