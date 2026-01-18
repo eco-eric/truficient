@@ -58,7 +58,7 @@ export function EstimatorLinks() {
               Central AC & heat pump options for whole-home comfort.
             </p>
             <Button asChild className="w-full touch-target bg-primary hover:bg-primary/90">
-              <Link to="/estimators/cost">
+              <Link to="/estimate/ducted">
                 Get My Quote
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
