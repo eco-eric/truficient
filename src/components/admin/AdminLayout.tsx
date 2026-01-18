@@ -38,8 +38,8 @@ export const AdminLayout = ({ children, title }: AdminLayoutProps) => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Desktop Sidebar - hidden on mobile */}
-      <div className="hidden lg:block">
+      {/* Desktop Sidebar - hidden on mobile, visible on tablet and up */}
+      <div className="hidden md:block">
         <AdminSidebar />
       </div>
       

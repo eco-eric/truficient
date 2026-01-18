@@ -25,11 +25,11 @@ export const AdminHeader = ({ title, onMenuClick }: AdminHeaderProps) => {
   return (
     <header className="bg-white border-b border-border px-4 lg:px-6 py-4 flex items-center justify-between gap-2">
       <div className="flex items-center gap-3 min-w-0">
-        {/* Hamburger menu - mobile only */}
+        {/* Hamburger menu - mobile only (hidden on tablet and up) */}
         <Button 
           variant="ghost" 
           size="icon" 
-          className="lg:hidden flex-shrink-0"
+          className="md:hidden flex-shrink-0"
           onClick={onMenuClick}
         >
           <Menu className="h-6 w-6" />
