@@ -134,7 +134,7 @@ export default function EquipmentReport() {
 
   const estimatorLinks = [
     {
-      title: 'Ducted Estimator',
+      title: 'AC | Heat Pump Estimator',
       description: 'Get an instant replacement cost estimate',
       icon: DollarSign,
       href: '/estimate/ducted',

@@ -73,7 +73,7 @@ const EstimatorContent = () => {
               </span>
             </Link>
             <span className="text-xs text-muted-foreground uppercase tracking-wide">
-              Ducted System Estimator
+              AC | Heat Pump Estimator
             </span>
           </div>
         </header>

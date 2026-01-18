@@ -177,7 +177,7 @@ const FinancingOptions = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Financing Options</h1>
             <p className="text-sm text-muted-foreground">
-              Manage financing plans for ductless and ducted system estimators.
+              Manage financing plans for ductless and AC/Heat Pump estimators.
             </p>
           </div>
         </div>
@@ -314,7 +314,7 @@ const FinancingOptions = () => {
                         checked={form.applies_to_ducted}
                         onCheckedChange={(checked) => setForm((p) => ({ ...p, applies_to_ducted: !!checked }))}
                       />
-                      <Label htmlFor="applies_ducted" className="font-normal cursor-pointer">Ducted Estimator</Label>
+                      <Label htmlFor="applies_ducted" className="font-normal cursor-pointer">AC | Heat Pump Estimator</Label>
                     </div>
                   </div>
                 </div>
