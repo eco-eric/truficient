@@ -4,6 +4,8 @@ import { Card } from '@/components/ui/card';
 import { ArrowRight, ArrowLeft, Info } from 'lucide-react';
 import { useScanner } from '../context/ScannerContext';
 import { ImageLightbox } from '@/components/ui/image-lightbox';
+import { useButtonTracking } from '@/hooks/useButtonTracking';
+import workedgeProLogo from '@/assets/workedge-pro-logo.png';
 
 // Import real data plate images
 import carrierPlate from '@/assets/data-plates/carrier.jpg';
@@ -61,6 +63,7 @@ const EXAMPLE_PLATES = [
 
 export function ExampleDataPlates() {
   const { dispatch } = useScanner();
+  const { trackButtonClick } = useButtonTracking();
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<{ src: string; alt: string } | null>(null);
 
@@ -136,6 +139,29 @@ export function ExampleDataPlates() {
           </div>
         </div>
       </Card>
+
+      {/* Workedge Pro Attribution Banner */}
+      <a 
+        href="https://workedge.pro" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="flex items-center justify-center gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors border max-w-md mx-auto"
+        onClick={() => trackButtonClick({
+          buttonName: 'Workedge Pro Banner',
+          buttonLocation: 'Scanner - Examples',
+          destinationUrl: 'https://workedge.pro',
+        })}
+      >
+        <img 
+          src={workedgeProLogo} 
+          alt="Workedge Pro" 
+          className="w-8 h-8 object-contain flex-shrink-0"
+        />
+        <p className="text-sm text-center">
+          <span className="text-muted-foreground">Scanner powered by </span>
+          <span className="font-semibold text-primary">Workedge Pro</span>
+        </p>
+      </a>
 
       {/* Navigation Buttons */}
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
