@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2, Award, Zap, Flame, Snowflake } from "lucide-react";
+import { Pencil, Plus, Trash2, Award, Zap, Flame, Snowflake, Ruler } from "lucide-react";
 
 type JsonArrayStrings = string[];
 
@@ -59,6 +59,17 @@ type DuctedAddon = {
   is_active: boolean;
 };
 
+type SizingRule = {
+  id: string;
+  home_type: string;
+  layout: string;
+  sq_ft_min: number;
+  sq_ft_max: number;
+  recommended_tonnage: number;
+  notes: string | null;
+  is_active: boolean;
+};
+
 const formatMoney = (n: number | null | undefined) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(n || 0));
 
@@ -70,9 +81,29 @@ const arrayToLines = (arr: unknown): string => {
   return arr.map((s) => String(s)).join("\n");
 };
 
+const HOME_TYPES = [
+  { value: "single_family", label: "Single Family" },
+  { value: "townhouse", label: "Townhouse" },
+  { value: "condo", label: "Condo" },
+  { value: "mobile_home", label: "Mobile Home" },
+  { value: "duplex", label: "Duplex" },
+  { value: "other", label: "Other" },
+];
+
+const LAYOUTS = [
+  { value: "1_story", label: "1 Story" },
+  { value: "2_stories", label: "2 Stories" },
+  { value: "3_stories", label: "3 Stories" },
+  { value: "split_level", label: "Split Level" },
+  { value: "basement", label: "Basement" },
+  { value: "loft", label: "Loft" },
+];
+
+const TONNAGES = [1.5, 2, 2.5, 3, 3.5, 4, 5];
+
 const CustomerEquipment = () => {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"equipment" | "tiers" | "addons">("equipment");
+  const [activeTab, setActiveTab] = useState<"equipment" | "tiers" | "addons" | "sizing">("equipment");
 
   // -------- Equipment --------
   const equipmentQuery = useQuery({
@@ -109,6 +140,20 @@ const CustomerEquipment = () => {
         .order("sort_order");
       if (error) throw error;
       return data as DuctedAddon[];
+    },
+  });
+
+  const sizingQuery = useQuery({
+    queryKey: ["ducted_tonnage_sizing_rules"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ducted_tonnage_sizing_rules")
+        .select("*")
+        .order("home_type")
+        .order("layout")
+        .order("sq_ft_min");
+      if (error) throw error;
+      return data as SizingRule[];
     },
   });
 
@@ -418,6 +463,99 @@ const CustomerEquipment = () => {
     onError: (e: Error) => toast.error(e.message || "Failed to delete"),
   });
 
+  // Sizing Rules Dialog State
+  const [sizingDialogOpen, setSizingDialogOpen] = useState(false);
+  const [editingSizing, setEditingSizing] = useState<SizingRule | null>(null);
+  const [sizingForm, setSizingForm] = useState({
+    home_type: "single_family",
+    layout: "1_story",
+    sq_ft_min: 0,
+    sq_ft_max: 1000,
+    recommended_tonnage: 2,
+    notes: "",
+    is_active: true,
+  });
+
+  const resetSizingForm = () => {
+    setEditingSizing(null);
+    setSizingForm({
+      home_type: "single_family",
+      layout: "1_story",
+      sq_ft_min: 0,
+      sq_ft_max: 1000,
+      recommended_tonnage: 2,
+      notes: "",
+      is_active: true,
+    });
+  };
+
+  const openCreateSizing = () => {
+    resetSizingForm();
+    setSizingDialogOpen(true);
+  };
+
+  const openEditSizing = (s: SizingRule) => {
+    setEditingSizing(s);
+    setSizingForm({
+      home_type: s.home_type,
+      layout: s.layout,
+      sq_ft_min: s.sq_ft_min,
+      sq_ft_max: s.sq_ft_max,
+      recommended_tonnage: s.recommended_tonnage,
+      notes: s.notes || "",
+      is_active: s.is_active,
+    });
+    setSizingDialogOpen(true);
+  };
+
+  const saveSizingMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        home_type: sizingForm.home_type,
+        layout: sizingForm.layout,
+        sq_ft_min: Number(sizingForm.sq_ft_min),
+        sq_ft_max: Number(sizingForm.sq_ft_max),
+        recommended_tonnage: Number(sizingForm.recommended_tonnage),
+        notes: sizingForm.notes.trim() || null,
+        is_active: sizingForm.is_active,
+      };
+
+      if (payload.sq_ft_min >= payload.sq_ft_max) {
+        throw new Error("Sq Ft Min must be less than Sq Ft Max");
+      }
+
+      if (editingSizing) {
+        const { error } = await supabase.from("ducted_tonnage_sizing_rules").update(payload).eq("id", editingSizing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("ducted_tonnage_sizing_rules").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ducted_tonnage_sizing_rules"] });
+      toast.success(editingSizing ? "Sizing rule updated" : "Sizing rule created");
+      setSizingDialogOpen(false);
+      resetSizingForm();
+    },
+    onError: (e: Error) => toast.error(e.message || "Failed to save"),
+  });
+
+  const deleteSizingMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("ducted_tonnage_sizing_rules").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ducted_tonnage_sizing_rules"] });
+      toast.success("Sizing rule deleted");
+    },
+    onError: (e: Error) => toast.error(e.message || "Failed to delete"),
+  });
+
+  const getHomeTypeLabel = (value: string) => HOME_TYPES.find((h) => h.value === value)?.label || value;
+  const getLayoutLabel = (value: string) => LAYOUTS.find((l) => l.value === value)?.label || value;
+
   const getTierName = (tierId: string | null) => {
     if (!tierId) return "—";
     const tier = tiersQuery.data?.find((t) => t.id === tierId);
@@ -441,6 +579,10 @@ const CustomerEquipment = () => {
             <TabsTrigger value="equipment">Equipment</TabsTrigger>
             <TabsTrigger value="tiers">Efficiency Tiers</TabsTrigger>
             <TabsTrigger value="addons">Add-ons</TabsTrigger>
+            <TabsTrigger value="sizing" className="flex items-center gap-1.5">
+              <Ruler className="h-3.5 w-3.5" />
+              Sizing Rules
+            </TabsTrigger>
           </TabsList>
 
           {/* Equipment Tab */}
@@ -851,6 +993,134 @@ const CustomerEquipment = () => {
                   ))}
                   {!addonsQuery.data?.length && (
                     <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No add-ons configured</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+          {/* Sizing Rules Tab */}
+          <TabsContent value="sizing" className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-sm text-muted-foreground">{sizingQuery.data?.length || 0} records</div>
+              <Dialog open={sizingDialogOpen} onOpenChange={(open) => { if (!open) resetSizingForm(); setSizingDialogOpen(open); }}>
+                <DialogTrigger asChild>
+                  <Button onClick={openCreateSizing}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Rule
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>{editingSizing ? "Edit Sizing Rule" : "Add Sizing Rule"}</DialogTitle>
+                  </DialogHeader>
+
+                  <div className="grid gap-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label>Home Type</Label>
+                        <Select value={sizingForm.home_type} onValueChange={(v) => setSizingForm((p) => ({ ...p, home_type: v }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {HOME_TYPES.map((h) => (
+                              <SelectItem key={h.value} value={h.value}>{h.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Layout</Label>
+                        <Select value={sizingForm.layout} onValueChange={(v) => setSizingForm((p) => ({ ...p, layout: v }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {LAYOUTS.map((l) => (
+                              <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label>Sq Ft Min</Label>
+                        <Input type="number" value={sizingForm.sq_ft_min} onChange={(e) => setSizingForm((p) => ({ ...p, sq_ft_min: Number(e.target.value) }))} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Sq Ft Max</Label>
+                        <Input type="number" value={sizingForm.sq_ft_max} onChange={(e) => setSizingForm((p) => ({ ...p, sq_ft_max: Number(e.target.value) }))} />
+                      </div>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label>Recommended Tonnage</Label>
+                      <Select value={String(sizingForm.recommended_tonnage)} onValueChange={(v) => setSizingForm((p) => ({ ...p, recommended_tonnage: Number(v) }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {TONNAGES.map((t) => (
+                            <SelectItem key={t} value={String(t)}>{t} Ton</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label>Notes</Label>
+                      <Input value={sizingForm.notes} onChange={(e) => setSizingForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Optional notes about this rule" />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Switch checked={sizingForm.is_active} onCheckedChange={(c) => setSizingForm((p) => ({ ...p, is_active: c }))} />
+                      <Label>Active</Label>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-4">
+                      <Button variant="outline" onClick={() => setSizingDialogOpen(false)}>Cancel</Button>
+                      <Button onClick={() => saveSizingMutation.mutate()} disabled={saveSizingMutation.isPending}>
+                        {saveSizingMutation.isPending ? "Saving..." : "Save"}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Home Type</TableHead>
+                    <TableHead>Layout</TableHead>
+                    <TableHead>Sq Ft Range</TableHead>
+                    <TableHead>Tonnage</TableHead>
+                    <TableHead>Notes</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-[100px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sizingQuery.data?.map((rule) => (
+                    <TableRow key={rule.id}>
+                      <TableCell className="font-medium">{getHomeTypeLabel(rule.home_type)}</TableCell>
+                      <TableCell>{getLayoutLabel(rule.layout)}</TableCell>
+                      <TableCell>{rule.sq_ft_min.toLocaleString()} - {rule.sq_ft_max.toLocaleString()}</TableCell>
+                      <TableCell className="font-medium">{rule.recommended_tonnage}T</TableCell>
+                      <TableCell className="text-sm text-muted-foreground max-w-[150px] truncate">{rule.notes || "—"}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${rule.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                          {rule.is_active ? "Active" : "Inactive"}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => openEditSizing(rule)}><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => deleteSizingMutation.mutate(rule.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {!sizingQuery.data?.length && (
+                    <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No sizing rules configured</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
