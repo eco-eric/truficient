@@ -201,7 +201,8 @@ export function useDuctedPricing(state: DuctedEstimatorState): {
       return [];
     }
 
-    const systemType = state.heatingType === "gas_system" ? "gas_furnace_ac" : "heat_pump";
+    // The database uses "gas_system" and "heat_pump" as system_type values
+    const systemType = state.heatingType;
 
     return equipment.filter((eq) => {
       const tonnageMatch = eq.tonnage === recommendedTonnage;
