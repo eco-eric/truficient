@@ -37,7 +37,7 @@ export const documentationApi = {
     const { data, error } = await supabase
       .from('equipment_documentation')
       .select('*')
-      .eq('brand', brand.toLowerCase())
+      .ilike('brand', brand)
       .eq('model_number', modelNumber)
       .eq('verified_working', true);
 
