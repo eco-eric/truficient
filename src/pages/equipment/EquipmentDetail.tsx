@@ -298,6 +298,30 @@ export default function EquipmentDetail() {
                 </div>
               </Card>
 
+              {/* Workedge Pro Attribution Banner */}
+              <a 
+                href="https://workedge.pro" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors border"
+                onClick={() => trackButtonClick({
+                  buttonName: 'Workedge Pro Banner',
+                  buttonLocation: 'Equipment Detail - Specifications',
+                  destinationUrl: 'https://workedge.pro',
+                })}
+              >
+                <img 
+                  src={workedgeProLogo} 
+                  alt="Workedge Pro" 
+                  className="w-12 h-12 object-contain flex-shrink-0"
+                />
+                <p className="text-sm">
+                  <span className="text-muted-foreground">The Document Library is powered by </span>
+                  <span className="font-bold text-primary">Workedge Pro</span>
+                  <span className="text-muted-foreground"> – A Field Documentation App for Service Pros.</span>
+                </p>
+              </a>
+
               {/* Documentation Card */}
               <Card className="p-6">
                 <h2 className="text-xl font-bold mb-4">Documentation & Manuals</h2>
@@ -362,31 +386,6 @@ export default function EquipmentDetail() {
                   </div>
                 )}
 
-                {/* Workedge Pro Attribution Banner */}
-                <div className="mt-6 pt-4 border-t">
-                  <a 
-                    href="https://workedge.pro" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
-                    onClick={() => trackButtonClick({
-                      buttonName: 'Workedge Pro Banner',
-                      buttonLocation: 'Equipment Detail - Documentation',
-                      destinationUrl: 'https://workedge.pro',
-                    })}
-                  >
-                    <img 
-                      src={workedgeProLogo} 
-                      alt="Workedge Pro" 
-                      className="w-12 h-12 object-contain flex-shrink-0"
-                    />
-                    <p className="text-sm">
-                      <span className="text-muted-foreground">The Document Library is powered by </span>
-                      <span className="font-bold text-primary">Workedge Pro</span>
-                      <span className="text-muted-foreground"> – A Field Documentation App for Service Pros.</span>
-                    </p>
-                  </a>
-                </div>
               </Card>
 
               {/* Alerts */}
