@@ -43,6 +43,11 @@ const INITIAL_TOTALS: PricingTotals = {
 
 const INITIAL_STATE: DuctedEstimatorState = {
   currentStep: 0,
+  // Zip code gate
+  zipCode: "",
+  zipCity: null,
+  zipState: null,
+  isInServiceArea: null,
   // Home info
   homeType: null,
   homeLayout: null,
@@ -79,6 +84,10 @@ interface EstimatorContextValue {
   goToStep: (step: number) => void;
   nextStep: () => void;
   prevStep: () => void;
+  // Zip code gate setters
+  setZipCode: (zipCode: string) => void;
+  setZipLocation: (city: string | null, state: string | null) => void;
+  setIsInServiceArea: (value: boolean | null) => void;
   // Home info setters
   setHomeType: (type: HomeType | null) => void;
   setHomeLayout: (layout: HomeLayout | null) => void;
@@ -128,6 +137,19 @@ export const EstimatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const prevStep = useCallback(() => {
     setState((prev) => ({ ...prev, currentStep: Math.max(0, prev.currentStep - 1) }));
+  }, []);
+
+  // Zip code gate setters
+  const setZipCode = useCallback((zipCode: string) => {
+    setState((prev) => ({ ...prev, zipCode }));
+  }, []);
+
+  const setZipLocation = useCallback((city: string | null, state: string | null) => {
+    setState((prev) => ({ ...prev, zipCity: city, zipState: state }));
+  }, []);
+
+  const setIsInServiceArea = useCallback((value: boolean | null) => {
+    setState((prev) => ({ ...prev, isInServiceArea: value }));
   }, []);
 
   // Home info setters
@@ -245,6 +267,10 @@ export const EstimatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       goToStep,
       nextStep,
       prevStep,
+      // Zip code gate
+      setZipCode,
+      setZipLocation,
+      setIsInServiceArea,
       // Home info
       setHomeType,
       setHomeLayout,
@@ -282,6 +308,9 @@ export const EstimatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       goToStep,
       nextStep,
       prevStep,
+      setZipCode,
+      setZipLocation,
+      setIsInServiceArea,
       setHomeType,
       setHomeLayout,
       setSystemCount,

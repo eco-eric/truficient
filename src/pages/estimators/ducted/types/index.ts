@@ -242,6 +242,11 @@ export interface PricingTotals {
 // Full estimator state
 export interface DuctedEstimatorState {
   currentStep: number;
+  // Zip code gate
+  zipCode: string;
+  zipCity: string | null;
+  zipState: string | null;
+  isInServiceArea: boolean | null;
   // Home info
   homeType: HomeType | null;
   homeLayout: HomeLayout | null;

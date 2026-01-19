@@ -1,6 +1,7 @@
 import { AnimatePresence } from "framer-motion";
 import { EstimatorProvider, useEstimator } from "./context/EstimatorContext";
 import { ProgressIndicator } from "../ductless/components/ProgressIndicator";
+import { Step0ZipCodeGate } from "./steps/Step0ZipCodeGate";
 import { Step1HomeType } from "./steps/Step1HomeType";
 import { Step2HomeDetails } from "./steps/Step2HomeDetails";
 import { Step3InsulationFactors } from "./steps/Step3InsulationFactors";
@@ -15,6 +16,7 @@ import { Link } from "react-router-dom";
 import truficientLogo from "@/assets/truficient-logo.png";
 
 const STEP_LABELS = [
+  "Location",
   "Home Type",
   "Home Details",
   "Insulation",
@@ -34,35 +36,37 @@ const EstimatorContent = () => {
   const renderStep = () => {
     switch (currentStep) {
       case 0:
-        return <Step1HomeType />;
+        return <Step0ZipCodeGate />;
       case 1:
-        return <Step2HomeDetails />;
+        return <Step1HomeType />;
       case 2:
-        return <Step3InsulationFactors />;
+        return <Step2HomeDetails />;
       case 3:
-        return <Step4UsagePatterns />;
+        return <Step3InsulationFactors />;
       case 4:
-        return <Step5HeatingType />;
+        return <Step4UsagePatterns />;
       case 5:
-        return <Step6SystemSize />;
+        return <Step5HeatingType />;
       case 6:
-        return <Step7EfficiencyTier />;
+        return <Step6SystemSize />;
       case 7:
-        return <Step8QuoteResults />;
+        return <Step7EfficiencyTier />;
       case 8:
-        return <Step9CustomerInfo />;
+        return <Step8QuoteResults />;
       case 9:
+        return <Step9CustomerInfo />;
+      case 10:
         return <Step10ThankYou />;
       default:
-        return <Step1HomeType />;
+        return <Step0ZipCodeGate />;
     }
   };
 
-  // Show progress on steps 1-8 (after welcome, before thank you)
-  const showProgress = currentStep > 0 && currentStep < 9;
+  // Show progress on steps 1-9 (after zip gate, before thank you)
+  const showProgress = currentStep > 0 && currentStep < 10;
 
-  // Show header on all steps except first and last
-  const showHeader = currentStep > 0 && currentStep < 9;
+  // Show header on all steps except first (zip gate) and last (thank you)
+  const showHeader = currentStep > 0 && currentStep < 10;
 
   return (
     <div className="min-h-screen bg-background">
@@ -90,9 +94,9 @@ const EstimatorContent = () => {
       {/* Progress indicator */}
       {showProgress && (
         <ProgressIndicator
-          currentStep={currentStep}
-          totalSteps={8}
-          labels={STEP_LABELS.slice(1, 9)}
+          currentStep={currentStep - 1}
+          totalSteps={9}
+          labels={STEP_LABELS.slice(1, 10)}
         />
       )}
 
