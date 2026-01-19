@@ -633,6 +633,7 @@ export type Database = {
           layout: string
           notes: string | null
           recommended_tonnage: number
+          sort_order: number
           sq_ft_max: number
           sq_ft_min: number
           updated_at: string
@@ -645,6 +646,7 @@ export type Database = {
           layout: string
           notes?: string | null
           recommended_tonnage: number
+          sort_order?: number
           sq_ft_max: number
           sq_ft_min: number
           updated_at?: string
@@ -657,6 +659,7 @@ export type Database = {
           layout?: string
           notes?: string | null
           recommended_tonnage?: number
+          sort_order?: number
           sq_ft_max?: number
           sq_ft_min?: number
           updated_at?: string
