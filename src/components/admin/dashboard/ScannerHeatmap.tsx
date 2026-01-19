@@ -197,9 +197,9 @@ export function ScannerHeatmap({ zipCodeData, isLoading }: ScannerHeatmapProps) 
     geocodeZips();
   }, [isMapLoaded, zipCodeData]);
 
-  // Initialize map and heatmap layer
+  // Initialize map - always show DFW area as default
   useEffect(() => {
-    if (!isMapLoaded || !mapRef.current || !geocodedLocations.length) return;
+    if (!isMapLoaded || !mapRef.current) return;
 
     // Initialize map if not already done
     if (!mapInstanceRef.current) {
@@ -223,6 +223,11 @@ export function ScannerHeatmap({ zipCodeData, isLoading }: ScannerHeatmapProps) 
 
       infoWindowRef.current = new window.google.maps.InfoWindow();
     }
+  }, [isMapLoaded]);
+
+  // Update heatmap layer when data changes
+  useEffect(() => {
+    if (!mapInstanceRef.current || !geocodedLocations.length) return;
 
     // Clear existing markers
     markersRef.current.forEach(marker => marker.setMap(null));
