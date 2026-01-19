@@ -53,13 +53,7 @@ export function ZipCodeGate() {
       dispatch({ type: 'GO_TO_STEP', payload: 'examples' });
     } catch (err) {
       console.error('Zip validation error:', err);
-      // On error, allow through with basic validation
-      const isDfw = isDfwZipCode(cleanZip);
-      trackScanStarted(cleanZip, isDfw);
-      dispatch({ type: 'SET_ZIP_CODE', payload: cleanZip });
-      dispatch({ type: 'SET_IS_DFW', payload: isDfw });
-      dispatch({ type: 'GO_TO_STEP', payload: 'examples' });
-    } finally {
+      setError('Unable to validate your zip code. Please try again.');
       setIsValidating(false);
     }
   };
