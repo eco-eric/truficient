@@ -296,27 +296,33 @@ export function useDuctedPricing(state: DuctedEstimatorState): {
   const effectiveTonnage = state.selectedTonnage || recommendedTonnage;
   
   const matchingEquipment = useMemo(() => {
+    // Debug logging
+    console.log('[Pricing Debug] effectiveTonnage:', effectiveTonnage);
+    console.log('[Pricing Debug] heatingType:', state.heatingType);
+    console.log('[Pricing Debug] efficiencyTierId:', state.efficiencyTierId);
+    console.log('[Pricing Debug] Equipment count before filter:', equipment.length);
+
     if (!effectiveTonnage || !state.heatingType || !state.efficiencyTierId) {
+      console.log('[Pricing Debug] Early return - missing required values');
       return [];
     }
-
-    // Find the selected efficiency tier to get SEER range
-    const selectedTier = tiers.find(t => t.id === state.efficiencyTierId);
-    if (!selectedTier) return [];
 
     // The database uses "gas_system" and "heat_pump" as system_type values
     const systemType = state.heatingType;
 
-    return equipment.filter((eq) => {
+    const filtered = equipment.filter((eq) => {
       const tonnageMatch = eq.tonnage === effectiveTonnage;
       const typeMatch = eq.system_type === systemType;
-      // Match SEER2 rating within tier's range (instead of efficiency_tier_id)
-      const seerMatch = eq.seer2_rating && 
-        eq.seer2_rating >= selectedTier.seer_min && 
-        eq.seer2_rating <= selectedTier.seer_max;
-      return tonnageMatch && typeMatch && seerMatch;
+      // FIXED: Use efficiency_tier_id instead of SEER range matching
+      const tierMatch = eq.efficiency_tier_id === state.efficiencyTierId;
+      return tonnageMatch && typeMatch && tierMatch;
     });
-  }, [equipment, tiers, effectiveTonnage, state.heatingType, state.efficiencyTierId]);
+
+    console.log('[Pricing Debug] matchingEquipment count:', filtered.length);
+    console.log('[Pricing Debug] matchingEquipment:', filtered);
+
+    return filtered;
+  }, [equipment, effectiveTonnage, state.heatingType, state.efficiencyTierId]);
 
   // Find selected equipment
   const selectedEquipment = useMemo(() => {
