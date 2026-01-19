@@ -268,16 +268,23 @@ export function useDuctedPricing(state: DuctedEstimatorState): {
       return [];
     }
 
+    // Find the selected efficiency tier to get SEER range
+    const selectedTier = tiers.find(t => t.id === state.efficiencyTierId);
+    if (!selectedTier) return [];
+
     // The database uses "gas_system" and "heat_pump" as system_type values
     const systemType = state.heatingType;
 
     return equipment.filter((eq) => {
       const tonnageMatch = eq.tonnage === effectiveTonnage;
       const typeMatch = eq.system_type === systemType;
-      const tierMatch = eq.efficiency_tier_id === state.efficiencyTierId;
-      return tonnageMatch && typeMatch && tierMatch;
+      // Match SEER2 rating within tier's range (instead of efficiency_tier_id)
+      const seerMatch = eq.seer2_rating && 
+        eq.seer2_rating >= selectedTier.seer_min && 
+        eq.seer2_rating <= selectedTier.seer_max;
+      return tonnageMatch && typeMatch && seerMatch;
     });
-  }, [equipment, effectiveTonnage, state.heatingType, state.efficiencyTierId]);
+  }, [equipment, tiers, effectiveTonnage, state.heatingType, state.efficiencyTierId]);
 
   // Find selected equipment
   const selectedEquipment = useMemo(() => {
