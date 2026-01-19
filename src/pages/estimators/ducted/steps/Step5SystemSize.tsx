@@ -55,19 +55,50 @@ export const Step5SystemSize = () => {
     return null;
   };
 
-  // Handler for successful scan - auto-select tonnage and return to main
-  const handleScanSuccess = (specs: any) => {
+  // Handler for successful scan - auto-select tonnage, create equipment page, return to main
+  const handleScanSuccess = async (specs: any) => {
     const tonnage = parseTonnage(specs?.tonnage);
+    const equipmentType = specs?.equipment_type || specs?.equipmentType;
     
     setScannedEquipmentInfo({
       brand: specs?.brand || undefined,
       tonnage: tonnage || undefined,
       model: specs?.model_number || undefined,
+      equipmentType: equipmentType || undefined,
     });
+    
+    // Create equipment library page (without serial number)
+    if (specs?.model_number && specs?.brand) {
+      try {
+        const slug = `${specs.brand.toLowerCase().replace(/\s+/g, '-')}-${specs.model_number.toLowerCase().replace(/\s+/g, '-')}`;
+        
+        await supabase.from('equipment_pages').upsert({
+          model_number: specs.model_number,
+          brand: specs.brand,
+          slug: slug,
+          equipment_type: equipmentType || null,
+          specs: {
+            tonnage: specs.tonnage,
+            seer_rating: specs.seer_rating,
+            refrigerant: specs.refrigerant,
+            manufactured_year: specs.manufactured_year,
+            voltage_info: specs.voltage_info,
+            breaker_size: specs.breaker_size,
+          },
+          auto_generated: true,
+          published: true,
+        }, { onConflict: 'slug' });
+        
+        console.log('Equipment page created/updated:', slug);
+      } catch (err) {
+        console.error('Failed to create equipment page:', err);
+      }
+    }
     
     if (tonnage) {
       setSelectedTonnage(tonnage);
-      toast.success(`Detected ${tonnage} Ton ${specs?.brand || ''} system!`);
+      const typeStr = equipmentType ? `${equipmentType} • ` : '';
+      toast.success(`Detected ${typeStr}${tonnage} Ton ${specs?.brand || ''} system!`);
     } else {
       toast.info("Equipment scanned but tonnage not detected. Please select manually.");
     }
@@ -266,7 +297,7 @@ export const Step5SystemSize = () => {
           </div>
         </div>
         
-        {/* Show scanned info */}
+        {/* Show scanned info with equipment type */}
         {state.scannedEquipmentInfo && (
           <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-xl flex items-start gap-2">
             <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
@@ -275,6 +306,7 @@ export const Step5SystemSize = () => {
                 Equipment Detected
               </p>
               <p className="text-green-700">
+                {state.scannedEquipmentInfo.equipmentType && `${state.scannedEquipmentInfo.equipmentType} • `}
                 {state.scannedEquipmentInfo.brand && `${state.scannedEquipmentInfo.brand} • `}
                 {state.scannedEquipmentInfo.tonnage && `${state.scannedEquipmentInfo.tonnage} Ton`}
                 {state.scannedEquipmentInfo.model && ` • ${state.scannedEquipmentInfo.model}`}

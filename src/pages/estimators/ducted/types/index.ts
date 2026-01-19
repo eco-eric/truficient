@@ -228,7 +228,7 @@ export interface DuctedEstimatorState {
   // Equipment selection
   heatingType: HeatingType | null;
   selectedTonnage: number | null; // User-selected or scanned tonnage
-  scannedEquipmentInfo: { brand?: string; tonnage?: number; model?: string } | null; // From scanner
+  scannedEquipmentInfo: { brand?: string; tonnage?: number; model?: string; equipmentType?: string } | null; // From scanner
   efficiencyTierId: string | null;
   selectedEquipmentId: string | null;
   recommendedTonnage: number | null;

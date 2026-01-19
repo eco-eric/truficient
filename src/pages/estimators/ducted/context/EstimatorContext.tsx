@@ -86,7 +86,7 @@ interface EstimatorContextValue {
   // Equipment selection setters
   setHeatingType: (type: HeatingType | null) => void;
   setSelectedTonnage: (tonnage: number | null) => void;
-  setScannedEquipmentInfo: (info: { brand?: string; tonnage?: number; model?: string } | null) => void;
+  setScannedEquipmentInfo: (info: { brand?: string; tonnage?: number; model?: string; equipmentType?: string } | null) => void;
   setEfficiencyTierId: (id: string | null) => void;
   setSelectedEquipmentId: (id: string | null) => void;
   setRecommendedTonnage: (tonnage: number | null) => void;
@@ -163,7 +163,7 @@ export const EstimatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setState((prev) => ({ ...prev, selectedTonnage: tonnage }));
   }, []);
 
-  const setScannedEquipmentInfo = useCallback((info: { brand?: string; tonnage?: number; model?: string } | null) => {
+  const setScannedEquipmentInfo = useCallback((info: { brand?: string; tonnage?: number; model?: string; equipmentType?: string } | null) => {
     setState((prev) => ({ ...prev, scannedEquipmentInfo: info }));
   }, []);
 
