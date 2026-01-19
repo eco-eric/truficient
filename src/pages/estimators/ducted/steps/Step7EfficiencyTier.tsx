@@ -100,29 +100,59 @@ export const Step7EfficiencyTier = () => {
     },
   });
 
+  // Get available tonnages for the selected heating type
+  const availableTonnages = (() => {
+    if (!state.heatingType || equipment.length === 0) return [];
+    
+    const tonnages = equipment
+      .filter((eq) => eq.system_type === state.heatingType)
+      .map((eq) => eq.tonnage);
+    
+    return [...new Set(tonnages)].sort((a, b) => a - b);
+  })();
+
+  // Compute effective tonnage: user-selected or snap to nearest available
+  const effectiveTonnage = (() => {
+    if (state.selectedTonnage) return state.selectedTonnage;
+    if (availableTonnages.length === 0) return null;
+    
+    // Default to a common tonnage (3) if no selection, snap to nearest available
+    const target = 3;
+    let closest = availableTonnages[0];
+    let minDiff = Math.abs(target - closest);
+    
+    for (const t of availableTonnages) {
+      const diff = Math.abs(target - t);
+      if (diff < minDiff || (diff === minDiff && t > closest)) {
+        closest = t;
+        minDiff = diff;
+      }
+    }
+    
+    return closest;
+  })();
+
   // Calculate price RANGE for a tier based on real equipment data
   const getPriceRangeForTier = (tier: DuctedEfficiencyTier) => {
     if (!equipment || equipment.length === 0) {
       return null;
     }
 
-    // Filter equipment that matches the tier's SEER2 range, system type, and selected tonnage
+    // Filter equipment that matches the tier's SEER2 range, system type, and effective tonnage
     const matchingEquipment = equipment.filter((eq) => {
       if (!eq.seer2_rating) return false;
       
       // Match system type based on heating type selection
-      const isHeatPump = state.heatingType === "heat_pump";
-      const equipmentIsHeatPump = eq.system_type === "heat_pump";
-      
-      if (isHeatPump !== equipmentIsHeatPump) return false;
+      const typeMatch = eq.system_type === state.heatingType;
+      if (!typeMatch) return false;
       
       // Check if equipment SEER2 falls within tier's range
       const seerMatch = eq.seer2_rating >= tier.seer_min && eq.seer2_rating <= tier.seer_max;
       if (!seerMatch) return false;
       
-      // Match tonnage if selected
-      if (state.selectedTonnage) {
-        return eq.tonnage === state.selectedTonnage;
+      // Match effective tonnage
+      if (effectiveTonnage) {
+        return eq.tonnage === effectiveTonnage;
       }
       
       return true;
