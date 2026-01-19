@@ -79,6 +79,13 @@ export const TEMP_PREFERENCE_OPTIONS: TempPreferenceOption[] = [
   { value: '76_plus', label: '76°+', description: 'Very Warm' },
 ];
 
+// Summer temperature options (excludes Cool option since AC won't cool below 64-68°)
+export const SUMMER_TEMP_OPTIONS: TempPreferenceOption[] = [
+  { value: '68_72', label: '68° - 72°', description: 'Comfortable' },
+  { value: '72_76', label: '72° - 76°', description: 'Warm' },
+  { value: '76_plus', label: '76°+', description: 'Very Warm' },
+];
+
 export const SYSTEM_COUNT_OPTIONS = [
   { value: 1 as const, label: '1 System' },
   { value: 2 as const, label: '2 Systems' },

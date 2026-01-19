@@ -5,6 +5,7 @@ import { useEstimator } from "../context/EstimatorContext";
 import {
   HOT_COLD_SPOTS_OPTIONS,
   TEMP_PREFERENCE_OPTIONS,
+  SUMMER_TEMP_OPTIONS,
   type HotColdSpots,
   type TempPreference,
 } from "../types";
@@ -93,8 +94,8 @@ export const Step3UsagePatterns = () => {
             <Sun className="h-4 w-4 text-orange-500" />
             Preferred summer temperature
           </h3>
-          <div className="grid grid-cols-2 gap-2">
-            {TEMP_PREFERENCE_OPTIONS.map((option) => (
+          <div className="grid grid-cols-3 gap-2">
+            {SUMMER_TEMP_OPTIONS.map((option) => (
               <SelectableCard
                 key={option.value}
                 selected={state.summerTemp === option.value}
