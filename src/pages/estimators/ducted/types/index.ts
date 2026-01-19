@@ -98,6 +98,23 @@ export const COVERAGE_OPTIONS = [
   { value: 'partial_home' as const, label: 'Partial Home', description: 'Specific areas only' },
 ];
 
+// Tonnage options for system size selection
+export interface TonnageOption {
+  value: number;
+  label: string;
+  btu: string;
+}
+
+export const TONNAGE_OPTIONS: TonnageOption[] = [
+  { value: 1.5, label: '1.5 Ton', btu: '18,000 BTU' },
+  { value: 2.0, label: '2 Ton', btu: '24,000 BTU' },
+  { value: 2.5, label: '2.5 Ton', btu: '30,000 BTU' },
+  { value: 3.0, label: '3 Ton', btu: '36,000 BTU' },
+  { value: 3.5, label: '3.5 Ton', btu: '42,000 BTU' },
+  { value: 4.0, label: '4 Ton', btu: '48,000 BTU' },
+  { value: 5.0, label: '5 Ton', btu: '60,000 BTU' },
+];
+
 // Database types from Supabase
 export interface DuctedEfficiencyTier {
   id: string;
@@ -210,6 +227,8 @@ export interface DuctedEstimatorState {
   summerTemp: TempPreference | null;
   // Equipment selection
   heatingType: HeatingType | null;
+  selectedTonnage: number | null; // User-selected or scanned tonnage
+  scannedEquipmentInfo: { brand?: string; tonnage?: number; model?: string } | null; // From scanner
   efficiencyTierId: string | null;
   selectedEquipmentId: string | null;
   recommendedTonnage: number | null;

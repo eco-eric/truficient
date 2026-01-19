@@ -53,6 +53,8 @@ const INITIAL_STATE: DuctedEstimatorState = {
   summerTemp: null,
   // Equipment selection
   heatingType: null,
+  selectedTonnage: null,
+  scannedEquipmentInfo: null,
   efficiencyTierId: null,
   selectedEquipmentId: null,
   recommendedTonnage: null,
@@ -83,6 +85,8 @@ interface EstimatorContextValue {
   setSummerTemp: (temp: TempPreference | null) => void;
   // Equipment selection setters
   setHeatingType: (type: HeatingType | null) => void;
+  setSelectedTonnage: (tonnage: number | null) => void;
+  setScannedEquipmentInfo: (info: { brand?: string; tonnage?: number; model?: string } | null) => void;
   setEfficiencyTierId: (id: string | null) => void;
   setSelectedEquipmentId: (id: string | null) => void;
   setRecommendedTonnage: (tonnage: number | null) => void;
@@ -155,6 +159,14 @@ export const EstimatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setState((prev) => ({ ...prev, heatingType: type }));
   }, []);
 
+  const setSelectedTonnage = useCallback((tonnage: number | null) => {
+    setState((prev) => ({ ...prev, selectedTonnage: tonnage }));
+  }, []);
+
+  const setScannedEquipmentInfo = useCallback((info: { brand?: string; tonnage?: number; model?: string } | null) => {
+    setState((prev) => ({ ...prev, scannedEquipmentInfo: info }));
+  }, []);
+
   const setEfficiencyTierId = useCallback((id: string | null) => {
     setState((prev) => ({ ...prev, efficiencyTierId: id }));
   }, []);
@@ -222,6 +234,8 @@ export const EstimatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setSummerTemp,
       // Equipment selection
       setHeatingType,
+      setSelectedTonnage,
+      setScannedEquipmentInfo,
       setEfficiencyTierId,
       setSelectedEquipmentId,
       setRecommendedTonnage,
@@ -249,6 +263,8 @@ export const EstimatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setWinterTemp,
       setSummerTemp,
       setHeatingType,
+      setSelectedTonnage,
+      setScannedEquipmentInfo,
       setEfficiencyTierId,
       setSelectedEquipmentId,
       setRecommendedTonnage,
