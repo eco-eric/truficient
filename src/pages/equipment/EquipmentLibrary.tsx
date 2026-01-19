@@ -155,6 +155,17 @@ export default function EquipmentLibrary() {
                   className="pl-12 h-14 text-lg bg-white text-foreground"
                 />
               </div>
+
+              {/* Scanner Callout */}
+              <Link 
+                to="/scanner" 
+                className="inline-flex items-center gap-2 mt-6 px-4 py-2 bg-secondary/20 hover:bg-secondary/30 text-secondary-foreground rounded-full transition-colors group"
+              >
+                <ScanLine className="w-4 h-4 text-secondary" />
+                <span className="text-sm font-medium">
+                  Don't know your model? <span className="text-secondary group-hover:underline">Scan your data plate</span>
+                </span>
+              </Link>
             </div>
           </div>
         </section>
