@@ -57,6 +57,7 @@ interface DuctedEquipment {
   id: string;
   system_type: string;
   seer2_rating: number | null;
+  tonnage: number;
   equipment_cost: number;
   installation_labor: number;
   is_active: boolean;
@@ -91,7 +92,7 @@ export const Step6EfficiencyTier = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ducted_equipment")
-        .select("id, system_type, seer2_rating, equipment_cost, installation_labor, is_active")
+        .select("id, system_type, seer2_rating, tonnage, equipment_cost, installation_labor, is_active")
         .eq("is_active", true);
 
       if (error) throw error;
@@ -99,14 +100,13 @@ export const Step6EfficiencyTier = () => {
     },
   });
 
-  // Calculate minimum price for a tier based on real equipment data
-  const getStartingPriceForTier = (tier: DuctedEfficiencyTier) => {
-    // Return null if equipment hasn't loaded yet
+  // Calculate price RANGE for a tier based on real equipment data
+  const getPriceRangeForTier = (tier: DuctedEfficiencyTier) => {
     if (!equipment || equipment.length === 0) {
       return null;
     }
 
-    // Filter equipment that matches the tier's SEER2 range and system type
+    // Filter equipment that matches the tier's SEER2 range, system type, and selected tonnage
     const matchingEquipment = equipment.filter((eq) => {
       if (!eq.seer2_rating) return false;
       
@@ -117,22 +117,31 @@ export const Step6EfficiencyTier = () => {
       if (isHeatPump !== equipmentIsHeatPump) return false;
       
       // Check if equipment SEER2 falls within tier's range
-      return eq.seer2_rating >= tier.seer_min && eq.seer2_rating <= tier.seer_max;
+      const seerMatch = eq.seer2_rating >= tier.seer_min && eq.seer2_rating <= tier.seer_max;
+      if (!seerMatch) return false;
+      
+      // Match tonnage if selected
+      if (state.selectedTonnage) {
+        return eq.tonnage === state.selectedTonnage;
+      }
+      
+      return true;
     });
 
-    // Debug logging
-    console.log(`Tier ${tier.name}: SEER ${tier.seer_min}-${tier.seer_max}, heating: ${state.heatingType}, matches: ${matchingEquipment.length}`);
-
     if (matchingEquipment.length === 0) {
-      return null; // No matching equipment for this tier
+      return null;
     }
 
-    // Find the minimum total price (equipment + installation)
-    const minPrice = Math.min(
-      ...matchingEquipment.map((eq) => (eq.equipment_cost || 0) + (eq.installation_labor || 0))
+    // Calculate prices (equipment + installation)
+    const prices = matchingEquipment.map((eq) => 
+      (eq.equipment_cost || 0) + (eq.installation_labor || 0)
     );
-
-    return minPrice;
+    
+    return {
+      min: Math.min(...prices),
+      max: Math.max(...prices),
+      count: matchingEquipment.length,
+    };
   };
 
   const isLoading = tiersLoading || equipmentLoading;
@@ -165,7 +174,7 @@ export const Step6EfficiencyTier = () => {
         <div className="space-y-4 mb-6">
           {tiers.map((tier) => {
             const style = getTierStyle(tier.name);
-            const startingPrice = getStartingPriceForTier(tier);
+            const priceRange = getPriceRangeForTier(tier);
             const features = tier.features || [];
             const TierIcon = style.icon;
 
@@ -195,11 +204,17 @@ export const Step6EfficiencyTier = () => {
                     <div className="text-right">
                       {equipmentLoading ? (
                         <div className="text-xs text-muted-foreground">Loading...</div>
-                      ) : startingPrice ? (
+                      ) : priceRange ? (
                         <>
-                          <div className="text-xs text-muted-foreground">Starting at</div>
+                          <div className="text-xs text-muted-foreground">Price Range</div>
                           <div className="text-lg font-bold text-[#1e3a5f]">
-                            {formatMoney(startingPrice)}
+                            {priceRange.min === priceRange.max 
+                              ? formatMoney(priceRange.min)
+                              : `${formatMoney(priceRange.min)} - ${formatMoney(priceRange.max)}`
+                            }
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {priceRange.count} option{priceRange.count > 1 ? 's' : ''} available
                           </div>
                         </>
                       ) : (
