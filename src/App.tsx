@@ -65,6 +65,7 @@ import AdminTrashBin from "./pages/admin/TrashBin";
 import { Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
+import { ScrollToTop } from "./components/ScrollToTop";
 
 // Blog imports
 import Blog from "./pages/Blog";
@@ -82,6 +83,7 @@ const queryClient = new QueryClient();
 // Root layout component that includes global elements
 const RootLayout = () => (
   <>
+    <ScrollToTop />
     <TrackingScripts />
     <CookieConsent />
     <Outlet />
