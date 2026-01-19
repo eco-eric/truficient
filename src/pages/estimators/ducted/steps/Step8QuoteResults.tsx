@@ -68,10 +68,10 @@ export const Step8QuoteResults = () => {
   const sqftLabel = SQUARE_FOOTAGE_OPTIONS.find((o) => o.value === state.squareFootage)?.label || "N/A";
   const systemTypeLabel = state.heatingType === "gas_system" ? "Gas Furnace + AC" : "Heat Pump System";
   
-  // Get selected equipment for pricing display
+  // Get selected equipment for pricing display (tax already included in pricing)
   const selectedEq = matchingEquipment.find((eq) => eq.id === localSelectedId) || matchingEquipment[0];
   const selectedPrice = selectedEq 
-    ? (selectedEq.equipment_cost + selectedEq.installation_labor) * 1.0825 // Include tax
+    ? (selectedEq.equipment_cost + selectedEq.installation_labor)
     : pricing.finalTotal;
 
   return (
@@ -126,7 +126,7 @@ export const Step8QuoteResults = () => {
           {matchingEquipment.length > 0 ? (
             <div className="space-y-3">
               {matchingEquipment.map((eq) => {
-                const totalPrice = (eq.equipment_cost + eq.installation_labor) * 1.0825;
+                const totalPrice = eq.equipment_cost + eq.installation_labor;
                 const isSelected = localSelectedId === eq.id;
                 
                 return (
@@ -157,7 +157,7 @@ export const Step8QuoteResults = () => {
                           {formatMoney(totalPrice)}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          incl. tax & install
+                          incl. installation
                         </p>
                       </div>
                     </div>
