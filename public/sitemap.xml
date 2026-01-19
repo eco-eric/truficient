@@ -16,47 +16,96 @@
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
+  <url>
+    <loc>https://www.truficient.com/gallery</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
   
   <!-- Services -->
   <url>
-    <loc>https://www.truficient.com/residential-services</loc>
+    <loc>https://www.truficient.com/services/residential</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://www.truficient.com/commercial-services</loc>
+    <loc>https://www.truficient.com/services/commercial</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
+  <url>
+    <loc>https://www.truficient.com/services/ductless</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- Estimators & Calculators -->
   <url>
     <loc>https://www.truficient.com/hvac-estimate</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.truficient.com/estimate/ducted</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.truficient.com/estimate/ductless</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.truficient.com/estimators/sizing</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.truficient.com/estimators/cost</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.truficient.com/estimators/savings</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   
+  <!-- Equipment Scanner & Library -->
+  <url>
+    <loc>https://www.truficient.com/scanner</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.truficient.com/equipment</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
   <!-- Service Areas -->
   <url>
-    <loc>https://www.truficient.com/service-areas/dallas</loc>
+    <loc>https://www.truficient.com/service-areas/dallas-area</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.truficient.com/service-areas/frisco-mckinney</loc>
+    <loc>https://www.truficient.com/service-areas/north-dallas-area</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.truficient.com/service-areas/mid-cities</loc>
+    <loc>https://www.truficient.com/service-areas/frisco-mckinney-area</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.truficient.com/service-areas/north-dallas</loc>
+    <loc>https://www.truficient.com/service-areas/mid-cities-area</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.truficient.com/service-areas/south-dallas</loc>
+    <loc>https://www.truficient.com/service-areas/south-dallas-area</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -68,12 +117,14 @@
     <priority>0.8</priority>
   </url>
   
-  <!-- Other Pages -->
+  <!-- Careers -->
   <url>
     <loc>https://www.truficient.com/careers</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
+  
+  <!-- Legal Pages -->
   <url>
     <loc>https://www.truficient.com/privacy-policy</loc>
     <changefreq>yearly</changefreq>
