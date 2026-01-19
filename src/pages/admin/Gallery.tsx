@@ -586,12 +586,12 @@ const AdminGallery = () => {
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Image
+                    Add Media
                   </Button>
                 </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>{editingImage ? 'Edit Image' : 'Add New Image'}</DialogTitle>
+                  <DialogTitle>{editingImage ? 'Edit Media' : 'Add New Media'}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
@@ -686,7 +686,7 @@ const AdminGallery = () => {
                     {(createImageMutation.isPending || updateImageMutation.isPending) && (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     )}
-                    {editingImage ? 'Save Changes' : 'Add Image'}
+                    {editingImage ? 'Save Changes' : 'Add Media'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -863,11 +863,11 @@ const AdminGallery = () => {
             <Card>
               <CardContent className="py-12 text-center">
                 <ImageIcon className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Images Yet</h3>
-                <p className="text-muted-foreground mb-4">Upload your first gallery image to showcase your work.</p>
+                <h3 className="text-lg font-semibold mb-2">No Media Yet</h3>
+                <p className="text-muted-foreground mb-4">Upload your first gallery image or video to showcase your work.</p>
                 <Button onClick={() => setImageDialogOpen(true)}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Image
+                  Add Media
                 </Button>
               </CardContent>
             </Card>
@@ -941,7 +941,7 @@ const AdminGallery = () => {
               <CardContent className="py-12 text-center">
                 <Tag className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No Tags Yet</h3>
-                <p className="text-muted-foreground mb-4">Create tags to organize your gallery images.</p>
+                <p className="text-muted-foreground mb-4">Create tags to organize your gallery media.</p>
                 <Button onClick={() => setTagDialogOpen(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Tag
