@@ -336,22 +336,22 @@ export default function EquipmentDetail() {
                     {documents.map((doc, index) => (
                       <div
                         key={`${doc.document_url}-${index}`}
-                        className="flex items-center justify-between py-3 border-b last:border-0"
+                        className="flex items-center justify-between gap-2 py-3 border-b last:border-0"
                       >
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
                           <FileText className="w-5 h-5 text-primary flex-shrink-0" />
-                          <div className="min-w-0">
-                            <p className="font-medium truncate">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium truncate max-w-full">
                               {doc.document_title || doc.document_type}
                             </p>
                             {doc.source_domain && (
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-xs text-muted-foreground truncate">
                                 {doc.source_domain}
                               </p>
                             )}
                           </div>
                         </div>
-                        <Button variant="ghost" size="sm" asChild>
+                        <Button variant="ghost" size="sm" className="flex-shrink-0" asChild>
                           <a href={doc.document_url} target="_blank" rel="noopener noreferrer">
                             <ExternalLink className="w-4 h-4 mr-1" />
                             Open
