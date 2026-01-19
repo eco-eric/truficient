@@ -28,6 +28,7 @@ interface GalleryImage {
   title: string;
   description: string | null;
   image_url: string;
+  thumbnail_url: string | null;
   media_type: 'image' | 'video';
   alt_text: string | null;
   sort_order: number | null;
@@ -104,7 +105,7 @@ const Gallery = () => {
     queryFn: async ({ pageParam = 0 }) => {
       let query = supabase
         .from('gallery_images')
-        .select('id, title, description, image_url, alt_text, sort_order')
+        .select('id, title, description, image_url, thumbnail_url, media_type, alt_text, sort_order')
         .eq('is_active', true)
         .order('sort_order', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false })
@@ -321,12 +322,21 @@ const Gallery = () => {
                       <div className="aspect-square overflow-hidden rounded-lg bg-muted relative">
                         {isVideo ? (
                           <>
-                            <video
-                              src={image.image_url}
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                              muted
-                              playsInline
-                            />
+                            {image.thumbnail_url ? (
+                              <img
+                                src={image.thumbnail_url}
+                                alt={image.alt_text || image.title}
+                                loading="lazy"
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              />
+                            ) : (
+                              <video
+                                src={image.image_url}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                muted
+                                playsInline
+                              />
+                            )}
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                               <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center">
                                 <Play className="w-6 h-6 text-white ml-1" />
