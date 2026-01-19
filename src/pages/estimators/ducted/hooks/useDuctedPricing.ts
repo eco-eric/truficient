@@ -205,6 +205,18 @@ export function useDuctedPricing(state: DuctedEstimatorState): {
 
   const isLoading = equipmentLoading || tiersLoading || addonsLoading || rulesLoading;
 
+  // Get available tonnages for the selected heating type
+  const availableTonnages = useMemo(() => {
+    if (!state.heatingType || equipment.length === 0) return [];
+    
+    const tonnages = equipment
+      .filter((eq) => eq.system_type === state.heatingType)
+      .map((eq) => eq.tonnage);
+    
+    // Get unique values and sort
+    return [...new Set(tonnages)].sort((a, b) => a - b);
+  }, [equipment, state.heatingType]);
+
   // Calculate recommended tonnage based on home characteristics including insulation factors
   const recommendedTonnage = useMemo(() => {
     if (!state.homeType || !state.homeLayout || !state.squareFootage || tonnageRules.length === 0) {
@@ -256,8 +268,28 @@ export function useDuctedPricing(state: DuctedEstimatorState): {
     const roundedTonnage = Math.round(adjustedTonnage * 2) / 2;
     
     // Clamp to valid tonnage range (1.5 to 5 tons for residential)
-    return Math.max(1.5, Math.min(5, roundedTonnage));
-  }, [state.homeType, state.homeLayout, state.squareFootage, state.atticInsulation, state.windowType, state.homeAge, tonnageRules]);
+    const clampedTonnage = Math.max(1.5, Math.min(5, roundedTonnage));
+    
+    // Snap to nearest available tonnage in equipment database
+    if (availableTonnages.length > 0) {
+      // Find the closest available tonnage (prefer rounding up for safety)
+      let closest = availableTonnages[0];
+      let minDiff = Math.abs(clampedTonnage - closest);
+      
+      for (const t of availableTonnages) {
+        const diff = Math.abs(clampedTonnage - t);
+        // Prefer this tonnage if it's closer, or same distance but higher (round up)
+        if (diff < minDiff || (diff === minDiff && t > closest)) {
+          closest = t;
+          minDiff = diff;
+        }
+      }
+      
+      return closest;
+    }
+    
+    return clampedTonnage;
+  }, [state.homeType, state.homeLayout, state.squareFootage, state.atticInsulation, state.windowType, state.homeAge, tonnageRules, availableTonnages]);
 
   // Find matching equipment based on tonnage, heating type, and efficiency tier
   // Use selectedTonnage if user picked one, otherwise fall back to recommendedTonnage
