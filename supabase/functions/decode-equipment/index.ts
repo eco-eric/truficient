@@ -366,7 +366,54 @@ IMPORTANT:
             .update({ times_searched: (duplicatePage.times_searched || 0) + 1 })
             .eq('id', duplicatePage.id);
         } else {
-          // No duplicates found - create new equipment page with PUBLIC specs only
+          // No duplicates found - generate SEO description and create new equipment page
+          let customContent = null;
+          
+          try {
+            // Generate SEO-optimized product description
+            const descriptionPrompt = `Write a 150-200 word SEO-optimized product description for this HVAC equipment:
+
+Brand: ${publicSpecs.brand}
+Model Number: ${publicSpecs.model_number}
+Equipment Type: ${publicSpecs.equipment_type || 'HVAC Equipment'}
+Tonnage: ${publicSpecs.tonnage || 'Not specified'}
+SEER Rating: ${publicSpecs.seer_rating || 'Not specified'}
+Refrigerant: ${publicSpecs.refrigerant || 'Not specified'}
+
+Guidelines:
+- Write in a professional, informative tone
+- Include the brand and model number naturally
+- Mention key specifications and their benefits
+- Include relevant use cases (residential cooling, home comfort, etc.)
+- Mention energy efficiency if SEER rating is available
+- Reference modern refrigerant standards if applicable
+- Do NOT include warranty information or pricing
+- Do NOT use marketing hyperbole or superlatives
+- Write 2-3 paragraphs of plain text (no markdown, no bullet points)`;
+
+            const descResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'google/gemini-2.5-flash-lite',
+                messages: [{ role: 'user', content: descriptionPrompt }],
+              }),
+            });
+
+            if (descResponse.ok) {
+              const descData = await descResponse.json();
+              customContent = descData.choices?.[0]?.message?.content?.trim() || null;
+              console.log('Generated product description:', customContent?.substring(0, 100) + '...');
+            }
+          } catch (descError) {
+            console.error('Failed to generate description:', descError);
+            // Continue without description - not critical
+          }
+
+          // Create new equipment page with PUBLIC specs and generated description
           await supabase
             .from('equipment_pages')
             .insert({
@@ -375,7 +422,8 @@ IMPORTANT:
               model_number: publicSpecs.model_number,
               model_pattern: publicSpecs.model_number.substring(0, 8),
               equipment_type: publicSpecs.equipment_type,
-              specs: publicSpecs, // PUBLIC specs - no serial number
+              specs: publicSpecs,
+              custom_content: customContent,
               seo_title: `${publicSpecs.brand} ${publicSpecs.model_number} Specifications, Manuals & Documentation | Truficient`,
               seo_description: `Complete specs for ${publicSpecs.brand} ${publicSpecs.model_number} including tonnage, refrigerant type, SEER rating, and downloadable manuals. Free resource from Truficient Energy Solutions.`,
             });
