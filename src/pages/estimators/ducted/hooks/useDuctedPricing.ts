@@ -1,7 +1,31 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { DuctedEstimatorState, SquareFootage, getSquareFootageMidpoint } from "../types";
+import type { DuctedEstimatorState, SquareFootage, AtticInsulation, WindowType, HomeAge } from "../types";
+
+// Insulation adjustment factors (adds to base tonnage)
+const INSULATION_ADJUSTMENTS: Record<AtticInsulation, number> = {
+  high: -0.25,      // Well insulated = slightly less capacity needed
+  medium: 0,        // Standard - no adjustment
+  low: 0.5,         // Poor insulation = need more capacity
+  not_sure: 0.25,   // Assume slightly below average
+};
+
+// Window type adjustment factors
+const WINDOW_ADJUSTMENTS: Record<WindowType, number> = {
+  triple_pane: -0.25,  // High efficiency = less capacity needed
+  double_pane: 0,      // Standard - no adjustment
+  single_pane: 0.5,    // Poor efficiency = need more capacity
+  mixed: 0.25,         // Assume slightly below average
+};
+
+// Home age adjustment factors (older homes typically have more air leakage)
+const HOME_AGE_ADJUSTMENTS: Record<HomeAge, number> = {
+  after_2010: -0.25,   // Modern construction, better sealed
+  "2000_2010": 0,      // Standard - no adjustment
+  "1980_2000": 0.25,   // Some air leakage expected
+  before_1980: 0.5,    // Likely significant air leakage
+};
 
 // Tax rate constant
 const TAX_RATE = 0.0825; // 8.25% Texas sales tax
@@ -181,7 +205,7 @@ export function useDuctedPricing(state: DuctedEstimatorState): {
 
   const isLoading = equipmentLoading || tiersLoading || addonsLoading || rulesLoading;
 
-  // Calculate recommended tonnage based on home characteristics
+  // Calculate recommended tonnage based on home characteristics including insulation factors
   const recommendedTonnage = useMemo(() => {
     if (!state.homeType || !state.homeLayout || !state.squareFootage || tonnageRules.length === 0) {
       return null;
@@ -197,16 +221,43 @@ export function useDuctedPricing(state: DuctedEstimatorState): {
       return homeTypeMatch && layoutMatch && sqftMatch;
     });
 
-    // If no exact match, find by just sqft range
-    if (!matchingRule) {
+    // Get base tonnage from rules
+    let baseTonnage: number | null = null;
+    
+    if (matchingRule) {
+      baseTonnage = matchingRule.recommended_tonnage;
+    } else {
+      // Fallback: find by just sqft range
       const fallbackRule = tonnageRules.find((rule) => {
         return sqftMidpoint >= rule.sq_ft_min && sqftMidpoint <= rule.sq_ft_max;
       });
-      return fallbackRule?.recommended_tonnage || null;
+      baseTonnage = fallbackRule?.recommended_tonnage || null;
     }
 
-    return matchingRule.recommended_tonnage;
-  }, [state.homeType, state.homeLayout, state.squareFootage, tonnageRules]);
+    if (baseTonnage === null) return null;
+
+    // Apply insulation and efficiency adjustments
+    let adjustment = 0;
+    
+    if (state.atticInsulation) {
+      adjustment += INSULATION_ADJUSTMENTS[state.atticInsulation];
+    }
+    
+    if (state.windowType) {
+      adjustment += WINDOW_ADJUSTMENTS[state.windowType];
+    }
+    
+    if (state.homeAge) {
+      adjustment += HOME_AGE_ADJUSTMENTS[state.homeAge];
+    }
+
+    // Apply adjustment and round to nearest 0.5 ton (standard sizing increments)
+    const adjustedTonnage = baseTonnage + adjustment;
+    const roundedTonnage = Math.round(adjustedTonnage * 2) / 2;
+    
+    // Clamp to valid tonnage range (1.5 to 5 tons for residential)
+    return Math.max(1.5, Math.min(5, roundedTonnage));
+  }, [state.homeType, state.homeLayout, state.squareFootage, state.atticInsulation, state.windowType, state.homeAge, tonnageRules]);
 
   // Find matching equipment based on tonnage, heating type, and efficiency tier
   // Use selectedTonnage if user picked one, otherwise fall back to recommendedTonnage
