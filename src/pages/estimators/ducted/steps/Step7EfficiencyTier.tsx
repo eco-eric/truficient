@@ -69,7 +69,7 @@ export const Step7EfficiencyTier = () => {
 
   // Fetch efficiency tiers
   const { data: tiers = [], isLoading: tiersLoading } = useQuery({
-    queryKey: ["ducted-efficiency-tiers"],
+    queryKey: ["ducted-efficiency-tiers-v2"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ducted_efficiency_tiers")
@@ -89,7 +89,7 @@ export const Step7EfficiencyTier = () => {
 
   // Fetch equipment for real pricing
   const { data: equipment = [], isLoading: equipmentLoading } = useQuery({
-    queryKey: ["ducted-equipment-pricing"],
+    queryKey: ["ducted-equipment-pricing-v2"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ducted_equipment")
