@@ -29,9 +29,25 @@ import {
 } from '@/components/ui/table';
 import { MediaUpload, MediaType } from '@/components/admin/MediaUpload';
 import { BulkImageUpload } from '@/components/admin/BulkImageUpload';
+import { SortableGalleryItem } from '@/components/admin/SortableGalleryItem';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import { Plus, Pencil, Trash2, Star, Image as ImageIcon, Video, Tag, Loader2, Upload, Grid2X2, Grid3X3, LayoutGrid, Play } from 'lucide-react';
+import { Plus, Pencil, Trash2, Star, Image as ImageIcon, Video, Tag, Loader2, Upload, Grid2X2, Grid3X3, LayoutGrid, Play, ArrowUpDown, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
 
 const PAGE_SIZE = 48;
 
@@ -71,6 +87,20 @@ const AdminGallery = () => {
   const [activeTab, setActiveTab] = useState('images');
   const [mediaFilter, setMediaFilter] = useState<MediaFilter>('all');
   const [thumbnailSize, setThumbnailSize] = useState<ThumbnailSize>('medium');
+  const [isReorderMode, setIsReorderMode] = useState(false);
+  const [reorderedImages, setReorderedImages] = useState<GalleryImage[]>([]);
+  
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
   
   // Image dialog state
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
@@ -278,6 +308,68 @@ const AdminGallery = () => {
     },
   });
 
+  // Reorder mutation
+  const reorderMutation = useMutation({
+    mutationFn: async (orderedImages: { id: string; sort_order: number }[]) => {
+      // Update all images with their new sort orders
+      const updates = orderedImages.map(({ id, sort_order }) =>
+        supabase.from('gallery_images').update({ sort_order }).eq('id', id)
+      );
+      const results = await Promise.all(updates);
+      const errors = results.filter(r => r.error);
+      if (errors.length > 0) throw new Error('Failed to update some items');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gallery-images-admin-infinite'] });
+      setIsReorderMode(false);
+      setReorderedImages([]);
+      toast.success('Gallery order saved successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to save order: ' + error.message);
+    },
+  });
+
+  // Handle drag end
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) return;
+
+    const currentImages = reorderedImages.length > 0 ? reorderedImages : images;
+    const oldIndex = currentImages.findIndex(img => img.id === active.id);
+    const newIndex = currentImages.findIndex(img => img.id === over.id);
+
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const newOrder = arrayMove(currentImages, oldIndex, newIndex);
+      setReorderedImages(newOrder);
+    }
+  };
+
+  // Enter reorder mode
+  const enterReorderMode = () => {
+    setReorderedImages([...images]);
+    setIsReorderMode(true);
+  };
+
+  // Cancel reorder mode
+  const cancelReorderMode = () => {
+    setReorderedImages([]);
+    setIsReorderMode(false);
+  };
+
+  // Save reordered images
+  const saveReorder = () => {
+    const orderedImages = reorderedImages.map((img, index) => ({
+      id: img.id,
+      sort_order: index + 1,
+    }));
+    reorderMutation.mutate(orderedImages);
+  };
+
+  // Get display images (reordered if in reorder mode)
+  const displayImages = isReorderMode && reorderedImages.length > 0 ? reorderedImages : images;
+
   // Tag mutations
   const createTagMutation = useMutation({
     mutationFn: async (data: typeof tagForm) => {
@@ -462,10 +554,31 @@ const AdminGallery = () => {
 
             {activeTab === 'images' && (
               <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setBulkUploadOpen(true)}>
-                <Upload className="w-4 h-4 mr-2" />
-                Bulk Upload
-              </Button>
+              {isReorderMode ? (
+                <>
+                  <Button variant="outline" onClick={cancelReorderMode} disabled={reorderMutation.isPending}>
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </Button>
+                  <Button onClick={saveReorder} disabled={reorderMutation.isPending}>
+                    {reorderMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Check className="w-4 h-4 mr-2" />
+                    )}
+                    Save Order
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={enterReorderMode} disabled={images.length < 2}>
+                    <ArrowUpDown className="w-4 h-4 mr-2" />
+                    Reorder
+                  </Button>
+                  <Button variant="outline" onClick={() => setBulkUploadOpen(true)}>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Bulk Upload
+                  </Button>
               <Dialog open={imageDialogOpen} onOpenChange={(open) => {
                 setImageDialogOpen(open);
                 if (!open) resetImageForm();
@@ -588,6 +701,8 @@ const AdminGallery = () => {
                 queryClient.invalidateQueries({ queryKey: ['gallery-image-tags-admin'] });
               }}
             />
+                </>
+              )}
               </div>
             )}
 
@@ -758,121 +873,60 @@ const AdminGallery = () => {
             </Card>
           ) : (
             <>
-              <div className={`grid gap-4 ${
-                thumbnailSize === 'small' 
-                  ? 'grid-cols-4 md:grid-cols-6 lg:grid-cols-8' 
-                  : thumbnailSize === 'large' 
-                    ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
-                    : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
-              }`}>
-                {images.map((image) => {
-                  const isVideo = image.media_type === 'video';
-                  return (
-                    <Card key={image.id} className="overflow-hidden group">
-                      <div className="aspect-square relative">
-                        {isVideo ? (
-                          <>
-                            {image.thumbnail_url ? (
-                              <img
-                                src={image.thumbnail_url}
-                                alt={image.alt_text || image.title}
-                                loading="lazy"
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <video
-                                src={image.image_url}
-                                className="w-full h-full object-cover"
-                                muted
-                                playsInline
-                              />
-                            )}
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <div className="w-10 h-10 rounded-full bg-black/60 flex items-center justify-center">
-                                <Play className="w-5 h-5 text-white ml-0.5" />
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <img
-                            src={image.image_url}
-                            alt={image.alt_text || image.title}
-                            loading="lazy"
-                            className="w-full h-full object-cover"
-                          />
-                        )}
-                        {image.is_featured && (
-                          <div className="absolute top-2 left-2">
-                            <Badge className="bg-secondary text-secondary-foreground">
-                              <Star className="w-3 h-3 mr-1" />
-                              Featured
-                            </Badge>
-                          </div>
-                        )}
-                        {!image.is_active && (
-                          <div className="absolute top-2 right-2">
-                            <Badge variant="secondary">Hidden</Badge>
-                          </div>
-                        )}
-                        {isVideo && (
-                          <div className="absolute bottom-2 left-2">
-                            <Badge variant="secondary" className="gap-1">
-                              <Video className="w-3 h-3" />
-                              Video
-                            </Badge>
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                          <Button size="sm" variant="secondary" onClick={() => openEditImage(image)}>
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="destructive" 
-                            onClick={() => {
-                              if (confirm('Are you sure you want to delete this?')) {
-                                deleteImageMutation.mutate(image.id);
-                              }
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <CardContent className="p-3">
-                        <h4 className="font-medium text-sm truncate">{image.title}</h4>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {getImageTags(image.id).slice(0, 2).map(tag => (
-                            <Badge key={tag.id} variant="outline" className="text-xs">
-                              {tag.name}
-                            </Badge>
-                          ))}
-                          {getImageTags(image.id).length > 2 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{getImageTags(image.id).length - 2}
-                            </Badge>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-              
-              {/* Infinite scroll trigger */}
-              <div ref={loadMoreRef} className="h-16 flex items-center justify-center mt-6">
-                {isFetchingNextPage && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Loading more...</span>
+              {isReorderMode && (
+                <div className="mb-4 p-3 bg-muted rounded-lg border flex items-center gap-2">
+                  <ArrowUpDown className="w-5 h-5 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    Drag and drop items to reorder. Click "Save Order" when done.
+                  </span>
+                </div>
+              )}
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={displayImages.map(img => img.id)}
+                  strategy={rectSortingStrategy}
+                >
+                  <div className={`grid gap-4 ${
+                    thumbnailSize === 'small' 
+                      ? 'grid-cols-4 md:grid-cols-6 lg:grid-cols-8' 
+                      : thumbnailSize === 'large' 
+                        ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
+                        : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+                  }`}>
+                    {displayImages.map((image) => (
+                      <SortableGalleryItem
+                        key={image.id}
+                        image={image}
+                        tags={getImageTags(image.id)}
+                        onEdit={openEditImage}
+                        onDelete={(id) => deleteImageMutation.mutate(id)}
+                        isReorderMode={isReorderMode}
+                      />
+                    ))}
                   </div>
-                )}
-                {!hasNextPage && images.length > 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    Showing all {images.length.toLocaleString()} items
-                  </p>
-                )}
-              </div>
+                </SortableContext>
+              </DndContext>
+              
+              {/* Infinite scroll trigger - only when not in reorder mode */}
+              {!isReorderMode && (
+                <div ref={loadMoreRef} className="h-16 flex items-center justify-center mt-6">
+                  {isFetchingNextPage && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Loading more...</span>
+                    </div>
+                  )}
+                  {!hasNextPage && images.length > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      Showing all {images.length.toLocaleString()} items
+                    </p>
+                  )}
+                </div>
+              )}
             </>
           )}
         </TabsContent>
