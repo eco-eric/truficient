@@ -43,10 +43,17 @@ export async function validateZipCode(zipCode: string): Promise<ZipCodeValidatio
     };
   }
 
-  // If no API key, fallback to basic validation
+  // If no API key, reject - we need real validation
   if (!GOOGLE_PLACES_API_KEY) {
-    console.warn('No Google Places API key configured, skipping geocoding validation');
-    return { valid: true, zipCode: cleanZip, city: null, state: null, formatted: null };
+    console.error('No Google Places API key configured - cannot validate zip codes');
+    return { 
+      valid: false, 
+      zipCode: cleanZip, 
+      city: null, 
+      state: null, 
+      formatted: null,
+      error: 'Unable to validate zip code. Please try again.' 
+    };
   }
 
   try {
@@ -56,8 +63,14 @@ export async function validateZipCode(zipCode: string): Promise<ZipCodeValidatio
     
     if (!response.ok) {
       console.error('Geocoding API request failed:', response.status);
-      // Fallback to basic validation on API error
-      return { valid: true, zipCode: cleanZip, city: null, state: null, formatted: null };
+      return { 
+        valid: false, 
+        zipCode: cleanZip, 
+        city: null, 
+        state: null, 
+        formatted: null,
+        error: 'Unable to verify zip code. Please try again.' 
+      };
     }
 
     const data: GeocodingResponse = await response.json();
@@ -88,7 +101,13 @@ export async function validateZipCode(zipCode: string): Promise<ZipCodeValidatio
     };
   } catch (error) {
     console.error('Geocoding API error:', error);
-    // Fallback to basic validation on network error
-    return { valid: true, zipCode: cleanZip, city: null, state: null, formatted: null };
+    return { 
+      valid: false, 
+      zipCode: cleanZip, 
+      city: null, 
+      state: null, 
+      formatted: null,
+      error: 'Unable to verify zip code. Please check your connection and try again.' 
+    };
   }
 }
