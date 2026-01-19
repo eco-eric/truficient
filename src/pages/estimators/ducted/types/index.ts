@@ -118,8 +118,8 @@ export interface DuctedEquipment {
   tonnage: number;
   system_type: 'heat_pump' | 'gas_system';
   efficiency_tier_id: string | null;
-  seer_rating: number;
-  hspf_rating: number | null;
+  seer2_rating: number | null;
+  hspf2_rating: number | null;
   afue_rating: number | null;
   equipment_cost: number;
   installation_labor: number;
