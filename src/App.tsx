@@ -61,6 +61,7 @@ import AdminFinancingOptions from "./pages/admin/FinancingOptions";
 import AdminEquipmentLibrary from "./pages/admin/EquipmentLibrary";
 import AdminDFWWatchList from "./pages/admin/DFWWatchList";
 import AdminCustomerEquipment from "./pages/admin/CustomerEquipment";
+import AdminTrashBin from "./pages/admin/TrashBin";
 import { Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
@@ -159,6 +160,7 @@ const router = createBrowserRouter([
       { path: "/admin/financing", element: <ProtectedRoute><AdminFinancingOptions /></ProtectedRoute> },
       { path: "/admin/gallery", element: <ProtectedRoute><AdminGallery /></ProtectedRoute> },
       { path: "/admin/equipment-library", element: <ProtectedRoute><AdminEquipmentLibrary /></ProtectedRoute> },
+      { path: "/admin/trash-bin", element: <ProtectedRoute><AdminTrashBin /></ProtectedRoute> },
       { path: "/admin/settings", element: <ProtectedRoute><AdminSettings /></ProtectedRoute> },
       { path: "/admin/button-clicks", element: <ProtectedRoute><AdminButtonClicks /></ProtectedRoute> },
       

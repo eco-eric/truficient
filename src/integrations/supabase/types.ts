@@ -2195,6 +2195,36 @@ export type Database = {
         }
         Relationships: []
       }
+      trash_bin: {
+        Row: {
+          data: Json
+          deleted_at: string | null
+          deleted_by: string | null
+          expires_at: string | null
+          id: string
+          original_id: string
+          original_table: string
+        }
+        Insert: {
+          data: Json
+          deleted_at?: string | null
+          deleted_by?: string | null
+          expires_at?: string | null
+          id?: string
+          original_id: string
+          original_table: string
+        }
+        Update: {
+          data?: Json
+          deleted_at?: string | null
+          deleted_by?: string | null
+          expires_at?: string | null
+          id?: string
+          original_id?: string
+          original_table?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
