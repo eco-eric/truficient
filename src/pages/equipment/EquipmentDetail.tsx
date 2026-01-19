@@ -52,6 +52,8 @@ const EQUIPMENT_TYPE_ICONS: Record<string, React.ReactNode> = {
 import { documentationApi, DocumentResult, getBrandSupportUrl } from '@/lib/api/documentation';
 import { useState, useEffect } from 'react';
 
+const BASE_URL = 'https://www.truficient.com';
+
 interface SpecRowProps {
   icon: React.ReactNode;
   label: string;
@@ -122,6 +124,93 @@ export default function EquipmentDetail() {
 
   // Set page title manually since usePageSEO expects a path
   usePageSEO(`/equipment/${slug}`);
+
+  // Inject canonical URL and JSON-LD structured data
+  useEffect(() => {
+    if (!equipment) return;
+
+    const specs = equipment.specs as Record<string, unknown> | undefined;
+    const canonicalUrl = `${BASE_URL}/equipment/${equipment.slug}`;
+
+    // Remove existing canonical and JSON-LD if present
+    const existingCanonical = document.querySelector('link[rel="canonical"]');
+    if (existingCanonical) existingCanonical.remove();
+    
+    const existingJsonLd = document.querySelector('script[data-equipment-jsonld]');
+    if (existingJsonLd) existingJsonLd.remove();
+
+    // Add canonical link
+    const canonicalLink = document.createElement('link');
+    canonicalLink.rel = 'canonical';
+    canonicalLink.href = canonicalUrl;
+    document.head.appendChild(canonicalLink);
+
+    // Build JSON-LD structured data
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: `${equipment.brand} ${equipment.model_number}`,
+      description: equipment.custom_content || equipment.seo_description || 
+        `${equipment.brand} ${equipment.model_number} ${equipment.equipment_type || 'HVAC equipment'} specifications, documentation, and service information.`,
+      brand: {
+        '@type': 'Brand',
+        name: equipment.brand,
+      },
+      model: equipment.model_number,
+      category: equipment.equipment_type || 'HVAC Equipment',
+      url: canonicalUrl,
+      ...(specs?.tonnage && {
+        additionalProperty: [
+          {
+            '@type': 'PropertyValue',
+            name: 'Tonnage',
+            value: specs.tonnage,
+          },
+          ...(specs?.seer_rating ? [{
+            '@type': 'PropertyValue',
+            name: 'SEER Rating',
+            value: specs.seer_rating,
+          }] : []),
+          ...(specs?.refrigerant ? [{
+            '@type': 'PropertyValue',
+            name: 'Refrigerant Type',
+            value: specs.refrigerant,
+          }] : []),
+        ],
+      }),
+      offers: {
+        '@type': 'Offer',
+        availability: 'https://schema.org/InStock',
+        seller: {
+          '@type': 'LocalBusiness',
+          name: 'Truficient HVAC',
+          url: BASE_URL,
+          telephone: '+1-972-638-1670',
+          address: {
+            '@type': 'PostalAddress',
+            addressLocality: 'Dallas',
+            addressRegion: 'TX',
+            addressCountry: 'US',
+          },
+        },
+      },
+    };
+
+    // Inject JSON-LD script
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.setAttribute('data-equipment-jsonld', 'true');
+    script.textContent = JSON.stringify(jsonLd);
+    document.head.appendChild(script);
+
+    // Cleanup on unmount
+    return () => {
+      const canonical = document.querySelector('link[rel="canonical"]');
+      if (canonical) canonical.remove();
+      const jsonLdScript = document.querySelector('script[data-equipment-jsonld]');
+      if (jsonLdScript) jsonLdScript.remove();
+    };
+  }, [equipment]);
 
   // Load documentation
   useEffect(() => {
