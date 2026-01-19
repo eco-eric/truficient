@@ -134,7 +134,7 @@ export const Step2HomeDetails = () => {
         {/* Coverage selection */}
         <div>
           <h3 className="text-sm font-medium text-foreground mb-3">
-            What coverage do you need?
+            What parts of the home are we cooling?
           </h3>
           <div className="grid grid-cols-2 gap-3">
             {COVERAGE_OPTIONS.map((option) => (
