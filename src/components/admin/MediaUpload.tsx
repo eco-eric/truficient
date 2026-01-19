@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Upload, Trash2, Loader2, ImageIcon, Video, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { compressImage } from "@/utils/imageCompression";
+import { generateVideoThumbnail, createThumbnailFile } from "@/utils/videoThumbnail";
 
 export type MediaType = 'image' | 'video';
 
@@ -12,7 +13,8 @@ interface MediaUploadProps {
   bucketName: string;
   currentUrl: string | null;
   currentMediaType?: MediaType;
-  onUpload: (url: string, mediaType: MediaType) => void;
+  currentThumbnailUrl?: string | null;
+  onUpload: (url: string, mediaType: MediaType, thumbnailUrl?: string) => void;
   onRemove: () => void;
   folder?: string;
   className?: string;
@@ -27,6 +29,7 @@ export const MediaUpload = ({
   bucketName,
   currentUrl,
   currentMediaType = 'image',
+  currentThumbnailUrl,
   onUpload,
   onRemove,
   folder = "",
@@ -35,6 +38,7 @@ export const MediaUpload = ({
   maxSizeMB = 100,
 }: MediaUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string>('');
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -74,19 +78,58 @@ export const MediaUpload = ({
     }
 
     setIsUploading(true);
+    setUploadStatus('');
 
     try {
       let fileToUpload: File = file;
       const mediaType = detectMediaType(file);
+      let thumbnailUrl: string | undefined;
 
       // Compress images only
       if (isImage) {
+        setUploadStatus('Compressing image...');
         fileToUpload = await compressImage(file, {
           maxWidth: 1920,
           maxHeight: 1920,
           quality: 0.85,
         });
       }
+
+      // Generate thumbnail for videos
+      if (isVideo) {
+        setUploadStatus('Generating thumbnail...');
+        try {
+          const thumbnailResult = await generateVideoThumbnail(file, 0.1, 640, 0.8);
+          const thumbnailFile = createThumbnailFile(thumbnailResult.blob, file.name);
+          
+          // Upload thumbnail
+          const thumbTimestamp = Date.now();
+          const thumbFileName = folder 
+            ? `${folder}/thumbnails/${thumbTimestamp}_thumb.jpg`
+            : `thumbnails/${thumbTimestamp}_thumb.jpg`;
+
+          const { error: thumbUploadError } = await supabase.storage
+            .from(bucketName)
+            .upload(thumbFileName, thumbnailFile, {
+              cacheControl: "3600",
+              upsert: false,
+            });
+
+          if (!thumbUploadError) {
+            const { data: thumbUrlData } = supabase.storage
+              .from(bucketName)
+              .getPublicUrl(thumbFileName);
+            thumbnailUrl = thumbUrlData.publicUrl;
+          } else {
+            console.warn("Failed to upload thumbnail:", thumbUploadError);
+          }
+        } catch (thumbError) {
+          console.warn("Failed to generate thumbnail:", thumbError);
+          // Continue without thumbnail - it's not critical
+        }
+      }
+
+      setUploadStatus('Uploading file...');
 
       // Generate unique filename
       const timestamp = Date.now();
@@ -100,6 +143,14 @@ export const MediaUpload = ({
         const oldPath = extractPathFromUrl(currentUrl, bucketName);
         if (oldPath) {
           await supabase.storage.from(bucketName).remove([oldPath]);
+        }
+      }
+
+      // Delete old thumbnail if exists
+      if (currentThumbnailUrl) {
+        const oldThumbPath = extractPathFromUrl(currentThumbnailUrl, bucketName);
+        if (oldThumbPath) {
+          await supabase.storage.from(bucketName).remove([oldThumbPath]);
         }
       }
 
@@ -118,12 +169,14 @@ export const MediaUpload = ({
         .from(bucketName)
         .getPublicUrl(fileName);
 
-      onUpload(urlData.publicUrl, mediaType);
+      onUpload(urlData.publicUrl, mediaType, thumbnailUrl);
       
       // Show success message
       if (isImage && fileToUpload.size < file.size) {
         const savedKB = Math.round((file.size - fileToUpload.size) / 1024);
         toast.success(`Image uploaded (saved ${savedKB}KB)`);
+      } else if (isVideo && thumbnailUrl) {
+        toast.success('Video uploaded with auto-generated thumbnail');
       } else {
         toast.success(`${isVideo ? 'Video' : 'Image'} uploaded successfully`);
       }
@@ -132,6 +185,7 @@ export const MediaUpload = ({
       toast.error(error?.message || "Failed to upload file");
     } finally {
       setIsUploading(false);
+      setUploadStatus('');
     }
   };
 
@@ -245,7 +299,9 @@ export const MediaUpload = ({
           {isUploading ? (
             <div className="flex flex-col items-center gap-2">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Uploading...</p>
+              <p className="text-sm text-muted-foreground">
+                {uploadStatus || 'Uploading...'}
+              </p>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2">

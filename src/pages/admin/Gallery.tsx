@@ -80,6 +80,7 @@ const AdminGallery = () => {
     title: '',
     description: '',
     image_url: '',
+    thumbnail_url: '' as string | null,
     media_type: 'image' as MediaType,
     alt_text: '',
     is_featured: false,
@@ -189,6 +190,7 @@ const AdminGallery = () => {
           title: imageData.title,
           description: imageData.description || null,
           image_url: imageData.image_url,
+          thumbnail_url: imageData.thumbnail_url || null,
           media_type: imageData.media_type,
           alt_text: imageData.alt_text || null,
           is_featured: imageData.is_featured,
@@ -230,6 +232,7 @@ const AdminGallery = () => {
           title: imageData.title,
           description: imageData.description || null,
           image_url: imageData.image_url,
+          thumbnail_url: imageData.thumbnail_url || null,
           media_type: imageData.media_type,
           alt_text: imageData.alt_text || null,
           is_featured: imageData.is_featured,
@@ -343,6 +346,7 @@ const AdminGallery = () => {
       title: '',
       description: '',
       image_url: '',
+      thumbnail_url: null,
       media_type: 'image',
       alt_text: '',
       is_featured: false,
@@ -372,6 +376,7 @@ const AdminGallery = () => {
       title: image.title,
       description: image.description || '',
       image_url: image.image_url,
+      thumbnail_url: image.thumbnail_url || null,
       media_type: image.media_type || 'image',
       alt_text: image.alt_text || '',
       is_featured: image.is_featured,
@@ -482,8 +487,14 @@ const AdminGallery = () => {
                       bucketName="gallery-images"
                       currentUrl={imageForm.image_url}
                       currentMediaType={imageForm.media_type}
-                      onUpload={(url, mediaType) => setImageForm(prev => ({ ...prev, image_url: url, media_type: mediaType }))}
-                      onRemove={() => setImageForm(prev => ({ ...prev, image_url: '', media_type: 'image' }))}
+                      currentThumbnailUrl={imageForm.thumbnail_url}
+                      onUpload={(url, mediaType, thumbnailUrl) => setImageForm(prev => ({ 
+                        ...prev, 
+                        image_url: url, 
+                        media_type: mediaType,
+                        thumbnail_url: thumbnailUrl || null
+                      }))}
+                      onRemove={() => setImageForm(prev => ({ ...prev, image_url: '', thumbnail_url: null, media_type: 'image' }))}
                       acceptedTypes="all"
                     />
                   </div>
@@ -761,12 +772,21 @@ const AdminGallery = () => {
                       <div className="aspect-square relative">
                         {isVideo ? (
                           <>
-                            <video
-                              src={image.image_url}
-                              className="w-full h-full object-cover"
-                              muted
-                              playsInline
-                            />
+                            {image.thumbnail_url ? (
+                              <img
+                                src={image.thumbnail_url}
+                                alt={image.alt_text || image.title}
+                                loading="lazy"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <video
+                                src={image.image_url}
+                                className="w-full h-full object-cover"
+                                muted
+                                playsInline
+                              />
+                            )}
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                               <div className="w-10 h-10 rounded-full bg-black/60 flex items-center justify-center">
                                 <Play className="w-5 h-5 text-white ml-0.5" />
