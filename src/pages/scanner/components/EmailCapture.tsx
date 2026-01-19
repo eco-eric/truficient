@@ -13,6 +13,21 @@ import { trackEmailCaptured } from '@/utils/conversionTracking';
 import { AddressAutocomplete, AddressComponents } from '@/components/AddressAutocomplete';
 import { MapPreview } from '@/components/MapPreview';
 
+// Format phone number as (XXX) XXX-XXXX
+const formatPhoneNumber = (value: string): string => {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length === 0) return '';
+  if (digits.length <= 3) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+};
+
+// Validate phone number (must be 10 digits)
+const isValidPhone = (value: string): boolean => {
+  const digits = value.replace(/\D/g, '');
+  return digits.length === 0 || digits.length === 10;
+};
+
 export function EmailCapture() {
   const { state, dispatch } = useScanner();
   const navigate = useNavigate();
@@ -27,6 +42,12 @@ export function EmailCapture() {
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [marketingOptIn, setMarketingOptIn] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Handle phone input with formatting
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setPhone(formatted);
+  };
 
   // Handle address selection from Google Places autocomplete
   const handleAddressSelect = (components: AddressComponents) => {
@@ -65,6 +86,11 @@ export function EmailCapture() {
     
     if (!email || !email.includes('@')) {
       toast.error('Please enter a valid email address');
+      return;
+    }
+
+    if (phone && !isValidPhone(phone)) {
+      toast.error('Please enter a valid 10-digit phone number');
       return;
     }
 
@@ -243,16 +269,17 @@ export function EmailCapture() {
             />
           </div>
           
-          {/* Phone - Optional */}
+          {/* Phone - Optional with formatting */}
           <div>
             <Label htmlFor="phone" className="sr-only">Phone number</Label>
             <Input
               id="phone"
               type="tel"
-              placeholder="Phone number (optional)"
+              placeholder="Phone (optional)"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={handlePhoneChange}
               disabled={isSubmitting}
+              maxLength={14}
             />
           </div>
           
