@@ -81,9 +81,9 @@ export const TEMP_PREFERENCE_OPTIONS: TempPreferenceOption[] = [
 
 // Summer temperature options
 export const SUMMER_TEMP_OPTIONS: TempPreferenceOption[] = [
-  { value: '64_68', label: '64° - 68°', description: 'Cold' },
-  { value: '68_72', label: '68° - 72°', description: 'Comfortable' },
-  { value: '72_76', label: '72° - 76°', description: 'Warm' },
+  { value: '68_72', label: '68° - 72°', description: 'Cold' },
+  { value: '72_76', label: '72° - 76°', description: 'Comfortable' },
+  { value: '76_plus', label: '76°+', description: 'Warm' },
 ];
 
 export const SYSTEM_COUNT_OPTIONS = [
