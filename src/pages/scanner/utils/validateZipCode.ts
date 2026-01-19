@@ -1,4 +1,6 @@
 const GOOGLE_PLACES_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
+const CACHE_KEY = 'validated_zip_codes';
+const CACHE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export interface ZipCodeValidation {
   valid: boolean;
@@ -7,6 +9,14 @@ export interface ZipCodeValidation {
   state: string | null;
   formatted: string | null;
   error?: string;
+}
+
+interface CachedValidation extends ZipCodeValidation {
+  timestamp: number;
+}
+
+interface ZipCodeCache {
+  [zipCode: string]: CachedValidation;
 }
 
 interface GeocodingResult {
@@ -20,6 +30,44 @@ interface GeocodingResult {
 interface GeocodingResponse {
   status: string;
   results: GeocodingResult[];
+}
+
+function getCache(): ZipCodeCache {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    return cached ? JSON.parse(cached) : {};
+  } catch {
+    return {};
+  }
+}
+
+function setCache(cache: ZipCodeCache): void {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // localStorage might be full or disabled
+  }
+}
+
+function getCachedValidation(zipCode: string): ZipCodeValidation | null {
+  const cache = getCache();
+  const cached = cache[zipCode];
+  
+  if (cached && Date.now() - cached.timestamp < CACHE_EXPIRY_MS) {
+    const { timestamp, ...validation } = cached;
+    return validation;
+  }
+  
+  return null;
+}
+
+function cacheValidation(validation: ZipCodeValidation): void {
+  const cache = getCache();
+  cache[validation.zipCode] = {
+    ...validation,
+    timestamp: Date.now()
+  };
+  setCache(cache);
 }
 
 function extractComponent(result: GeocodingResult, type: string): string | null {
@@ -41,6 +89,13 @@ export async function validateZipCode(zipCode: string): Promise<ZipCodeValidatio
       formatted: null,
       error: 'Please enter a valid 5-digit zip code' 
     };
+  }
+
+  // Check cache first
+  const cached = getCachedValidation(cleanZip);
+  if (cached) {
+    console.log('Using cached zip code validation for:', cleanZip);
+    return cached;
   }
 
   // If no API key, fallback to basic format validation
@@ -67,13 +122,16 @@ export async function validateZipCode(zipCode: string): Promise<ZipCodeValidatio
       const state = extractComponent(result, 'administrative_area_level_1');
       const stateShort = result.address_components?.find(c => c.types.includes('administrative_area_level_1'))?.short_name || state;
       
-      return {
+      const validation: ZipCodeValidation = {
         valid: true,
         zipCode: cleanZip,
         city,
         state,
         formatted: city && stateShort ? `${city}, ${stateShort} ${cleanZip}` : cleanZip
       };
+      
+      cacheValidation(validation);
+      return validation;
     }
     
     // No results found - invalid zip code
