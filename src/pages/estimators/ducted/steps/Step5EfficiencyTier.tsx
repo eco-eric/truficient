@@ -52,26 +52,21 @@ const getTierStyle = (name: string) => {
   }
 };
 
-// Estimate starting prices based on tier (will be replaced with real equipment query)
-const getEstimatedStartingPrice = (tierName: string, heatingType: string | null) => {
-  const baseMultiplier = heatingType === "heat_pump" ? 1.15 : 1;
-  switch (tierName) {
-    case "efficient":
-      return Math.round(6500 * baseMultiplier);
-    case "efficiency_plus":
-      return Math.round(8500 * baseMultiplier);
-    case "premium":
-      return Math.round(11000 * baseMultiplier);
-    default:
-      return 7000;
-  }
-};
+// Equipment type interface for pricing calculation
+interface DuctedEquipment {
+  id: string;
+  system_type: string;
+  seer2_rating: number | null;
+  equipment_cost: number;
+  installation_labor: number;
+  is_active: boolean;
+}
 
 export const Step5EfficiencyTier = () => {
   const { state, setEfficiencyTierId, nextStep, prevStep } = useEstimator();
 
   // Fetch efficiency tiers
-  const { data: tiers = [], isLoading } = useQuery({
+  const { data: tiers = [], isLoading: tiersLoading } = useQuery({
     queryKey: ["ducted-efficiency-tiers"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -89,6 +84,50 @@ export const Step5EfficiencyTier = () => {
       })) as DuctedEfficiencyTier[];
     },
   });
+
+  // Fetch equipment for real pricing
+  const { data: equipment = [], isLoading: equipmentLoading } = useQuery({
+    queryKey: ["ducted-equipment-pricing"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ducted_equipment")
+        .select("id, system_type, seer2_rating, equipment_cost, installation_labor, is_active")
+        .eq("is_active", true);
+
+      if (error) throw error;
+      return data as DuctedEquipment[];
+    },
+  });
+
+  // Calculate minimum price for a tier based on real equipment data
+  const getStartingPriceForTier = (tier: DuctedEfficiencyTier) => {
+    // Filter equipment that matches the tier's SEER2 range and system type
+    const matchingEquipment = equipment.filter((eq) => {
+      if (!eq.seer2_rating) return false;
+      
+      // Match system type based on heating type selection
+      const isHeatPump = state.heatingType === "heat_pump";
+      const equipmentIsHeatPump = eq.system_type === "heat_pump";
+      
+      if (isHeatPump !== equipmentIsHeatPump) return false;
+      
+      // Check if equipment SEER2 falls within tier's range
+      return eq.seer2_rating >= tier.seer_min && eq.seer2_rating <= tier.seer_max;
+    });
+
+    if (matchingEquipment.length === 0) {
+      return null; // No matching equipment for this tier
+    }
+
+    // Find the minimum total price (equipment + installation)
+    const minPrice = Math.min(
+      ...matchingEquipment.map((eq) => (eq.equipment_cost || 0) + (eq.installation_labor || 0))
+    );
+
+    return minPrice;
+  };
+
+  const isLoading = tiersLoading || equipmentLoading;
 
   const handleSelect = (id: string) => {
     setEfficiencyTierId(id);
@@ -118,7 +157,7 @@ export const Step5EfficiencyTier = () => {
         <div className="space-y-4 mb-6">
           {tiers.map((tier) => {
             const style = getTierStyle(tier.name);
-            const startingPrice = getEstimatedStartingPrice(tier.name, state.heatingType);
+            const startingPrice = getStartingPriceForTier(tier);
             const features = tier.features || [];
             const TierIcon = style.icon;
 
@@ -146,10 +185,16 @@ export const Step5EfficiencyTier = () => {
                       </span>
                     </div>
                     <div className="text-right">
-                      <div className="text-xs text-muted-foreground">Starting at</div>
-                      <div className="text-lg font-bold text-[#1e3a5f]">
-                        {formatMoney(startingPrice)}
-                      </div>
+                      {startingPrice ? (
+                        <>
+                          <div className="text-xs text-muted-foreground">Starting at</div>
+                          <div className="text-lg font-bold text-[#1e3a5f]">
+                            {formatMoney(startingPrice)}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-xs text-muted-foreground">Contact for pricing</div>
+                      )}
                     </div>
                   </div>
 
