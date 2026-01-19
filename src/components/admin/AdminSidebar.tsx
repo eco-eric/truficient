@@ -1,21 +1,53 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LogOut, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import truficientLogo from '@/assets/truficient-logo.png';
 import { useUserRole } from '@/hooks/useUserRole';
 import { navSections } from './adminNavConfig';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+
+const STORAGE_KEY = 'admin-sidebar-sections';
 
 export const AdminSidebar = () => {
   const location = useLocation();
   const { signOut } = useAuth();
   const { isAdmin } = useUserRole();
   const [collapsed, setCollapsed] = useState(false);
+  
+  // Initialize expanded sections from localStorage or default all open
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    // Default: all sections expanded
+    return navSections.reduce((acc, section) => {
+      acc[section.title] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
+  });
+
+  // Persist expanded sections to localStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(expandedSections));
+  }, [expandedSections]);
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const toggleSection = (title: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [title]: !prev[title],
+    }));
   };
 
   // Filter sections and items based on role
@@ -50,38 +82,75 @@ export const AdminSidebar = () => {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 overflow-y-auto">
-        <div className="space-y-6">
+        <div className="space-y-2">
           {visibleSections.map((section) => (
-            <div key={section.title}>
-              {!collapsed && (
-                <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-2 px-3">
-                  {section.title}
-                </h3>
-              )}
-              <ul className="space-y-1">
+            <Collapsible
+              key={section.title}
+              open={collapsed ? false : expandedSections[section.title]}
+              onOpenChange={() => !collapsed && toggleSection(section.title)}
+            >
+              {!collapsed ? (
+                <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-white/50 uppercase tracking-wider hover:text-white/70 transition-colors">
+                  <span>{section.title}</span>
+                  <ChevronDown 
+                    className={cn(
+                      "h-4 w-4 transition-transform duration-200",
+                      expandedSections[section.title] ? "rotate-0" : "-rotate-90"
+                    )} 
+                  />
+                </CollapsibleTrigger>
+              ) : null}
+              
+              <CollapsibleContent className="space-y-1">
                 {section.items.map((item) => {
                   const isActive = location.pathname === item.href || 
                     (item.href !== '/admin' && location.pathname.startsWith(item.href));
                   
                   return (
-                    <li key={item.href}>
-                      <Link
-                        to={item.href}
-                        className={cn(
-                          "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
-                          isActive 
-                            ? "bg-[#d4a84b] text-[#1e3a5f] font-medium" 
-                            : "text-white/80 hover:bg-white/10 hover:text-white"
-                        )}
-                      >
-                        <item.icon className="h-5 w-5 flex-shrink-0" />
-                        {!collapsed && <span>{item.label}</span>}
-                      </Link>
-                    </li>
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
+                        isActive 
+                          ? "bg-[#d4a84b] text-[#1e3a5f] font-medium" 
+                          : "text-white/80 hover:bg-white/10 hover:text-white"
+                      )}
+                    >
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      {!collapsed && <span>{item.label}</span>}
+                    </Link>
                   );
                 })}
-              </ul>
-            </div>
+              </CollapsibleContent>
+
+              {/* Show items directly when sidebar is collapsed */}
+              {collapsed && (
+                <ul className="space-y-1">
+                  {section.items.map((item) => {
+                    const isActive = location.pathname === item.href || 
+                      (item.href !== '/admin' && location.pathname.startsWith(item.href));
+                    
+                    return (
+                      <li key={item.href}>
+                        <Link
+                          to={item.href}
+                          className={cn(
+                            "flex items-center justify-center p-2 rounded-lg transition-colors",
+                            isActive 
+                              ? "bg-[#d4a84b] text-[#1e3a5f]" 
+                              : "text-white/80 hover:bg-white/10 hover:text-white"
+                          )}
+                          title={item.label}
+                        >
+                          <item.icon className="h-5 w-5" />
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </Collapsible>
           ))}
         </div>
       </nav>

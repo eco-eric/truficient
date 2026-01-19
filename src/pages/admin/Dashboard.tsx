@@ -4,8 +4,10 @@ import { StatsCards } from '@/components/admin/dashboard/StatsCards';
 import { RecentSubmissions } from '@/components/admin/dashboard/RecentSubmissions';
 import { RecentChats } from '@/components/admin/dashboard/RecentChats';
 import { SubmissionsChart } from '@/components/admin/dashboard/SubmissionsChart';
-import { ServiceTypeChart } from '@/components/admin/dashboard/ServiceTypeChart';
-import { StatusChart } from '@/components/admin/dashboard/StatusChart';
+import { QuickActions } from '@/components/admin/dashboard/QuickActions';
+import { ActivityFeed } from '@/components/admin/dashboard/ActivityFeed';
+import { LeadMetrics } from '@/components/admin/dashboard/LeadMetrics';
+import { EngagementStats } from '@/components/admin/dashboard/EngagementStats';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { startOfWeek } from 'date-fns';
@@ -156,6 +158,7 @@ const Dashboard = () => {
   return (
     <AdminLayout title="Dashboard">
       <div className="space-y-6">
+        {/* Stats Cards Row */}
         <StatsCards
           totalSubmissions={stats.total}
           newSubmissions={stats.new}
@@ -163,16 +166,21 @@ const Dashboard = () => {
           thisWeekSubmissions={stats.thisWeek}
         />
         
-        {/* Analytics Charts */}
+        {/* Quick Actions + Lead Metrics Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <SubmissionsChart submissions={allSubmissions} days={30} />
-          <div className="grid grid-cols-1 gap-6">
-            <ServiceTypeChart submissions={allSubmissions} />
-          </div>
+          <QuickActions />
+          <LeadMetrics />
         </div>
         
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <SubmissionsChart submissions={allSubmissions} days={30} />
+          <EngagementStats />
+        </div>
+        
+        {/* Activity + Recent Items Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <StatusChart submissions={allSubmissions} />
+          <ActivityFeed />
           <RecentSubmissions submissions={submissions} />
           <RecentChats />
         </div>
