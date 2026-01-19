@@ -7,6 +7,7 @@ import ServiceAreaBanner from '@/components/home/ServiceAreaBanner';
 import MitsubishiSection from '@/components/home/MitsubishiSection';
 import ServicesOverview from '@/components/home/ServicesOverview';
 import TestimonialsSection from '@/components/home/TestimonialsSection';
+import ScannerPromo from '@/components/home/ScannerPromo';
 import GalleryPreview from '@/components/home/GalleryPreview';
 import ServicesGrid from '@/components/home/ServicesGrid';
 import BlogSection from '@/components/home/BlogSection';
@@ -26,6 +27,7 @@ const Index = () => {
         <MitsubishiSection />
         <ServicesOverview />
         <TestimonialsSection />
+        <ScannerPromo />
         <GalleryPreview />
         <ServicesGrid />
         <BlogSection />
