@@ -89,6 +89,7 @@ interface PricingBreakdown {
   
   // Metadata
   recommendedTonnage: number | null;
+  effectiveTonnage: number | null; // The tonnage being used (selected or recommended)
   selectedEquipment: DuctedEquipment | null;
   selectedTier: DuctedEfficiencyTier | null;
 }
@@ -208,8 +209,11 @@ export function useDuctedPricing(state: DuctedEstimatorState): {
   }, [state.homeType, state.homeLayout, state.squareFootage, tonnageRules]);
 
   // Find matching equipment based on tonnage, heating type, and efficiency tier
+  // Use selectedTonnage if user picked one, otherwise fall back to recommendedTonnage
+  const effectiveTonnage = state.selectedTonnage || recommendedTonnage;
+  
   const matchingEquipment = useMemo(() => {
-    if (!recommendedTonnage || !state.heatingType || !state.efficiencyTierId) {
+    if (!effectiveTonnage || !state.heatingType || !state.efficiencyTierId) {
       return [];
     }
 
@@ -217,12 +221,12 @@ export function useDuctedPricing(state: DuctedEstimatorState): {
     const systemType = state.heatingType;
 
     return equipment.filter((eq) => {
-      const tonnageMatch = eq.tonnage === recommendedTonnage;
+      const tonnageMatch = eq.tonnage === effectiveTonnage;
       const typeMatch = eq.system_type === systemType;
       const tierMatch = eq.efficiency_tier_id === state.efficiencyTierId;
       return tonnageMatch && typeMatch && tierMatch;
     });
-  }, [equipment, recommendedTonnage, state.heatingType, state.efficiencyTierId]);
+  }, [equipment, effectiveTonnage, state.heatingType, state.efficiencyTierId]);
 
   // Find selected equipment
   const selectedEquipment = useMemo(() => {
@@ -279,10 +283,11 @@ export function useDuctedPricing(state: DuctedEstimatorState): {
       finalTotal,
       monthlyFinancing: Math.round(monthlyFinancing),
       recommendedTonnage,
+      effectiveTonnage,
       selectedEquipment,
       selectedTier,
     };
-  }, [selectedEquipment, selectedAddons, recommendedTonnage, selectedTier]);
+  }, [selectedEquipment, selectedAddons, recommendedTonnage, effectiveTonnage, selectedTier]);
 
   return {
     pricing,
