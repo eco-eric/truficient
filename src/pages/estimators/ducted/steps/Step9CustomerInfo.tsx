@@ -10,6 +10,7 @@ import { MapPreview } from "@/components/MapPreview";
 import { isInServiceArea, SERVICE_AREA_COUNTIES } from "@/pages/estimators/ductless/constants/serviceArea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useFormSourceTags } from "@/hooks/useFormSourceTags";
 import { 
   Mail, Phone, MapPin, User, Shield, Clock, MapPinOff, 
   Loader2, CheckCircle2, Calendar 
@@ -18,6 +19,7 @@ import {
 export const Step9CustomerInfo = () => {
   const { state, setCustomerInfo, nextStep, prevStep } = useEstimator();
   const { pricing } = useDuctedPricing(state);
+  const { data: dynamicTags } = useFormSourceTags('ducted');
   
   const [addressError, setAddressError] = useState<string | null>(null);
   const [isAddressValidated, setIsAddressValidated] = useState(false);
@@ -166,6 +168,9 @@ export const Step9CustomerInfo = () => {
       const systemTypeLabel = state.heatingType === "gas_system" ? "Gas Furnace + AC" : "Heat Pump";
       const tierName = pricing.selectedTier?.display_name || "Standard";
       
+      // Build tags from dynamic configuration + heating type
+      const tags = [...(dynamicTags || ['ducted-estimator']), state.heatingType || 'hvac'];
+      
       supabase.functions.invoke("sync-ghl-contact", {
         body: {
           firstName,
@@ -173,7 +178,7 @@ export const Step9CustomerInfo = () => {
           email: state.customerInfo.email,
           phone: state.customerInfo.phone || undefined,
           source: "Ducted HVAC Estimator",
-          tags: ["ducted-estimator", "hvac-lead", state.heatingType || "hvac"],
+          tags,
           message: `Ducted HVAC Estimate Request:
 • System: ${systemTypeLabel} - ${tierName} Tier
 • Size: ${pricing.recommendedTonnage} Ton

@@ -13,6 +13,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { usePageSEO } from '@/hooks/usePageSEO';
 import { trackContactFormSubmission, trackPhoneCallClick } from '@/utils/conversionTracking';
+import { useFormSourceTags } from '@/hooks/useFormSourceTags';
 
 const contactInfo = [
   {
@@ -48,6 +49,7 @@ const contactInfo = [
 const Contact = () => {
   usePageSEO();
   const { toast } = useToast();
+  const { data: dynamicTags } = useFormSourceTags('contact');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -95,6 +97,8 @@ const Contact = () => {
           phone: formData.phone,
           serviceType: formData.serviceType,
           message: formData.message,
+          source: 'Website Contact Form',
+          tags: dynamicTags || ['website-lead'],
         },
       }).then(({ error: ghlError }) => {
         if (ghlError) {
