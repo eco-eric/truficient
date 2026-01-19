@@ -32,6 +32,7 @@ import {
   LayoutGrid,
   GitBranch,
   Factory,
+  ArrowRight,
 } from 'lucide-react';
 import { usePageSEO } from '@/hooks/usePageSEO';
 
@@ -157,15 +158,17 @@ export default function EquipmentLibrary() {
               </div>
 
               {/* Scanner Callout */}
-              <Link 
-                to="/scanner" 
-                className="inline-flex items-center gap-2 mt-6 px-4 py-2 bg-secondary/20 hover:bg-secondary/30 text-secondary-foreground rounded-full transition-colors group"
-              >
-                <ScanLine className="w-4 h-4 text-secondary" />
-                <span className="text-sm font-medium">
-                  Don't know your model? <span className="text-secondary group-hover:underline">Scan your data plate</span>
-                </span>
-              </Link>
+              <div className="mt-6 text-center">
+                <p className="text-muted-foreground mb-2">Don't know your model number?</p>
+                <Link 
+                  to="/scanner" 
+                  className="inline-flex items-center gap-3 px-6 py-3 bg-secondary hover:bg-secondary/90 text-secondary-foreground rounded-full transition-all shadow-md hover:shadow-lg hover:scale-105 group"
+                >
+                  <ScanLine className="w-5 h-5" />
+                  <span className="font-semibold">Scan Your Data Plate</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
             </div>
           </div>
         </section>
