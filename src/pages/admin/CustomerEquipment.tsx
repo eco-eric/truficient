@@ -9,10 +9,12 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Pencil, Plus, Trash2, Award, Zap, Flame, Snowflake, Ruler, Download, Upload } from "lucide-react";
+import { useSoftDelete } from "@/hooks/useSoftDelete";
 import * as XLSX from "xlsx";
 
 type JsonArrayStrings = string[];
@@ -329,16 +331,10 @@ const CustomerEquipment = () => {
     onError: (e: Error) => toast.error(e.message || "Failed to save"),
   });
 
-  const deleteEquipMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("ducted_equipment").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ducted_equipment"] });
-      toast.success("Equipment deleted");
-    },
-    onError: (e: Error) => toast.error(e.message || "Failed to delete"),
+  const softDeleteEquipMutation = useSoftDelete({
+    tableName: "ducted_equipment",
+    queryKey: "ducted_equipment",
+    itemLabel: "Equipment",
   });
 
   // Tier Dialog State
@@ -423,16 +419,10 @@ const CustomerEquipment = () => {
     onError: (e: Error) => toast.error(e.message || "Failed to save"),
   });
 
-  const deleteTierMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("ducted_efficiency_tiers").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ducted_efficiency_tiers"] });
-      toast.success("Tier deleted");
-    },
-    onError: (e: Error) => toast.error(e.message || "Failed to delete"),
+  const softDeleteTierMutation = useSoftDelete({
+    tableName: "ducted_efficiency_tiers",
+    queryKey: "ducted_efficiency_tiers",
+    itemLabel: "Efficiency Tier",
   });
 
   // Addon Dialog State
@@ -511,16 +501,10 @@ const CustomerEquipment = () => {
     onError: (e: Error) => toast.error(e.message || "Failed to save"),
   });
 
-  const deleteAddonMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("ducted_addons").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ducted_addons"] });
-      toast.success("Add-on deleted");
-    },
-    onError: (e: Error) => toast.error(e.message || "Failed to delete"),
+  const softDeleteAddonMutation = useSoftDelete({
+    tableName: "ducted_addons",
+    queryKey: "ducted_addons",
+    itemLabel: "Add-on",
   });
 
   // Sizing Rules Dialog State
@@ -601,16 +585,10 @@ const CustomerEquipment = () => {
     onError: (e: Error) => toast.error(e.message || "Failed to save"),
   });
 
-  const deleteSizingMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("ducted_tonnage_sizing_rules").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ducted_tonnage_sizing_rules"] });
-      toast.success("Sizing rule deleted");
-    },
-    onError: (e: Error) => toast.error(e.message || "Failed to delete"),
+  const softDeleteSizingMutation = useSoftDelete({
+    tableName: "ducted_tonnage_sizing_rules",
+    queryKey: "ducted_tonnage_sizing_rules",
+    itemLabel: "Sizing Rule",
   });
 
   const getHomeTypeLabel = (value: string) => HOME_TYPES.find((h) => h.value === value)?.label || value;
@@ -1122,7 +1100,28 @@ const CustomerEquipment = () => {
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" onClick={() => openEditEquip(eq)}><Pencil className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => deleteEquipMutation.mutate(eq.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Equipment?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will move "{eq.system_name || `${eq.brand} ${eq.tonnage}T`}" to trash. You can restore it from Settings → Trash Bin.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => softDeleteEquipMutation.mutate({ id: eq.id, data: eq as unknown as Record<string, unknown> })}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Move to Trash
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1233,7 +1232,28 @@ const CustomerEquipment = () => {
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" onClick={() => openEditTier(tier)}><Pencil className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => deleteTierMutation.mutate(tier.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Efficiency Tier?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will move "{tier.display_name}" to trash. You can restore it from Settings → Trash Bin.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => softDeleteTierMutation.mutate({ id: tier.id, data: tier as unknown as Record<string, unknown> })}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Move to Trash
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1340,7 +1360,28 @@ const CustomerEquipment = () => {
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" onClick={() => openEditAddon(addon)}><Pencil className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => deleteAddonMutation.mutate(addon.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Add-on?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will move "{addon.name}" to trash. You can restore it from Settings → Trash Bin.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => softDeleteAddonMutation.mutate({ id: addon.id, data: addon as unknown as Record<string, unknown> })}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Move to Trash
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1468,7 +1509,28 @@ const CustomerEquipment = () => {
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" onClick={() => openEditSizing(rule)}><Pencil className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => deleteSizingMutation.mutate(rule.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Sizing Rule?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will move the sizing rule for "{getHomeTypeLabel(rule.home_type)} - {getLayoutLabel(rule.layout)}" to trash. You can restore it from Settings → Trash Bin.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => softDeleteSizingMutation.mutate({ id: rule.id, data: rule as unknown as Record<string, unknown> })}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Move to Trash
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </TableCell>
                     </TableRow>

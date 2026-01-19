@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Shield, Crown } from 'lucide-react';
+import { Loader2, Shield, Crown, Trash2, ArrowRight } from 'lucide-react';
 
 const Settings = () => {
   const { user } = useAuth();
@@ -127,6 +128,28 @@ const Settings = () => {
                 <li>Calculator configuration</li>
                 <li>All submissions and blog posts</li>
               </ul>
+            </CardContent>
+          </Card>
+        )}
+
+        {isAdmin && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-muted-foreground" />
+                <CardTitle>Trash Bin</CardTitle>
+              </div>
+              <CardDescription>
+                View and restore deleted items. Items are automatically removed after 30 days.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link to="/admin/trash-bin">
+                <Button variant="outline" className="gap-2">
+                  View Trash Bin
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         )}
