@@ -1603,6 +1603,35 @@ export type Database = {
         }
         Relationships: []
       }
+      form_source_tags: {
+        Row: {
+          created_at: string
+          id: string
+          source_type: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          source_type: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          source_type?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_source_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "ghl_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gallery_image_tags: {
         Row: {
           created_at: string | null

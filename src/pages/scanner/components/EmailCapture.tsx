@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { trackEmailCaptured } from '@/utils/conversionTracking';
 import { AddressAutocomplete, AddressComponents } from '@/components/AddressAutocomplete';
 import { MapPreview } from '@/components/MapPreview';
+import { useFormSourceTags } from '@/hooks/useFormSourceTags';
 
 // Format phone number as (XXX) XXX-XXXX
 const formatPhoneNumber = (value: string): string => {
@@ -31,6 +32,7 @@ const isValidPhone = (value: string): boolean => {
 export function EmailCapture() {
   const { state, dispatch } = useScanner();
   const navigate = useNavigate();
+  const { data: dynamicTags } = useFormSourceTags('scanner');
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -110,8 +112,8 @@ export function EmailCapture() {
         ? currentYear - primaryScan.specs.manufactured_year 
         : undefined;
 
-      // Build tags based on equipment data
-      const tags = ['equipment-scanner', marketingOptIn ? 'marketing-opted-in' : 'marketing-opted-out'];
+      // Build tags based on dynamic config + equipment data
+      const tags = [...(dynamicTags || ['equipment-scanner']), marketingOptIn ? 'marketing-opted-in' : 'marketing-opted-out'];
       if (state.isDfw) {
         tags.push('dfw-lead');
       }

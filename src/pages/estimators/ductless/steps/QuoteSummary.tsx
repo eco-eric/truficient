@@ -6,10 +6,12 @@ import { usePricing, formatMoney } from "../hooks/usePricing";
 import { CheckCircle, Zap, Loader2, User, Mail, Phone, MapPin, Edit2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useFormSourceTags } from "@/hooks/useFormSourceTags";
 
 export const QuoteSummary = () => {
   const { state, prevStep, nextStep, goToStep } = useQuote();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { data: dynamicTags } = useFormSourceTags('ductless');
 
   // Use the pricing engine
   const { pricing, selectedUnit, selectedTier, unitTypes, isLoading } = usePricing({
@@ -80,7 +82,34 @@ export const QuoteSummary = () => {
         return;
       }
 
+      // Sync to GoHighLevel (non-blocking)
+      const nameParts = state.customerInfo.name.trim().split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+      
+      supabase.functions.invoke("sync-ghl-contact", {
+        body: {
+          firstName,
+          lastName,
+          email: state.customerInfo.email,
+          phone: state.customerInfo.phone || undefined,
+          source: "Ductless Mini-Split Estimator",
+          tags: dynamicTags || ['ductless-estimator'],
+          message: `Ductless Estimate Request:
+• Zones: ${pricing.zoneCount}
+• Total BTU: ${pricing.totalBtu.toLocaleString()}
+• Tier: ${selectedTier?.display_name || "Standard"}
+• Estimate: $${pricing.finalTotal.toLocaleString()}
+• Address: ${state.customerInfo.formattedAddress || state.customerInfo.address || "Not provided"}`,
+          zipCode: state.customerInfo.zipCode || undefined,
+          isDfw: true,
+        },
+      }).catch((err) => {
+        console.error("GHL sync error:", err);
+      });
+
       toast.success("Estimate submitted successfully!");
+      nextStep();
       nextStep();
     } catch (err) {
       console.error("Unexpected error:", err);

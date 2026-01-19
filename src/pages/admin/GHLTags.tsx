@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -26,7 +27,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2, Tag, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Tag, Loader2, ClipboardList, Snowflake, Mail, ScanLine, FileText } from 'lucide-react';
+import { useAllFormSourceTags, FormSourceType } from '@/hooks/useFormSourceTags';
 
 interface GHLTag {
   id: string;
@@ -46,10 +48,41 @@ const defaultFormData = {
   is_active: true,
 };
 
+const SOURCE_CONFIG: Record<FormSourceType, { label: string; icon: React.ReactNode; description: string }> = {
+  ducted: {
+    label: 'Ducted Estimator',
+    icon: <ClipboardList className="h-5 w-5" />,
+    description: 'Central HVAC system quotes',
+  },
+  ductless: {
+    label: 'Ductless Estimator',
+    icon: <Snowflake className="h-5 w-5" />,
+    description: 'Mini-split system quotes',
+  },
+  contact: {
+    label: 'Contact Form',
+    icon: <Mail className="h-5 w-5" />,
+    description: 'Website contact submissions',
+  },
+  scanner: {
+    label: 'Equipment Scanner',
+    icon: <ScanLine className="h-5 w-5" />,
+    description: 'Data plate scans',
+  },
+  landing_page: {
+    label: 'Landing Pages',
+    icon: <FileText className="h-5 w-5" />,
+    description: 'Campaign form submissions',
+  },
+};
+
 export default function GHLTags() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTag, setEditingTag] = useState<GHLTag | null>(null);
   const [formData, setFormData] = useState(defaultFormData);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedSource, setSelectedSource] = useState<FormSourceType | null>(null);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -64,6 +97,8 @@ export default function GHLTags() {
       return data as GHLTag[];
     },
   });
+
+  const { data: formSourceTags, isLoading: isLoadingSourceTags } = useAllFormSourceTags();
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -140,6 +175,43 @@ export default function GHLTags() {
     },
   });
 
+  const saveAssignmentsMutation = useMutation({
+    mutationFn: async ({ sourceType, tagIds }: { sourceType: FormSourceType; tagIds: string[] }) => {
+      // First, delete all existing assignments for this source
+      const { error: deleteError } = await supabase
+        .from('form_source_tags')
+        .delete()
+        .eq('source_type', sourceType);
+      
+      if (deleteError) throw deleteError;
+
+      // Then insert new assignments
+      if (tagIds.length > 0) {
+        const { error: insertError } = await supabase
+          .from('form_source_tags')
+          .insert(
+            tagIds.map(tagId => ({
+              source_type: sourceType,
+              tag_id: tagId,
+            }))
+          );
+        
+        if (insertError) throw insertError;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['form-source-tags-all'] });
+      queryClient.invalidateQueries({ queryKey: ['form-source-tags'] });
+      toast({ title: 'Tag assignments updated successfully' });
+      setAssignDialogOpen(false);
+      setSelectedSource(null);
+      setSelectedTagIds([]);
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error updating assignments', description: error.message, variant: 'destructive' });
+    },
+  });
+
   const resetForm = () => {
     setFormData(defaultFormData);
     setEditingTag(null);
@@ -169,6 +241,31 @@ export default function GHLTags() {
 
   const generateTagValue = (name: string) => {
     return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  };
+
+  const openAssignDialog = (sourceType: FormSourceType) => {
+    setSelectedSource(sourceType);
+    // Get current tag IDs for this source
+    const currentTags = formSourceTags?.[sourceType] || [];
+    setSelectedTagIds(currentTags.map(t => t.tag_id));
+    setAssignDialogOpen(true);
+  };
+
+  const handleSaveAssignments = () => {
+    if (selectedSource) {
+      saveAssignmentsMutation.mutate({
+        sourceType: selectedSource,
+        tagIds: selectedTagIds,
+      });
+    }
+  };
+
+  const toggleTagSelection = (tagId: string) => {
+    setSelectedTagIds(prev =>
+      prev.includes(tagId)
+        ? prev.filter(id => id !== tagId)
+        : [...prev, tagId]
+    );
   };
 
   return (
@@ -355,6 +452,136 @@ export default function GHLTags() {
             )}
           </CardContent>
         </Card>
+
+        {/* Tag Assignments Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Tag Assignments</CardTitle>
+            <CardDescription>
+              Assign tags to each form source. These tags will be applied to contacts in GoHighLevel when they submit.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingSourceTags ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {(Object.keys(SOURCE_CONFIG) as FormSourceType[]).map((sourceType) => {
+                  const config = SOURCE_CONFIG[sourceType];
+                  const assignedTags = formSourceTags?.[sourceType] || [];
+                  
+                  return (
+                    <Card key={sourceType} className="bg-muted/30">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                              {config.icon}
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">{config.label}</h3>
+                              <p className="text-sm text-muted-foreground">{config.description}</p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div className="min-h-[40px]">
+                            {assignedTags.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {assignedTags.map((tag) => (
+                                  <Badge 
+                                    key={tag.id} 
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
+                                    {tag.tag_name}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-muted-foreground italic">
+                                No tags assigned (using defaults)
+                              </p>
+                            )}
+                          </div>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => openAssignDialog(sourceType)}
+                          >
+                            <Pencil className="h-3 w-3 mr-2" />
+                            Edit Tags
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Tag Assignment Dialog */}
+        <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                Assign Tags to {selectedSource ? SOURCE_CONFIG[selectedSource].label : ''}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              {tags && tags.length > 0 ? (
+                <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                  {tags.filter(t => t.is_active).map((tag) => (
+                    <div
+                      key={tag.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer"
+                      onClick={() => toggleTagSelection(tag.id)}
+                    >
+                      <Checkbox
+                        checked={selectedTagIds.includes(tag.id)}
+                        onCheckedChange={() => toggleTagSelection(tag.id)}
+                      />
+                      <Badge
+                        style={{ backgroundColor: tag.color || '#3b82f6' }}
+                        className="text-white"
+                      >
+                        {tag.name}
+                      </Badge>
+                      <span className="text-sm text-muted-foreground font-mono">
+                        {tag.tag_value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-4">
+                  No active tags available. Create some tags first.
+                </p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSaveAssignments}
+                disabled={saveAssignmentsMutation.isPending}
+              >
+                {saveAssignmentsMutation.isPending && (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                )}
+                Save Assignments
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
