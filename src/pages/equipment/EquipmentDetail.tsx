@@ -242,7 +242,19 @@ export default function EquipmentDetail() {
                     </h1>
                   </div>
                 </div>
-              </Card>
+                </Card>
+
+              {/* Product Overview */}
+              {equipment.custom_content && (
+                <Card className="p-6">
+                  <h2 className="text-xl font-bold mb-4">Product Overview</h2>
+                  <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed">
+                    {equipment.custom_content.split('\n').map((paragraph, idx) => (
+                      paragraph.trim() && <p key={idx} className="mb-3 last:mb-0">{paragraph}</p>
+                    ))}
+                  </div>
+                </Card>
+              )}
 
               {/* Specifications Card */}
               <Card className="p-6">
