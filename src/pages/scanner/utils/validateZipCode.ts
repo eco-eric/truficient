@@ -43,17 +43,10 @@ export async function validateZipCode(zipCode: string): Promise<ZipCodeValidatio
     };
   }
 
-  // If no API key, reject - we need real validation
+  // If no API key, fallback to basic format validation
   if (!GOOGLE_PLACES_API_KEY) {
-    console.error('No Google Places API key configured - cannot validate zip codes');
-    return { 
-      valid: false, 
-      zipCode: cleanZip, 
-      city: null, 
-      state: null, 
-      formatted: null,
-      error: 'Unable to validate zip code. Please try again.' 
-    };
+    console.warn('No Google Places API key configured - using basic validation');
+    return { valid: true, zipCode: cleanZip, city: null, state: null, formatted: null };
   }
 
   try {
@@ -62,15 +55,8 @@ export async function validateZipCode(zipCode: string): Promise<ZipCodeValidatio
     );
     
     if (!response.ok) {
-      console.error('Geocoding API request failed:', response.status);
-      return { 
-        valid: false, 
-        zipCode: cleanZip, 
-        city: null, 
-        state: null, 
-        formatted: null,
-        error: 'Unable to verify zip code. Please try again.' 
-      };
+      console.warn('Geocoding API request failed:', response.status, '- using basic validation');
+      return { valid: true, zipCode: cleanZip, city: null, state: null, formatted: null };
     }
 
     const data: GeocodingResponse = await response.json();
@@ -100,14 +86,7 @@ export async function validateZipCode(zipCode: string): Promise<ZipCodeValidatio
       error: 'Please enter a valid US zip code' 
     };
   } catch (error) {
-    console.error('Geocoding API error:', error);
-    return { 
-      valid: false, 
-      zipCode: cleanZip, 
-      city: null, 
-      state: null, 
-      formatted: null,
-      error: 'Unable to verify zip code. Please check your connection and try again.' 
-    };
+    console.warn('Geocoding API error:', error, '- using basic validation');
+    return { valid: true, zipCode: cleanZip, city: null, state: null, formatted: null };
   }
 }
