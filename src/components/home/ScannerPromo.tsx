@@ -25,8 +25,14 @@ const ScannerPromo = () => {
   return (
     <section className="py-16 md:py-24 bg-gradient-to-br from-primary/5 via-accent/10 to-primary/5 relative overflow-hidden">
       {/* Decorative elements */}
-      <div className="absolute top-0 left-0 w-72 h-72 bg-primary/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+      <div className="absolute top-0 left-0 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl translate-x-1/3 translate-y-1/3" />
+      
+      {/* Animated scan lines */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent animate-pulse" />
+        <div className="absolute top-3/4 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent animate-pulse delay-500" />
+      </div>
       
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
@@ -37,8 +43,11 @@ const ScannerPromo = () => {
             viewport={{ once: true }}
             className="mb-6"
           >
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-6">
-              <ScanLine className="w-10 h-10 text-primary" />
+            {/* Hero icon with pulse animation */}
+            <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-emerald-500/10 mb-6 relative">
+              <div className="absolute inset-0 rounded-2xl bg-emerald-500/20 animate-ping opacity-75" style={{ animationDuration: '2s' }} />
+              <div className="absolute inset-2 rounded-xl border-2 border-emerald-500/30" />
+              <ScanLine className="w-12 h-12 text-emerald-500 relative z-10" />
             </div>
             
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
@@ -58,15 +67,19 @@ const ScannerPromo = () => {
             className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto mb-8"
           >
             {benefits.map((benefit, index) => (
-              <div 
+              <motion.div 
                 key={index}
-                className="flex items-center gap-3 bg-background/80 backdrop-blur-sm rounded-lg p-4 shadow-sm border border-border/50"
+                initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
+                viewport={{ once: true }}
+                className="flex items-center gap-3 bg-background/90 backdrop-blur-sm rounded-lg p-4 shadow-md border-l-4 border-emerald-500 hover:shadow-lg transition-shadow"
               >
-                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <benefit.icon className="w-5 h-5 text-primary" />
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                  <benefit.icon className="w-5 h-5 text-emerald-500" />
                 </div>
                 <span className="text-sm font-medium text-foreground">{benefit.text}</span>
-              </div>
+              </motion.div>
             ))}
           </motion.div>
 
@@ -80,7 +93,7 @@ const ScannerPromo = () => {
             <Button 
               asChild 
               size="lg" 
-              className="text-lg px-8 py-6 group"
+              className="text-lg px-8 py-6 group bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold shadow-lg hover:shadow-xl transition-all"
               onClick={handleScanClick}
             >
               <Link to="/scanner">
