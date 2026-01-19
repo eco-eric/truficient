@@ -61,6 +61,7 @@ interface DuctedEquipment {
   equipment_cost: number;
   installation_labor: number;
   is_active: boolean;
+  efficiency_tier_id: string | null;
 }
 
 export const Step7EfficiencyTier = () => {
@@ -92,7 +93,7 @@ export const Step7EfficiencyTier = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ducted_equipment")
-        .select("id, system_type, seer2_rating, tonnage, equipment_cost, installation_labor, is_active")
+        .select("id, system_type, seer2_rating, tonnage, equipment_cost, installation_labor, is_active, efficiency_tier_id")
         .eq("is_active", true);
 
       if (error) throw error;
@@ -138,17 +139,15 @@ export const Step7EfficiencyTier = () => {
       return null;
     }
 
-    // Filter equipment that matches the tier's SEER2 range, system type, and effective tonnage
+    // FIXED: Filter equipment using efficiency_tier_id instead of SEER range
     const matchingEquipment = equipment.filter((eq) => {
-      if (!eq.seer2_rating) return false;
-      
       // Match system type based on heating type selection
       const typeMatch = eq.system_type === state.heatingType;
       if (!typeMatch) return false;
       
-      // Check if equipment SEER2 falls within tier's range
-      const seerMatch = eq.seer2_rating >= tier.seer_min && eq.seer2_rating <= tier.seer_max;
-      if (!seerMatch) return false;
+      // FIXED: Use tier ID matching instead of SEER range
+      const tierMatch = eq.efficiency_tier_id === tier.id;
+      if (!tierMatch) return false;
       
       // Match effective tonnage
       if (effectiveTonnage) {
@@ -157,6 +156,8 @@ export const Step7EfficiencyTier = () => {
       
       return true;
     });
+
+    console.log(`[Step7 Debug] Tier ${tier.name}: ${matchingEquipment.length} matching equipment for tonnage ${effectiveTonnage}`);
 
     if (matchingEquipment.length === 0) {
       return null;
