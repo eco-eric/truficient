@@ -8,6 +8,11 @@ export type HotColdSpots = 'none' | 'some' | 'too_many';
 export type TempPreference = '64_68' | '68_72' | '72_76' | '76_plus';
 export type HeatingType = 'gas_system' | 'heat_pump';
 
+// Insulation & efficiency factors
+export type AtticInsulation = 'not_sure' | 'low' | 'medium' | 'high';
+export type WindowType = 'single_pane' | 'double_pane' | 'triple_pane' | 'mixed';
+export type HomeAge = 'before_1980' | '1980_2000' | '2000_2010' | 'after_2010';
+
 // Display option types
 export interface HomeTypeOption {
   value: HomeType;
@@ -77,6 +82,28 @@ export const TEMP_PREFERENCE_OPTIONS: TempPreferenceOption[] = [
   { value: '68_72', label: '68° - 72°', description: 'Comfortable' },
   { value: '72_76', label: '72° - 76°', description: 'Warm' },
   { value: '76_plus', label: '76°+', description: 'Very Warm' },
+];
+
+// Insulation & efficiency factor options
+export const ATTIC_INSULATION_OPTIONS = [
+  { value: 'not_sure' as const, label: 'Not sure' },
+  { value: 'low' as const, label: 'Low (< 6")' },
+  { value: 'medium' as const, label: 'Medium (6-15")' },
+  { value: 'high' as const, label: 'High (> 16")' },
+];
+
+export const WINDOW_TYPE_OPTIONS = [
+  { value: 'single_pane' as const, label: 'Single-Pane' },
+  { value: 'double_pane' as const, label: 'Double-Pane' },
+  { value: 'triple_pane' as const, label: 'Triple-Pane' },
+  { value: 'mixed' as const, label: 'Mixed/Not Sure' },
+];
+
+export const HOME_AGE_OPTIONS = [
+  { value: 'before_1980' as const, label: 'Before 1980' },
+  { value: '1980_2000' as const, label: '1980-2000' },
+  { value: '2000_2010' as const, label: '2000-2010' },
+  { value: 'after_2010' as const, label: 'After 2010' },
 ];
 
 // Summer temperature options
@@ -221,6 +248,10 @@ export interface DuctedEstimatorState {
   systemCount: SystemCount;
   coverage: Coverage | null;
   squareFootage: SquareFootage | null;
+  // Insulation & efficiency factors
+  atticInsulation: AtticInsulation | null;
+  windowType: WindowType | null;
+  homeAge: HomeAge | null;
   // Usage patterns
   hotColdSpots: HotColdSpots | null;
   winterTemp: TempPreference | null;

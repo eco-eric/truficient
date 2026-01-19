@@ -11,7 +11,7 @@ import {
 } from "../types";
 import { Thermometer, Sun, Snowflake } from "lucide-react";
 
-export const Step3UsagePatterns = () => {
+export const Step4UsagePatterns = () => {
   const {
     state,
     setHotColdSpots,

@@ -8,6 +8,9 @@ import type {
   SystemCount,
   Coverage,
   SquareFootage,
+  AtticInsulation,
+  WindowType,
+  HomeAge,
   HotColdSpots,
   TempPreference,
   HeatingType,
@@ -47,6 +50,10 @@ const INITIAL_STATE: DuctedEstimatorState = {
   systemCount: 1,
   coverage: null,
   squareFootage: null,
+  // Insulation & efficiency factors
+  atticInsulation: null,
+  windowType: null,
+  homeAge: null,
   // Usage patterns
   hotColdSpots: null,
   winterTemp: null,
@@ -79,6 +86,10 @@ interface EstimatorContextValue {
   setSystemCount: (count: SystemCount) => void;
   setCoverage: (coverage: Coverage | null) => void;
   setSquareFootage: (sqft: SquareFootage | null) => void;
+  // Insulation & efficiency factor setters
+  setAtticInsulation: (value: AtticInsulation | null) => void;
+  setWindowType: (value: WindowType | null) => void;
+  setHomeAge: (value: HomeAge | null) => void;
   // Usage pattern setters
   setHotColdSpots: (value: HotColdSpots | null) => void;
   setWinterTemp: (temp: TempPreference | null) => void;
@@ -139,6 +150,19 @@ export const EstimatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const setSquareFootage = useCallback((sqft: SquareFootage | null) => {
     setState((prev) => ({ ...prev, squareFootage: sqft }));
+  }, []);
+
+  // Insulation & efficiency factor setters
+  const setAtticInsulation = useCallback((value: AtticInsulation | null) => {
+    setState((prev) => ({ ...prev, atticInsulation: value }));
+  }, []);
+
+  const setWindowType = useCallback((value: WindowType | null) => {
+    setState((prev) => ({ ...prev, windowType: value }));
+  }, []);
+
+  const setHomeAge = useCallback((value: HomeAge | null) => {
+    setState((prev) => ({ ...prev, homeAge: value }));
   }, []);
 
   // Usage pattern setters
@@ -228,6 +252,10 @@ export const EstimatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setSystemCount,
       setCoverage,
       setSquareFootage,
+      // Insulation & efficiency factors
+      setAtticInsulation,
+      setWindowType,
+      setHomeAge,
       // Usage patterns
       setHotColdSpots,
       setWinterTemp,
@@ -259,6 +287,9 @@ export const EstimatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setSystemCount,
       setCoverage,
       setSquareFootage,
+      setAtticInsulation,
+      setWindowType,
+      setHomeAge,
       setHotColdSpots,
       setWinterTemp,
       setSummerTemp,
