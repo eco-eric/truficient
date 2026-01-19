@@ -6,7 +6,7 @@ import { useDuctedPricing, formatMoney } from "../hooks/useDuctedPricing";
 import { Loader2, CheckCircle2, Award, Zap, Shield, Snowflake, Flame, Percent } from "lucide-react";
 import { HOME_TYPE_OPTIONS, HOME_LAYOUT_OPTIONS, SQUARE_FOOTAGE_OPTIONS } from "../types";
 
-export const Step6QuoteResults = () => {
+export const Step7QuoteResults = () => {
   const { state, nextStep, prevStep, setTotals, setRecommendedTonnage } = useEstimator();
   const { pricing, isLoading, matchingEquipment } = useDuctedPricing(state);
 

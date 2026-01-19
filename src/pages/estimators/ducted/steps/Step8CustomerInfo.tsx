@@ -15,7 +15,7 @@ import {
   Loader2, CheckCircle2, Calendar 
 } from "lucide-react";
 
-export const Step7CustomerInfo = () => {
+export const Step8CustomerInfo = () => {
   const { state, setCustomerInfo, nextStep, prevStep } = useEstimator();
   const { pricing } = useDuctedPricing(state);
   
