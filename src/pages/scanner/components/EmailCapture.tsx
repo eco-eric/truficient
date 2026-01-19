@@ -10,6 +10,8 @@ import { Mail, Loader2, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { trackEmailCaptured } from '@/utils/conversionTracking';
+import { AddressAutocomplete, AddressComponents } from '@/components/AddressAutocomplete';
+import { MapPreview } from '@/components/MapPreview';
 
 export function EmailCapture() {
   const { state, dispatch } = useScanner();
@@ -17,9 +19,27 @@ export function EmailCapture() {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
+  const [streetAddress, setStreetAddress] = useState('');
+  const [city, setCity] = useState(state.city || '');
+  const [addressState, setAddressState] = useState(state.state || '');
+  const [zipCode, setZipCode] = useState(state.zipCode || '');
+  const [county, setCounty] = useState('');
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [marketingOptIn, setMarketingOptIn] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Handle address selection from Google Places autocomplete
+  const handleAddressSelect = (components: AddressComponents) => {
+    setStreetAddress(components.streetAddress);
+    setCity(components.city);
+    setAddressState(components.state);
+    setZipCode(components.zipCode);
+    setCounty(components.county);
+    
+    if (components.lat && components.lng) {
+      setCoordinates({ lat: components.lat, lng: components.lng });
+    }
+  };
 
   // Get all scan IDs (current result + accumulated results)
   const getAllScanIds = (): string[] => {
@@ -79,7 +99,7 @@ export function EmailCapture() {
 
       // Update all scan records with the email and contact info
       console.log('Updating scan IDs:', scanIds);
-      console.log('Update data:', { email, name, phone, address, city: state.city, stateVal: state.state });
+      console.log('Update data:', { email, name, phone, streetAddress, city, addressState, zipCode });
       
       const { data: updateData, error } = await supabase
         .from('equipment_scans')
@@ -87,10 +107,11 @@ export function EmailCapture() {
           email,
           customer_name: name || null,
           customer_phone: phone || null,
-          customer_address: address || null,
+          customer_address: streetAddress || null,
+          city: city || state.city || null,
+          state: addressState || state.state || null,
+          zip_code: zipCode || state.zipCode,
           marketing_opt_in: marketingOptIn,
-          city: state.city,
-          state: state.state,
           ghl_sync_status: 'pending'
         })
         .in('id', scanIds)
@@ -125,10 +146,14 @@ export function EmailCapture() {
             lastName,
             email,
             phone: phone || undefined,
+            address: streetAddress || undefined,
+            city: city || state.city || undefined,
+            state: addressState || state.state || undefined,
+            postalCode: zipCode || state.zipCode || undefined,
             tags,
             source: 'Equipment Scanner',
             equipmentReportUrl: reportUrl,
-            zipCode: state.zipCode,
+            zipCode: zipCode || state.zipCode,
             isDfw: state.isDfw,
             equipment: primaryScan?.specs ? {
               brand: primaryScan.specs.brand,
@@ -231,17 +256,65 @@ export function EmailCapture() {
             />
           </div>
           
-          {/* Address - Optional */}
-          <div>
-            <Label htmlFor="address" className="sr-only">Property address</Label>
-            <Input
-              id="address"
-              type="text"
-              placeholder="Property address (optional)"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              disabled={isSubmitting}
-            />
+          {/* Address with Google Places Autocomplete */}
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="address" className="sr-only">Property address</Label>
+              <AddressAutocomplete
+                value={streetAddress}
+                onChange={setStreetAddress}
+                onAddressSelect={handleAddressSelect}
+                placeholder="Property address (optional)"
+                disabled={isSubmitting}
+              />
+            </div>
+            
+            {/* City, State, Zip - Show after address entry or pre-filled from zip gate */}
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <div className="col-span-2 sm:col-span-1">
+                <Label htmlFor="city" className="sr-only">City</Label>
+                <Input
+                  id="city"
+                  type="text"
+                  placeholder="City"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  disabled={isSubmitting}
+                />
+              </div>
+              <div>
+                <Label htmlFor="state" className="sr-only">State</Label>
+                <Input
+                  id="state"
+                  type="text"
+                  placeholder="State"
+                  value={addressState}
+                  onChange={(e) => setAddressState(e.target.value)}
+                  disabled={isSubmitting}
+                />
+              </div>
+              <div>
+                <Label htmlFor="zip" className="sr-only">Zip Code</Label>
+                <Input
+                  id="zip"
+                  type="text"
+                  placeholder="Zip"
+                  value={zipCode}
+                  onChange={(e) => setZipCode(e.target.value)}
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+            
+            {/* Map Preview - Shows after address selection with coordinates */}
+            {coordinates && (
+              <MapPreview
+                lat={coordinates.lat}
+                lng={coordinates.lng}
+                address={streetAddress}
+                county={county}
+              />
+            )}
           </div>
           
           {/* Marketing Opt-in - Pre-checked */}
