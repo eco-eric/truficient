@@ -13,9 +13,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2, Award, Zap, Flame, Snowflake, Ruler, Download, Upload } from "lucide-react";
+import { Pencil, Plus, Trash2, Award, Zap, Flame, Snowflake, Ruler, Download, Upload, Copy, GripVertical } from "lucide-react";
 import { useSoftDelete } from "@/hooks/useSoftDelete";
 import * as XLSX from "xlsx";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type JsonArrayStrings = string[];
 
@@ -85,6 +88,7 @@ type SizingRule = {
   recommended_tonnage: number;
   notes: string | null;
   is_active: boolean;
+  sort_order: number;
 };
 
 const formatMoney = (n: number | null | undefined) =>
@@ -117,6 +121,80 @@ const LAYOUTS = [
 ];
 
 const TONNAGES = [1.5, 2, 2.5, 3, 3.5, 4, 5];
+
+// Sortable row component for sizing rules
+interface SortableSizingRowProps {
+  rule: SizingRule;
+  getHomeTypeLabel: (value: string) => string;
+  getLayoutLabel: (value: string) => string;
+  onEdit: (rule: SizingRule) => void;
+  onClone: (rule: SizingRule) => void;
+  onDelete: (rule: SizingRule) => void;
+}
+
+const SortableSizingRow = ({ rule, getHomeTypeLabel, getLayoutLabel, onEdit, onClone, onDelete }: SortableSizingRowProps) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: rule.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style}>
+      <TableCell className="w-10">
+        <button {...attributes} {...listeners} className="cursor-grab touch-none p-1 hover:bg-muted rounded">
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </TableCell>
+      <TableCell className="font-medium">{getHomeTypeLabel(rule.home_type)}</TableCell>
+      <TableCell>{getLayoutLabel(rule.layout)}</TableCell>
+      <TableCell>{rule.sq_ft_min.toLocaleString()} - {rule.sq_ft_max.toLocaleString()}</TableCell>
+      <TableCell className="font-medium">{rule.recommended_tonnage}T</TableCell>
+      <TableCell className="text-sm text-muted-foreground max-w-[150px] truncate">{rule.notes || "—"}</TableCell>
+      <TableCell>
+        <span className={`px-2 py-0.5 rounded-full text-xs ${rule.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+          {rule.is_active ? "Active" : "Inactive"}
+        </span>
+      </TableCell>
+      <TableCell>
+        <div className="flex gap-1">
+          <Button variant="ghost" size="icon" onClick={() => onClone(rule)} title="Duplicate">
+            <Copy className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => onEdit(rule)} title="Edit">
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" title="Delete">
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Sizing Rule?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will move the sizing rule for "{getHomeTypeLabel(rule.home_type)} - {getLayoutLabel(rule.layout)}" to trash. You can restore it from Settings → Trash Bin.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => onDelete(rule)}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Move to Trash
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+};
 
 const CustomerEquipment = () => {
   const queryClient = useQueryClient();
@@ -167,9 +245,7 @@ const CustomerEquipment = () => {
       const { data, error } = await supabase
         .from("ducted_tonnage_sizing_rules")
         .select("*")
-        .order("home_type")
-        .order("layout")
-        .order("sq_ft_min");
+        .order("sort_order");
       if (error) throw error;
       return data as SizingRule[];
     },
@@ -590,6 +666,64 @@ const CustomerEquipment = () => {
     queryKey: "ducted_tonnage_sizing_rules",
     itemLabel: "Sizing Rule",
   });
+
+  // Clone sizing rule mutation
+  const cloneSizingMutation = useMutation({
+    mutationFn: async (rule: SizingRule) => {
+      const maxSortOrder = sizingQuery.data?.reduce((max, r) => Math.max(max, r.sort_order), 0) || 0;
+      const { error } = await supabase.from("ducted_tonnage_sizing_rules").insert({
+        home_type: rule.home_type,
+        layout: rule.layout,
+        sq_ft_min: rule.sq_ft_min,
+        sq_ft_max: rule.sq_ft_max,
+        recommended_tonnage: rule.recommended_tonnage,
+        notes: rule.notes ? `${rule.notes} (copy)` : "(copy)",
+        is_active: rule.is_active,
+        sort_order: maxSortOrder + 1,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ducted_tonnage_sizing_rules"] });
+      toast.success("Sizing rule duplicated");
+    },
+    onError: (e: Error) => toast.error(e.message || "Failed to duplicate"),
+  });
+
+  // Reorder sizing rules mutation
+  const reorderSizingMutation = useMutation({
+    mutationFn: async (updates: { id: string; sort_order: number }[]) => {
+      for (const update of updates) {
+        const { error } = await supabase
+          .from("ducted_tonnage_sizing_rules")
+          .update({ sort_order: update.sort_order })
+          .eq("id", update.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ducted_tonnage_sizing_rules"] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Failed to reorder"),
+  });
+
+  // Drag sensors for sizing rules
+  const sizingSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleSizingDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !sizingQuery.data) return;
+
+    const oldIndex = sizingQuery.data.findIndex((r) => r.id === active.id);
+    const newIndex = sizingQuery.data.findIndex((r) => r.id === over.id);
+
+    const reordered = arrayMove(sizingQuery.data, oldIndex, newIndex);
+    const updates = reordered.map((r, i) => ({ id: r.id, sort_order: i + 1 }));
+    reorderSizingMutation.mutate(updates);
+  };
 
   const getHomeTypeLabel = (value: string) => HOME_TYPES.find((h) => h.value === value)?.label || value;
   const getLayoutLabel = (value: string) => LAYOUTS.find((l) => l.value === value)?.label || value;
@@ -1481,65 +1615,40 @@ const CustomerEquipment = () => {
             </div>
 
             <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Home Type</TableHead>
-                    <TableHead>Layout</TableHead>
-                    <TableHead>Sq Ft Range</TableHead>
-                    <TableHead>Tonnage</TableHead>
-                    <TableHead>Notes</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sizingQuery.data?.map((rule) => (
-                    <TableRow key={rule.id}>
-                      <TableCell className="font-medium">{getHomeTypeLabel(rule.home_type)}</TableCell>
-                      <TableCell>{getLayoutLabel(rule.layout)}</TableCell>
-                      <TableCell>{rule.sq_ft_min.toLocaleString()} - {rule.sq_ft_max.toLocaleString()}</TableCell>
-                      <TableCell className="font-medium">{rule.recommended_tonnage}T</TableCell>
-                      <TableCell className="text-sm text-muted-foreground max-w-[150px] truncate">{rule.notes || "—"}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-0.5 rounded-full text-xs ${rule.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
-                          {rule.is_active ? "Active" : "Inactive"}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => openEditSizing(rule)}><Pencil className="h-4 w-4" /></Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Sizing Rule?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will move the sizing rule for "{getHomeTypeLabel(rule.home_type)} - {getLayoutLabel(rule.layout)}" to trash. You can restore it from Settings → Trash Bin.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => softDeleteSizingMutation.mutate({ id: rule.id, data: rule as unknown as Record<string, unknown> })}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Move to Trash
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
+              <DndContext sensors={sizingSensors} collisionDetection={closestCenter} onDragEnd={handleSizingDragEnd}>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10"></TableHead>
+                      <TableHead>Home Type</TableHead>
+                      <TableHead>Layout</TableHead>
+                      <TableHead>Sq Ft Range</TableHead>
+                      <TableHead>Tonnage</TableHead>
+                      <TableHead>Notes</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-[130px]">Actions</TableHead>
                     </TableRow>
-                  ))}
-                  {!sizingQuery.data?.length && (
-                    <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No sizing rules configured</TableCell></TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    <SortableContext items={sizingQuery.data?.map((r) => r.id) || []} strategy={verticalListSortingStrategy}>
+                      {sizingQuery.data?.map((rule) => (
+                        <SortableSizingRow
+                          key={rule.id}
+                          rule={rule}
+                          getHomeTypeLabel={getHomeTypeLabel}
+                          getLayoutLabel={getLayoutLabel}
+                          onEdit={openEditSizing}
+                          onClone={(r) => cloneSizingMutation.mutate(r)}
+                          onDelete={(r) => softDeleteSizingMutation.mutate({ id: r.id, data: r as unknown as Record<string, unknown> })}
+                        />
+                      ))}
+                    </SortableContext>
+                    {!sizingQuery.data?.length && (
+                      <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No sizing rules configured</TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </DndContext>
             </div>
           </TabsContent>
         </Tabs>
