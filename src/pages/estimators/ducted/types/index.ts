@@ -133,6 +133,7 @@ export interface TonnageOption {
 }
 
 export const TONNAGE_OPTIONS: TonnageOption[] = [
+  { value: 1.0, label: '1 Ton', btu: '12,000 BTU' },
   { value: 1.5, label: '1.5 Ton', btu: '18,000 BTU' },
   { value: 2.0, label: '2 Ton', btu: '24,000 BTU' },
   { value: 2.5, label: '2.5 Ton', btu: '30,000 BTU' },
