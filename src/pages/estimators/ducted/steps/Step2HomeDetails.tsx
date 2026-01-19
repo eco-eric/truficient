@@ -43,6 +43,14 @@ export const Step2HomeDetails = () => {
     prevStep,
   } = useEstimator();
 
+  const handleSystemCountChange = (count: SystemCount) => {
+    setSystemCount(count);
+    // Auto-select partial home if more than 1 unit
+    if (count > 1) {
+      setCoverage("partial_home");
+    }
+  };
+
   const canContinue =
     state.homeLayout && state.squareFootage && state.coverage;
 
@@ -107,14 +115,14 @@ export const Step2HomeDetails = () => {
         {/* System count - always visible */}
         <div>
           <h3 className="text-sm font-medium text-foreground mb-3">
-            How many HVAC systems do you have?
+            How many AC units does your home have?
           </h3>
           <div className="grid grid-cols-4 gap-3">
             {SYSTEM_COUNT_OPTIONS.map((option) => (
               <SelectableCard
                 key={option.value}
                 selected={state.systemCount === option.value}
-                onClick={() => setSystemCount(option.value as SystemCount)}
+                onClick={() => handleSystemCountChange(option.value as SystemCount)}
                 className="py-6 text-center"
               >
                 <span className="text-2xl font-bold">{option.label}</span>
