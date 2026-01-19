@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, MapPin } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ZipCodeDataItem {
   zip: string;
@@ -23,9 +24,9 @@ interface GeocodedLocation {
   isDfw: boolean;
 }
 
-const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
 const DFW_CENTER = { lat: 32.7767, lng: -96.7970 };
 const CACHE_KEY = 'geocoded-zip-codes';
+const GOOGLE_MAPS_SCRIPT_ID = 'google-maps-heatmap';
 
 // Load geocoded zips from localStorage cache
 const getGeocodedCache = (): Record<string, { lat: number; lng: number }> => {
@@ -65,13 +66,10 @@ export function ScannerHeatmap({ zipCodeData, isLoading }: ScannerHeatmapProps) 
       return;
     }
 
-    if (!GOOGLE_API_KEY) {
-      setError('Google Maps API key not configured');
-      return;
-    }
-
     // Check if script is already loading
-    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+    const existingScript = document.getElementById(GOOGLE_MAPS_SCRIPT_ID) || 
+                           document.querySelector('script[src*="maps.googleapis.com"]');
+    
     if (existingScript) {
       // Check if it has visualization library
       if (!existingScript.getAttribute('src')?.includes('visualization')) {
@@ -94,35 +92,55 @@ export function ScannerHeatmap({ zipCodeData, isLoading }: ScannerHeatmapProps) 
       }
     }
 
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&libraries=places,visualization`;
-    script.async = true;
-    script.defer = true;
+    // Fetch API key from edge function
+    const loadMapScript = async () => {
+      try {
+        const { data, error: fnError } = await supabase.functions.invoke('get-maps-config');
+        
+        if (fnError || !data?.apiKey) {
+          console.error('Failed to get maps config:', fnError);
+          setError('Google Maps API key not configured');
+          return;
+        }
 
-    script.onload = () => {
-      setIsMapLoaded(true);
+        const script = document.createElement('script');
+        script.id = GOOGLE_MAPS_SCRIPT_ID;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.apiKey}&libraries=visualization`;
+        script.async = true;
+        script.defer = true;
+
+        script.onload = () => {
+          setIsMapLoaded(true);
+        };
+
+        script.onerror = () => {
+          setError('Failed to load Google Maps');
+        };
+
+        document.head.appendChild(script);
+      } catch (err) {
+        console.error('Failed to load map:', err);
+        setError('Failed to initialize map');
+      }
     };
 
-    script.onerror = () => {
-      setError('Failed to load Google Maps');
-    };
-
-    document.head.appendChild(script);
+    loadMapScript();
   }, []);
 
-  // Geocode zip codes
+  // Geocode zip codes using edge function
   useEffect(() => {
     if (!isMapLoaded || !zipCodeData.length) return;
 
     const geocodeZips = async () => {
       setIsGeocoding(true);
       const cache = getGeocodedCache();
-      const geocoder = new window.google.maps.Geocoder();
       const results: GeocodedLocation[] = [];
       const newCache = { ...cache };
 
+      // Separate cached and uncached zip codes
+      const uncachedZips: string[] = [];
+      
       for (const item of zipCodeData) {
-        // Check cache first
         if (cache[item.zip]) {
           results.push({
             zip: item.zip,
@@ -132,41 +150,43 @@ export function ScannerHeatmap({ zipCodeData, isLoading }: ScannerHeatmapProps) 
             city: item.city,
             isDfw: item.isDfw,
           });
-          continue;
+        } else {
+          uncachedZips.push(item.zip);
         }
+      }
 
-        // Geocode the zip code
+      // Geocode uncached zip codes via edge function
+      if (uncachedZips.length > 0) {
         try {
-          const response = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
-            geocoder.geocode({ address: `${item.zip}, USA` }, (results, status) => {
-              if (status === 'OK' && results) {
-                resolve(results);
-              } else {
-                reject(new Error(`Geocoding failed: ${status}`));
-              }
-            });
+          const { data, error: fnError } = await supabase.functions.invoke('geocode-zipcodes', {
+            body: { zipCodes: uncachedZips }
           });
 
-          if (response[0]?.geometry?.location) {
-            const lat = response[0].geometry.location.lat();
-            const lng = response[0].geometry.location.lng();
-            
-            newCache[item.zip] = { lat, lng };
-            results.push({
-              zip: item.zip,
-              lat,
-              lng,
-              count: item.count,
-              city: item.city,
-              isDfw: item.isDfw,
-            });
+          if (fnError) {
+            console.error('Geocoding edge function error:', fnError);
+          } else if (data?.results) {
+            for (const geocoded of data.results) {
+              if (geocoded.lat && geocoded.lng && !geocoded.error) {
+                newCache[geocoded.zip] = { lat: geocoded.lat, lng: geocoded.lng };
+                
+                // Find the original item to get count, city, isDfw
+                const originalItem = zipCodeData.find(item => item.zip === geocoded.zip);
+                if (originalItem) {
+                  results.push({
+                    zip: geocoded.zip,
+                    lat: geocoded.lat,
+                    lng: geocoded.lng,
+                    count: originalItem.count,
+                    city: originalItem.city,
+                    isDfw: originalItem.isDfw,
+                  });
+                }
+              }
+            }
           }
         } catch (e) {
-          console.warn(`Failed to geocode ${item.zip}:`, e);
+          console.error('Failed to geocode zip codes:', e);
         }
-
-        // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
       saveGeocodedCache(newCache);
