@@ -3,7 +3,10 @@ import { StepContainer } from "@/pages/estimators/ductless/components/StepContai
 import { CTAButton } from "@/pages/estimators/ductless/components/CTAButton";
 import { useEstimator } from "../context/EstimatorContext";
 import { useDuctedPricing, formatMoney } from "../hooks/useDuctedPricing";
-import { Loader2, CheckCircle2, Award, Zap, Shield, Snowflake, Flame, Percent } from "lucide-react";
+import { 
+  Loader2, CheckCircle2, Award, Zap, Shield, Snowflake, Flame, Percent,
+  ThermometerSun, Wind, Wrench, Box
+} from "lucide-react";
 import { HOME_TYPE_OPTIONS, HOME_LAYOUT_OPTIONS, SQUARE_FOOTAGE_OPTIONS } from "../types";
 
 export const Step7QuoteResults = () => {
@@ -12,7 +15,7 @@ export const Step7QuoteResults = () => {
 
   // Update totals in context when pricing changes
   useEffect(() => {
-    if (!isLoading && pricing.recommendedTonnage) {
+    if (!isLoading && pricing.effectiveTonnage) {
       setRecommendedTonnage(pricing.recommendedTonnage);
       setTotals({
         equipmentCost: pricing.equipmentCost,
@@ -42,6 +45,7 @@ export const Step7QuoteResults = () => {
   const layoutLabel = HOME_LAYOUT_OPTIONS.find((o) => o.value === state.homeLayout)?.label || "N/A";
   const sqftLabel = SQUARE_FOOTAGE_OPTIONS.find((o) => o.value === state.squareFootage)?.label || "N/A";
   const systemTypeLabel = state.heatingType === "gas_system" ? "Gas Furnace + AC" : "Heat Pump System";
+  const eq = pricing.selectedEquipment;
 
   return (
     <StepContainer className="px-4 py-6">
@@ -71,27 +75,29 @@ export const Step7QuoteResults = () => {
             <div>
               <h3 className="font-semibold text-lg">{systemTypeLabel}</h3>
               <p className="text-white/70 text-sm">
-                {pricing.recommendedTonnage} Ton • {pricing.selectedTier?.display_name || "Standard"} Tier
+                {pricing.effectiveTonnage} Ton • {pricing.selectedTier?.display_name || "Standard"} Tier
               </p>
             </div>
           </div>
 
           {/* Selected equipment details */}
-          {pricing.selectedEquipment && (
+          {eq && (
             <div className="bg-white/10 rounded-xl p-4 mb-4">
-              <div className="flex justify-between items-start mb-2">
+              <div className="flex justify-between items-start mb-3">
                 <div>
-                  <p className="font-medium">{pricing.selectedEquipment.system_name || `${pricing.selectedEquipment.brand} ${pricing.selectedEquipment.tonnage}T System`}</p>
-                  <p className="text-sm text-white/70">{pricing.selectedEquipment.brand}</p>
+                  <p className="font-semibold text-lg">
+                    {eq.system_name || `${eq.brand} ${eq.tonnage}T System`}
+                  </p>
+                  <p className="text-sm text-white/70">{eq.brand}</p>
                 </div>
                 <div className="flex gap-2">
-                  {pricing.selectedEquipment.is_best_value && (
+                  {eq.is_best_value && (
                     <span className="px-2 py-1 bg-yellow-500 text-yellow-900 text-xs font-medium rounded-full flex items-center gap-1">
                       <Award className="h-3 w-3" />
                       Best Value
                     </span>
                   )}
-                  {pricing.selectedEquipment.is_energy_star && (
+                  {eq.is_energy_star && (
                     <span className="px-2 py-1 bg-green-500 text-green-900 text-xs font-medium rounded-full flex items-center gap-1">
                       <Zap className="h-3 w-3" />
                       Energy Star
@@ -99,20 +105,110 @@ export const Step7QuoteResults = () => {
                   )}
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4 text-center text-sm mt-3">
-                <div>
-                  <p className="text-white/60">SEER2</p>
-                  <p className="font-semibold">{pricing.selectedEquipment.seer2_rating || "—"}</p>
+
+              {/* Performance Ratings */}
+              <div className="grid grid-cols-4 gap-3 text-center text-sm mb-4">
+                <div className="bg-white/5 rounded-lg p-2">
+                  <p className="text-white/60 text-xs mb-1">SEER2</p>
+                  <p className="font-bold text-lg">{eq.seer2_rating || "—"}</p>
                 </div>
-                <div>
-                  <p className="text-white/60">Tonnage</p>
-                  <p className="font-semibold">{pricing.selectedEquipment.tonnage}</p>
+                {eq.eer2_rating && (
+                  <div className="bg-white/5 rounded-lg p-2">
+                    <p className="text-white/60 text-xs mb-1">EER2</p>
+                    <p className="font-bold text-lg">{eq.eer2_rating}</p>
+                  </div>
+                )}
+                {eq.hspf2_rating && state.heatingType === "heat_pump" && (
+                  <div className="bg-white/5 rounded-lg p-2">
+                    <p className="text-white/60 text-xs mb-1">HSPF2</p>
+                    <p className="font-bold text-lg">{eq.hspf2_rating}</p>
+                  </div>
+                )}
+                <div className="bg-white/5 rounded-lg p-2">
+                  <p className="text-white/60 text-xs mb-1">Tonnage</p>
+                  <p className="font-bold text-lg">{eq.tonnage}</p>
                 </div>
-                <div>
-                  <p className="text-white/60">Warranty</p>
-                  <p className="font-semibold">{pricing.selectedEquipment.warranty_years} yr</p>
+                <div className="bg-white/5 rounded-lg p-2">
+                  <p className="text-white/60 text-xs mb-1">Warranty</p>
+                  <p className="font-bold text-lg">{eq.warranty_years}yr</p>
                 </div>
               </div>
+
+              {/* Equipment Components */}
+              <div className="border-t border-white/20 pt-3">
+                <p className="text-xs text-white/60 uppercase tracking-wide mb-2">
+                  System Components
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                  {state.heatingType === "gas_system" ? (
+                    <>
+                      {eq.condenser_model && (
+                        <div className="flex items-center gap-2">
+                          <Wind className="h-3.5 w-3.5 text-cyan-300" />
+                          <span className="text-white/80">
+                            Condenser: <span className="font-medium text-white">{eq.condenser_model}</span>
+                          </span>
+                        </div>
+                      )}
+                      {eq.furnace_model && (
+                        <div className="flex items-center gap-2">
+                          <Flame className="h-3.5 w-3.5 text-orange-300" />
+                          <span className="text-white/80">
+                            Furnace: <span className="font-medium text-white">{eq.furnace_model}</span>
+                          </span>
+                        </div>
+                      )}
+                      {eq.evap_coil_model && (
+                        <div className="flex items-center gap-2">
+                          <Box className="h-3.5 w-3.5 text-blue-300" />
+                          <span className="text-white/80">
+                            Coil: <span className="font-medium text-white">{eq.evap_coil_model}</span>
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {eq.heat_pump_model && (
+                        <div className="flex items-center gap-2">
+                          <ThermometerSun className="h-3.5 w-3.5 text-amber-300" />
+                          <span className="text-white/80">
+                            Heat Pump: <span className="font-medium text-white">{eq.heat_pump_model}</span>
+                          </span>
+                        </div>
+                      )}
+                      {eq.air_handler_model && (
+                        <div className="flex items-center gap-2">
+                          <Wind className="h-3.5 w-3.5 text-cyan-300" />
+                          <span className="text-white/80">
+                            Air Handler: <span className="font-medium text-white">{eq.air_handler_model}</span>
+                          </span>
+                        </div>
+                      )}
+                      {eq.heat_kit_model && (
+                        <div className="flex items-center gap-2">
+                          <Flame className="h-3.5 w-3.5 text-orange-300" />
+                          <span className="text-white/80">
+                            Heat Kit: <span className="font-medium text-white">{eq.heat_kit_model}</span>
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* No matching equipment fallback */}
+          {!eq && (
+            <div className="bg-white/10 rounded-xl p-4 mb-4 text-center">
+              <p className="text-white/80">
+                Custom configuration for {pricing.effectiveTonnage} Ton {systemTypeLabel}
+              </p>
+              <p className="text-sm text-white/60 mt-1">
+                Final equipment selection will be confirmed during your consultation.
+              </p>
             </div>
           )}
 
@@ -143,8 +239,8 @@ export const Step7QuoteResults = () => {
               <span className="font-medium">{sqftLabel}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Recommended Size:</span>
-              <span className="font-medium">{pricing.recommendedTonnage} Ton</span>
+              <span className="text-muted-foreground">System Size:</span>
+              <span className="font-medium">{pricing.effectiveTonnage} Ton</span>
             </div>
           </div>
         </div>
@@ -207,6 +303,10 @@ export const Step7QuoteResults = () => {
           <div className="flex items-center gap-1.5">
             <Shield className="h-3.5 w-3.5 text-[#a5a983]" />
             <span>Licensed & Insured</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Wrench className="h-3.5 w-3.5 text-[#a5a983]" />
+            <span>Expert Installation</span>
           </div>
           <div className="flex items-center gap-1.5">
             <CheckCircle2 className="h-3.5 w-3.5 text-[#a5a983]" />
