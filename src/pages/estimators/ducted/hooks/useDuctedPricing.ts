@@ -150,7 +150,8 @@ export function useDuctedPricing(state: DuctedEstimatorState): {
 } {
   // Fetch equipment
   const { data: equipment = [], isLoading: equipmentLoading } = useQuery({
-    queryKey: ["ducted_equipment_active"],
+    // Bump cache key to ensure fresh data after tier-id & DB changes
+    queryKey: ["ducted_equipment_active_v2"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ducted_equipment")
@@ -164,7 +165,7 @@ export function useDuctedPricing(state: DuctedEstimatorState): {
 
   // Fetch efficiency tiers
   const { data: tiers = [], isLoading: tiersLoading } = useQuery({
-    queryKey: ["ducted_efficiency_tiers_active"],
+    queryKey: ["ducted_efficiency_tiers_active_v2"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ducted_efficiency_tiers")
@@ -178,7 +179,7 @@ export function useDuctedPricing(state: DuctedEstimatorState): {
 
   // Fetch add-ons
   const { data: addons = [], isLoading: addonsLoading } = useQuery({
-    queryKey: ["ducted_addons_active"],
+    queryKey: ["ducted_addons_active_v2"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ducted_addons")
@@ -192,7 +193,7 @@ export function useDuctedPricing(state: DuctedEstimatorState): {
 
   // Fetch tonnage sizing rules
   const { data: tonnageRules = [], isLoading: rulesLoading } = useQuery({
-    queryKey: ["ducted_tonnage_sizing_rules"],
+    queryKey: ["ducted_tonnage_sizing_rules_v2"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ducted_tonnage_sizing_rules")
