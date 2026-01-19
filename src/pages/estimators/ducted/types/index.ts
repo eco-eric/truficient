@@ -114,10 +114,10 @@ export const SUMMER_TEMP_OPTIONS: TempPreferenceOption[] = [
 ];
 
 export const SYSTEM_COUNT_OPTIONS = [
-  { value: 1 as const, label: '1 System' },
-  { value: 2 as const, label: '2 Systems' },
-  { value: 3 as const, label: '3 Systems' },
-  { value: 4 as const, label: '4+ Systems' },
+  { value: 1 as const, label: '1' },
+  { value: 2 as const, label: '2' },
+  { value: 3 as const, label: '3' },
+  { value: 4 as const, label: '4+' },
 ];
 
 export const COVERAGE_OPTIONS = [
