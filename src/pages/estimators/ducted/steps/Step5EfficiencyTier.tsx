@@ -101,6 +101,11 @@ export const Step5EfficiencyTier = () => {
 
   // Calculate minimum price for a tier based on real equipment data
   const getStartingPriceForTier = (tier: DuctedEfficiencyTier) => {
+    // Return null if equipment hasn't loaded yet
+    if (!equipment || equipment.length === 0) {
+      return null;
+    }
+
     // Filter equipment that matches the tier's SEER2 range and system type
     const matchingEquipment = equipment.filter((eq) => {
       if (!eq.seer2_rating) return false;
@@ -114,6 +119,9 @@ export const Step5EfficiencyTier = () => {
       // Check if equipment SEER2 falls within tier's range
       return eq.seer2_rating >= tier.seer_min && eq.seer2_rating <= tier.seer_max;
     });
+
+    // Debug logging
+    console.log(`Tier ${tier.name}: SEER ${tier.seer_min}-${tier.seer_max}, heating: ${state.heatingType}, matches: ${matchingEquipment.length}`);
 
     if (matchingEquipment.length === 0) {
       return null; // No matching equipment for this tier
@@ -185,7 +193,9 @@ export const Step5EfficiencyTier = () => {
                       </span>
                     </div>
                     <div className="text-right">
-                      {startingPrice ? (
+                      {equipmentLoading ? (
+                        <div className="text-xs text-muted-foreground">Loading...</div>
+                      ) : startingPrice ? (
                         <>
                           <div className="text-xs text-muted-foreground">Starting at</div>
                           <div className="text-lg font-bold text-[#1e3a5f]">
