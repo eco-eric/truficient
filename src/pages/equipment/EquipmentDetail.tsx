@@ -59,15 +59,16 @@ interface SpecRowProps {
 }
 
 function SpecRow({ icon, label, value }: SpecRowProps) {
-  if (!value) return null;
+  // Hide if no value or if value is literally "null" string
+  if (!value || value === 'null' || value === 'undefined') return null;
 
   return (
-    <div className="flex items-center justify-between py-3 border-b border-border last:border-0">
-      <div className="flex items-center gap-3">
+    <div className="flex items-start justify-between gap-4 py-3 border-b border-border last:border-0">
+      <div className="flex items-center gap-3 flex-shrink-0">
         <div className="text-muted-foreground">{icon}</div>
         <span className="font-medium text-foreground">{label}</span>
       </div>
-      <span className="text-foreground font-semibold">{value}</span>
+      <span className="text-foreground font-semibold text-right">{value}</span>
     </div>
   );
 }
@@ -265,7 +266,7 @@ export default function EquipmentDetail() {
                   <SpecRow
                     icon={<Zap className="w-5 h-5" />}
                     label="Breaker Size"
-                    value={specs?.breaker_size ? `${specs.breaker_size} Amp` : undefined}
+                    value={specs?.breaker_size as string}
                   />
                   <SpecRow
                     icon={<Factory className="w-5 h-5" />}
