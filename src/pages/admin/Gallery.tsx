@@ -27,13 +27,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ImageUpload } from '@/components/admin/ImageUpload';
+import { MediaUpload, MediaType } from '@/components/admin/MediaUpload';
 import { BulkImageUpload } from '@/components/admin/BulkImageUpload';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import { Plus, Pencil, Trash2, Star, Image as ImageIcon, Tag, Loader2, Upload, Grid2X2, Grid3X3, LayoutGrid } from 'lucide-react';
+import { Plus, Pencil, Trash2, Star, Image as ImageIcon, Video, Tag, Loader2, Upload, Grid2X2, Grid3X3, LayoutGrid, Play } from 'lucide-react';
 import { toast } from 'sonner';
 
 const PAGE_SIZE = 48;
+
+type MediaFilter = 'all' | 'image' | 'video';
 
 interface GalleryTag {
   id: string;
@@ -49,6 +51,8 @@ interface GalleryImage {
   title: string;
   description: string | null;
   image_url: string;
+  thumbnail_url: string | null;
+  media_type: MediaType;
   alt_text: string | null;
   is_featured: boolean;
   is_active: boolean;
@@ -65,6 +69,7 @@ type ThumbnailSize = 'small' | 'medium' | 'large';
 const AdminGallery = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('images');
+  const [mediaFilter, setMediaFilter] = useState<MediaFilter>('all');
   const [thumbnailSize, setThumbnailSize] = useState<ThumbnailSize>('medium');
   
   // Image dialog state
@@ -75,6 +80,7 @@ const AdminGallery = () => {
     title: '',
     description: '',
     image_url: '',
+    media_type: 'image' as MediaType,
     alt_text: '',
     is_featured: false,
     is_active: true,
@@ -105,15 +111,17 @@ const AdminGallery = () => {
     },
   });
 
-  // Fetch total count for display
-  const { data: totalCount = 0 } = useQuery({
-    queryKey: ['gallery-images-count-admin'],
+  // Fetch counts for display
+  const { data: mediaCounts = { total: 0, images: 0, videos: 0 } } = useQuery({
+    queryKey: ['gallery-media-counts-admin'],
     queryFn: async () => {
-      const { count, error } = await supabase
+      const { data, error } = await supabase
         .from('gallery_images')
-        .select('*', { count: 'exact', head: true });
+        .select('media_type');
       if (error) throw error;
-      return count || 0;
+      const images = data.filter(d => d.media_type !== 'video').length;
+      const videos = data.filter(d => d.media_type === 'video').length;
+      return { total: data.length, images, videos };
     },
   });
 
@@ -144,10 +152,14 @@ const AdminGallery = () => {
     initialPageParam: 0,
   });
 
-  // Flatten all pages into a single array
+  // Flatten all pages and filter by media type
   const images = useMemo(() => {
-    return imagesData?.pages.flatMap(page => page.images) || [];
-  }, [imagesData]);
+    const allImages = imagesData?.pages.flatMap(page => page.images) || [];
+    if (mediaFilter === 'all') return allImages;
+    return allImages.filter(img => 
+      mediaFilter === 'video' ? img.media_type === 'video' : img.media_type !== 'video'
+    );
+  }, [imagesData, mediaFilter]);
 
   const { loadMoreRef } = useInfiniteScroll({
     onLoadMore: () => fetchNextPage(),
@@ -177,6 +189,7 @@ const AdminGallery = () => {
           title: imageData.title,
           description: imageData.description || null,
           image_url: imageData.image_url,
+          media_type: imageData.media_type,
           alt_text: imageData.alt_text || null,
           is_featured: imageData.is_featured,
           is_active: imageData.is_active,
@@ -197,14 +210,14 @@ const AdminGallery = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gallery-images-admin-infinite'] });
-      queryClient.invalidateQueries({ queryKey: ['gallery-images-count-admin'] });
+      queryClient.invalidateQueries({ queryKey: ['gallery-media-counts-admin'] });
       queryClient.invalidateQueries({ queryKey: ['gallery-image-tags-admin'] });
       setImageDialogOpen(false);
       resetImageForm();
-      toast.success('Image added successfully');
+      toast.success('Media added successfully');
     },
     onError: (error) => {
-      toast.error('Failed to add image: ' + error.message);
+      toast.error('Failed to add media: ' + error.message);
     },
   });
 
@@ -217,6 +230,7 @@ const AdminGallery = () => {
           title: imageData.title,
           description: imageData.description || null,
           image_url: imageData.image_url,
+          media_type: imageData.media_type,
           alt_text: imageData.alt_text || null,
           is_featured: imageData.is_featured,
           is_active: imageData.is_active,
@@ -235,13 +249,14 @@ const AdminGallery = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gallery-images-admin-infinite'] });
+      queryClient.invalidateQueries({ queryKey: ['gallery-media-counts-admin'] });
       queryClient.invalidateQueries({ queryKey: ['gallery-image-tags-admin'] });
       setImageDialogOpen(false);
       resetImageForm();
-      toast.success('Image updated successfully');
+      toast.success('Media updated successfully');
     },
     onError: (error) => {
-      toast.error('Failed to update image: ' + error.message);
+      toast.error('Failed to update media: ' + error.message);
     },
   });
 
@@ -252,11 +267,11 @@ const AdminGallery = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gallery-images-admin-infinite'] });
-      queryClient.invalidateQueries({ queryKey: ['gallery-images-count-admin'] });
-      toast.success('Image deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['gallery-media-counts-admin'] });
+      toast.success('Media deleted successfully');
     },
     onError: (error) => {
-      toast.error('Failed to delete image: ' + error.message);
+      toast.error('Failed to delete media: ' + error.message);
     },
   });
 
@@ -328,6 +343,7 @@ const AdminGallery = () => {
       title: '',
       description: '',
       image_url: '',
+      media_type: 'image',
       alt_text: '',
       is_featured: false,
       is_active: true,
@@ -356,6 +372,7 @@ const AdminGallery = () => {
       title: image.title,
       description: image.description || '',
       image_url: image.image_url,
+      media_type: image.media_type || 'image',
       alt_text: image.alt_text || '',
       is_featured: image.is_featured,
       is_active: image.is_active,
@@ -460,12 +477,14 @@ const AdminGallery = () => {
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label>Image</Label>
-                    <ImageUpload
+                    <Label>Media</Label>
+                    <MediaUpload
                       bucketName="gallery-images"
                       currentUrl={imageForm.image_url}
-                      onUpload={(url) => setImageForm(prev => ({ ...prev, image_url: url }))}
-                      onRemove={() => setImageForm(prev => ({ ...prev, image_url: '' }))}
+                      currentMediaType={imageForm.media_type}
+                      onUpload={(url, mediaType) => setImageForm(prev => ({ ...prev, image_url: url, media_type: mediaType }))}
+                      onRemove={() => setImageForm(prev => ({ ...prev, image_url: '', media_type: 'image' }))}
+                      acceptedTypes="all"
                     />
                   </div>
                   <div className="space-y-2">
@@ -648,13 +667,44 @@ const AdminGallery = () => {
             )}
           </div>
           
-          {/* Photo Count and Thumbnail Size Toggle */}
+          {/* Media Filter, Count and Thumbnail Size Toggle */}
           {activeTab === 'images' && (
-            <div className="flex items-center justify-between border-t pt-4">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold">{totalCount.toLocaleString()}</span>
-                <span className="text-muted-foreground">Photos</span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t pt-4">
+              <div className="flex items-center gap-4">
+                {/* Media type filter */}
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant={mediaFilter === 'all' ? 'default' : 'outline'}
+                    className="cursor-pointer"
+                    onClick={() => setMediaFilter('all')}
+                  >
+                    All
+                  </Badge>
+                  <Badge
+                    variant={mediaFilter === 'image' ? 'default' : 'outline'}
+                    className="cursor-pointer gap-1"
+                    onClick={() => setMediaFilter('image')}
+                  >
+                    <ImageIcon className="w-3 h-3" />
+                    Photos
+                  </Badge>
+                  <Badge
+                    variant={mediaFilter === 'video' ? 'default' : 'outline'}
+                    className="cursor-pointer gap-1"
+                    onClick={() => setMediaFilter('video')}
+                  >
+                    <Video className="w-3 h-3" />
+                    Videos
+                  </Badge>
+                </div>
+                
+                {/* Counts */}
+                <div className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{mediaCounts.images}</span> Photos, 
+                  <span className="font-medium text-foreground ml-1">{mediaCounts.videos}</span> Videos
+                </div>
               </div>
+              
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">View:</span>
                 <ToggleGroup 
@@ -704,62 +754,89 @@ const AdminGallery = () => {
                     ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
                     : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
               }`}>
-                {images.map((image) => (
-                  <Card key={image.id} className="overflow-hidden group">
-                    <div className="aspect-square relative">
-                      <img
-                        src={image.image_url}
-                        alt={image.alt_text || image.title}
-                        loading="lazy"
-                        className="w-full h-full object-cover"
-                      />
-                      {image.is_featured && (
-                        <div className="absolute top-2 left-2">
-                          <Badge className="bg-secondary text-secondary-foreground">
-                            <Star className="w-3 h-3 mr-1" />
-                            Featured
-                          </Badge>
-                        </div>
-                      )}
-                      {!image.is_active && (
-                        <div className="absolute top-2 right-2">
-                          <Badge variant="secondary">Hidden</Badge>
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                        <Button size="sm" variant="secondary" onClick={() => openEditImage(image)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="destructive" 
-                          onClick={() => {
-                            if (confirm('Are you sure you want to delete this image?')) {
-                              deleteImageMutation.mutate(image.id);
-                            }
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    <CardContent className="p-3">
-                      <h4 className="font-medium text-sm truncate">{image.title}</h4>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {getImageTags(image.id).slice(0, 2).map(tag => (
-                          <Badge key={tag.id} variant="outline" className="text-xs">
-                            {tag.name}
-                          </Badge>
-                        ))}
-                        {getImageTags(image.id).length > 2 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{getImageTags(image.id).length - 2}
-                          </Badge>
+                {images.map((image) => {
+                  const isVideo = image.media_type === 'video';
+                  return (
+                    <Card key={image.id} className="overflow-hidden group">
+                      <div className="aspect-square relative">
+                        {isVideo ? (
+                          <>
+                            <video
+                              src={image.image_url}
+                              className="w-full h-full object-cover"
+                              muted
+                              playsInline
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <div className="w-10 h-10 rounded-full bg-black/60 flex items-center justify-center">
+                                <Play className="w-5 h-5 text-white ml-0.5" />
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <img
+                            src={image.image_url}
+                            alt={image.alt_text || image.title}
+                            loading="lazy"
+                            className="w-full h-full object-cover"
+                          />
                         )}
+                        {image.is_featured && (
+                          <div className="absolute top-2 left-2">
+                            <Badge className="bg-secondary text-secondary-foreground">
+                              <Star className="w-3 h-3 mr-1" />
+                              Featured
+                            </Badge>
+                          </div>
+                        )}
+                        {!image.is_active && (
+                          <div className="absolute top-2 right-2">
+                            <Badge variant="secondary">Hidden</Badge>
+                          </div>
+                        )}
+                        {isVideo && (
+                          <div className="absolute bottom-2 left-2">
+                            <Badge variant="secondary" className="gap-1">
+                              <Video className="w-3 h-3" />
+                              Video
+                            </Badge>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <Button size="sm" variant="secondary" onClick={() => openEditImage(image)}>
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="destructive" 
+                            onClick={() => {
+                              if (confirm('Are you sure you want to delete this?')) {
+                                deleteImageMutation.mutate(image.id);
+                              }
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      <CardContent className="p-3">
+                        <h4 className="font-medium text-sm truncate">{image.title}</h4>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {getImageTags(image.id).slice(0, 2).map(tag => (
+                            <Badge key={tag.id} variant="outline" className="text-xs">
+                              {tag.name}
+                            </Badge>
+                          ))}
+                          {getImageTags(image.id).length > 2 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{getImageTags(image.id).length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
               
               {/* Infinite scroll trigger */}
@@ -767,12 +844,12 @@ const AdminGallery = () => {
                 {isFetchingNextPage && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Loading more photos...</span>
+                    <span>Loading more...</span>
                   </div>
                 )}
                 {!hasNextPage && images.length > 0 && (
                   <p className="text-sm text-muted-foreground">
-                    Showing all {images.length.toLocaleString()} photos
+                    Showing all {images.length.toLocaleString()} items
                   </p>
                 )}
               </div>
