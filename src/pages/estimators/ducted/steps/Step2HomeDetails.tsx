@@ -104,32 +104,24 @@ export const Step2HomeDetails = () => {
           </div>
         </div>
 
-        {/* System count - only show for larger homes */}
-        {state.squareFootage &&
-          ["3000_3500", "3500_4000", "4000_plus"].includes(
-            state.squareFootage
-          ) && (
-            <div>
-              <h3 className="text-sm font-medium text-foreground mb-3">
-                How many HVAC systems do you need?
-              </h3>
-              <div className="grid grid-cols-4 gap-2">
-                {SYSTEM_COUNT_OPTIONS.map((option) => (
-                  <SelectableCard
-                    key={option.value}
-                    selected={state.systemCount === option.value}
-                    onClick={() => setSystemCount(option.value as SystemCount)}
-                    className="py-3 text-center"
-                  >
-                    <span className="text-sm font-medium">{option.label}</span>
-                  </SelectableCard>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Larger homes often have multiple zones for better comfort.
-              </p>
-            </div>
-          )}
+        {/* System count - always visible */}
+        <div>
+          <h3 className="text-sm font-medium text-foreground mb-3">
+            How many HVAC systems do you have?
+          </h3>
+          <div className="grid grid-cols-4 gap-3">
+            {SYSTEM_COUNT_OPTIONS.map((option) => (
+              <SelectableCard
+                key={option.value}
+                selected={state.systemCount === option.value}
+                onClick={() => setSystemCount(option.value as SystemCount)}
+                className="py-6 text-center"
+              >
+                <span className="text-2xl font-bold">{option.label}</span>
+              </SelectableCard>
+            ))}
+          </div>
+        </div>
 
         {/* Coverage selection */}
         <div>
