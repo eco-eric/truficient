@@ -11,7 +11,7 @@ import { HOME_TYPE_OPTIONS, HOME_LAYOUT_OPTIONS, SQUARE_FOOTAGE_OPTIONS } from "
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
-export const Step7QuoteResults = () => {
+export const Step8QuoteResults = () => {
   const { state, nextStep, prevStep, setTotals, setRecommendedTonnage, setSelectedEquipmentId } = useEstimator();
   const { pricing, isLoading, matchingEquipment } = useDuctedPricing(state);
   

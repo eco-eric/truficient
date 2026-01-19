@@ -3,19 +3,21 @@ import { EstimatorProvider, useEstimator } from "./context/EstimatorContext";
 import { ProgressIndicator } from "../ductless/components/ProgressIndicator";
 import { Step1HomeType } from "./steps/Step1HomeType";
 import { Step2HomeDetails } from "./steps/Step2HomeDetails";
-import { Step3UsagePatterns } from "./steps/Step3UsagePatterns";
-import { Step4HeatingType } from "./steps/Step4HeatingType";
-import { Step5SystemSize } from "./steps/Step5SystemSize";
-import { Step6EfficiencyTier } from "./steps/Step6EfficiencyTier";
-import { Step7QuoteResults } from "./steps/Step7QuoteResults";
-import { Step8CustomerInfo } from "./steps/Step8CustomerInfo";
-import { Step9ThankYou } from "./steps/Step9ThankYou";
+import { Step3InsulationFactors } from "./steps/Step3InsulationFactors";
+import { Step4UsagePatterns } from "./steps/Step4UsagePatterns";
+import { Step5HeatingType } from "./steps/Step5HeatingType";
+import { Step6SystemSize } from "./steps/Step6SystemSize";
+import { Step7EfficiencyTier } from "./steps/Step7EfficiencyTier";
+import { Step8QuoteResults } from "./steps/Step8QuoteResults";
+import { Step9CustomerInfo } from "./steps/Step9CustomerInfo";
+import { Step10ThankYou } from "./steps/Step10ThankYou";
 import { Link } from "react-router-dom";
 import truficientLogo from "@/assets/truficient-logo.png";
 
 const STEP_LABELS = [
   "Home Type",
   "Home Details",
+  "Insulation",
   "Comfort",
   "Heating Type",
   "System Size",
@@ -36,33 +38,35 @@ const EstimatorContent = () => {
       case 1:
         return <Step2HomeDetails />;
       case 2:
-        return <Step3UsagePatterns />;
+        return <Step3InsulationFactors />;
       case 3:
-        return <Step4HeatingType />;
+        return <Step4UsagePatterns />;
       case 4:
-        return <Step5SystemSize />;
+        return <Step5HeatingType />;
       case 5:
-        return <Step6EfficiencyTier />;
+        return <Step6SystemSize />;
       case 6:
-        return <Step7QuoteResults />;
+        return <Step7EfficiencyTier />;
       case 7:
-        return <Step8CustomerInfo />;
+        return <Step8QuoteResults />;
       case 8:
-        return <Step9ThankYou />;
+        return <Step9CustomerInfo />;
+      case 9:
+        return <Step10ThankYou />;
       default:
         return <Step1HomeType />;
     }
   };
 
-  // Show progress on steps 1-7 (after welcome, before thank you)
-  const showProgress = currentStep > 0 && currentStep < 8;
+  // Show progress on steps 1-8 (after welcome, before thank you)
+  const showProgress = currentStep > 0 && currentStep < 9;
 
   // Show header on all steps except first and last
-  const showHeader = currentStep > 0 && currentStep < 8;
+  const showHeader = currentStep > 0 && currentStep < 9;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header - shown on steps 1-7 */}
+      {/* Header - shown on steps 1-8 */}
       {showHeader && (
         <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b">
           <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
@@ -87,8 +91,8 @@ const EstimatorContent = () => {
       {showProgress && (
         <ProgressIndicator
           currentStep={currentStep}
-          totalSteps={7}
-          labels={STEP_LABELS.slice(1, 8)}
+          totalSteps={8}
+          labels={STEP_LABELS.slice(1, 9)}
         />
       )}
 

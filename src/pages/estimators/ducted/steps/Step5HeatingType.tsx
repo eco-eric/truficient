@@ -46,7 +46,7 @@ const HEATING_TYPE_OPTIONS: HeatingTypeOption[] = [
   },
 ];
 
-export const Step4HeatingType = () => {
+export const Step5HeatingType = () => {
   const { state, setHeatingType, nextStep, prevStep } = useEstimator();
 
   const handleSelect = (type: HeatingType) => {

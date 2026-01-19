@@ -5,7 +5,7 @@ import { useEstimator } from "../context/EstimatorContext";
 import { motion } from "framer-motion";
 import { CheckCircle, Phone, Calendar, FileText, Wrench } from "lucide-react";
 
-export const Step9ThankYou = () => {
+export const Step10ThankYou = () => {
   const { resetEstimator, state } = useEstimator();
 
   const steps = [
