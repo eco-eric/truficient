@@ -437,8 +437,8 @@ const UnifiedSubmissions = () => {
         {/* Source Tabs */}
         <Tabs value={sourceFilter} onValueChange={(v) => setSourceFilter(v as SubmissionSource | "all")} defaultValue="ducted">
           <TabsList className="flex-wrap h-auto gap-1">
-            <TabsTrigger value="ducted">Ducted ({sourceCounts.ducted})</TabsTrigger>
             <TabsTrigger value="all">All ({sourceCounts.all})</TabsTrigger>
+            <TabsTrigger value="ducted">Ducted ({sourceCounts.ducted})</TabsTrigger>
             <TabsTrigger value="contact">Contact ({sourceCounts.contact})</TabsTrigger>
             <TabsTrigger value="landing_page">Landing Page ({sourceCounts.landing_page})</TabsTrigger>
             <TabsTrigger value="ductless">Ductless ({sourceCounts.ductless})</TabsTrigger>
