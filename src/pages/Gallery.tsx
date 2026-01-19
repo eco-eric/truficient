@@ -5,14 +5,15 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ImageLightbox } from '@/components/ui/image-lightbox';
+import { MediaLightbox } from '@/components/ui/media-lightbox';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { usePageSEO } from '@/hooks/usePageSEO';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { motion } from 'framer-motion';
-import { Loader2, ChevronLeft, ChevronRight, Grid2X2, Grid3X3, LayoutGrid } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Grid2X2, Grid3X3, LayoutGrid, Image as ImageIcon, Video, Play } from 'lucide-react';
 
 type ThumbnailSize = 'small' | 'medium' | 'large';
+type MediaFilter = 'all' | 'image' | 'video';
 
 const PAGE_SIZE = 48;
 
@@ -27,6 +28,7 @@ interface GalleryImage {
   title: string;
   description: string | null;
   image_url: string;
+  media_type: 'image' | 'video';
   alt_text: string | null;
   sort_order: number | null;
 }
@@ -34,6 +36,7 @@ interface GalleryImage {
 const Gallery = () => {
   usePageSEO();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [mediaFilter, setMediaFilter] = useState<MediaFilter>('all');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [thumbnailSize, setThumbnailSize] = useState<ThumbnailSize>('medium');
@@ -127,10 +130,14 @@ const Gallery = () => {
     initialPageParam: 0,
   });
 
-  // Flatten all pages into a single array
+  // Flatten all pages and filter by media type
   const images = useMemo(() => {
-    return imagesData?.pages.flatMap(page => page.images) || [];
-  }, [imagesData]);
+    const allImages = imagesData?.pages.flatMap(page => page.images) || [];
+    if (mediaFilter === 'all') return allImages;
+    return allImages.filter(img => 
+      mediaFilter === 'video' ? img.media_type === 'video' : img.media_type !== 'video'
+    );
+  }, [imagesData, mediaFilter]);
 
   // Calculate filtered count
   const filteredCount = selectedTags.length > 0 
@@ -195,16 +202,35 @@ const Gallery = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             {/* Left side - Filters */}
             <div className="flex flex-wrap items-center gap-2">
+              {/* Media type filter */}
+              <Badge
+                variant={mediaFilter === 'all' ? 'default' : 'outline'}
+                className="cursor-pointer"
+                onClick={() => setMediaFilter('all')}
+              >
+                All
+              </Badge>
+              <Badge
+                variant={mediaFilter === 'image' ? 'default' : 'outline'}
+                className="cursor-pointer gap-1"
+                onClick={() => setMediaFilter('image')}
+              >
+                <ImageIcon className="w-3 h-3" />
+                Photos
+              </Badge>
+              <Badge
+                variant={mediaFilter === 'video' ? 'default' : 'outline'}
+                className="cursor-pointer gap-1"
+                onClick={() => setMediaFilter('video')}
+              >
+                <Video className="w-3 h-3" />
+                Videos
+              </Badge>
+              
+              {/* Tag filters */}
               {tags.length > 0 && (
                 <>
-                  <span className="text-sm text-muted-foreground mr-2">Filter by:</span>
-                  <Badge
-                    variant={selectedTags.length === 0 ? 'default' : 'outline'}
-                    className="cursor-pointer"
-                    onClick={() => setSelectedTags([])}
-                  >
-                    All
-                  </Badge>
+                  <span className="text-muted-foreground mx-2">|</span>
                   {tags.map(tag => (
                     <Badge
                       key={tag.id}
@@ -281,37 +307,56 @@ const Gallery = () => {
                     ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
                     : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
               }`}>
-                {images.map((image, index) => (
-                  <motion.div
-                    key={image.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: Math.min(index % PAGE_SIZE, 12) * 0.03 }}
-                    className="group cursor-pointer"
-                    onClick={() => openLightbox(index)}
-                  >
-                    <div className="aspect-square overflow-hidden rounded-lg bg-muted relative">
-                      <img
-                        src={image.image_url}
-                        alt={image.alt_text || image.title}
-                        loading="lazy"
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end">
-                        <div className="p-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <h3 className="font-medium text-sm">{image.title}</h3>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {getImageTags(image.id).slice(0, 2).map(tag => (
-                              <span key={tag.id} className="text-xs bg-white/20 px-2 py-0.5 rounded">
-                                {tag.name}
-                              </span>
-                            ))}
+                {images.map((image, index) => {
+                  const isVideo = image.media_type === 'video';
+                  return (
+                    <motion.div
+                      key={image.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: Math.min(index % PAGE_SIZE, 12) * 0.03 }}
+                      className="group cursor-pointer"
+                      onClick={() => openLightbox(index)}
+                    >
+                      <div className="aspect-square overflow-hidden rounded-lg bg-muted relative">
+                        {isVideo ? (
+                          <>
+                            <video
+                              src={image.image_url}
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              muted
+                              playsInline
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center">
+                                <Play className="w-6 h-6 text-white ml-1" />
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <img
+                            src={image.image_url}
+                            alt={image.alt_text || image.title}
+                            loading="lazy"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        )}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end">
+                          <div className="p-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <h3 className="font-medium text-sm">{image.title}</h3>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {getImageTags(image.id).slice(0, 2).map(tag => (
+                                <span key={tag.id} className="text-xs bg-white/20 px-2 py-0.5 rounded">
+                                  {tag.name}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  );
+                })}
               </div>
 
               {/* Infinite scroll trigger */}
@@ -335,9 +380,10 @@ const Gallery = () => {
 
       {/* Enhanced Lightbox with Navigation */}
       {currentImage && (
-        <ImageLightbox
+        <MediaLightbox
           src={currentImage.image_url}
           alt={currentImage.alt_text || currentImage.title}
+          mediaType={currentImage.media_type || 'image'}
           open={lightboxOpen}
           onOpenChange={setLightboxOpen}
         />

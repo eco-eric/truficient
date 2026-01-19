@@ -1645,7 +1645,9 @@ export type Database = {
           image_url: string
           is_active: boolean | null
           is_featured: boolean | null
+          media_type: string | null
           sort_order: number | null
+          thumbnail_url: string | null
           title: string
           updated_at: string | null
         }
@@ -1657,7 +1659,9 @@ export type Database = {
           image_url: string
           is_active?: boolean | null
           is_featured?: boolean | null
+          media_type?: string | null
           sort_order?: number | null
+          thumbnail_url?: string | null
           title: string
           updated_at?: string | null
         }
@@ -1669,7 +1673,9 @@ export type Database = {
           image_url?: string
           is_active?: boolean | null
           is_featured?: boolean | null
+          media_type?: string | null
           sort_order?: number | null
+          thumbnail_url?: string | null
           title?: string
           updated_at?: string | null
         }
