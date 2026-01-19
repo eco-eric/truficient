@@ -55,6 +55,7 @@ const getTierStyle = (name: string) => {
 // Equipment type interface for pricing calculation
 interface DuctedEquipment {
   id: string;
+  brand: string;
   system_type: string;
   seer2_rating: number | null;
   tonnage: number;
@@ -89,11 +90,11 @@ export const Step7EfficiencyTier = () => {
 
   // Fetch equipment for real pricing
   const { data: equipment = [], isLoading: equipmentLoading } = useQuery({
-    queryKey: ["ducted-equipment-pricing-v2"],
+    queryKey: ["ducted-equipment-pricing-v3"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ducted_equipment")
-        .select("id, system_type, seer2_rating, tonnage, equipment_cost, installation_labor, is_active, efficiency_tier_id")
+        .select("id, brand, system_type, seer2_rating, tonnage, equipment_cost, installation_labor, is_active, efficiency_tier_id")
         .eq("is_active", true);
 
       if (error) throw error;
@@ -139,19 +140,25 @@ export const Step7EfficiencyTier = () => {
       return null;
     }
 
-    // FIXED: Filter equipment using efficiency_tier_id instead of SEER range
+    // Filter equipment using efficiency_tier_id with variable speed rounding
     const matchingEquipment = equipment.filter((eq) => {
       // Match system type based on heating type selection
       const typeMatch = eq.system_type === state.heatingType;
       if (!typeMatch) return false;
       
-      // FIXED: Use tier ID matching instead of SEER range
+      // Use tier ID matching
       const tierMatch = eq.efficiency_tier_id === tier.id;
       if (!tierMatch) return false;
       
-      // Match effective tonnage
+      // Match effective tonnage with variable speed rounding
       if (effectiveTonnage) {
-        return eq.tonnage === effectiveTonnage;
+        // Variable speed brands (Trane, Bosch) only have whole-ton units
+        // They can modulate down, so round UP to next whole ton for matching
+        const isVariableSpeed = ['Trane', 'Bosch'].includes(eq.brand || '');
+        const targetTonnage = isVariableSpeed 
+          ? Math.ceil(effectiveTonnage) 
+          : effectiveTonnage;
+        return eq.tonnage === targetTonnage;
       }
       
       return true;
