@@ -27,8 +27,8 @@ const HOME_AGE_ADJUSTMENTS: Record<HomeAge, number> = {
   before_1980: 0.5,    // Likely significant air leakage
 };
 
-// Tax rate constant
-const TAX_RATE = 0.0825; // 8.25% Texas sales tax
+// Tax rate constant - taxes already included in equipment/labor pricing
+const TAX_RATE = 0;
 
 // Financing constants
 const FINANCING_TERM_MONTHS = 60;
@@ -312,10 +312,17 @@ export function useDuctedPricing(state: DuctedEstimatorState): {
     const systemType = state.heatingType;
 
     const filtered = equipment.filter((eq) => {
-      const tonnageMatch = eq.tonnage === effectiveTonnage;
       const typeMatch = eq.system_type === systemType;
-      // FIXED: Use efficiency_tier_id instead of SEER range matching
       const tierMatch = eq.efficiency_tier_id === state.efficiencyTierId;
+      
+      // Variable speed brands (Trane, Bosch) only have whole-ton units
+      // They can modulate down, so round UP to next whole ton for matching
+      const isVariableSpeed = ['Trane', 'Bosch'].includes(eq.brand);
+      const targetTonnage = isVariableSpeed 
+        ? Math.ceil(effectiveTonnage) 
+        : effectiveTonnage;
+      const tonnageMatch = eq.tonnage === targetTonnage;
+      
       return tonnageMatch && typeMatch && tierMatch;
     });
 
@@ -358,10 +365,10 @@ export function useDuctedPricing(state: DuctedEstimatorState): {
     
     const addonsCost = addonsBreakdown.reduce((sum, a) => sum + a.price, 0);
 
-    // Calculate totals
+    // Calculate totals - taxes already included in pricing
     const subtotal = equipmentCost + installationCost + addonsCost;
-    const taxAmount = subtotal * TAX_RATE;
-    const finalTotal = subtotal + taxAmount;
+    const taxAmount = 0;
+    const finalTotal = subtotal;
 
     // Calculate monthly financing
     const monthlyRate = FINANCING_APR / 12;
