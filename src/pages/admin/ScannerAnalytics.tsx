@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ScannerHeatmap } from '@/components/admin/dashboard/ScannerHeatmap';
 import { 
   ScanLine, 
   Mail, 
@@ -20,7 +21,8 @@ import {
   Fan,
   Wind,
   Package,
-  BarChart3
+  BarChart3,
+  Map
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -465,6 +467,28 @@ export default function ScannerAnalytics() {
           ) : (
             <p className="text-muted-foreground text-center py-8">No trend data available</p>
           )}
+        </CardContent>
+      </Card>
+
+      {/* DFW Heatmap */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Map className="h-5 w-5" />
+            DFW Scanner Activity Heatmap
+          </CardTitle>
+          <CardDescription>Geographic visualization of equipment scans across zip codes</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ScannerHeatmap 
+            zipCodeData={zipCodeData.map(z => ({
+              zip: z.zip,
+              count: z.count,
+              city: z.city,
+              isDfw: z.isDfw
+            }))} 
+            isLoading={isLoading} 
+          />
         </CardContent>
       </Card>
 
