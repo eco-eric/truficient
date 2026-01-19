@@ -55,6 +55,7 @@ import AdminEstimateTemplates from "./pages/admin/EstimateTemplates";
 import AdminTemplateBuilder from "./pages/admin/TemplateBuilder";
 import AdminGHLConversations from "./pages/admin/GHLConversations";
 import AdminButtonClicks from "./pages/admin/ButtonClicks";
+import AdminScannerAnalytics from "./pages/admin/ScannerAnalytics";
 import AdminDuctlessConfig from "./pages/admin/DuctlessConfig";
 import AdminGallery from "./pages/admin/Gallery";
 import AdminFinancingOptions from "./pages/admin/FinancingOptions";
@@ -165,6 +166,7 @@ const router = createBrowserRouter([
       { path: "/admin/trash-bin", element: <ProtectedRoute><AdminTrashBin /></ProtectedRoute> },
       { path: "/admin/settings", element: <ProtectedRoute><AdminSettings /></ProtectedRoute> },
       { path: "/admin/button-clicks", element: <ProtectedRoute><AdminButtonClicks /></ProtectedRoute> },
+      { path: "/admin/scanner-analytics", element: <ProtectedRoute><AdminScannerAnalytics /></ProtectedRoute> },
       
       // Catch-all route
       { path: "*", element: <NotFound /> },

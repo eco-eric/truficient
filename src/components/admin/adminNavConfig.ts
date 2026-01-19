@@ -22,7 +22,8 @@ import {
   CreditCard,
   Library,
   Target,
-  Trash2
+  Trash2,
+  ScanLine
 } from 'lucide-react';
 
 export interface NavItem {
@@ -91,6 +92,7 @@ export const navSections: NavSection[] = [
     title: 'Analytics',
     adminOnly: true,
     items: [
+      { label: 'Scanner Analytics', href: '/admin/scanner-analytics', icon: ScanLine, adminOnly: true },
       { label: 'Button Clicks', href: '/admin/button-clicks', icon: MousePointer, adminOnly: true },
       { label: 'Analytics', href: '/admin/analytics', icon: BarChart3, adminOnly: true },
       { label: 'Social Media', href: '/admin/social-media', icon: Share2, adminOnly: true },
