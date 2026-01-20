@@ -5,7 +5,8 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Loader2, Calendar, ArrowLeft } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Calendar, ArrowLeft, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface BlogPost {
@@ -18,6 +19,8 @@ interface BlogPost {
   published_at: string;
   meta_title: string | null;
   meta_description: string | null;
+  category: string | null;
+  tags: string[] | null;
 }
 
 const BlogPostPage = () => {
@@ -59,7 +62,7 @@ const BlogPostPage = () => {
       <div className="min-h-screen">
         <Header />
         <div className="flex justify-center items-center py-32">
-          <Loader2 className="h-8 w-8 animate-spin text-[#1e3a5f]" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
         <Footer />
       </div>
@@ -89,7 +92,7 @@ const BlogPostPage = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-[#1e3a5f] to-[#2d4a6f] text-white py-16">
+      <section className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground py-16">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -99,7 +102,7 @@ const BlogPostPage = () => {
           >
             <Link 
               to="/blog" 
-              className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-6 transition-colors"
+              className="inline-flex items-center gap-2 text-primary-foreground/80 hover:text-primary-foreground mb-6 transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to Blog
@@ -109,10 +112,29 @@ const BlogPostPage = () => {
               {post.title}
             </h1>
             
-            <div className="flex items-center gap-2 text-white/80">
-              <Calendar className="h-4 w-4" />
-              <span>{format(new Date(post.published_at), 'MMMM d, yyyy')}</span>
+            <div className="flex flex-wrap items-center gap-3 text-primary-foreground/80">
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-4 w-4" />
+                <span>{format(new Date(post.published_at), 'MMMM d, yyyy')}</span>
+              </div>
+              
+              {post.category && (
+                <Badge variant="secondary" className="bg-white/20 text-primary-foreground hover:bg-white/30">
+                  {post.category}
+                </Badge>
+              )}
             </div>
+
+            {post.tags && post.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-4">
+                {post.tags.map((tag, i) => (
+                  <Badge key={i} variant="outline" className="text-primary-foreground/80 border-primary-foreground/30">
+                    <Tag className="h-3 w-3 mr-1" />
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </motion.div>
         </div>
       </section>
@@ -148,7 +170,6 @@ const BlogPostPage = () => {
             
             {post.content ? (
               <div 
-                className="whitespace-pre-wrap"
                 dangerouslySetInnerHTML={{ __html: post.content }}
               />
             ) : (
@@ -159,13 +180,13 @@ const BlogPostPage = () => {
       </article>
 
       {/* CTA Section */}
-      <section className="py-12 bg-gray-50">
+      <section className="py-12 bg-muted/30">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-2xl font-bold mb-4">Need HVAC Services?</h2>
           <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
             Contact Truficient Energy Solutions for expert heating and cooling services in the Dallas-Fort Worth area.
           </p>
-          <Button asChild size="lg" className="bg-[#d4a84b] hover:bg-[#c49a3d] text-white">
+          <Button asChild size="lg" className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
             <Link to="/contact">Get a Free Quote</Link>
           </Button>
         </div>

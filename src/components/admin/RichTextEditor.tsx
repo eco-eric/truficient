@@ -1,9 +1,10 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
+import Image from '@tiptap/extension-image';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Bold,
@@ -22,8 +23,13 @@ import {
   Undo,
   Redo,
   RemoveFormatting,
+  ImageIcon,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
 interface RichTextEditorProps {
   value: string;
@@ -32,6 +38,10 @@ interface RichTextEditorProps {
 }
 
 const RichTextEditor = ({ value, onChange, placeholder = 'Start writing...' }: RichTextEditorProps) => {
+  const { toast } = useToast();
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -43,6 +53,11 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Start writing...' }: R
         openOnClick: false,
         HTMLAttributes: {
           class: 'text-primary underline',
+        },
+      }),
+      Image.configure({
+        HTMLAttributes: {
+          class: 'max-w-full h-auto rounded-lg my-4',
         },
       }),
       Underline,
@@ -58,6 +73,35 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Start writing...' }: R
       attributes: {
         class: 'prose prose-sm sm:prose-base max-w-none focus:outline-none min-h-[300px] px-4 py-3',
       },
+      handleDrop: (view, event, slice, moved) => {
+        if (!moved && event.dataTransfer?.files?.length) {
+          const files = Array.from(event.dataTransfer.files);
+          const images = files.filter(file => file.type.startsWith('image/'));
+          
+          if (images.length > 0) {
+            event.preventDefault();
+            images.forEach(file => handleImageUpload(file));
+            return true;
+          }
+        }
+        return false;
+      },
+      handlePaste: (view, event) => {
+        const items = event.clipboardData?.items;
+        if (items) {
+          for (let i = 0; i < items.length; i++) {
+            if (items[i].type.startsWith('image/')) {
+              const file = items[i].getAsFile();
+              if (file) {
+                event.preventDefault();
+                handleImageUpload(file);
+                return true;
+              }
+            }
+          }
+        }
+        return false;
+      },
     },
   });
 
@@ -67,6 +111,52 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Start writing...' }: R
       editor.commands.setContent(value || '');
     }
   }, [value, editor]);
+
+  const handleImageUpload = async (file: File) => {
+    if (!editor) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `content/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('blog_images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('blog_images')
+        .getPublicUrl(filePath);
+
+      editor.chain().focus().setImage({ src: publicUrl }).run();
+
+      toast({
+        title: 'Image uploaded',
+        description: 'Image has been added to your content.',
+      });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: 'Upload failed',
+        description: 'Failed to upload image. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+    // Reset input so same file can be selected again
+    event.target.value = '';
+  };
 
   const setLink = useCallback(() => {
     if (!editor) return;
@@ -119,6 +209,15 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Start writing...' }: R
 
   return (
     <div className="border rounded-md overflow-hidden">
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        accept="image/*"
+        className="hidden"
+      />
+
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-0.5 p-2 border-b bg-muted/30">
         {/* Headings */}
@@ -214,7 +313,7 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Start writing...' }: R
           </ToolbarButton>
         </div>
 
-        {/* Links */}
+        {/* Links & Images */}
         <div className="flex items-center gap-0.5 pr-2 border-r mr-2">
           <ToolbarButton
             onClick={setLink}
@@ -229,6 +328,17 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Start writing...' }: R
             title="Remove Link"
           >
             <Unlink className="h-4 w-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            title="Insert Image"
+          >
+            {uploading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ImageIcon className="h-4 w-4" />
+            )}
           </ToolbarButton>
         </div>
 
@@ -259,6 +369,11 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Start writing...' }: R
 
       {/* Editor Content */}
       <EditorContent editor={editor} className="bg-background" />
+
+      {/* Drag and drop hint */}
+      <div className="px-3 py-1.5 text-xs text-muted-foreground border-t bg-muted/20">
+        Tip: Drag & drop or paste images directly into the editor
+      </div>
     </div>
   );
 };
