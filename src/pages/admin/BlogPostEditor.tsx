@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Save, Eye, X, Plus } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, Eye, X, Plus, Upload, Trash2 } from 'lucide-react';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import BlogPreview from '@/components/admin/BlogPreview';
 
@@ -58,6 +58,7 @@ const BlogPostEditor = () => {
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [newTag, setNewTag] = useState('');
   const [post, setPost] = useState<Partial<BlogPost>>({
     title: '',
@@ -423,22 +424,91 @@ const BlogPostEditor = () => {
                     <CardTitle>Featured Image</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
+                      {post.featured_image ? (
+                        <div className="relative group">
+                          <img
+                            src={post.featured_image}
+                            alt="Featured"
+                            className="w-full h-40 object-cover rounded-md"
+                            onError={(e) => {
+                              e.currentTarget.src = '/placeholder.svg';
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => setPost(prev => ({ ...prev, featured_image: '' }))}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            {uploadingImage ? (
+                              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            ) : (
+                              <>
+                                <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                                <p className="text-sm text-muted-foreground">Click to upload</p>
+                              </>
+                            )}
+                          </div>
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            disabled={uploadingImage}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+
+                              setUploadingImage(true);
+                              try {
+                                const fileExt = file.name.split('.').pop();
+                                const fileName = `featured/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+                                const { error: uploadError } = await supabase.storage
+                                  .from('blog_images')
+                                  .upload(fileName, file);
+
+                                if (uploadError) throw uploadError;
+
+                                const { data: { publicUrl } } = supabase.storage
+                                  .from('blog_images')
+                                  .getPublicUrl(fileName);
+
+                                setPost(prev => ({ ...prev, featured_image: publicUrl }));
+                                toast({
+                                  title: 'Image uploaded',
+                                  description: 'Featured image has been set.',
+                                });
+                              } catch (error) {
+                                console.error('Error uploading image:', error);
+                                toast({
+                                  title: 'Upload failed',
+                                  description: 'Failed to upload image. Please try again.',
+                                  variant: 'destructive',
+                                });
+                              } finally {
+                                setUploadingImage(false);
+                                e.target.value = '';
+                              }
+                            }}
+                          />
+                        </label>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Or paste an image URL:
+                      </p>
                       <Input
                         value={post.featured_image || ''}
                         onChange={(e) => setPost(prev => ({ ...prev, featured_image: e.target.value }))}
-                        placeholder="Image URL..."
+                        placeholder="https://example.com/image.jpg"
                       />
-                      {post.featured_image && (
-                        <img
-                          src={post.featured_image}
-                          alt="Featured"
-                          className="w-full h-32 object-cover rounded-md"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      )}
                     </div>
                   </CardContent>
                 </Card>
