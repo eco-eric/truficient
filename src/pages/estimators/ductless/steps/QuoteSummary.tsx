@@ -7,10 +7,13 @@ import { CheckCircle, Zap, Loader2, User, Mail, Phone, MapPin, Edit2 } from "luc
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useFormSourceTags } from "@/hooks/useFormSourceTags";
+import { Button } from "@/components/ui/button";
+import { addDays, format } from "date-fns";
 
 export const QuoteSummary = () => {
   const { state, prevStep, nextStep, goToStep } = useQuote();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSendingQuote, setIsSendingQuote] = useState(false);
   const { data: dynamicTags } = useFormSourceTags('ductless');
 
   // Use the pricing engine
@@ -116,6 +119,54 @@ export const QuoteSummary = () => {
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleEmailQuote = async () => {
+    if (!state.customerInfo.email) {
+      toast.error("Please enter your email to save the quote.");
+      return;
+    }
+
+    setIsSendingQuote(true);
+
+    try {
+      const nameParts = state.customerInfo.name.trim().split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+      const validUntil = format(addDays(new Date(), 30), "MMMM d, yyyy");
+
+      await supabase.functions.invoke("sync-ghl-contact", {
+        body: {
+          firstName,
+          lastName,
+          email: state.customerInfo.email,
+          phone: state.customerInfo.phone || undefined,
+          source: "Ductless Estimator - Save Quote",
+          tags: ["save-quote-ductless", "ductless-estimator"],
+          message: `Quote saved for ${pricing.zoneCount}-zone ductless system - ${selectedTier?.display_name || "Standard"} Tier`,
+          zipCode: state.customerInfo.zipCode || undefined,
+          isDfw: true,
+          quote: {
+            systemType: `Ductless Mini-Split - ${selectedTier?.display_name || "Standard"} Tier`,
+            zones: pricing.zoneCount,
+            totalBtu: pricing.totalBtu,
+            price: formatMoney(pricing.finalTotal),
+            monthlyPayment: `${formatMoney(pricing.monthlyFinancing)}/mo`,
+            validUntil,
+            tier: selectedTier?.display_name || "Standard",
+          },
+        },
+      });
+
+      toast.success(`Quote sent to ${state.customerInfo.email}!`, {
+        description: "Check your inbox for the estimate details.",
+      });
+    } catch (err) {
+      console.error("Error sending quote:", err);
+      toast.error("Failed to send quote. Please try again.");
+    } finally {
+      setIsSendingQuote(false);
     }
   };
 
@@ -286,6 +337,26 @@ export const QuoteSummary = () => {
               </span>
             </div>
           )}
+        </div>
+
+        {/* Save My Quote */}
+        <div className="rounded-xl border border-border p-4 mb-6">
+          <div className="flex items-center gap-3 mb-3">
+            <Mail className="h-5 w-5 text-[#1e3a5f]" />
+            <div>
+              <p className="font-medium text-foreground">Save This Quote</p>
+              <p className="text-sm text-muted-foreground">Get this estimate emailed to you for future reference</p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            onClick={handleEmailQuote}
+            disabled={isSendingQuote || !state.customerInfo.email}
+            className="w-full"
+          >
+            <Mail className="h-4 w-4 mr-2" />
+            {isSendingQuote ? "Sending..." : "Email My Quote"}
+          </Button>
         </div>
 
         {/* Navigation */}

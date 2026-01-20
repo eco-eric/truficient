@@ -15,6 +15,19 @@ interface EquipmentData {
   equipmentType?: string;
 }
 
+interface QuoteData {
+  systemType?: string;
+  tonnage?: string;
+  equipment?: string;
+  price?: string;
+  monthlyPayment?: string;
+  homeDetails?: string;
+  validUntil?: string;
+  tier?: string;
+  zones?: number;
+  totalBtu?: number;
+}
+
 interface ContactData {
   firstName: string;
   lastName: string;
@@ -28,6 +41,7 @@ interface ContactData {
   zipCode?: string;
   isDfw?: boolean;
   equipment?: EquipmentData;
+  quote?: QuoteData;
 }
 
 interface GHLResponse {
@@ -183,6 +197,81 @@ serve(async (req) => {
         customFields.push({
           key: 'equipment_type',
           field_value: equip.equipmentType,
+        });
+      }
+    }
+
+    // Add quote-specific fields for "Save My Quote" feature
+    if (contactData.quote) {
+      const quote = contactData.quote;
+      
+      if (quote.systemType) {
+        customFields.push({
+          key: 'quote_system_type',
+          field_value: quote.systemType,
+        });
+      }
+
+      if (quote.tonnage) {
+        customFields.push({
+          key: 'quote_tonnage',
+          field_value: quote.tonnage,
+        });
+      }
+
+      if (quote.equipment) {
+        customFields.push({
+          key: 'quote_equipment',
+          field_value: quote.equipment,
+        });
+      }
+
+      if (quote.price) {
+        customFields.push({
+          key: 'quote_price',
+          field_value: quote.price,
+        });
+      }
+
+      if (quote.monthlyPayment) {
+        customFields.push({
+          key: 'quote_monthly',
+          field_value: quote.monthlyPayment,
+        });
+      }
+
+      if (quote.homeDetails) {
+        customFields.push({
+          key: 'quote_home_details',
+          field_value: quote.homeDetails,
+        });
+      }
+
+      if (quote.validUntil) {
+        customFields.push({
+          key: 'quote_valid_until',
+          field_value: quote.validUntil,
+        });
+      }
+
+      if (quote.tier) {
+        customFields.push({
+          key: 'quote_tier',
+          field_value: quote.tier,
+        });
+      }
+
+      if (quote.zones !== undefined) {
+        customFields.push({
+          key: 'quote_zones',
+          field_value: String(quote.zones),
+        });
+      }
+
+      if (quote.totalBtu !== undefined) {
+        customFields.push({
+          key: 'quote_total_btu',
+          field_value: String(quote.totalBtu),
         });
       }
     }
