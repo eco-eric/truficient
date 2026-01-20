@@ -26,8 +26,7 @@ import { useScanner } from '../context/ScannerContext';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { WarrantyNotice } from './WarrantyNotice';
-import { useButtonTracking } from '@/hooks/useButtonTracking';
-import workedgeProLogo from '@/assets/workedge-pro-logo.png';
+import { WorkEdgeBanner } from '@/components/WorkEdgeBanner';
 
 const MAX_SCANS = 5;
 
@@ -66,7 +65,6 @@ function SpecRow({ icon, label, value }: SpecRowProps) {
 export function ResultsCard() {
   const { state, dispatch } = useScanner();
   const { result, results } = state;
-  const { trackButtonClick } = useButtonTracking();
   
   const isAlreadyAdded = result?.id ? results.some(s => s.id === result.id) : false;
   const canAddMore = results.length < MAX_SCANS;
@@ -169,27 +167,7 @@ export function ResultsCard() {
       <WarrantyNotice age={age} brand={specs.brand || ''} />
 
       {/* WorkEdge Pro Banner */}
-      <a 
-        href="https://workedge.pro" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className="flex items-center gap-4 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors border border-amber-200 dark:border-amber-900"
-        onClick={() => trackButtonClick({
-          buttonName: 'Workedge Pro Banner',
-          buttonLocation: 'Scanner Results',
-          destinationUrl: 'https://workedge.pro',
-        })}
-      >
-        <img 
-          src={workedgeProLogo} 
-          alt="Workedge Pro" 
-          className="w-12 h-12 object-contain flex-shrink-0"
-        />
-        <p className="text-sm text-amber-800 dark:text-amber-200">
-          <strong className="font-medium">Powered by Workedge Pro</strong> – A Field Documentation App for HVAC Contractors. 
-          Build your own equipment library.
-        </p>
-      </a>
+      <WorkEdgeBanner location="Scanner Results" />
 
       {/* Disclaimer */}
       <div className="flex gap-2 p-3 bg-muted/50 rounded-lg text-sm">

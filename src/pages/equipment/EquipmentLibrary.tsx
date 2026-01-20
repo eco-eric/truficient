@@ -35,6 +35,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { usePageSEO } from '@/hooks/usePageSEO';
+import { WorkEdgeBanner } from '@/components/WorkEdgeBanner';
 
 interface EquipmentPage {
   id: string;
@@ -335,6 +336,11 @@ export default function EquipmentLibrary() {
               </Link>
             </div>
           )}
+        </section>
+
+        {/* WorkEdge Pro Banner */}
+        <section className="container mx-auto px-4 pb-8">
+          <WorkEdgeBanner location="Equipment Library" />
         </section>
 
         {/* CTA Section */}

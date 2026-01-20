@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import workedgeProLogo from '@/assets/workedge-pro-logo.png';
+import { WorkEdgeBanner } from '@/components/WorkEdgeBanner';
 import { EstimatorLinks } from '@/pages/scanner/components/EstimatorLinks';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -334,27 +334,7 @@ export default function EquipmentDetail() {
             </Card>
 
             {/* WorkEdge Pro Banner - After Model Number */}
-            <a 
-              href="https://workedge.pro" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center gap-4 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors border border-amber-200 dark:border-amber-900"
-              onClick={() => trackButtonClick({
-                buttonName: 'Workedge Pro Banner',
-                buttonLocation: 'Equipment Detail - Header',
-                destinationUrl: 'https://workedge.pro',
-              })}
-            >
-              <img 
-                src={workedgeProLogo} 
-                alt="Workedge Pro" 
-                className="w-12 h-12 object-contain flex-shrink-0"
-              />
-              <p className="text-sm text-amber-800 dark:text-amber-200">
-                <strong className="font-medium">Powered by Workedge Pro</strong> – A Field Documentation App for HVAC Contractors. 
-                Build your own equipment library.
-              </p>
-            </a>
+            <WorkEdgeBanner location="Equipment Detail - Header" />
 
             {/* Product Overview */}
               {equipment.custom_content && (
@@ -424,28 +404,7 @@ export default function EquipmentDetail() {
               </Card>
 
               {/* Workedge Pro Attribution Banner */}
-              <a 
-                href="https://workedge.pro" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors border"
-                onClick={() => trackButtonClick({
-                  buttonName: 'Workedge Pro Banner',
-                  buttonLocation: 'Equipment Detail - Specifications',
-                  destinationUrl: 'https://workedge.pro',
-                })}
-              >
-                <img 
-                  src={workedgeProLogo} 
-                  alt="Workedge Pro" 
-                  className="w-12 h-12 object-contain flex-shrink-0"
-                />
-                <p className="text-sm">
-                  <span className="text-muted-foreground">The Document Library is powered by </span>
-                  <span className="font-bold text-primary">Workedge Pro</span>
-                  <span className="text-muted-foreground"> – A Field Documentation App for Service Pros.</span>
-                </p>
-              </a>
+              <WorkEdgeBanner location="Equipment Detail - Specifications" variant="document" />
 
               {/* Documentation Card */}
               <Card className="p-6">
