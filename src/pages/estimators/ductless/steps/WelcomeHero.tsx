@@ -1,9 +1,9 @@
 import { CTAButton } from "../components/CTAButton";
 import { useQuote } from "../context/QuoteContext";
 import { motion } from "framer-motion";
-import { Award, ThermometerSnowflake, Wifi, Zap, Clock, Shield, Star, DollarSign, Calendar, Gift, CheckCircle } from "lucide-react";
+import { ThermometerSnowflake, Wifi, Zap, Clock, Star, DollarSign, Calendar, Gift, CheckCircle } from "lucide-react";
 import { PricingGuarantee } from "@/components/estimators/PricingGuarantee";
-import ductlessWallMount from "@/assets/ductless-wall-mount.png";
+import ductlessHeroImage from "@/assets/ductless-hero-living-room.png";
 
 export const WelcomeHero = () => {
   const { nextStep } = useQuote();
@@ -49,11 +49,11 @@ export const WelcomeHero = () => {
               transition={{ duration: 0.5 }}
               className="relative mb-8"
             >
-              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/30 dark:to-emerald-900/20">
+              <div className="relative rounded-2xl overflow-hidden shadow-xl">
                 <img
-                  src={ductlessWallMount}
-                  alt="Ductless mini-split wall unit in modern living room"
-                  className="w-full h-48 sm:h-64 md:h-80 object-contain mx-auto"
+                  src={ductlessHeroImage}
+                  alt="Ductless mini-split wall unit above couch in modern living room"
+                  className="w-full h-56 sm:h-72 md:h-96 object-cover"
                 />
                 {/* Diamond Contractor Badge */}
                 <div className="absolute top-4 left-4 flex items-center gap-2 bg-white/95 dark:bg-card/95 rounded-full px-3 py-1.5 shadow-lg">
