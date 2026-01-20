@@ -2,15 +2,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, ArrowRight, Loader2, CheckCircle, AlertCircle, Star, Clock, Shield, Zap } from "lucide-react";
-import { Link } from "react-router-dom";
+import { MapPin, ArrowRight, Loader2, CheckCircle, AlertCircle, Star, Clock, Shield, Zap, DollarSign, Calendar, Gift, ThermometerSnowflake, Home, Leaf } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEstimator } from "../context/EstimatorContext";
 import { isDfwZipCode, isDfwByCity } from "@/pages/scanner/types";
 import { validateZipCode } from "@/pages/scanner/utils/validateZipCode";
-import { EstimatorHeader } from "@/components/estimators/EstimatorHeader";
-import { EstimatorFooter } from "@/components/estimators/EstimatorFooter";
 import { PricingGuarantee } from "@/components/estimators/PricingGuarantee";
+import ductedHeroFamily from "@/assets/ducted-hero-family.jpg";
 
 export function Step0ZipCodeGate() {
   const { state, setZipCode, setZipLocation, setIsInServiceArea, nextStep } = useEstimator();
@@ -88,63 +86,104 @@ export function Step0ZipCodeGate() {
     { icon: Shield, text: "No appointment required" },
   ];
 
+  const features = [
+    { icon: DollarSign, title: "Transparent Pricing", desc: "See exact costs upfront" },
+    { icon: Calendar, title: "Easy Scheduling", desc: "Book at your convenience" },
+    { icon: Gift, title: "Special Offers", desc: "Exclusive online discounts" },
+    { icon: Shield, title: "Quality Guaranteed", desc: "Licensed & insured pros" },
+  ];
+
+  const whyCentralAC = [
+    { icon: Home, title: "Whole-Home Comfort", desc: "Even temperatures in every room" },
+    { icon: ThermometerSnowflake, title: "Hidden Components", desc: "Discreet, out-of-sight installation" },
+    { icon: Leaf, title: "Energy Efficient", desc: "Lower utility bills year-round" },
+  ];
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <EstimatorHeader estimatorType="Ducted" />
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        className="flex-1 flex flex-col"
-      >
-        {/* Hero Section */}
-        <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground py-10 sm:py-14 px-4">
-          <div className="max-w-lg mx-auto text-center">
-            <motion.h1
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3"
-            >
-              Get Your Final HVAC Price Online
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-primary-foreground/90 text-base sm:text-lg mb-6"
-            >
-              Answer a few questions about your home and receive accurate, locked-in pricing for your new AC or heat pump system.
-            </motion.p>
-
-            {/* Benefit pills */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="flex flex-wrap justify-center gap-2"
-            >
-              {benefits.map((benefit, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-1.5 bg-primary-foreground/10 backdrop-blur rounded-full px-3 py-1.5 text-sm"
-                >
-                  <benefit.icon className="w-4 h-4" />
-                  <span>{benefit.text}</span>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="flex-1 flex flex-col"
+    >
+      {/* Hero Section with Background Image */}
+      <div className="px-4 pt-6 pb-4">
+        <div className="max-w-lg mx-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="relative mb-8"
+          >
+            <div className="relative rounded-2xl overflow-hidden shadow-xl">
+              <img
+                src={ductedHeroFamily}
+                alt="Happy family enjoying comfortable temperatures on their couch"
+                className="w-full h-56 sm:h-72 md:h-96 object-cover"
+              />
+              {/* Diamond Contractor Badge */}
+              <div className="absolute top-4 left-4 flex items-center gap-2 bg-white/95 dark:bg-card/95 rounded-full px-3 py-1.5 shadow-lg">
+                <div className="w-5 h-5 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">✦</span>
                 </div>
-              ))}
-            </motion.div>
-          </div>
-        </div>
+                <span className="text-xs font-semibold text-foreground uppercase tracking-wide">
+                  Certified Diamond Contractor
+                </span>
+              </div>
+            </div>
+          </motion.div>
 
-        {/* Form Section */}
-        <div className="flex-1 px-4 py-8">
-          <div className="max-w-md mx-auto space-y-6">
-            {/* Pricing Guarantee */}
+          {/* Main Headline */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-center mb-6"
+          >
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3">
+              Get Your Final HVAC Price Online
+            </h1>
+            <p className="text-muted-foreground text-base sm:text-lg">
+              Answer a few questions about your home and receive accurate, locked-in pricing for your new AC or heat pump system.
+            </p>
+          </motion.div>
+
+          {/* Benefit Pills */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="flex flex-wrap justify-center gap-2 mb-6"
+          >
+            {benefits.map((benefit, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-1.5 bg-primary/10 text-primary rounded-full px-3 py-1.5 text-sm font-medium"
+              >
+                <benefit.icon className="w-4 h-4" />
+                <span>{benefit.text}</span>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* Pricing Guarantee */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="mb-6"
+          >
             <PricingGuarantee />
+          </motion.div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+          {/* CTA Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mb-8"
+          >
+            <form onSubmit={handleSubmit} className="space-y-4">
               {/* Zip Code Input */}
               <div className="space-y-2">
                 <Label htmlFor="zip-code" className="text-base font-medium flex items-center gap-2">
@@ -205,7 +244,7 @@ export function Step0ZipCodeGate() {
               <Button
                 type="submit"
                 size="lg"
-                className="w-full h-12 text-base font-semibold"
+                className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg"
                 disabled={isValidating || showOutOfAreaMessage || localZip.length < 5}
               >
                 {isValidating ? (
@@ -215,31 +254,85 @@ export function Step0ZipCodeGate() {
                   </>
                 ) : (
                   <>
-                    Get My Final Price
+                    Start My Free Estimate
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </>
                 )}
               </Button>
             </form>
+          </motion.div>
 
-            {/* Trust Elements */}
-            <div className="pt-6 border-t">
-              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                <div className="flex">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <span className="font-medium text-foreground">4.9</span>
-                <span>•</span>
-                <span>500+ systems installed across DFW this year</span>
-              </div>
+          {/* Stats Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+            className="flex items-center justify-center gap-6 mb-8 pb-8 border-b"
+          >
+            <div className="text-center">
+              <div className="text-2xl font-bold text-foreground">1,000+</div>
+              <div className="text-sm text-muted-foreground">Installs</div>
             </div>
-          </div>
-        </div>
-      </motion.div>
+            <div className="h-10 w-px bg-border" />
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1">
+                <span className="text-2xl font-bold text-foreground">4.9</span>
+                <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+              </div>
+              <div className="text-sm text-muted-foreground">Google Rating</div>
+            </div>
+          </motion.div>
 
-      <EstimatorFooter />
-    </div>
+          {/* Feature Cards */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="grid grid-cols-2 gap-3 mb-10"
+          >
+            {features.map((feature, i) => (
+              <div
+                key={i}
+                className="bg-card border rounded-xl p-4 text-center hover:shadow-md transition-shadow"
+              >
+                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <feature.icon className="w-5 h-5 text-primary" />
+                </div>
+                <h3 className="font-semibold text-sm text-foreground">{feature.title}</h3>
+                <p className="text-xs text-muted-foreground mt-1">{feature.desc}</p>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* Why Central AC Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="mb-10"
+          >
+            <h2 className="text-xl font-bold text-foreground text-center mb-4">
+              Why Central AC?
+            </h2>
+            <div className="space-y-3">
+              {whyCentralAC.map((item, i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4"
+                >
+                  <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/50 rounded-full flex items-center justify-center flex-shrink-0">
+                    <item.icon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </motion.div>
   );
 }
