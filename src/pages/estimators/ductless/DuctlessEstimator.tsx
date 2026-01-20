@@ -14,6 +14,8 @@ import { QuoteSummary } from "./steps/QuoteSummary";
 import { ThankYou } from "./steps/ThankYou";
 import { Link } from "react-router-dom";
 import truficientLogo from "@/assets/truficient-logo.png";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
 
 const STEP_LABELS = [
   "Welcome",
@@ -81,9 +83,16 @@ const EstimatorContent = () => {
   // Show header on all steps except first (welcome) and last (thank you)
   const showHeader = currentStep > 0 && currentStep < 8;
 
+  // Show standard header on welcome step only
+  const showStandardHeader = currentStep === 0;
+  const showStandardFooter = currentStep === 0 || currentStep === 8;
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header - shown on steps 1-7 */}
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Standard website header on welcome page */}
+      {showStandardHeader && <Header />}
+      
+      {/* Custom compact header for estimator steps 1-7 */}
       {showHeader && (
         <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b">
           <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
@@ -106,7 +115,7 @@ const EstimatorContent = () => {
       )}
 
       {/* Step content */}
-      <main className="pb-6">
+      <main className="flex-1 pb-6">
         <AnimatePresence mode="wait">{renderStep()}</AnimatePresence>
       </main>
 
@@ -120,6 +129,9 @@ const EstimatorContent = () => {
           highAmount={pricing.finalTotal}
         />
       )}
+
+      {/* Standard website footer on welcome and thank you pages */}
+      {showStandardFooter && <Footer />}
     </div>
   );
 };
