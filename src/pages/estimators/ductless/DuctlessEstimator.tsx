@@ -78,18 +78,23 @@ const EstimatorContent = () => {
   // Calculate base equipment cost from per-room unit selections
   const baseEquipmentCost = pricing.baseEquipmentCost;
 
+  // Show header on all steps except first (welcome) and last (thank you)
+  const showHeader = currentStep > 0 && currentStep < 8;
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <img src={truficientLogo} alt="Truficient" className="h-8 w-8 object-contain rounded" />
-            <span className="font-semibold text-[#1e3a5f] text-sm hidden sm:inline">Truficient</span>
-          </Link>
-          <span className="text-xs text-muted-foreground uppercase tracking-wide">Ductless Estimator</span>
-        </div>
-      </header>
+      {/* Header - shown on steps 1-7 */}
+      {showHeader && (
+        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b">
+          <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2">
+              <img src={truficientLogo} alt="Truficient" className="h-8 w-8 object-contain rounded" />
+              <span className="font-semibold text-primary text-sm hidden sm:inline">Truficient</span>
+            </Link>
+            <span className="text-xs text-muted-foreground uppercase tracking-wide">Ductless Estimator</span>
+          </div>
+        </header>
+      )}
 
       {/* Progress indicator */}
       {showProgress && (
