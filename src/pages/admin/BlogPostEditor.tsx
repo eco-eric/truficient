@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -16,8 +18,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Save, Eye } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, Eye, X, Plus } from 'lucide-react';
 import RichTextEditor from '@/components/admin/RichTextEditor';
+import BlogPreview from '@/components/admin/BlogPreview';
 
 interface BlogPost {
   id: string;
@@ -31,7 +34,20 @@ interface BlogPost {
   published_at: string | null;
   meta_title: string | null;
   meta_description: string | null;
+  category: string | null;
+  tags: string[] | null;
 }
+
+const CATEGORIES = [
+  'HVAC Tips',
+  'Energy Efficiency',
+  'Home Comfort',
+  'Maintenance',
+  'Industry News',
+  'Seasonal Advice',
+  'Technology',
+  'Case Studies',
+];
 
 const BlogPostEditor = () => {
   const { id } = useParams<{ id: string }>();
@@ -42,6 +58,7 @@ const BlogPostEditor = () => {
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+  const [newTag, setNewTag] = useState('');
   const [post, setPost] = useState<Partial<BlogPost>>({
     title: '',
     slug: '',
@@ -51,6 +68,8 @@ const BlogPostEditor = () => {
     status: 'draft',
     meta_title: '',
     meta_description: '',
+    category: '',
+    tags: [],
   });
 
   useEffect(() => {
@@ -97,6 +116,24 @@ const BlogPostEditor = () => {
     }));
   };
 
+  const addTag = () => {
+    const tag = newTag.trim();
+    if (tag && !post.tags?.includes(tag)) {
+      setPost(prev => ({
+        ...prev,
+        tags: [...(prev.tags || []), tag],
+      }));
+      setNewTag('');
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setPost(prev => ({
+      ...prev,
+      tags: (prev.tags || []).filter(t => t !== tagToRemove),
+    }));
+  };
+
   const handleSave = async (publishNow = false) => {
     if (!post.title?.trim()) {
       toast({
@@ -130,6 +167,8 @@ const BlogPostEditor = () => {
         meta_description: post.meta_description || null,
         published_at: publishNow ? new Date().toISOString() : post.published_at,
         author_id: user?.id || null,
+        category: post.category || null,
+        tags: post.tags || [],
       };
 
       if (isNew) {
@@ -187,7 +226,7 @@ const BlogPostEditor = () => {
     return (
       <AdminLayout title={isNew ? 'New Post' : 'Edit Post'}>
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-[#1e3a5f]" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </AdminLayout>
     );
@@ -226,7 +265,6 @@ const BlogPostEditor = () => {
               <Button
                 onClick={() => handleSave(true)}
                 disabled={saving}
-                className="bg-[#1e3a5f] hover:bg-[#1e3a5f]/90"
               >
                 {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                 Publish
@@ -235,144 +273,225 @@ const BlogPostEditor = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Content</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Title *</Label>
-                  <Input
-                    id="title"
-                    value={post.title || ''}
-                    onChange={(e) => handleTitleChange(e.target.value)}
-                    placeholder="Enter post title..."
-                    className="text-lg"
-                  />
-                </div>
+        <Tabs defaultValue="editor" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="editor">Editor</TabsTrigger>
+            <TabsTrigger value="preview">
+              <Eye className="h-4 w-4 mr-2" />
+              Live Preview
+            </TabsTrigger>
+          </TabsList>
 
-                <div className="space-y-2">
-                  <Label htmlFor="slug">Slug *</Label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">/blog/</span>
-                    <Input
-                      id="slug"
-                      value={post.slug || ''}
-                      onChange={(e) => setPost(prev => ({ ...prev, slug: e.target.value }))}
-                      placeholder="post-url-slug"
-                    />
-                  </div>
-                </div>
+          <TabsContent value="editor">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Main Content */}
+              <div className="lg:col-span-2 space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Content</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Title *</Label>
+                      <Input
+                        id="title"
+                        value={post.title || ''}
+                        onChange={(e) => handleTitleChange(e.target.value)}
+                        placeholder="Enter post title..."
+                        className="text-lg"
+                      />
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="excerpt">Excerpt</Label>
-                  <Textarea
-                    id="excerpt"
-                    value={post.excerpt || ''}
-                    onChange={(e) => setPost(prev => ({ ...prev, excerpt: e.target.value }))}
-                    placeholder="Brief description for previews..."
-                    rows={3}
-                  />
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="slug">Slug *</Label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">/blog/</span>
+                        <Input
+                          id="slug"
+                          value={post.slug || ''}
+                          onChange={(e) => setPost(prev => ({ ...prev, slug: e.target.value }))}
+                          placeholder="post-url-slug"
+                        />
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label>Content</Label>
-                  <RichTextEditor
-                    value={post.content || ''}
-                    onChange={(html) => setPost(prev => ({ ...prev, content: html }))}
-                    placeholder="Write your blog post content here..."
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="excerpt">Excerpt</Label>
+                      <Textarea
+                        id="excerpt"
+                        value={post.excerpt || ''}
+                        onChange={(e) => setPost(prev => ({ ...prev, excerpt: e.target.value }))}
+                        placeholder="Brief description for previews..."
+                        rows={3}
+                      />
+                    </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Status</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Select
-                  value={post.status || 'draft'}
-                  onValueChange={(value) => setPost(prev => ({ ...prev, status: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
+                    <div className="space-y-2">
+                      <Label>Content</Label>
+                      <RichTextEditor
+                        value={post.content || ''}
+                        onChange={(html) => setPost(prev => ({ ...prev, content: html }))}
+                        placeholder="Write your blog post content here..."
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Featured Image</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Input
-                    value={post.featured_image || ''}
-                    onChange={(e) => setPost(prev => ({ ...prev, featured_image: e.target.value }))}
-                    placeholder="Image URL..."
-                  />
-                  {post.featured_image && (
-                    <img
-                      src={post.featured_image}
-                      alt="Featured"
-                      className="w-full h-32 object-cover rounded-md"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+              {/* Sidebar */}
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Status</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Select
+                      value={post.status || 'draft'}
+                      onValueChange={(value) => setPost(prev => ({ ...prev, status: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="published">Published</SelectItem>
+                        <SelectItem value="archived">Archived</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </CardContent>
+                </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>SEO</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="metaTitle">Meta Title</Label>
-                  <Input
-                    id="metaTitle"
-                    value={post.meta_title || ''}
-                    onChange={(e) => setPost(prev => ({ ...prev, meta_title: e.target.value }))}
-                    placeholder="SEO title (defaults to post title)"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {(post.meta_title || post.title || '').length}/60 characters
-                  </p>
-                </div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Category & Tags</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Category</Label>
+                      <Select
+                        value={post.category || ''}
+                        onValueChange={(value) => setPost(prev => ({ ...prev, category: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CATEGORIES.map((cat) => (
+                            <SelectItem key={cat} value={cat}>
+                              {cat}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="metaDescription">Meta Description</Label>
-                  <Textarea
-                    id="metaDescription"
-                    value={post.meta_description || ''}
-                    onChange={(e) => setPost(prev => ({ ...prev, meta_description: e.target.value }))}
-                    placeholder="SEO description..."
-                    rows={3}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {(post.meta_description || '').length}/160 characters
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                    <div className="space-y-2">
+                      <Label>Tags</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          value={newTag}
+                          onChange={(e) => setNewTag(e.target.value)}
+                          placeholder="Add a tag..."
+                          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                        />
+                        <Button type="button" size="icon" onClick={addTag}>
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {post.tags && post.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {post.tags.map((tag, i) => (
+                            <Badge key={i} variant="secondary" className="gap-1">
+                              {tag}
+                              <button
+                                type="button"
+                                onClick={() => removeTag(tag)}
+                                className="hover:text-destructive"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Featured Image</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <Input
+                        value={post.featured_image || ''}
+                        onChange={(e) => setPost(prev => ({ ...prev, featured_image: e.target.value }))}
+                        placeholder="Image URL..."
+                      />
+                      {post.featured_image && (
+                        <img
+                          src={post.featured_image}
+                          alt="Featured"
+                          className="w-full h-32 object-cover rounded-md"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>SEO</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="metaTitle">Meta Title</Label>
+                      <Input
+                        id="metaTitle"
+                        value={post.meta_title || ''}
+                        onChange={(e) => setPost(prev => ({ ...prev, meta_title: e.target.value }))}
+                        placeholder="SEO title (defaults to post title)"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {(post.meta_title || post.title || '').length}/60 characters
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="metaDescription">Meta Description</Label>
+                      <Textarea
+                        id="metaDescription"
+                        value={post.meta_description || ''}
+                        onChange={(e) => setPost(prev => ({ ...prev, meta_description: e.target.value }))}
+                        placeholder="SEO description..."
+                        rows={3}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {(post.meta_description || '').length}/160 characters
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="preview">
+            <BlogPreview
+              title={post.title || ''}
+              excerpt={post.excerpt || ''}
+              content={post.content || ''}
+              featuredImage={post.featured_image || ''}
+              category={post.category || ''}
+              tags={post.tags || []}
+              publishedAt={post.published_at || undefined}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminLayout>
   );
