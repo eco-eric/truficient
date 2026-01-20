@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, Save, Eye } from 'lucide-react';
+import RichTextEditor from '@/components/admin/RichTextEditor';
 
 interface BlogPost {
   id: string;
@@ -278,18 +279,12 @@ const BlogPostEditor = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="content">Content</Label>
-                  <Textarea
-                    id="content"
+                  <Label>Content</Label>
+                  <RichTextEditor
                     value={post.content || ''}
-                    onChange={(e) => setPost(prev => ({ ...prev, content: e.target.value }))}
+                    onChange={(html) => setPost(prev => ({ ...prev, content: html }))}
                     placeholder="Write your blog post content here..."
-                    rows={15}
-                    className="font-mono"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Supports basic HTML and line breaks.
-                  </p>
                 </div>
               </CardContent>
             </Card>
