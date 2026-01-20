@@ -54,7 +54,7 @@ export const WorkEdgeBanner = ({ location, variant = 'default' }: WorkEdgeBanner
         className="w-12 h-12 object-contain flex-shrink-0"
       />
       <p className="text-sm text-amber-800 dark:text-amber-200">
-        <strong className="font-medium">Powered by Workedge Pro</strong> – A Field Documentation App for HVAC Contractors. 
+        <strong className="font-medium">Powered by Workedge Pro</strong> – A Field Documentation App for Field Service Professionals. 
         Build your own equipment library.
       </p>
     </a>
