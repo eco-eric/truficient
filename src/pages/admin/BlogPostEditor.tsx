@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Select,
   SelectContent,
@@ -18,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Save, Eye, X, Plus, Upload, Trash2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, Eye, X, Plus, Upload, Trash2, ChevronDown, CheckCircle2, AlertCircle, Search } from 'lucide-react';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import BlogPreview from '@/components/admin/BlogPreview';
 
@@ -29,6 +31,7 @@ interface BlogPost {
   excerpt: string | null;
   content: string | null;
   featured_image: string | null;
+  featured_image_alt: string | null;
   status: string;
   author_id: string | null;
   published_at: string | null;
@@ -36,6 +39,14 @@ interface BlogPost {
   meta_description: string | null;
   category: string | null;
   tags: string[] | null;
+  focus_keyword: string | null;
+  noindex: boolean;
+  canonical_url: string | null;
+  author_name: string | null;
+  author_bio: string | null;
+  og_title: string | null;
+  og_description: string | null;
+  og_image: string | null;
 }
 
 const CATEGORIES = [
@@ -60,17 +71,27 @@ const BlogPostEditor = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [newTag, setNewTag] = useState('');
+  const [advancedSeoOpen, setAdvancedSeoOpen] = useState(false);
   const [post, setPost] = useState<Partial<BlogPost>>({
     title: '',
     slug: '',
     excerpt: '',
     content: '',
     featured_image: '',
+    featured_image_alt: '',
     status: 'draft',
     meta_title: '',
     meta_description: '',
     category: '',
     tags: [],
+    focus_keyword: '',
+    noindex: false,
+    canonical_url: '',
+    author_name: '',
+    author_bio: '',
+    og_title: '',
+    og_description: '',
+    og_image: '',
   });
 
   useEffect(() => {
@@ -135,6 +156,41 @@ const BlogPostEditor = () => {
     }));
   };
 
+  // SEO Analysis helpers
+  const getMetaTitleStatus = () => {
+    const length = (post.meta_title || post.title || '').length;
+    if (length === 0) return { color: 'text-muted-foreground', label: '0/60' };
+    if (length <= 60) return { color: 'text-green-600', label: `${length}/60 ✓` };
+    return { color: 'text-destructive', label: `${length}/60 (too long)` };
+  };
+
+  const getMetaDescStatus = () => {
+    const length = (post.meta_description || '').length;
+    if (length === 0) return { color: 'text-muted-foreground', label: '0/160' };
+    if (length >= 120 && length <= 160) return { color: 'text-green-600', label: `${length}/160 ✓` };
+    if (length < 120) return { color: 'text-yellow-600', label: `${length}/160 (short)` };
+    if (length <= 200) return { color: 'text-yellow-600', label: `${length}/160 (long)` };
+    return { color: 'text-destructive', label: `${length}/160 (too long)` };
+  };
+
+  const getKeywordAnalysis = () => {
+    const keyword = (post.focus_keyword || '').toLowerCase().trim();
+    if (!keyword) return [];
+
+    const title = (post.title || '').toLowerCase();
+    const slug = (post.slug || '').toLowerCase();
+    const metaDesc = (post.meta_description || '').toLowerCase();
+    const content = (post.content || '').toLowerCase();
+    const firstParagraph = content.slice(0, 500);
+
+    return [
+      { label: 'In title', pass: title.includes(keyword) },
+      { label: 'In slug', pass: slug.includes(keyword) },
+      { label: 'In meta description', pass: metaDesc.includes(keyword) },
+      { label: 'In first 100 words', pass: firstParagraph.includes(keyword) },
+    ];
+  };
+
   const handleSave = async (publishNow = false) => {
     if (!post.title?.trim()) {
       toast({
@@ -163,6 +219,7 @@ const BlogPostEditor = () => {
         excerpt: post.excerpt || null,
         content: post.content || null,
         featured_image: post.featured_image || null,
+        featured_image_alt: post.featured_image_alt || null,
         status: publishNow ? 'published' : post.status,
         meta_title: post.meta_title || null,
         meta_description: post.meta_description || null,
@@ -170,6 +227,14 @@ const BlogPostEditor = () => {
         author_id: user?.id || null,
         category: post.category || null,
         tags: post.tags || [],
+        focus_keyword: post.focus_keyword || null,
+        noindex: post.noindex || false,
+        canonical_url: post.canonical_url || null,
+        author_name: post.author_name || null,
+        author_bio: post.author_bio || null,
+        og_title: post.og_title || null,
+        og_description: post.og_description || null,
+        og_image: post.og_image || null,
       };
 
       if (isNew) {
@@ -222,6 +287,10 @@ const BlogPostEditor = () => {
       setSaving(false);
     }
   };
+
+  const metaTitleStatus = getMetaTitleStatus();
+  const metaDescStatus = getMetaDescStatus();
+  const keywordAnalysis = getKeywordAnalysis();
 
   if (loading) {
     return (
@@ -362,6 +431,80 @@ const BlogPostEditor = () => {
                   </CardContent>
                 </Card>
 
+                {/* SEO Analysis Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Search className="h-4 w-4" />
+                      SEO Analysis
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="focusKeyword">Focus Keyword</Label>
+                      <Input
+                        id="focusKeyword"
+                        value={post.focus_keyword || ''}
+                        onChange={(e) => setPost(prev => ({ ...prev, focus_keyword: e.target.value }))}
+                        placeholder="e.g., hvac maintenance tips"
+                      />
+                    </div>
+                    
+                    {post.focus_keyword && keywordAnalysis.length > 0 && (
+                      <div className="space-y-1.5 pt-2 border-t">
+                        <p className="text-xs font-medium text-muted-foreground">Keyword Usage</p>
+                        {keywordAnalysis.map((item, i) => (
+                          <div key={i} className="flex items-center gap-2 text-sm">
+                            {item.pass ? (
+                              <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                            )}
+                            <span className={item.pass ? 'text-green-600' : 'text-muted-foreground'}>
+                              {item.label}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Meta Tags Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Meta Tags</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="metaTitle">Meta Title</Label>
+                      <Input
+                        id="metaTitle"
+                        value={post.meta_title || ''}
+                        onChange={(e) => setPost(prev => ({ ...prev, meta_title: e.target.value }))}
+                        placeholder="SEO title (defaults to post title)"
+                      />
+                      <p className={`text-xs ${metaTitleStatus.color}`}>
+                        {metaTitleStatus.label}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="metaDescription">Meta Description</Label>
+                      <Textarea
+                        id="metaDescription"
+                        value={post.meta_description || ''}
+                        onChange={(e) => setPost(prev => ({ ...prev, meta_description: e.target.value }))}
+                        placeholder="SEO description (120-160 chars recommended)..."
+                        rows={3}
+                      />
+                      <p className={`text-xs ${metaDescStatus.color}`}>
+                        {metaDescStatus.label}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 <Card>
                   <CardHeader>
                     <CardTitle>Category & Tags</CardTitle>
@@ -426,24 +569,38 @@ const BlogPostEditor = () => {
                   <CardContent>
                     <div className="space-y-3">
                       {post.featured_image ? (
-                        <div className="relative group">
-                          <img
-                            src={post.featured_image}
-                            alt="Featured"
-                            className="w-full h-40 object-cover rounded-md"
-                            onError={(e) => {
-                              e.currentTarget.src = '/placeholder.svg';
-                            }}
-                          />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => setPost(prev => ({ ...prev, featured_image: '' }))}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                        <div className="space-y-3">
+                          <div className="relative group">
+                            <img
+                              src={post.featured_image}
+                              alt={post.featured_image_alt || 'Featured'}
+                              className="w-full h-40 object-cover rounded-md"
+                              onError={(e) => {
+                                e.currentTarget.src = '/placeholder.svg';
+                              }}
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => setPost(prev => ({ ...prev, featured_image: '', featured_image_alt: '' }))}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="featuredImageAlt">Alt Text</Label>
+                            <Input
+                              id="featuredImageAlt"
+                              value={post.featured_image_alt || ''}
+                              onChange={(e) => setPost(prev => ({ ...prev, featured_image_alt: e.target.value }))}
+                              placeholder="Describe the image for accessibility..."
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Describe the image for screen readers and SEO
+                            </p>
+                          </div>
                         </div>
                       ) : (
                         <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
@@ -513,38 +670,116 @@ const BlogPostEditor = () => {
                   </CardContent>
                 </Card>
 
+                {/* Author Card */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>SEO</CardTitle>
+                    <CardTitle>Author</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="metaTitle">Meta Title</Label>
+                      <Label htmlFor="authorName">Author Name</Label>
                       <Input
-                        id="metaTitle"
-                        value={post.meta_title || ''}
-                        onChange={(e) => setPost(prev => ({ ...prev, meta_title: e.target.value }))}
-                        placeholder="SEO title (defaults to post title)"
+                        id="authorName"
+                        value={post.author_name || ''}
+                        onChange={(e) => setPost(prev => ({ ...prev, author_name: e.target.value }))}
+                        placeholder="e.g., John Smith"
                       />
-                      <p className="text-xs text-muted-foreground">
-                        {(post.meta_title || post.title || '').length}/60 characters
-                      </p>
                     </div>
-
                     <div className="space-y-2">
-                      <Label htmlFor="metaDescription">Meta Description</Label>
+                      <Label htmlFor="authorBio">Author Bio</Label>
                       <Textarea
-                        id="metaDescription"
-                        value={post.meta_description || ''}
-                        onChange={(e) => setPost(prev => ({ ...prev, meta_description: e.target.value }))}
-                        placeholder="SEO description..."
-                        rows={3}
+                        id="authorBio"
+                        value={post.author_bio || ''}
+                        onChange={(e) => setPost(prev => ({ ...prev, author_bio: e.target.value }))}
+                        placeholder="Brief author bio for E-E-A-T..."
+                        rows={2}
                       />
                       <p className="text-xs text-muted-foreground">
-                        {(post.meta_description || '').length}/160 characters
+                        Supports expertise, authority, and trust signals for SEO
                       </p>
                     </div>
                   </CardContent>
+                </Card>
+
+                {/* Advanced SEO Card */}
+                <Card>
+                  <Collapsible open={advancedSeoOpen} onOpenChange={setAdvancedSeoOpen}>
+                    <CollapsibleTrigger asChild>
+                      <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                        <CardTitle className="flex items-center justify-between">
+                          Advanced SEO
+                          <ChevronDown className={`h-4 w-4 transition-transform ${advancedSeoOpen ? 'rotate-180' : ''}`} />
+                        </CardTitle>
+                      </CardHeader>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label htmlFor="noindex">NoIndex</Label>
+                            <p className="text-xs text-muted-foreground">
+                              Hide this post from search engines
+                            </p>
+                          </div>
+                          <Switch
+                            id="noindex"
+                            checked={post.noindex || false}
+                            onCheckedChange={(checked) => setPost(prev => ({ ...prev, noindex: checked }))}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="canonicalUrl">Canonical URL</Label>
+                          <Input
+                            id="canonicalUrl"
+                            value={post.canonical_url || ''}
+                            onChange={(e) => setPost(prev => ({ ...prev, canonical_url: e.target.value }))}
+                            placeholder="https://example.com/original-post"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Use if this content exists elsewhere
+                          </p>
+                        </div>
+
+                        <div className="pt-2 border-t">
+                          <p className="text-sm font-medium mb-3">Open Graph Overrides</p>
+                          
+                          <div className="space-y-3">
+                            <div className="space-y-2">
+                              <Label htmlFor="ogTitle">OG Title</Label>
+                              <Input
+                                id="ogTitle"
+                                value={post.og_title || ''}
+                                onChange={(e) => setPost(prev => ({ ...prev, og_title: e.target.value }))}
+                                placeholder="Custom social media title"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="ogDescription">OG Description</Label>
+                              <Textarea
+                                id="ogDescription"
+                                value={post.og_description || ''}
+                                onChange={(e) => setPost(prev => ({ ...prev, og_description: e.target.value }))}
+                                placeholder="Custom social media description"
+                                rows={2}
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="ogImage">OG Image URL</Label>
+                              <Input
+                                id="ogImage"
+                                value={post.og_image || ''}
+                                onChange={(e) => setPost(prev => ({ ...prev, og_image: e.target.value }))}
+                                placeholder="https://example.com/social-image.jpg"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </Card>
               </div>
             </div>
@@ -556,9 +791,12 @@ const BlogPostEditor = () => {
               excerpt={post.excerpt || ''}
               content={post.content || ''}
               featuredImage={post.featured_image || ''}
+              featuredImageAlt={post.featured_image_alt || ''}
               category={post.category || ''}
               tags={post.tags || []}
               publishedAt={post.published_at || undefined}
+              authorName={post.author_name || ''}
+              authorBio={post.author_bio || ''}
             />
           </TabsContent>
         </Tabs>

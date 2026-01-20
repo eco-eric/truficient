@@ -52,15 +52,24 @@ export type Database = {
       }
       blog_posts: {
         Row: {
+          author_bio: string | null
           author_id: string | null
+          author_name: string | null
+          canonical_url: string | null
           category: string | null
           content: string | null
           created_at: string | null
           excerpt: string | null
           featured_image: string | null
+          featured_image_alt: string | null
+          focus_keyword: string | null
           id: string
           meta_description: string | null
           meta_title: string | null
+          noindex: boolean
+          og_description: string | null
+          og_image: string | null
+          og_title: string | null
           published_at: string | null
           slug: string
           status: string
@@ -69,15 +78,24 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          author_bio?: string | null
           author_id?: string | null
+          author_name?: string | null
+          canonical_url?: string | null
           category?: string | null
           content?: string | null
           created_at?: string | null
           excerpt?: string | null
           featured_image?: string | null
+          featured_image_alt?: string | null
+          focus_keyword?: string | null
           id?: string
           meta_description?: string | null
           meta_title?: string | null
+          noindex?: boolean
+          og_description?: string | null
+          og_image?: string | null
+          og_title?: string | null
           published_at?: string | null
           slug: string
           status?: string
@@ -86,15 +104,24 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          author_bio?: string | null
           author_id?: string | null
+          author_name?: string | null
+          canonical_url?: string | null
           category?: string | null
           content?: string | null
           created_at?: string | null
           excerpt?: string | null
           featured_image?: string | null
+          featured_image_alt?: string | null
+          focus_keyword?: string | null
           id?: string
           meta_description?: string | null
           meta_title?: string | null
+          noindex?: boolean
+          og_description?: string | null
+          og_image?: string | null
+          og_title?: string | null
           published_at?: string | null
           slug?: string
           status?: string

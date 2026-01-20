@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Calendar, ArrowLeft, Tag } from 'lucide-react';
+import { Loader2, Calendar, ArrowLeft, Tag, User } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface BlogPost {
@@ -16,11 +16,20 @@ interface BlogPost {
   excerpt: string | null;
   content: string | null;
   featured_image: string | null;
+  featured_image_alt: string | null;
   published_at: string;
   meta_title: string | null;
   meta_description: string | null;
   category: string | null;
   tags: string[] | null;
+  noindex: boolean;
+  canonical_url: string | null;
+  author_name: string | null;
+  author_bio: string | null;
+  og_title: string | null;
+  og_description: string | null;
+  og_image: string | null;
+  updated_at: string | null;
 }
 
 const BlogPostPage = () => {
@@ -42,11 +51,6 @@ const BlogPostPage = () => {
 
         if (error) throw error;
         setPost(data as unknown as BlogPost);
-
-        // Update page title
-        if (data) {
-          document.title = (data as any).meta_title || (data as any).title + ' | Truficient Energy Solutions';
-        }
       } catch (error) {
         console.error('Error fetching post:', error);
       } finally {
@@ -56,6 +60,118 @@ const BlogPostPage = () => {
 
     fetchPost();
   }, [slug]);
+
+  // Set meta tags and structured data
+  useEffect(() => {
+    if (!post) return;
+
+    // Update page title
+    document.title = post.meta_title || `${post.title} | Truficient Energy Solutions`;
+
+    // Set meta description
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', post.meta_description || post.excerpt || '');
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = 'description';
+      meta.content = post.meta_description || post.excerpt || '';
+      document.head.appendChild(meta);
+    }
+
+    // Set robots meta tag
+    let robotsMeta = document.querySelector('meta[name="robots"]');
+    if (post.noindex) {
+      if (!robotsMeta) {
+        robotsMeta = document.createElement('meta');
+        robotsMeta.setAttribute('name', 'robots');
+        document.head.appendChild(robotsMeta);
+      }
+      robotsMeta.setAttribute('content', 'noindex, nofollow');
+    } else if (robotsMeta) {
+      robotsMeta.remove();
+    }
+
+    // Set canonical URL
+    let canonicalLink = document.querySelector('link[rel="canonical"]');
+    const canonicalUrl = post.canonical_url || `https://truficient.lovable.app/blog/${post.slug}`;
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link');
+      canonicalLink.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonicalLink);
+    }
+    canonicalLink.setAttribute('href', canonicalUrl);
+
+    // Set Open Graph tags
+    const setOgMeta = (property: string, content: string) => {
+      let meta = document.querySelector(`meta[property="${property}"]`);
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('property', property);
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', content);
+    };
+
+    setOgMeta('og:type', 'article');
+    setOgMeta('og:title', post.og_title || post.meta_title || post.title);
+    setOgMeta('og:description', post.og_description || post.meta_description || post.excerpt || '');
+    setOgMeta('og:image', post.og_image || post.featured_image || '/og-image.png');
+    setOgMeta('og:url', canonicalUrl);
+    setOgMeta('article:published_time', post.published_at);
+    if (post.updated_at) {
+      setOgMeta('article:modified_time', post.updated_at);
+    }
+
+    // Add Article structured data (JSON-LD)
+    let scriptTag = document.querySelector('script[data-schema="article"]');
+    if (!scriptTag) {
+      scriptTag = document.createElement('script');
+      scriptTag.setAttribute('type', 'application/ld+json');
+      scriptTag.setAttribute('data-schema', 'article');
+      document.head.appendChild(scriptTag);
+    }
+
+    const structuredData = {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: post.title,
+      description: post.meta_description || post.excerpt || '',
+      image: post.featured_image || '/og-image.png',
+      datePublished: post.published_at,
+      dateModified: post.updated_at || post.published_at,
+      author: post.author_name ? {
+        '@type': 'Person',
+        name: post.author_name,
+        description: post.author_bio || undefined,
+      } : {
+        '@type': 'Organization',
+        name: 'Truficient Energy Solutions',
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: 'Truficient Energy Solutions',
+        logo: {
+          '@type': 'ImageObject',
+          url: 'https://truficient.lovable.app/truficient-logo.png',
+        },
+      },
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': canonicalUrl,
+      },
+    };
+
+    scriptTag.textContent = JSON.stringify(structuredData);
+
+    // Cleanup function
+    return () => {
+      const schemaScript = document.querySelector('script[data-schema="article"]');
+      if (schemaScript) {
+        schemaScript.remove();
+      }
+    };
+  }, [post]);
 
   if (loading) {
     return (
@@ -118,6 +234,13 @@ const BlogPostPage = () => {
                 <span>{format(new Date(post.published_at), 'MMMM d, yyyy')}</span>
               </div>
               
+              {post.author_name && (
+                <div className="flex items-center gap-1.5">
+                  <User className="h-4 w-4" />
+                  <span>{post.author_name}</span>
+                </div>
+              )}
+              
               {post.category && (
                 <Badge variant="secondary" className="bg-white/20 text-primary-foreground hover:bg-white/30">
                   {post.category}
@@ -147,7 +270,7 @@ const BlogPostPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
             src={post.featured_image}
-            alt={post.title}
+            alt={post.featured_image_alt || post.title}
             className="w-full max-w-4xl mx-auto rounded-lg shadow-lg aspect-video object-cover"
           />
         </div>
@@ -178,6 +301,25 @@ const BlogPostPage = () => {
           </motion.div>
         </div>
       </article>
+
+      {/* Author Bio Section */}
+      {post.author_name && post.author_bio && (
+        <section className="py-8 border-t">
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl mx-auto">
+              <div className="flex items-start gap-4 p-6 bg-muted/30 rounded-lg">
+                <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <User className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-lg">{post.author_name}</p>
+                  <p className="text-muted-foreground mt-1">{post.author_bio}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA Section */}
       <section className="py-12 bg-muted/30">
