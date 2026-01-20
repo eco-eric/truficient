@@ -14,6 +14,8 @@ import { Step9CustomerInfo } from "./steps/Step9CustomerInfo";
 import { Step10ThankYou } from "./steps/Step10ThankYou";
 import { Link } from "react-router-dom";
 import truficientLogo from "@/assets/truficient-logo.png";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
 
 const STEP_LABELS = [
   "Location",
@@ -65,13 +67,22 @@ const EstimatorContent = () => {
   // Show progress on steps 1-9 (after zip gate, before thank you)
   const showProgress = currentStep > 0 && currentStep < 10;
 
-  // Show header on all steps except first (zip gate) and last (thank you)
-  const showHeader = currentStep > 0 && currentStep < 10;
+  // Show compact custom header on steps 1-9 (middle steps)
+  const showCompactHeader = currentStep > 0 && currentStep < 10;
+
+  // Show standard website header on step 0 (welcome)
+  const showStandardHeader = currentStep === 0;
+
+  // Show standard website footer on step 0 and step 10 (welcome and thank you)
+  const showStandardFooter = currentStep === 0 || currentStep === 10;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header - shown on steps 1-8 */}
-      {showHeader && (
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Standard website header - shown on step 0 (welcome) */}
+      {showStandardHeader && <Header />}
+
+      {/* Compact header - shown on steps 1-9 */}
+      {showCompactHeader && (
         <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b">
           <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2">
@@ -101,9 +112,12 @@ const EstimatorContent = () => {
       )}
 
       {/* Step content */}
-      <main className="pb-6">
+      <main className="flex-1 pb-6">
         <AnimatePresence mode="wait">{renderStep()}</AnimatePresence>
       </main>
+
+      {/* Standard website footer - shown on step 0 and step 10 */}
+      {showStandardFooter && <Footer />}
     </div>
   );
 };
