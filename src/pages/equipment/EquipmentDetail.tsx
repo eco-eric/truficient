@@ -330,10 +330,33 @@ export default function EquipmentDetail() {
                       {equipment.model_number}
                     </h1>
                   </div>
-                </div>
-                </Card>
+              </div>
+            </Card>
 
-              {/* Product Overview */}
+            {/* WorkEdge Pro Banner - After Model Number */}
+            <a 
+              href="https://workedge.pro" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-4 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors border border-amber-200 dark:border-amber-900"
+              onClick={() => trackButtonClick({
+                buttonName: 'Workedge Pro Banner',
+                buttonLocation: 'Equipment Detail - Header',
+                destinationUrl: 'https://workedge.pro',
+              })}
+            >
+              <img 
+                src={workedgeProLogo} 
+                alt="Workedge Pro" 
+                className="w-12 h-12 object-contain flex-shrink-0"
+              />
+              <p className="text-sm text-amber-800 dark:text-amber-200">
+                <strong className="font-medium">Powered by Workedge Pro</strong> – A Field Documentation App for HVAC Contractors. 
+                Build your own equipment library.
+              </p>
+            </a>
+
+            {/* Product Overview */}
               {equipment.custom_content && (
                 <Card className="p-6">
                   <h2 className="text-xl font-bold mb-4">Product Overview</h2>
