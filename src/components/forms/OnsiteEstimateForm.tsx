@@ -6,10 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, Calendar, Home, ClipboardList } from 'lucide-react';
+import { Loader2, CheckCircle, Calendar, Home, ClipboardList, MapPin } from 'lucide-react';
 import { trackConversion } from '@/utils/conversionTracking';
 import { useFormSourceTags } from '@/hooks/useFormSourceTags';
-import { motion } from 'framer-motion';
+import { AddressAutocomplete, AddressComponents } from '@/components/AddressAutocomplete';
+import { isInServiceArea, getServiceAreaDisplay } from '@/pages/estimators/ductless/constants/serviceArea';
 
 // Phone formatting utility
 const formatPhoneNumber = (value: string): string => {
@@ -25,12 +26,17 @@ export const OnsiteEstimateForm = () => {
   const { data: dynamicTags } = useFormSourceTags('contact');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [addressError, setAddressError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
-    address: '',
+    streetAddress: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    county: '',
     message: '',
   });
 
@@ -44,11 +50,49 @@ export const OnsiteEstimateForm = () => {
     }
   };
 
+  const handleAddressSelect = (components: AddressComponents) => {
+    // Check if county is in service area
+    if (!isInServiceArea(components.county)) {
+      setAddressError(`We currently only serve the DFW metroplex (${getServiceAreaDisplay()}). Please contact us for referrals in your area.`);
+      setFormData(prev => ({
+        ...prev,
+        streetAddress: components.streetAddress,
+        city: '',
+        state: '',
+        zipCode: '',
+        county: '',
+      }));
+      return;
+    }
+    
+    setAddressError(null);
+    setFormData(prev => ({
+      ...prev,
+      streetAddress: components.streetAddress,
+      city: components.city,
+      state: components.state,
+      zipCode: components.zipCode,
+      county: components.county,
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (addressError || !formData.city) {
+      toast({
+        title: 'Address Required',
+        description: 'Please select a valid address within our service area.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
+      const fullAddress = `${formData.streetAddress}, ${formData.city}, ${formData.state} ${formData.zipCode}`;
+      
       // Save to contact_submissions table
       const { error: submitError } = await supabase
         .from('contact_submissions')
@@ -58,7 +102,7 @@ export const OnsiteEstimateForm = () => {
           email: formData.email,
           phone: formData.phone,
           service_type: 'Onsite Estimate',
-          message: `Address: ${formData.address}\n\n${formData.message}`,
+          message: `Address: ${fullAddress}\nCounty: ${formData.county}\n\n${formData.message}`,
           status: 'new',
         });
 
@@ -71,7 +115,10 @@ export const OnsiteEstimateForm = () => {
           lastName: formData.lastName,
           email: formData.email,
           phone: formData.phone,
-          address: formData.address,
+          address: fullAddress,
+          city: formData.city,
+          state: formData.state,
+          postalCode: formData.zipCode,
           serviceType: 'Onsite Estimate',
           message: formData.message,
           source: 'HVAC Estimate Page - Onsite Request',
@@ -193,15 +240,59 @@ export const OnsiteEstimateForm = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="onsite-address">Property Address *</Label>
-            <Input
-              id="onsite-address"
-              name="address"
-              value={formData.address}
-              onChange={handleInputChange}
-              required
-              placeholder="123 Main St, Dallas, TX 75201"
+            <Label htmlFor="onsite-streetAddress">Street Address *</Label>
+            <AddressAutocomplete
+              value={formData.streetAddress}
+              onChange={(value) => {
+                setFormData(prev => ({ ...prev, streetAddress: value }));
+                if (addressError) setAddressError(null);
+              }}
+              onAddressSelect={handleAddressSelect}
+              placeholder="Start typing your address..."
+              className={addressError ? 'border-destructive' : ''}
             />
+            {addressError && (
+              <p className="text-sm text-destructive flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                {addressError}
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="space-y-2 col-span-2">
+              <Label htmlFor="onsite-city">City</Label>
+              <Input
+                id="onsite-city"
+                name="city"
+                value={formData.city}
+                readOnly
+                placeholder="Auto-filled"
+                className="bg-muted/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="onsite-state">State</Label>
+              <Input
+                id="onsite-state"
+                name="state"
+                value={formData.state}
+                readOnly
+                placeholder="TX"
+                className="bg-muted/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="onsite-zipCode">ZIP</Label>
+              <Input
+                id="onsite-zipCode"
+                name="zipCode"
+                value={formData.zipCode}
+                readOnly
+                placeholder="Auto-filled"
+                className="bg-muted/50"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -220,7 +311,7 @@ export const OnsiteEstimateForm = () => {
             type="submit" 
             className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground" 
             size="lg"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !!addressError || !formData.city}
           >
             {isSubmitting ? (
               <>
