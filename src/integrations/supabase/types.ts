@@ -50,11 +50,42 @@ export type Database = {
         }
         Relationships: []
       }
+      author_profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string
+          id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author_bio: string | null
           author_id: string | null
           author_name: string | null
+          author_profile_id: string | null
           canonical_url: string | null
           category: string | null
           content: string | null
@@ -81,6 +112,7 @@ export type Database = {
           author_bio?: string | null
           author_id?: string | null
           author_name?: string | null
+          author_profile_id?: string | null
           canonical_url?: string | null
           category?: string | null
           content?: string | null
@@ -107,6 +139,7 @@ export type Database = {
           author_bio?: string | null
           author_id?: string | null
           author_name?: string | null
+          author_profile_id?: string | null
           canonical_url?: string | null
           category?: string | null
           content?: string | null
@@ -128,6 +161,32 @@ export type Database = {
           tags?: string[] | null
           title?: string
           updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_posts_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "author_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blog_tags: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
         }
         Relationships: []
       }

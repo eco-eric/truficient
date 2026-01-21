@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -20,9 +19,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Save, Eye, X, Plus, Upload, Trash2, ChevronDown, CheckCircle2, AlertCircle, Search } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, Eye, Upload, Trash2, ChevronDown, CheckCircle2, AlertCircle, Search } from 'lucide-react';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import BlogPreview from '@/components/admin/BlogPreview';
+import TagSelector from '@/components/admin/TagSelector';
+import AuthorSelector from '@/components/admin/AuthorSelector';
+
+interface AuthorProfile {
+  id: string;
+  display_name: string;
+  bio: string | null;
+  avatar_url: string | null;
+}
 
 interface BlogPost {
   id: string;
@@ -34,6 +42,7 @@ interface BlogPost {
   featured_image_alt: string | null;
   status: string;
   author_id: string | null;
+  author_profile_id: string | null;
   published_at: string | null;
   meta_title: string | null;
   meta_description: string | null;
@@ -70,8 +79,8 @@ const BlogPostEditor = () => {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [newTag, setNewTag] = useState('');
   const [advancedSeoOpen, setAdvancedSeoOpen] = useState(false);
+  const [selectedAuthor, setSelectedAuthor] = useState<AuthorProfile | null>(null);
   const [post, setPost] = useState<Partial<BlogPost>>({
     title: '',
     slug: '',
@@ -87,6 +96,7 @@ const BlogPostEditor = () => {
     focus_keyword: '',
     noindex: false,
     canonical_url: '',
+    author_profile_id: null,
     author_name: '',
     author_bio: '',
     og_title: '',
@@ -138,21 +148,17 @@ const BlogPostEditor = () => {
     }));
   };
 
-  const addTag = () => {
-    const tag = newTag.trim();
-    if (tag && !post.tags?.includes(tag)) {
-      setPost(prev => ({
-        ...prev,
-        tags: [...(prev.tags || []), tag],
-      }));
-      setNewTag('');
-    }
+  const handleTagsChange = (tags: string[]) => {
+    setPost(prev => ({ ...prev, tags }));
   };
 
-  const removeTag = (tagToRemove: string) => {
+  const handleAuthorChange = (profile: AuthorProfile | null) => {
+    setSelectedAuthor(profile);
     setPost(prev => ({
       ...prev,
-      tags: (prev.tags || []).filter(t => t !== tagToRemove),
+      author_profile_id: profile?.id || null,
+      author_name: profile?.display_name || '',
+      author_bio: profile?.bio || '',
     }));
   };
 
@@ -225,6 +231,7 @@ const BlogPostEditor = () => {
         meta_description: post.meta_description || null,
         published_at: publishNow ? new Date().toISOString() : post.published_at,
         author_id: user?.id || null,
+        author_profile_id: post.author_profile_id || null,
         category: post.category || null,
         tags: post.tags || [],
         focus_keyword: post.focus_keyword || null,
@@ -531,33 +538,10 @@ const BlogPostEditor = () => {
 
                     <div className="space-y-2">
                       <Label>Tags</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          value={newTag}
-                          onChange={(e) => setNewTag(e.target.value)}
-                          placeholder="Add a tag..."
-                          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                        />
-                        <Button type="button" size="icon" onClick={addTag}>
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      {post.tags && post.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mt-2">
-                          {post.tags.map((tag, i) => (
-                            <Badge key={i} variant="secondary" className="gap-1">
-                              {tag}
-                              <button
-                                type="button"
-                                onClick={() => removeTag(tag)}
-                                className="hover:text-destructive"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
+                      <TagSelector
+                        selectedTags={post.tags || []}
+                        onChange={handleTagsChange}
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -675,29 +659,11 @@ const BlogPostEditor = () => {
                   <CardHeader>
                     <CardTitle>Author</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="authorName">Author Name</Label>
-                      <Input
-                        id="authorName"
-                        value={post.author_name || ''}
-                        onChange={(e) => setPost(prev => ({ ...prev, author_name: e.target.value }))}
-                        placeholder="e.g., John Smith"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="authorBio">Author Bio</Label>
-                      <Textarea
-                        id="authorBio"
-                        value={post.author_bio || ''}
-                        onChange={(e) => setPost(prev => ({ ...prev, author_bio: e.target.value }))}
-                        placeholder="Brief author bio for E-E-A-T..."
-                        rows={2}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Supports expertise, authority, and trust signals for SEO
-                      </p>
-                    </div>
+                  <CardContent>
+                    <AuthorSelector
+                      selectedProfileId={post.author_profile_id || null}
+                      onChange={handleAuthorChange}
+                    />
                   </CardContent>
                 </Card>
 
