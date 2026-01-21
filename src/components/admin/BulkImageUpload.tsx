@@ -15,9 +15,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Upload, X, Loader2, ImageIcon, Check, Star } from "lucide-react";
+import { Upload, X, Loader2, ImageIcon, Check, Star, Video, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { compressImage } from "@/utils/imageCompression";
+import { generateVideoThumbnail, createThumbnailFile } from "@/utils/videoThumbnail";
 
 interface GalleryTag {
   id: string;
@@ -25,15 +26,19 @@ interface GalleryTag {
   is_active: boolean;
 }
 
-interface UploadedImage {
+type MediaType = 'image' | 'video';
+
+interface UploadedMedia {
   id: string;
   file: File;
   url: string;
+  thumbnailUrl?: string;
   title: string;
   selectedTags: string[];
   is_featured: boolean;
   status: 'pending' | 'uploading' | 'uploaded' | 'error';
   error?: string;
+  mediaType: MediaType;
 }
 
 interface BulkImageUploadProps {
@@ -50,14 +55,19 @@ export const BulkImageUpload = ({
   onComplete,
 }: BulkImageUploadProps) => {
   const [phase, setPhase] = useState<'upload' | 'review'>('upload');
-  const [images, setImages] = useState<UploadedImage[]>([]);
+  const [media, setMedia] = useState<UploadedMedia[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isCompressing, setIsCompressing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [applyToAllTags, setApplyToAllTags] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
+  const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+  const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
 
   const generateTitle = (filename: string) => {
     return filename
@@ -69,79 +79,128 @@ export const BulkImageUpload = ({
 
   const handleFilesSelected = useCallback(async (files: FileList | File[]) => {
     const fileArray = Array.from(files).filter(file => {
-      if (!file.type.startsWith('image/')) {
-        toast.error(`${file.name} is not an image file`);
+      const isImage = IMAGE_TYPES.includes(file.type);
+      const isVideo = VIDEO_TYPES.includes(file.type);
+      
+      if (!isImage && !isVideo) {
+        toast.error(`${file.name} is not a supported file type`);
         return false;
       }
-      if (file.size > 10 * 1024 * 1024) {
+      
+      if (isImage && file.size > MAX_IMAGE_SIZE) {
         toast.error(`${file.name} is larger than 10MB`);
         return false;
       }
+      
+      if (isVideo && file.size > MAX_VIDEO_SIZE) {
+        toast.error(`${file.name} is larger than 100MB`);
+        return false;
+      }
+      
       return true;
     });
 
     if (fileArray.length === 0) return;
 
-    // Compress images before adding to state
-    setIsCompressing(true);
-    toast.info(`Optimizing ${fileArray.length} image${fileArray.length > 1 ? 's' : ''}...`);
+    setIsProcessing(true);
     
-    const compressedFiles = await Promise.all(
-      fileArray.map(file => compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.85 }))
+    const imageFiles = fileArray.filter(f => IMAGE_TYPES.includes(f.type));
+    const videoFiles = fileArray.filter(f => VIDEO_TYPES.includes(f.type));
+    
+    if (imageFiles.length > 0) {
+      toast.info(`Optimizing ${imageFiles.length} image${imageFiles.length > 1 ? 's' : ''}...`);
+    }
+    if (videoFiles.length > 0) {
+      toast.info(`Processing ${videoFiles.length} video${videoFiles.length > 1 ? 's' : ''}...`);
+    }
+    
+    // Process images - compress them
+    const processedImages: UploadedMedia[] = await Promise.all(
+      imageFiles.map(async (file) => {
+        const compressed = await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.85 });
+        return {
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          file: compressed,
+          url: URL.createObjectURL(compressed),
+          title: generateTitle(file.name),
+          selectedTags: [],
+          is_featured: false,
+          status: 'pending' as const,
+          mediaType: 'image' as MediaType,
+        };
+      })
+    );
+    
+    // Process videos - generate thumbnails
+    const processedVideos: UploadedMedia[] = await Promise.all(
+      videoFiles.map(async (file) => {
+        let thumbnailUrl: string | undefined;
+        try {
+          const thumbnailResult = await generateVideoThumbnail(file, 0.1, 640, 0.8);
+          thumbnailUrl = thumbnailResult.dataUrl;
+        } catch (e) {
+          console.warn('Failed to generate video thumbnail:', e);
+        }
+        return {
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          file,
+          url: URL.createObjectURL(file),
+          thumbnailUrl,
+          title: generateTitle(file.name),
+          selectedTags: [],
+          is_featured: false,
+          status: 'pending' as const,
+          mediaType: 'video' as MediaType,
+        };
+      })
     );
 
-    // Create preview URLs and add to state
-    const newImages: UploadedImage[] = compressedFiles.map(file => ({
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      file,
-      url: URL.createObjectURL(file),
-      title: generateTitle(file.name),
-      selectedTags: [],
-      is_featured: false,
-      status: 'pending' as const,
-    }));
-
-    setImages(prev => [...prev, ...newImages]);
-    setIsCompressing(false);
+    const newMedia = [...processedImages, ...processedVideos];
+    setMedia(prev => [...prev, ...newMedia]);
+    setIsProcessing(false);
     
-    // Calculate total savings
-    const originalSize = fileArray.reduce((sum, f) => sum + f.size, 0);
-    const compressedSize = compressedFiles.reduce((sum, f) => sum + f.size, 0);
-    const savedMB = ((originalSize - compressedSize) / 1024 / 1024).toFixed(1);
+    // Calculate total savings for images
+    if (imageFiles.length > 0) {
+      const originalSize = imageFiles.reduce((sum, f) => sum + f.size, 0);
+      const compressedSize = processedImages.reduce((sum, m) => sum + m.file.size, 0);
+      const savedMB = ((originalSize - compressedSize) / 1024 / 1024).toFixed(1);
+      
+      if (originalSize > compressedSize) {
+        toast.success(`Images optimized! Saved ${savedMB}MB`);
+      }
+    }
     
-    if (originalSize > compressedSize) {
-      toast.success(`Images optimized! Saved ${savedMB}MB`);
-    } else {
-      toast.success('Images ready for upload');
+    if (videoFiles.length > 0) {
+      toast.success(`${videoFiles.length} video${videoFiles.length > 1 ? 's' : ''} ready for upload`);
     }
   }, []);
 
-  const uploadAllImages = async () => {
-    if (images.length === 0) return;
+  const uploadAllMedia = async () => {
+    if (media.length === 0) return;
 
     setIsUploading(true);
-    setUploadProgress({ current: 0, total: images.length });
+    setUploadProgress({ current: 0, total: media.length });
 
-    const updatedImages = [...images];
+    const updatedMedia = [...media];
 
-    for (let i = 0; i < updatedImages.length; i++) {
-      const image = updatedImages[i];
-      if (image.status === 'uploaded') {
+    for (let i = 0; i < updatedMedia.length; i++) {
+      const item = updatedMedia[i];
+      if (item.status === 'uploaded') {
         setUploadProgress(prev => ({ ...prev, current: prev.current + 1 }));
         continue;
       }
 
-      updatedImages[i] = { ...image, status: 'uploading' };
-      setImages([...updatedImages]);
+      updatedMedia[i] = { ...item, status: 'uploading' };
+      setMedia([...updatedMedia]);
 
       try {
         const timestamp = Date.now();
-        const ext = image.file.name.split('.').pop() || 'jpg';
+        const ext = item.file.name.split('.').pop() || (item.mediaType === 'video' ? 'mp4' : 'jpg');
         const fileName = `${timestamp}-${i}.${ext}`;
 
         const { error: uploadError } = await supabase.storage
           .from('gallery-images')
-          .upload(fileName, image.file, {
+          .upload(fileName, item.file, {
             cacheControl: '3600',
             upsert: false,
           });
@@ -152,56 +211,87 @@ export const BulkImageUpload = ({
           .from('gallery-images')
           .getPublicUrl(fileName);
 
+        // Upload video thumbnail if present
+        let uploadedThumbnailUrl: string | undefined;
+        if (item.mediaType === 'video' && item.thumbnailUrl) {
+          try {
+            const thumbnailFile = createThumbnailFile(
+              await (await fetch(item.thumbnailUrl)).blob(),
+              item.file.name
+            );
+            const thumbFileName = `thumbnails/${timestamp}-${i}_thumb.jpg`;
+            
+            const { error: thumbError } = await supabase.storage
+              .from('gallery-images')
+              .upload(thumbFileName, thumbnailFile, {
+                cacheControl: '3600',
+                upsert: false,
+              });
+
+            if (!thumbError) {
+              const { data: thumbUrlData } = supabase.storage
+                .from('gallery-images')
+                .getPublicUrl(thumbFileName);
+              uploadedThumbnailUrl = thumbUrlData.publicUrl;
+            }
+          } catch (e) {
+            console.warn('Failed to upload video thumbnail:', e);
+          }
+        }
+
         // Revoke the blob URL and update with real URL
-        URL.revokeObjectURL(image.url);
-        updatedImages[i] = {
-          ...updatedImages[i],
+        URL.revokeObjectURL(item.url);
+        updatedMedia[i] = {
+          ...updatedMedia[i],
           url: urlData.publicUrl,
+          thumbnailUrl: uploadedThumbnailUrl || item.thumbnailUrl,
           status: 'uploaded',
         };
       } catch (error: any) {
-        updatedImages[i] = {
-          ...updatedImages[i],
+        updatedMedia[i] = {
+          ...updatedMedia[i],
           status: 'error',
           error: error.message,
         };
       }
 
-      setImages([...updatedImages]);
+      setMedia([...updatedMedia]);
       setUploadProgress(prev => ({ ...prev, current: prev.current + 1 }));
     }
 
     setIsUploading(false);
     
-    const successCount = updatedImages.filter(img => img.status === 'uploaded').length;
+    const successCount = updatedMedia.filter(m => m.status === 'uploaded').length;
     if (successCount > 0) {
-      toast.success(`${successCount} images uploaded successfully`);
+      toast.success(`${successCount} file${successCount > 1 ? 's' : ''} uploaded successfully`);
       setPhase('review');
     }
   };
 
-  const saveAllImages = async () => {
-    const uploadedImages = images.filter(img => img.status === 'uploaded');
-    if (uploadedImages.length === 0) {
-      toast.error('No images to save');
+  const saveAllMedia = async () => {
+    const uploadedMedia = media.filter(m => m.status === 'uploaded');
+    if (uploadedMedia.length === 0) {
+      toast.error('No media to save');
       return;
     }
 
     setIsSaving(true);
 
     try {
-      // Insert all gallery images
-      const imageRecords = uploadedImages.map((img, index) => ({
-        title: img.title || `Image ${index + 1}`,
-        image_url: img.url,
-        is_featured: img.is_featured,
+      // Insert all gallery items
+      const mediaRecords = uploadedMedia.map((item, index) => ({
+        title: item.title || `${item.mediaType === 'video' ? 'Video' : 'Image'} ${index + 1}`,
+        image_url: item.url,
+        thumbnail_url: item.mediaType === 'video' ? item.thumbnailUrl : null,
+        media_type: item.mediaType,
+        is_featured: item.is_featured,
         is_active: true,
         sort_order: index,
       }));
 
-      const { data: insertedImages, error: insertError } = await supabase
+      const { data: insertedMedia, error: insertError } = await supabase
         .from('gallery_images')
-        .insert(imageRecords)
+        .insert(mediaRecords)
         .select();
 
       if (insertError) throw insertError;
@@ -209,13 +299,13 @@ export const BulkImageUpload = ({
       // Insert tag relations
       const tagRelations: { image_id: string; tag_id: string }[] = [];
       
-      insertedImages?.forEach((dbImage, index) => {
-        const originalImage = uploadedImages[index];
-        const tagsToApply = [...new Set([...originalImage.selectedTags, ...applyToAllTags])];
+      insertedMedia?.forEach((dbItem, index) => {
+        const originalItem = uploadedMedia[index];
+        const tagsToApply = [...new Set([...originalItem.selectedTags, ...applyToAllTags])];
         
         tagsToApply.forEach(tagId => {
           tagRelations.push({
-            image_id: dbImage.id,
+            image_id: dbItem.id,
             tag_id: tagId,
           });
         });
@@ -229,42 +319,42 @@ export const BulkImageUpload = ({
         if (tagError) throw tagError;
       }
 
-      toast.success(`${uploadedImages.length} images saved to gallery`);
+      toast.success(`${uploadedMedia.length} items saved to gallery`);
       handleClose();
       onComplete();
     } catch (error: any) {
       console.error('Save error:', error);
-      toast.error(error.message || 'Failed to save images');
+      toast.error(error.message || 'Failed to save media');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const removeImage = (id: string) => {
-    setImages(prev => {
-      const image = prev.find(img => img.id === id);
-      if (image && image.status === 'pending') {
-        URL.revokeObjectURL(image.url);
+  const removeMedia = (id: string) => {
+    setMedia(prev => {
+      const item = prev.find(m => m.id === id);
+      if (item && item.status === 'pending') {
+        URL.revokeObjectURL(item.url);
       }
-      return prev.filter(img => img.id !== id);
+      return prev.filter(m => m.id !== id);
     });
   };
 
-  const updateImage = (id: string, updates: Partial<UploadedImage>) => {
-    setImages(prev => prev.map(img => 
-      img.id === id ? { ...img, ...updates } : img
+  const updateMedia = (id: string, updates: Partial<UploadedMedia>) => {
+    setMedia(prev => prev.map(m => 
+      m.id === id ? { ...m, ...updates } : m
     ));
   };
 
-  const toggleImageTag = (imageId: string, tagId: string) => {
-    setImages(prev => prev.map(img => {
-      if (img.id !== imageId) return img;
-      const hasTag = img.selectedTags.includes(tagId);
+  const toggleMediaTag = (mediaId: string, tagId: string) => {
+    setMedia(prev => prev.map(m => {
+      if (m.id !== mediaId) return m;
+      const hasTag = m.selectedTags.includes(tagId);
       return {
-        ...img,
+        ...m,
         selectedTags: hasTag 
-          ? img.selectedTags.filter(t => t !== tagId)
-          : [...img.selectedTags, tagId],
+          ? m.selectedTags.filter(t => t !== tagId)
+          : [...m.selectedTags, tagId],
       };
     }));
   };
@@ -279,12 +369,12 @@ export const BulkImageUpload = ({
 
   const handleClose = () => {
     // Clean up blob URLs
-    images.forEach(img => {
-      if (img.status === 'pending') {
-        URL.revokeObjectURL(img.url);
+    media.forEach(m => {
+      if (m.status === 'pending') {
+        URL.revokeObjectURL(m.url);
       }
     });
-    setImages([]);
+    setMedia([]);
     setPhase('upload');
     setUploadProgress({ current: 0, total: 0 });
     setApplyToAllTags([]);
@@ -305,8 +395,8 @@ export const BulkImageUpload = ({
         <DialogHeader>
           <DialogTitle>
             {phase === 'upload' 
-              ? 'Bulk Upload Images' 
-              : `Review Images (${images.filter(i => i.status === 'uploaded').length} uploaded)`
+              ? 'Bulk Upload Media' 
+              : `Review Media (${media.filter(m => m.status === 'uploaded').length} uploaded)`
             }
           </DialogTitle>
         </DialogHeader>
@@ -320,30 +410,33 @@ export const BulkImageUpload = ({
                 isDragging
                   ? "border-primary bg-primary/5"
                   : "border-muted-foreground/25 hover:border-primary/50",
-                (isUploading || isCompressing) && "pointer-events-none opacity-50"
+                (isUploading || isProcessing) && "pointer-events-none opacity-50"
               )}
               onClick={() => fileInputRef.current?.click()}
               onDrop={handleDrop}
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
               onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
             >
-              {isCompressing ? (
+              {isProcessing ? (
                 <div className="flex flex-col items-center gap-3">
                   <Loader2 className="h-12 w-12 text-muted-foreground animate-spin" />
                   <div>
-                    <p className="text-lg font-medium">Optimizing images...</p>
+                    <p className="text-lg font-medium">Processing files...</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Compressing for faster uploads
+                      Optimizing images and generating video thumbnails
                     </p>
                   </div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-3">
-                  <Upload className="h-12 w-12 text-muted-foreground" />
+                  <div className="flex gap-2">
+                    <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                    <Video className="h-10 w-10 text-muted-foreground" />
+                  </div>
                   <div>
-                    <p className="text-lg font-medium">Drop images here or click to browse</p>
+                    <p className="text-lg font-medium">Drop images or videos here</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      JPEG, PNG, WebP, or GIF (max 10MB each, auto-optimized)
+                      Images: JPEG, PNG, WebP, GIF (max 10MB) • Videos: MP4, WebM (max 100MB)
                     </p>
                   </div>
                 </div>
@@ -353,7 +446,7 @@ export const BulkImageUpload = ({
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
+              accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
               multiple
               className="hidden"
               onChange={(e) => {
@@ -363,20 +456,25 @@ export const BulkImageUpload = ({
             />
 
             {/* Preview grid */}
-            {images.length > 0 && (
+            {media.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
-                    {images.length} image{images.length !== 1 ? 's' : ''} selected
+                    {media.length} file{media.length !== 1 ? 's' : ''} selected
+                    {media.filter(m => m.mediaType === 'video').length > 0 && (
+                      <span className="ml-1">
+                        ({media.filter(m => m.mediaType === 'video').length} video{media.filter(m => m.mediaType === 'video').length !== 1 ? 's' : ''})
+                      </span>
+                    )}
                   </p>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      images.forEach(img => {
-                        if (img.status === 'pending') URL.revokeObjectURL(img.url);
+                      media.forEach(m => {
+                        if (m.status === 'pending') URL.revokeObjectURL(m.url);
                       });
-                      setImages([]);
+                      setMedia([]);
                     }}
                   >
                     Clear all
@@ -385,31 +483,52 @@ export const BulkImageUpload = ({
 
                 <ScrollArea className="h-[200px]">
                   <div className="grid grid-cols-6 gap-2">
-                    {images.map((image) => (
-                      <div key={image.id} className="relative group aspect-square">
-                        <img
-                          src={image.url}
-                          alt={image.title}
-                          className="w-full h-full object-cover rounded-md"
-                        />
-                        {image.status === 'uploading' && (
+                    {media.map((item) => (
+                      <div key={item.id} className="relative group aspect-square">
+                        {item.mediaType === 'video' ? (
+                          <div className="w-full h-full relative">
+                            {item.thumbnailUrl ? (
+                              <img
+                                src={item.thumbnailUrl}
+                                alt={item.title}
+                                className="w-full h-full object-cover rounded-md"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-muted rounded-md flex items-center justify-center">
+                                <Video className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <div className="w-8 h-8 rounded-full bg-black/50 flex items-center justify-center">
+                                <Play className="h-4 w-4 text-white ml-0.5" />
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <img
+                            src={item.url}
+                            alt={item.title}
+                            className="w-full h-full object-cover rounded-md"
+                          />
+                        )}
+                        {item.status === 'uploading' && (
                           <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-md">
                             <Loader2 className="h-5 w-5 animate-spin" />
                           </div>
                         )}
-                        {image.status === 'uploaded' && (
+                        {item.status === 'uploaded' && (
                           <div className="absolute top-1 right-1 bg-green-500 rounded-full p-0.5">
                             <Check className="h-3 w-3 text-white" />
                           </div>
                         )}
-                        {image.status === 'error' && (
+                        {item.status === 'error' && (
                           <div className="absolute inset-0 bg-destructive/20 flex items-center justify-center rounded-md">
                             <X className="h-5 w-5 text-destructive" />
                           </div>
                         )}
                         <button
                           className="absolute top-1 left-1 bg-background/80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => removeImage(image.id)}
+                          onClick={() => removeMedia(item.id)}
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -438,7 +557,7 @@ export const BulkImageUpload = ({
             {/* Apply to all tags */}
             {activeTags.length > 0 && (
               <div className="space-y-2 pb-3 border-b">
-                <Label className="text-sm font-medium">Apply to all images:</Label>
+                <Label className="text-sm font-medium">Apply to all media:</Label>
                 <div className="flex flex-wrap gap-2">
                   {activeTags.map(tag => (
                     <Badge
@@ -454,29 +573,55 @@ export const BulkImageUpload = ({
               </div>
             )}
 
-            {/* Image grid for review */}
+            {/* Media grid for review */}
             <ScrollArea className="flex-1 h-[400px]">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pr-4">
-                {images.filter(img => img.status === 'uploaded').map((image) => (
-                  <div key={image.id} className="space-y-2 p-3 border rounded-lg">
+                {media.filter(m => m.status === 'uploaded').map((item) => (
+                  <div key={item.id} className="space-y-2 p-3 border rounded-lg">
                     <div className="relative aspect-video">
-                      <img
-                        src={image.url}
-                        alt={image.title}
-                        className="w-full h-full object-cover rounded-md"
-                      />
+                      {item.mediaType === 'video' ? (
+                        <div className="relative w-full h-full">
+                          {item.thumbnailUrl ? (
+                            <img
+                              src={item.thumbnailUrl}
+                              alt={item.title}
+                              className="w-full h-full object-cover rounded-md"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-muted rounded-md flex items-center justify-center">
+                              <Video className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="w-10 h-10 rounded-full bg-black/50 flex items-center justify-center">
+                              <Play className="h-5 w-5 text-white ml-0.5" />
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <img
+                          src={item.url}
+                          alt={item.title}
+                          className="w-full h-full object-cover rounded-md"
+                        />
+                      )}
                       <button
                         className="absolute top-1 right-1 bg-background/80 rounded-full p-1 hover:bg-background"
-                        onClick={() => removeImage(image.id)}
+                        onClick={() => removeMedia(item.id)}
                       >
                         <X className="h-4 w-4" />
                       </button>
+                      {item.mediaType === 'video' && (
+                        <Badge className="absolute bottom-1 left-1 text-xs" variant="secondary">
+                          Video
+                        </Badge>
+                      )}
                     </div>
                     
                     <Input
-                      value={image.title}
-                      onChange={(e) => updateImage(image.id, { title: e.target.value })}
-                      placeholder="Image title"
+                      value={item.title}
+                      onChange={(e) => updateMedia(item.id, { title: e.target.value })}
+                      placeholder={`${item.mediaType === 'video' ? 'Video' : 'Image'} title`}
                       className="h-8 text-sm"
                     />
 
@@ -485,7 +630,7 @@ export const BulkImageUpload = ({
                         <Badge
                           key={tag.id}
                           variant={
-                            image.selectedTags.includes(tag.id) || applyToAllTags.includes(tag.id) 
+                            item.selectedTags.includes(tag.id) || applyToAllTags.includes(tag.id) 
                               ? 'default' 
                               : 'outline'
                           }
@@ -493,21 +638,20 @@ export const BulkImageUpload = ({
                             "cursor-pointer text-xs",
                             applyToAllTags.includes(tag.id) && "opacity-60"
                           )}
-                          onClick={() => !applyToAllTags.includes(tag.id) && toggleImageTag(image.id, tag.id)}
+                          onClick={() => !applyToAllTags.includes(tag.id) && toggleMediaTag(item.id, tag.id)}
                         >
                           {tag.name}
                         </Badge>
                       ))}
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 pt-1">
                       <Switch
-                        id={`featured-${image.id}`}
-                        checked={image.is_featured}
-                        onCheckedChange={(checked) => updateImage(image.id, { is_featured: checked })}
-                        className="h-4 w-7"
+                        id={`featured-${item.id}`}
+                        checked={item.is_featured}
+                        onCheckedChange={(checked) => updateMedia(item.id, { is_featured: checked })}
                       />
-                      <Label htmlFor={`featured-${image.id}`} className="text-xs flex items-center gap-1">
+                      <Label htmlFor={`featured-${item.id}`} className="text-xs flex items-center gap-1">
                         <Star className="h-3 w-3" />
                         Featured
                       </Label>
@@ -519,44 +663,47 @@ export const BulkImageUpload = ({
           </div>
         )}
 
-        <DialogFooter className="gap-2">
+        <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
           
-          {phase === 'upload' && (
+          {phase === 'upload' ? (
             <Button
-              onClick={uploadAllImages}
-              disabled={images.length === 0 || isUploading}
+              onClick={uploadAllMedia}
+              disabled={media.length === 0 || isUploading || isProcessing || media.every(m => m.status === 'uploaded')}
             >
               {isUploading ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Uploading...
+                </>
+              ) : media.every(m => m.status === 'uploaded') ? (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  All Uploaded
                 </>
               ) : (
                 <>
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload {images.length} Image{images.length !== 1 ? 's' : ''}
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload {media.filter(m => m.status === 'pending').length} Files
                 </>
               )}
             </Button>
-          )}
-
-          {phase === 'review' && (
+          ) : (
             <Button
-              onClick={saveAllImages}
-              disabled={isSaving}
+              onClick={saveAllMedia}
+              disabled={isSaving || media.filter(m => m.status === 'uploaded').length === 0}
             >
               {isSaving ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Saving...
                 </>
               ) : (
                 <>
-                  <Check className="w-4 h-4 mr-2" />
-                  Save All ({images.filter(i => i.status === 'uploaded').length})
+                  <Check className="h-4 w-4 mr-2" />
+                  Save {media.filter(m => m.status === 'uploaded').length} Items to Gallery
                 </>
               )}
             </Button>
