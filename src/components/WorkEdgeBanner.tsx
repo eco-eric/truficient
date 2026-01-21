@@ -32,9 +32,9 @@ export const WorkEdgeBanner = ({ location, variant = 'default' }: WorkEdgeBanner
           className="w-12 h-12 object-contain flex-shrink-0"
         />
         <p className="text-sm">
-          <span className="text-muted-foreground">The Document Library is powered by </span>
+          <span className="text-muted-foreground">Powered by </span>
           <span className="font-bold text-primary">Workedge Pro</span>
-          <span className="text-muted-foreground"> – A Field Documentation App for Field Service Professionals.</span>
+          <span className="text-muted-foreground"> – A Field Documentation App for Service Pro's.</span>
         </p>
       </a>
     );
@@ -54,7 +54,7 @@ export const WorkEdgeBanner = ({ location, variant = 'default' }: WorkEdgeBanner
         className="w-12 h-12 object-contain flex-shrink-0"
       />
       <p className="text-sm text-amber-800 dark:text-amber-200">
-        <strong className="font-medium">Powered by Workedge Pro</strong> – A Field Documentation App for Field Service Professionals.
+        <strong className="font-medium">Powered by Workedge Pro</strong> – A Field Documentation App for Service Pro's.
       </p>
     </a>
   );
