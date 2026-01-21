@@ -9,6 +9,14 @@ interface WorkEdgeBannerProps {
 export const WorkEdgeBanner = ({ location, variant = 'default' }: WorkEdgeBannerProps) => {
   const { trackButtonClick } = useButtonTracking();
 
+  const handleClick = () => {
+    trackButtonClick({
+      buttonName: 'Workedge Pro Banner',
+      buttonLocation: location,
+      destinationUrl: 'https://workedge.pro',
+    });
+  };
+
   if (variant === 'document') {
     return (
       <a 
@@ -16,11 +24,7 @@ export const WorkEdgeBanner = ({ location, variant = 'default' }: WorkEdgeBanner
         target="_blank" 
         rel="noopener noreferrer"
         className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors border"
-        onClick={() => trackButtonClick({
-          buttonName: 'Workedge Pro Banner',
-          buttonLocation: location,
-          destinationUrl: 'https://workedge.pro',
-        })}
+        onClick={handleClick}
       >
         <img 
           src={workedgeProLogo} 
@@ -30,7 +34,7 @@ export const WorkEdgeBanner = ({ location, variant = 'default' }: WorkEdgeBanner
         <p className="text-sm">
           <span className="text-muted-foreground">The Document Library is powered by </span>
           <span className="font-bold text-primary">Workedge Pro</span>
-          <span className="text-muted-foreground"> – A Field Documentation App for Service Pros.</span>
+          <span className="text-muted-foreground"> – A Field Documentation App for Field Service Professionals.</span>
         </p>
       </a>
     );
@@ -42,11 +46,7 @@ export const WorkEdgeBanner = ({ location, variant = 'default' }: WorkEdgeBanner
       target="_blank" 
       rel="noopener noreferrer"
       className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors border border-amber-200 dark:border-amber-900"
-      onClick={() => trackButtonClick({
-        buttonName: 'Workedge Pro Banner',
-        buttonLocation: location,
-        destinationUrl: 'https://workedge.pro',
-      })}
+      onClick={handleClick}
     >
       <img 
         src={workedgeProLogo} 
@@ -54,8 +54,7 @@ export const WorkEdgeBanner = ({ location, variant = 'default' }: WorkEdgeBanner
         className="w-12 h-12 object-contain flex-shrink-0"
       />
       <p className="text-sm text-amber-800 dark:text-amber-200">
-        <strong className="font-medium">Powered by Workedge Pro</strong> – A Field Documentation App for Field Service Professionals. 
-        Build your own equipment library.
+        <strong className="font-medium">Powered by Workedge Pro</strong> – A Field Documentation App for Field Service Professionals.
       </p>
     </a>
   );
