@@ -17,6 +17,9 @@ export function ScannerCoupon({ variant = 'full' }: ScannerCouponProps) {
       <Card className="overflow-hidden border-2 border-secondary/30 bg-gradient-to-br from-secondary/5 via-background to-primary/5">
         {/* Header Banner */}
         <div className="bg-gradient-to-r from-secondary to-secondary/80 px-4 py-3 text-center">
+          <p className="text-secondary-foreground/90 text-xs font-medium mb-1">
+            For DFW Customers Only
+          </p>
           <div className="flex items-center justify-center gap-2">
             <Ticket className="w-5 h-5 text-secondary-foreground" />
             <span className="font-bold text-secondary-foreground tracking-wide">
