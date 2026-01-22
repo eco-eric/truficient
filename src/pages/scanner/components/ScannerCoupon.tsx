@@ -32,38 +32,33 @@ export function ScannerCoupon({ variant = 'full' }: ScannerCouponProps) {
         <div className={variant === 'compact' ? 'p-4 space-y-3' : 'p-4 sm:p-6 space-y-4'}>
           {/* Offer Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Ducted Offer */}
+            {/* Installs Offer */}
             <div className="bg-primary/10 rounded-lg p-4 text-center border border-primary/20">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Home className="w-5 h-5 text-primary" />
-                <span className="font-semibold text-primary">Full Ducted System</span>
+                <span className="font-semibold text-primary">New Installs</span>
               </div>
-              <div className="text-3xl sm:text-4xl font-bold text-foreground">
-                10<span className="text-xl">%</span> OFF
+              <div className="text-2xl sm:text-3xl font-bold text-foreground">
+                Up to 10<span className="text-lg">%</span> OFF
               </div>
-              <p className="text-sm text-muted-foreground mt-1">AC or Heat Pump Installation</p>
             </div>
 
-            {/* Mini-Split Offer */}
+            {/* Repairs Offer */}
             <div className="bg-emerald-500/10 rounded-lg p-4 text-center border border-emerald-500/20">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Snowflake className="w-5 h-5 text-emerald-600" />
-                <span className="font-semibold text-emerald-600">Mini-Split System</span>
+                <span className="font-semibold text-emerald-600">Repairs</span>
               </div>
-              <div className="text-3xl sm:text-4xl font-bold text-foreground">
-                5<span className="text-xl">%</span> OFF
+              <div className="text-2xl sm:text-3xl font-bold text-foreground">
+                Up to $150 OFF
               </div>
-              <p className="text-sm text-muted-foreground mt-1">Ductless Installation</p>
             </div>
           </div>
 
-          {/* Body Text - only show in full variant */}
-          {variant === 'full' && (
-            <p className="text-sm text-muted-foreground text-center">
-              Use this coupon to save on your new HVAC system. Pricing is based on our transparent 
-              Online Estimator which includes equipment, labor, and taxes—no hidden fees, just honest pricing.
-            </p>
-          )}
+          {/* Terms note */}
+          <p className="text-sm text-muted-foreground text-center">
+            See Terms & Conditions for more details
+          </p>
 
           {/* Terms & Conditions Accordion */}
           <Accordion type="single" collapsible className="w-full">
