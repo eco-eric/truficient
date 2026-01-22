@@ -14,6 +14,7 @@ import { EstimatorLinks } from './components/EstimatorLinks';
 import { DFWCallToAction } from './components/DFWCallToAction';
 import { DocumentationSearch } from './components/DocumentationSearch';
 import { TrustElements } from './components/TrustElements';
+import { ScannerCoupon } from './components/ScannerCoupon';
 import { ScanList } from './components/ScanList';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -68,6 +69,10 @@ function ScannerContent() {
             <ScanList />
             
             <EmailCapture />
+            
+            {/* Exclusive Coupon Offer */}
+            <ScannerCoupon variant="full" />
+            
             <ContextualMessages />
             <DFWCallToAction />
             <EstimatorLinks />

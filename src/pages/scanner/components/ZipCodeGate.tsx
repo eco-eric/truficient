@@ -7,6 +7,7 @@ import { useScanner } from '../context/ScannerContext';
 import { isDfwZipCode, isDfwByCity } from '../types';
 import { trackScanStarted } from '@/utils/conversionTracking';
 import { validateZipCode } from '../utils/validateZipCode';
+import { ScannerCoupon } from './ScannerCoupon';
 import { WorkEdgeBanner } from '@/components/WorkEdgeBanner';
 
 export function ZipCodeGate() {
@@ -153,8 +154,13 @@ export function ZipCodeGate() {
           )}
         </Button>
 
+        {/* Exclusive Coupon Offer */}
+        <div className="mt-6">
+          <ScannerCoupon variant="compact" />
+        </div>
+
         {/* Workedge Pro Attribution Banner */}
-        <div className="mt-2">
+        <div className="mt-4">
           <WorkEdgeBanner location="Scanner - Zip Code Gate" variant="document" />
         </div>
       </form>
