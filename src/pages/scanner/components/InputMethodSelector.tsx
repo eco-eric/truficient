@@ -3,8 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Camera, Upload, Keyboard, ArrowLeft, Images } from 'lucide-react';
 import { InputMethod } from '../types';
-import { useButtonTracking } from '@/hooks/useButtonTracking';
-import workedgeProLogo from '@/assets/workedge-pro-logo.png';
+import { WorkEdgeBanner } from '@/components/WorkEdgeBanner';
 
 interface MethodOption {
   id: InputMethod;
@@ -44,7 +43,6 @@ const methods: MethodOption[] = [
 
 export function InputMethodSelector() {
   const { state, dispatch } = useScanner();
-  const { trackButtonClick } = useButtonTracking();
   
   const remainingSlots = MAX_SCANS - state.results.length;
   
@@ -88,27 +86,9 @@ export function InputMethodSelector() {
       </div>
 
       {/* Workedge Pro Attribution Banner */}
-      <a 
-        href="https://workedge.pro" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className="flex items-center justify-center gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors border max-w-md mx-auto"
-        onClick={() => trackButtonClick({
-          buttonName: 'Workedge Pro Banner',
-          buttonLocation: 'Scanner - Input Method',
-          destinationUrl: 'https://workedge.pro',
-        })}
-      >
-        <img 
-          src={workedgeProLogo} 
-          alt="Workedge Pro" 
-          className="w-8 h-8 object-contain flex-shrink-0"
-        />
-        <p className="text-sm text-center">
-          <span className="text-muted-foreground">Scanner powered by </span>
-          <span className="font-semibold text-primary">Workedge Pro</span>
-        </p>
-      </a>
+      <div className="max-w-md mx-auto">
+        <WorkEdgeBanner location="Scanner - Input Method" variant="document" />
+      </div>
 
       <div className="text-center pt-4">
         <Button

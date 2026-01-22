@@ -7,12 +7,10 @@ import { useScanner } from '../context/ScannerContext';
 import { isDfwZipCode, isDfwByCity } from '../types';
 import { trackScanStarted } from '@/utils/conversionTracking';
 import { validateZipCode } from '../utils/validateZipCode';
-import { useButtonTracking } from '@/hooks/useButtonTracking';
-import workedgeProLogo from '@/assets/workedge-pro-logo.png';
+import { WorkEdgeBanner } from '@/components/WorkEdgeBanner';
 
 export function ZipCodeGate() {
   const { state, dispatch } = useScanner();
-  const { trackButtonClick } = useButtonTracking();
   const [localZip, setLocalZip] = useState(state.zipCode);
   const [error, setError] = useState('');
   const [isValidating, setIsValidating] = useState(false);
@@ -156,27 +154,9 @@ export function ZipCodeGate() {
         </Button>
 
         {/* Workedge Pro Attribution Banner */}
-        <a 
-          href="https://workedge.pro" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-3 p-4 mt-2 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors border"
-          onClick={() => trackButtonClick({
-            buttonName: 'Workedge Pro Banner',
-            buttonLocation: 'Scanner - Zip Code Gate',
-            destinationUrl: 'https://workedge.pro',
-          })}
-        >
-          <img 
-            src={workedgeProLogo} 
-            alt="Workedge Pro" 
-            className="w-8 h-8 object-contain flex-shrink-0"
-          />
-          <p className="text-sm text-center">
-            <span className="text-muted-foreground">Scanner powered by </span>
-            <span className="font-semibold text-primary">Workedge Pro</span>
-          </p>
-        </a>
+        <div className="mt-2">
+          <WorkEdgeBanner location="Scanner - Zip Code Gate" variant="document" />
+        </div>
       </form>
     </div>
   );
