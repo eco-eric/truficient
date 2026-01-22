@@ -70,11 +70,21 @@ export function ScannerCoupon({ variant = 'full' }: ScannerCouponProps) {
               </AccordionTrigger>
               <AccordionContent className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
                 <ul className="space-y-2 list-disc list-inside">
-                  <li>To validate this offer, the Equipment Report form must be completed in full, including Name, Phone Number, and Property Address.</li>
+                  <li>To validate this offer, once the equipment is scanned, the Equipment Report form must be completed in full, including Name, Phone Number, and Property Address.</li>
                   <li>Coupon expires 90 days from the date the report was generated.</li>
                   <li>Cannot be combined with other offers, promotions, or manufacturer rebates.</li>
-                  <li>Valid for new installations only. Not applicable to repairs or maintenance.</li>
-                  <li>Must be presented at time of estimate. Cannot be applied retroactively.</li>
+                  <li>Install coupon applies to pricing for the online estimators:
+                    <ul className="ml-4 mt-1 space-y-1 list-disc list-inside">
+                      <li>10% off Ducted AC replacements</li>
+                      <li>5% off Mini split installs</li>
+                    </ul>
+                  </li>
+                  <li>Repair discounts:
+                    <ul className="ml-4 mt-1 space-y-1 list-disc list-inside">
+                      <li>$75 off repairs – minimum repair of $250</li>
+                      <li>$150 off repairs – minimum repair of $750</li>
+                    </ul>
+                  </li>
                   <li>Truficient Energy Solutions reserves the right to modify or cancel this offer at any time.</li>
                 </ul>
               </AccordionContent>
