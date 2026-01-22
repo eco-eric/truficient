@@ -68,10 +68,10 @@ function ScannerContent() {
             {/* Scan List - show accumulated scans */}
             <ScanList />
             
-            <EmailCapture />
-            
-            {/* Exclusive Coupon Offer */}
+            {/* Exclusive Coupon Offer - before email capture */}
             <ScannerCoupon variant="full" />
+            
+            <EmailCapture />
             
             <ContextualMessages />
             <DFWCallToAction />
