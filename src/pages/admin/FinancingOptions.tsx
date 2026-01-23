@@ -358,6 +358,8 @@ const FinancingOptions = () => {
                   <TableHead className="w-[80px] text-right">Months</TableHead>
                   <TableHead className="w-[90px] text-right">Fee</TableHead>
                   <TableHead className="w-[80px] text-center">Active</TableHead>
+                  <TableHead className="w-[80px] text-center">Ducted</TableHead>
+                  <TableHead className="w-[80px] text-center">Ductless</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -376,6 +378,16 @@ const FinancingOptions = () => {
                     <TableCell className="text-center">
                       <span className={option.is_active ? "text-green-600" : "text-muted-foreground"}>
                         {option.is_active ? "Yes" : "No"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className={option.applies_to?.includes("ducted") ? "text-green-600" : "text-muted-foreground"}>
+                        {option.applies_to?.includes("ducted") ? "Yes" : "No"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className={option.applies_to?.includes("ductless") ? "text-green-600" : "text-muted-foreground"}>
+                        {option.applies_to?.includes("ductless") ? "Yes" : "No"}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -401,7 +413,7 @@ const FinancingOptions = () => {
                 ))}
                 {(!financingQuery.data || financingQuery.data.length === 0) && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
                       No financing options found. Click "Add Financing Option" to create one.
                     </TableCell>
                   </TableRow>
