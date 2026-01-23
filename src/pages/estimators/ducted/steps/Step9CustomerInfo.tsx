@@ -33,6 +33,12 @@ export const Step9CustomerInfo = () => {
     address: string;
     county: string;
   } | null>(null);
+  
+  // Track touched fields for inline validation
+  const [touchedFields, setTouchedFields] = useState({
+    phone: false,
+    address: false,
+  });
 
   // Email validation
   const isValidEmail = (email: string) => {
@@ -403,9 +409,14 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
               type="tel"
               value={state.customerInfo.phone}
               onChange={(e) => handlePhoneChange(e.target.value)}
+              onBlur={() => setTouchedFields(prev => ({ ...prev, phone: true }))}
               placeholder="(555) 123-4567"
               autoComplete="tel"
+              className={touchedFields.phone && !isValidPhone(state.customerInfo.phone) ? "border-destructive" : ""}
             />
+            {touchedFields.phone && !isValidPhone(state.customerInfo.phone) && (
+              <p className="text-sm text-destructive">Please enter a valid 10-digit phone number</p>
+            )}
           </div>
 
           {/* Best time to call */}
@@ -439,8 +450,13 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
               value={state.customerInfo.address}
               onChange={handleAddressChange}
               onAddressSelect={handleAddressSelect}
+              onBlur={() => setTouchedFields(prev => ({ ...prev, address: true }))}
               placeholder="Start typing your address..."
+              className={touchedFields.address && !isAddressValidated ? "border-destructive" : ""}
             />
+            {touchedFields.address && !isAddressValidated && (
+              <p className="text-sm text-destructive">Please select an address from the dropdown</p>
+            )}
             
             {/* Display separated address fields after selection */}
             {isAddressValidated && !addressError && (

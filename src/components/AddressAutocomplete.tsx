@@ -25,6 +25,7 @@ interface AddressAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
   onAddressSelect: (components: AddressComponents) => void;
+  onBlur?: () => void;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
@@ -36,6 +37,7 @@ export function AddressAutocomplete({
   value,
   onChange,
   onAddressSelect,
+  onBlur,
   placeholder = "Enter your address",
   className,
   disabled,
@@ -147,6 +149,7 @@ export function AddressAutocomplete({
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
         placeholder={placeholder}
         className={className}
         disabled={disabled}
@@ -159,6 +162,7 @@ export function AddressAutocomplete({
       ref={inputRef}
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      onBlur={onBlur}
       placeholder={isLoaded ? placeholder : "Loading..."}
       className={className}
       disabled={disabled || !isLoaded}
