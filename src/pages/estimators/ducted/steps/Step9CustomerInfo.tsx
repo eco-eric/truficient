@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { StepContainer } from "@/pages/estimators/ductless/components/StepContainer";
 import { CTAButton } from "@/pages/estimators/ductless/components/CTAButton";
 import { useEstimator } from "../context/EstimatorContext";
@@ -6,16 +6,13 @@ import { useDuctedPricing, formatMoney } from "../hooks/useDuctedPricing";
 import { HOME_TYPE_OPTIONS, HOME_LAYOUT_OPTIONS, SQUARE_FOOTAGE_OPTIONS } from "../types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AddressAutocomplete, type AddressComponents } from "@/components/AddressAutocomplete";
-import { MapPreview } from "@/components/MapPreview";
-import { isInServiceArea, SERVICE_AREA_COUNTIES } from "@/pages/estimators/ductless/constants/serviceArea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useFormSourceTags } from "@/hooks/useFormSourceTags";
 import { addDays, format } from "date-fns";
 import { 
-  Mail, Phone, MapPin, User, Shield, Clock, MapPinOff, 
-  Loader2, CheckCircle2, Calendar 
+  Mail, Phone, MapPin, User, Shield, Clock, 
+  Loader2, Calendar 
 } from "lucide-react";
 
 export const Step9CustomerInfo = () => {
@@ -23,22 +20,22 @@ export const Step9CustomerInfo = () => {
   const { pricing } = useDuctedPricing(state);
   const { data: dynamicTags } = useFormSourceTags('ducted');
   
-  const [addressError, setAddressError] = useState<string | null>(null);
-  const [isAddressValidated, setIsAddressValidated] = useState(false);
-  const [continueAnyway, setContinueAnyway] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<{
-    lat: number;
-    lng: number;
-    address: string;
-    county: string;
-  } | null>(null);
   
   // Track touched fields for inline validation
   const [touchedFields, setTouchedFields] = useState({
     phone: false,
-    address: false,
+    streetAddress: false,
+    city: false,
+    zipCode: false,
   });
+
+  // Force state to Texas on mount
+  useEffect(() => {
+    if (state.customerInfo.state !== "TX") {
+      setCustomerInfo({ state: "TX" });
+    }
+  }, []);
 
   // Email validation
   const isValidEmail = (email: string) => {
@@ -64,60 +61,28 @@ export const Step9CustomerInfo = () => {
     setCustomerInfo({ phone: formatted });
   };
 
-  const handleAddressSelect = (components: AddressComponents) => {
-    setCustomerInfo({
-      address: components.formattedAddress,
-      streetAddress: components.streetAddress,
-      formattedAddress: components.formattedAddress,
-      city: components.city,
-      county: components.county,
-      state: components.state,
-      zipCode: components.zipCode,
-      placeId: components.placeId,
-    });
-
-    // Set location for map preview
-    if (components.lat && components.lng) {
-      setSelectedLocation({
-        lat: components.lat,
-        lng: components.lng,
-        address: components.formattedAddress,
-        county: components.county,
-      });
-    }
-
-    setIsAddressValidated(true);
-    setContinueAnyway(false);
-
-    // Check service area
-    if (!isInServiceArea(components.county)) {
-      setAddressError(components.county);
-    } else {
-      setAddressError(null);
-    }
-  };
-
-  const handleAddressChange = (value: string) => {
-    setCustomerInfo({ address: value });
-    // Reset validation when manually typing
-    if (isAddressValidated) {
-      setIsAddressValidated(false);
-      setAddressError(null);
-      setContinueAnyway(false);
-      setSelectedLocation(null);
-    }
-  };
+  // Address validation
+  const isAddressComplete = 
+    (state.customerInfo.streetAddress?.trim() || "") !== "" &&
+    (state.customerInfo.city?.trim() || "") !== "" &&
+    (state.customerInfo.zipCode?.trim() || "").length === 5;
 
   const isFormValid = 
     state.customerInfo.name.trim() !== "" &&
     isValidEmail(state.customerInfo.email) &&
     isValidPhone(state.customerInfo.phone) &&
-    isAddressValidated &&
-    (!addressError || continueAnyway);
+    isAddressComplete;
 
-  // Format service area counties for display
-  const serviceAreaList = SERVICE_AREA_COUNTIES.slice(0, -1).join(", ") + 
-    ", and " + SERVICE_AREA_COUNTIES[SERVICE_AREA_COUNTIES.length - 1];
+  // Build full address string
+  const getFullAddress = () => {
+    const street = state.customerInfo.streetAddress?.trim() || "";
+    const city = state.customerInfo.city?.trim() || "";
+    const zip = state.customerInfo.zipCode?.trim() || "";
+    if (street && city && zip) {
+      return `${street}, ${city}, TX ${zip}`;
+    }
+    return "";
+  };
 
   const handleSubmit = async () => {
     if (!isFormValid) return;
@@ -130,12 +95,14 @@ export const Step9CustomerInfo = () => {
       const firstName = nameParts[0] || "";
       const lastName = nameParts.slice(1).join(" ") || "";
 
+      const fullAddress = getFullAddress();
+
       const submissionData = {
         // Customer info
         customer_name: state.customerInfo.name,
         customer_email: state.customerInfo.email,
         customer_phone: state.customerInfo.phone || null,
-        customer_address: state.customerInfo.formattedAddress || state.customerInfo.address || null,
+        customer_address: fullAddress || null,
         best_time_to_call: state.customerInfo.bestTimeToCall || null,
         wants_backup_quote: state.customerInfo.wantsBackupQuote || false,
         
@@ -218,7 +185,7 @@ CUSTOMER INFORMATION
 Name: ${state.customerInfo.name}
 Email: ${state.customerInfo.email}
 Phone: ${state.customerInfo.phone || 'Not provided'}
-Address: ${state.customerInfo.formattedAddress || state.customerInfo.address || 'Not provided'}
+Address: ${fullAddress || 'Not provided'}
 Best Time to Call: ${state.customerInfo.bestTimeToCall || 'No preference'}
 
 SYSTEM CONFIGURATION
@@ -270,9 +237,9 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
 • Size: ${pricing.recommendedTonnage} Ton
 • Home: ${state.homeType}, ${state.homeLayout}, ${state.squareFootage} sq ft
 • Estimate: $${pricing.finalTotal.toLocaleString()}
-• Address: ${state.customerInfo.formattedAddress || state.customerInfo.address || "Not provided"}`,
+• Address: ${fullAddress || "Not provided"}`,
           zipCode: state.customerInfo.zipCode || undefined,
-          isDfw: !addressError || continueAnyway,
+          isDfw: true,
           quote: {
             systemType: `${systemTypeLabel} - ${tierName} Tier`,
             tonnage: `${pricing.recommendedTonnage} Ton`,
@@ -303,7 +270,7 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
               customerName: state.customerInfo.name,
               customerEmail: state.customerInfo.email,
               customerPhone: state.customerInfo.phone || undefined,
-              customerAddress: state.customerInfo.formattedAddress || state.customerInfo.address || undefined,
+              customerAddress: fullAddress || undefined,
               quoteTotal: formatMoney(pricing.finalTotal),
               quoteDetails: quoteRawDetails,
             },
@@ -440,120 +407,76 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
             </select>
           </div>
 
-          {/* Address with Google Places */}
+          {/* Street Address */}
           <div className="grid gap-2">
-            <Label htmlFor="address" className="flex items-center gap-2">
+            <Label htmlFor="streetAddress" className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
-              Installation Address <span className="text-red-500">*</span>
+              Street Address <span className="text-red-500">*</span>
             </Label>
-            <AddressAutocomplete
-              value={state.customerInfo.address}
-              onChange={handleAddressChange}
-              onAddressSelect={handleAddressSelect}
-              onBlur={() => setTouchedFields(prev => ({ ...prev, address: true }))}
-              placeholder="Start typing your address..."
-              className={touchedFields.address && !isAddressValidated ? "border-destructive" : ""}
+            <Input
+              id="streetAddress"
+              value={state.customerInfo.streetAddress || ""}
+              onChange={(e) => setCustomerInfo({ streetAddress: e.target.value })}
+              onBlur={() => setTouchedFields(prev => ({ ...prev, streetAddress: true }))}
+              placeholder="123 Main Street"
+              autoComplete="street-address"
+              className={touchedFields.streetAddress && !state.customerInfo.streetAddress?.trim() ? "border-destructive" : ""}
             />
-            {touchedFields.address && !isAddressValidated && (
-              <p className="text-sm text-destructive">Please select an address from the dropdown</p>
+            {touchedFields.streetAddress && !state.customerInfo.streetAddress?.trim() && (
+              <p className="text-sm text-destructive">Please enter your street address</p>
             )}
-            
-            {/* Display separated address fields after selection */}
-            {isAddressValidated && !addressError && (
-              <div className="space-y-3 mt-3">
-                <div className="grid gap-2">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    Address
-                  </Label>
-                  <Input
-                    value={state.customerInfo.streetAddress || ""}
-                    disabled
-                    className="bg-muted/50"
-                  />
-                </div>
-                <div className="grid grid-cols-6 gap-3">
-                  <div className="col-span-3 grid gap-2">
-                    <Label className="text-xs text-muted-foreground">City</Label>
-                    <Input
-                      value={state.customerInfo.city || ""}
-                      disabled
-                      className="bg-muted/50"
-                    />
-                  </div>
-                  <div className="col-span-1 grid gap-2">
-                    <Label className="text-xs text-muted-foreground">St</Label>
-                    <Input
-                      value={state.customerInfo.state || ""}
-                      disabled
-                      className="bg-muted/50"
-                    />
-                  </div>
-                  <div className="col-span-2 grid gap-2">
-                    <Label className="text-xs text-muted-foreground">Zip</Label>
-                    <Input
-                      value={state.customerInfo.zipCode || ""}
-                      disabled
-                      className="bg-muted/50"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Service area error */}
-            {addressError && (
-              <div className="rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-4 mt-3 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-amber-100 rounded-full">
-                    <MapPinOff className="h-5 w-5 text-amber-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-amber-900 mb-1">
-                      Outside Our Service Area
-                    </h4>
-                    <p className="text-sm text-amber-800 mb-3">
-                      Your location ({addressError} County) is outside our primary coverage. 
-                      We currently service <span className="font-medium">{serviceAreaList}</span> counties in the DFW Metroplex.
-                    </p>
-                    
-                    {!continueAnyway ? (
-                      <button
-                        type="button"
-                        onClick={() => setContinueAnyway(true)}
-                        className="w-full py-2.5 px-4 bg-[#1e3a5f] text-white rounded-lg font-medium hover:bg-[#2a4a6f] transition-colors text-sm"
-                      >
-                        Request a Callback Anyway
-                      </button>
-                    ) : (
-                      <div className="flex items-center gap-2 p-2.5 bg-green-100 rounded-lg text-green-800 text-sm">
-                        <span className="text-green-600">✓</span>
-                        <span className="font-medium">We'll reach out to discuss service options for your area.</span>
-                      </div>
-                    )}
-                    
-                    <p className="text-xs text-amber-700 mt-2 text-center">
-                      Or call us directly: <a href="tel:9724020184" className="font-medium underline">(972) 402-0184</a>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+          </div>
 
-            {/* Map preview and success indicator */}
-            {isAddressValidated && !addressError && selectedLocation && (
-              <div className="mt-3 space-y-2">
-                <p className="text-xs text-[#a5a983] flex items-center gap-1 font-medium">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  Address verified – we service your area!
-                </p>
-                <MapPreview
-                  lat={selectedLocation.lat}
-                  lng={selectedLocation.lng}
-                  address={selectedLocation.address}
-                  county={selectedLocation.county}
-                />
-              </div>
-            )}
+          {/* City | State | ZIP row */}
+          <div className="grid grid-cols-6 gap-3">
+            {/* City - 3 columns */}
+            <div className="col-span-3 grid gap-2">
+              <Label htmlFor="city">City <span className="text-red-500">*</span></Label>
+              <Input
+                id="city"
+                value={state.customerInfo.city || ""}
+                onChange={(e) => setCustomerInfo({ city: e.target.value })}
+                onBlur={() => setTouchedFields(prev => ({ ...prev, city: true }))}
+                placeholder="Dallas"
+                autoComplete="address-level2"
+                className={touchedFields.city && !state.customerInfo.city?.trim() ? "border-destructive" : ""}
+              />
+              {touchedFields.city && !state.customerInfo.city?.trim() && (
+                <p className="text-sm text-destructive">Required</p>
+              )}
+            </div>
+            
+            {/* State - 1 column (locked to Texas) */}
+            <div className="col-span-1 grid gap-2">
+              <Label htmlFor="state">State</Label>
+              <Input
+                id="state"
+                value="TX"
+                disabled
+                className="bg-muted/50"
+              />
+            </div>
+            
+            {/* ZIP - 2 columns */}
+            <div className="col-span-2 grid gap-2">
+              <Label htmlFor="zipCode">ZIP <span className="text-red-500">*</span></Label>
+              <Input
+                id="zipCode"
+                value={state.customerInfo.zipCode || ""}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 5);
+                  setCustomerInfo({ zipCode: digits });
+                }}
+                onBlur={() => setTouchedFields(prev => ({ ...prev, zipCode: true }))}
+                placeholder="75248"
+                maxLength={5}
+                autoComplete="postal-code"
+                className={touchedFields.zipCode && (state.customerInfo.zipCode?.length || 0) !== 5 ? "border-destructive" : ""}
+              />
+              {touchedFields.zipCode && (state.customerInfo.zipCode?.length || 0) !== 5 && (
+                <p className="text-sm text-destructive">5 digits</p>
+              )}
+            </div>
           </div>
         </div>
 
