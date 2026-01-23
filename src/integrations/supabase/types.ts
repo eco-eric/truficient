@@ -563,7 +563,7 @@ export type Database = {
           customer_address: string | null
           customer_email: string
           customer_name: string
-          customer_phone: string
+          customer_phone: string | null
           efficiency_tier_id: string | null
           equipment_cost: number | null
           equipment_id: string | null
@@ -596,7 +596,7 @@ export type Database = {
           customer_address?: string | null
           customer_email: string
           customer_name: string
-          customer_phone: string
+          customer_phone?: string | null
           efficiency_tier_id?: string | null
           equipment_cost?: number | null
           equipment_id?: string | null
@@ -629,7 +629,7 @@ export type Database = {
           customer_address?: string | null
           customer_email?: string
           customer_name?: string
-          customer_phone?: string
+          customer_phone?: string | null
           efficiency_tier_id?: string | null
           equipment_cost?: number | null
           equipment_id?: string | null
