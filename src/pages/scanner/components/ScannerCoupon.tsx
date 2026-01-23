@@ -17,9 +17,6 @@ export function ScannerCoupon({
   }} transition={{
     duration: 0.4
   }} className="space-y-2">
-      {/* DFW Only Notice */}
-      <p className="text-center text-sm font-medium text-muted-foreground">
-    </p>
       
       <Card className="overflow-hidden border-2 border-secondary/30 bg-gradient-to-br from-secondary/5 via-background to-primary/5">
         {/* Header Banner */}
@@ -33,6 +30,9 @@ export function ScannerCoupon({
           <p className="text-secondary-foreground/80 text-sm flex items-center justify-center gap-1 mt-1">
             <Clock className="w-3 h-3" />
             Valid for 90 days from your Equipment Report date
+          </p>
+          <p className="text-secondary-foreground/70 text-xs mt-1">
+            For DFW Customers Only
           </p>
         </div>
 
