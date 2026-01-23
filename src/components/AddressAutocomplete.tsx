@@ -21,7 +21,7 @@ export interface AddressComponents {
   lng: number | null;
 }
 
-interface AddressAutocompleteProps {
+export interface AddressAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
   onAddressSelect: (components: AddressComponents) => void;
