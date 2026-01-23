@@ -39,6 +39,12 @@ export const Step9CustomerInfo = () => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
+  // Phone validation - requires 10 digits
+  const isValidPhone = (phone: string) => {
+    const digits = phone.replace(/\D/g, "");
+    return digits.length === 10;
+  };
+
   // Phone formatting
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, "");
@@ -99,6 +105,8 @@ export const Step9CustomerInfo = () => {
   const isFormValid = 
     state.customerInfo.name.trim() !== "" &&
     isValidEmail(state.customerInfo.email) &&
+    isValidPhone(state.customerInfo.phone) &&
+    isAddressValidated &&
     (!addressError || continueAnyway);
 
   // Format service area counties for display
@@ -388,7 +396,7 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
           <div className="grid gap-2">
             <Label htmlFor="phone" className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-muted-foreground" />
-              Phone
+              Phone <span className="text-red-500">*</span>
             </Label>
             <Input
               id="phone"
@@ -425,7 +433,7 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
           <div className="grid gap-2">
             <Label htmlFor="address" className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
-              Installation Address
+              Installation Address <span className="text-red-500">*</span>
             </Label>
             <AddressAutocomplete
               value={state.customerInfo.address}
