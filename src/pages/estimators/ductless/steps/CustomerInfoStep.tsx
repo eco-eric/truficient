@@ -182,38 +182,40 @@ export const CustomerInfoStep = () => {
             
             {/* Display separated address fields after selection */}
             {isAddressValidated && !addressError && (
-              <div className="space-y-3 mt-3 p-4 bg-muted/30 rounded-lg border border-border/50">
+              <div className="space-y-3 mt-3">
                 <div className="grid gap-2">
-                  <Label className="text-xs text-muted-foreground">Street Address</Label>
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    Address
+                  </Label>
                   <Input
                     value={state.customerInfo.streetAddress || ""}
                     disabled
-                    className="bg-background"
+                    className="bg-muted/50"
                   />
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="col-span-1 grid gap-2">
+                <div className="grid grid-cols-6 gap-3">
+                  <div className="col-span-3 grid gap-2">
                     <Label className="text-xs text-muted-foreground">City</Label>
                     <Input
                       value={state.customerInfo.city || ""}
                       disabled
-                      className="bg-background"
+                      className="bg-muted/50"
                     />
                   </div>
-                  <div className="grid gap-2">
-                    <Label className="text-xs text-muted-foreground">State</Label>
+                  <div className="col-span-1 grid gap-2">
+                    <Label className="text-xs text-muted-foreground">St</Label>
                     <Input
                       value={state.customerInfo.state || ""}
                       disabled
-                      className="bg-background"
+                      className="bg-muted/50"
                     />
                   </div>
-                  <div className="grid gap-2">
-                    <Label className="text-xs text-muted-foreground">ZIP</Label>
+                  <div className="col-span-2 grid gap-2">
+                    <Label className="text-xs text-muted-foreground">Zip</Label>
                     <Input
                       value={state.customerInfo.zipCode || ""}
                       disabled
-                      className="bg-background"
+                      className="bg-muted/50"
                     />
                   </div>
                 </div>
