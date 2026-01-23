@@ -218,6 +218,7 @@ export interface CustomerInfo {
   phone: string;
   address: string;
   // Extended address fields from Google Places
+  streetAddress?: string;
   formattedAddress?: string;
   city?: string;
   county?: string;
