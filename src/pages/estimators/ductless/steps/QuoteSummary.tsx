@@ -30,6 +30,57 @@ export const QuoteSummary = () => {
     return unitType?.display_name || selectedUnit?.display_name || "—";
   };
 
+  // Build quote raw details text for GHL
+  const buildQuoteRawDetails = () => {
+    const validUntil = format(addDays(new Date(), 30), "MMMM d, yyyy");
+    
+    const roomsDetail = state.selectedRooms.map(room => 
+      `• ${room.label}: ${room.recommendedBtu.toLocaleString()} BTU - ${getUnitTypeName(room)}`
+    ).join('\n');
+
+    const addonsDetail = pricing.addonsBreakdown.length > 0
+      ? `\nADD-ONS\n-------\n${pricing.addonsBreakdown.map(addon => 
+          `• ${addon.name}: ${formatMoney(addon.total)}${addon.priceType === 'per_zone' ? ` (${formatMoney(addon.price)} × ${pricing.zoneCount} zones)` : ''}`
+        ).join('\n')}\n`
+      : '';
+
+    return `DUCTLESS MINI-SPLIT ESTIMATE
+============================
+Date: ${format(new Date(), "MMMM d, yyyy")}
+Valid Until: ${validUntil}
+
+CUSTOMER INFORMATION
+--------------------
+Name: ${state.customerInfo.name}
+Email: ${state.customerInfo.email}
+Phone: ${state.customerInfo.phone || 'Not provided'}
+Address: ${state.customerInfo.formattedAddress || state.customerInfo.address || 'Not provided'}
+
+SYSTEM CONFIGURATION
+--------------------
+System Type: Ductless Mini-Split
+Tier: ${selectedTier?.display_name || 'Standard'}
+Number of Zones: ${pricing.zoneCount}
+Total Capacity: ${pricing.totalBtu.toLocaleString()} BTU
+
+CONFIGURED ZONES
+----------------
+${roomsDetail}
+${addonsDetail}
+PRICING BREAKDOWN
+-----------------
+Equipment (${pricing.zoneCount} zone${pricing.zoneCount !== 1 ? 's' : ''}): ${formatMoney(pricing.baseEquipmentCost)}
+${pricing.tierMultiplier !== 1 ? `Tier Adjustment (${selectedTier?.display_name} ${pricing.tierMultiplier}×): ${formatMoney(pricing.equipmentTotal)}` : ''}
+${pricing.addonsBreakdown.length > 0 ? `Add-ons Total: ${formatMoney(pricing.addonsTotal)}` : ''}
+Subtotal: ${formatMoney(pricing.subtotal)}
+Tax (8.25%): ${formatMoney(pricing.taxAmount)}
+${pricing.rebates > 0 ? `Rebates: -${formatMoney(pricing.rebates)}` : ''}
+-----------------
+TOTAL: ${formatMoney(pricing.finalTotal)}
+
+Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financing`.trim();
+  };
+
   const handleSubmit = async () => {
     if (isSubmitting) return;
 
@@ -89,6 +140,8 @@ export const QuoteSummary = () => {
       const nameParts = state.customerInfo.name.trim().split(" ");
       const firstName = nameParts[0] || "";
       const lastName = nameParts.slice(1).join(" ") || "";
+      const validUntil = format(addDays(new Date(), 30), "MMMM d, yyyy");
+      const quoteRawDetails = buildQuoteRawDetails();
       
       supabase.functions.invoke("sync-ghl-contact", {
         body: {
@@ -106,6 +159,16 @@ export const QuoteSummary = () => {
 • Address: ${state.customerInfo.formattedAddress || state.customerInfo.address || "Not provided"}`,
           zipCode: state.customerInfo.zipCode || undefined,
           isDfw: true,
+          quote: {
+            systemType: `Ductless Mini-Split - ${selectedTier?.display_name || "Standard"} Tier`,
+            zones: pricing.zoneCount,
+            totalBtu: pricing.totalBtu,
+            price: formatMoney(pricing.finalTotal),
+            monthlyPayment: `${formatMoney(pricing.monthlyFinancing)}/mo`,
+            validUntil,
+            tier: selectedTier?.display_name || "Standard",
+            quoteRawDetails,
+          },
         },
       }).catch((err) => {
         console.error("GHL sync error:", err);
@@ -135,6 +198,7 @@ export const QuoteSummary = () => {
       const firstName = nameParts[0] || "";
       const lastName = nameParts.slice(1).join(" ") || "";
       const validUntil = format(addDays(new Date(), 30), "MMMM d, yyyy");
+      const quoteRawDetails = buildQuoteRawDetails();
 
       await supabase.functions.invoke("sync-ghl-contact", {
         body: {
@@ -155,6 +219,7 @@ export const QuoteSummary = () => {
             monthlyPayment: `${formatMoney(pricing.monthlyFinancing)}/mo`,
             validUntil,
             tier: selectedTier?.display_name || "Standard",
+            quoteRawDetails,
           },
         },
       });
