@@ -195,7 +195,6 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
 
       toast.success("Estimate submitted successfully!");
       nextStep();
-      nextStep();
     } catch (err) {
       console.error("Unexpected error:", err);
       toast.error("An unexpected error occurred. Please try again.");
