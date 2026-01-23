@@ -85,7 +85,46 @@ export const Step9CustomerInfo = () => {
   };
 
   const handleSubmit = async () => {
-    if (!isFormValid) return;
+    console.log("🚀 ========================================");
+    console.log("🚀 DUCTED ESTIMATOR SUBMISSION STARTED");
+    console.log("🚀 ========================================");
+    console.log("📊 Customer Info:", state.customerInfo);
+    console.log("📊 Configuration:", {
+      homeType: state.homeType,
+      homeLayout: state.homeLayout,
+      squareFootage: state.squareFootage,
+      heatingType: state.heatingType,
+      coverage: state.coverage,
+      equipmentId: pricing.selectedEquipment?.id,
+    });
+
+    // Pre-submission validation for configuration
+    console.log("🔍 Step 1: Validating configuration...");
+    if (!state.homeType || !state.homeLayout || !state.squareFootage || !state.heatingType) {
+      console.error("❌ Missing configuration:", { 
+        homeType: state.homeType, 
+        homeLayout: state.homeLayout,
+        squareFootage: state.squareFootage,
+        heatingType: state.heatingType,
+      });
+      toast.error("Please complete all home configuration steps before submitting.");
+      return;
+    }
+    console.log("✅ Configuration validated");
+
+    // Form validation
+    console.log("🔍 Step 2: Validating form fields...");
+    if (!isFormValid) {
+      console.error("❌ Form validation failed:", {
+        hasName: !!state.customerInfo.name.trim(),
+        validEmail: isValidEmail(state.customerInfo.email),
+        validPhone: isValidPhone(state.customerInfo.phone),
+        addressComplete: isAddressComplete,
+      });
+      toast.error("Please fill in all required fields correctly.");
+      return;
+    }
+    console.log("✅ Form validation passed");
     
     setIsSubmitting(true);
 
@@ -96,13 +135,15 @@ export const Step9CustomerInfo = () => {
       const lastName = nameParts.slice(1).join(" ") || "";
 
       const fullAddress = getFullAddress();
+      console.log("🏠 Step 3: Address built:", fullAddress);
 
+      console.log("📋 Step 4: Preparing submission data...");
       const submissionData = {
         // Customer info
-        customer_name: state.customerInfo.name,
-        customer_email: state.customerInfo.email,
-        customer_phone: state.customerInfo.phone || null,
-        customer_address: fullAddress || null,
+        customer_name: state.customerInfo.name?.trim() || "",
+        customer_email: state.customerInfo.email?.trim() || "",
+        customer_phone: state.customerInfo.phone?.trim() || null,
+        customer_address: fullAddress?.trim() || null,
         best_time_to_call: state.customerInfo.bestTimeToCall || null,
         wants_backup_quote: state.customerInfo.wantsBackupQuote || false,
         
@@ -128,27 +169,39 @@ export const Step9CustomerInfo = () => {
           : null,
         
         // Pricing
-        equipment_cost: pricing.equipmentCost,
-        installation_cost: pricing.installationCost,
-        addons_cost: pricing.addonsCost,
-        tax_amount: pricing.taxAmount,
-        final_total: pricing.finalTotal,
+        equipment_cost: pricing.equipmentCost || 0,
+        installation_cost: pricing.installationCost || 0,
+        addons_cost: pricing.addonsCost || 0,
+        tax_amount: pricing.taxAmount || 0,
+        final_total: pricing.finalTotal || 0,
         
         // Status
         status: "new",
         ghl_sync_status: "pending",
       };
+      console.log("✅ Submission data prepared:", submissionData);
 
       // Insert to database
+      console.log("💾 Step 5: Inserting to database...");
       const { data: insertedData, error } = await supabase
         .from("ducted_estimate_submissions")
         .insert(submissionData)
         .select("id")
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("❌ DATABASE ERROR:", error);
+        console.error("Error code:", error.code);
+        console.error("Error message:", error.message);
+        console.error("Error details:", error.details);
+        throw error;
+      }
+
+      console.log("✅ DATABASE INSERT SUCCESSFUL!");
+      console.log("Submission ID:", insertedData.id);
 
       // Sync to GoHighLevel (non-blocking)
+      console.log("📤 Step 6: Starting GHL sync...");
       const systemTypeLabel = state.heatingType === "gas_system" ? "Gas Furnace + AC" : "Heat Pump";
       const tierName = pricing.selectedTier?.display_name || "Standard";
       const validUntil = format(addDays(new Date(), 30), "MMMM d, yyyy");
@@ -255,6 +308,8 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
       }).then(async (response) => {
         // Update GHL sync status
         if (response.data?.contactId) {
+          console.log("✅ GHL SYNC SUCCESSFUL!");
+          console.log("Contact ID:", response.data.contactId);
           await supabase
             .from("ducted_estimate_submissions")
             .update({ 
@@ -275,24 +330,43 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
               quoteDetails: quoteRawDetails,
             },
           }).catch((err) => {
-            console.error("Notification error:", err);
+            console.error("⚠️ Notification error (non-blocking):", err);
           });
         } else if (response.error) {
-          console.error("GHL sync failed:", response.error);
+          console.error("⚠️ GHL sync failed (non-blocking):", response.error);
           await supabase
             .from("ducted_estimate_submissions")
             .update({ ghl_sync_status: "failed" })
             .eq("id", insertedData.id);
         }
       }).catch((err) => {
-        console.error("GHL sync error:", err);
+        console.error("⚠️ GHL sync error (non-blocking):", err);
       });
 
+      console.log("🎉 ========================================");
+      console.log("🎉 SUBMISSION COMPLETE!");
+      console.log("🎉 ========================================");
+      
       toast.success("Your estimate request has been submitted!");
       nextStep();
     } catch (error) {
-      console.error("Submission error:", error);
-      toast.error("Failed to submit. Please try again or call us directly.");
+      console.error("❌ ========================================");
+      console.error("❌ SUBMISSION FAILED");
+      console.error("❌ ========================================");
+      console.error("Error object:", error);
+      
+      // Show specific error message based on error type
+      const errorMsg = (error as any)?.message || '';
+      
+      if (errorMsg.includes('permission denied') || errorMsg.includes('RLS') || errorMsg.includes('policy')) {
+        toast.error("Access denied. Please refresh the page and try again.");
+      } else if (errorMsg.includes('violates') || errorMsg.includes('constraint')) {
+        toast.error("Missing required information. Please go back and complete all steps.");
+      } else if (errorMsg.includes('network') || errorMsg.includes('fetch') || errorMsg.includes('Failed to fetch')) {
+        toast.error("Network error. Please check your connection and try again.");
+      } else {
+        toast.error("Failed to submit. Please try again or call us at (817) 349-8549.");
+      }
     } finally {
       setIsSubmitting(false);
     }
