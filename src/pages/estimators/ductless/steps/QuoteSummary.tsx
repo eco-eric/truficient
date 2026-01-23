@@ -3,12 +3,13 @@ import { StepContainer } from "../components/StepContainer";
 import { CTAButton } from "../components/CTAButton";
 import { useQuote } from "../context/QuoteContext";
 import { usePricing, formatMoney } from "../hooks/usePricing";
-import { CheckCircle, Zap, Loader2, User, Mail, Phone, MapPin, Edit2 } from "lucide-react";
+import { CheckCircle, Loader2, User, Mail, Phone, MapPin, Edit2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useFormSourceTags } from "@/hooks/useFormSourceTags";
 import { Button } from "@/components/ui/button";
 import { addDays, format } from "date-fns";
+import { FinancingOptionsSection } from "@/components/estimators/FinancingOptionsSection";
 
 export const QuoteSummary = () => {
   const { state, prevStep, nextStep, goToStep } = useQuote();
@@ -410,17 +411,13 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
               <span className="text-[#1e3a5f]">{formatMoney(pricing.finalTotal)}</span>
             </div>
           </div>
-          
-          {/* Financing callout */}
-          {pricing.monthlyFinancing > 0 && (
-            <div className="mt-4 p-3 rounded-lg bg-[#d4a84b]/10 border border-[#d4a84b]/30 flex items-center gap-2">
-              <Zap className="h-4 w-4 text-[#d4a84b]" />
-              <span className="text-sm">
-                Or as low as <strong className="text-[#d4a84b]">{formatMoney(pricing.monthlyFinancing)}/mo</strong> with financing
-              </span>
-            </div>
-          )}
         </div>
+
+        {/* Financing Options Section */}
+        <FinancingOptionsSection 
+          estimatorType="ductless" 
+          finalTotal={pricing.finalTotal} 
+        />
 
         {/* Save My Quote */}
         <div className="rounded-xl border border-border p-4 mb-6">

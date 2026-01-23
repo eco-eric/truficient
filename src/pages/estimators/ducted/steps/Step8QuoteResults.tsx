@@ -4,12 +4,13 @@ import { CTAButton } from "@/pages/estimators/ductless/components/CTAButton";
 import { useEstimator } from "../context/EstimatorContext";
 import { useDuctedPricing, formatMoney } from "../hooks/useDuctedPricing";
 import { 
-  Loader2, CheckCircle2, Award, Zap, Shield, Snowflake, Flame, Percent,
+  Loader2, CheckCircle2, Award, Zap, Shield, Snowflake, Flame,
   ThermometerSun, Wind, Wrench, Box
 } from "lucide-react";
 import { HOME_TYPE_OPTIONS, HOME_LAYOUT_OPTIONS, SQUARE_FOOTAGE_OPTIONS } from "../types";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { FinancingOptionsSection } from "@/components/estimators/FinancingOptionsSection";
 
 export const Step8QuoteResults = () => {
   const { state, nextStep, prevStep, setTotals, setRecommendedTonnage, setSelectedEquipmentId } = useEstimator();
@@ -113,9 +114,6 @@ export const Step8QuoteResults = () => {
           <div className="text-center">
             <p className="text-white/70 text-sm mb-1">Your Investment</p>
             <p className="text-4xl font-bold">{formatMoney(selectedPrice)}</p>
-            <p className="text-white/70 text-sm mt-1">
-              or {formatMoney(Math.round(selectedPrice / 60 * 1.05))}/month for 60 months
-            </p>
           </div>
         </div>
 
@@ -296,19 +294,11 @@ export const Step8QuoteResults = () => {
           </div>
         </div>
 
-        {/* Financing callout */}
-        <div className="bg-gradient-to-r from-[#a5a983]/20 to-[#a5a983]/10 rounded-xl p-4 mb-6 flex items-center gap-4">
-          <div className="p-3 bg-[#a5a983] rounded-full">
-            <Percent className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <p className="font-medium text-[#1e3a5f]">Financing Available</p>
-            <p className="text-sm text-muted-foreground">
-              As low as {formatMoney(Math.round(selectedPrice / 60 * 1.05))}/mo with approved credit
-            </p>
-          </div>
-        </div>
-
+        {/* Financing Options Section */}
+        <FinancingOptionsSection 
+          estimatorType="ducted" 
+          finalTotal={selectedPrice} 
+        />
 
         {/* Trust signals */}
         <div className="flex flex-wrap justify-center gap-4 mb-8 text-xs text-muted-foreground">
