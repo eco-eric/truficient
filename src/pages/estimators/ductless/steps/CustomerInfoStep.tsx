@@ -1,29 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { StepContainer } from "../components/StepContainer";
 import { CTAButton } from "../components/CTAButton";
 import { useQuote } from "../context/QuoteContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AddressAutocomplete, AddressComponents } from "@/components/AddressAutocomplete";
-import { MapPreview } from "@/components/MapPreview";
-import { isInServiceArea, getServiceAreaDisplay, SERVICE_AREA_COUNTIES } from "../constants/serviceArea";
-import { Mail, Phone, MapPin, User, AlertCircle, Shield, Clock, MapPinOff } from "lucide-react";
+import { Mail, Phone, MapPin, User, Shield, Clock } from "lucide-react";
 
 export const CustomerInfoStep = () => {
   const { state, setCustomerInfo, nextStep, prevStep } = useQuote();
-  const [addressError, setAddressError] = useState<string | null>(null);
-  const [isAddressValidated, setIsAddressValidated] = useState(false);
-  const [continueAnyway, setContinueAnyway] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<{
-    lat: number;
-    lng: number;
-    address: string;
-    county: string;
-  } | null>(null);
+  
+  // Track touched fields for inline validation
+  const [touchedFields, setTouchedFields] = useState({
+    phone: false,
+    streetAddress: false,
+    city: false,
+    zipCode: false,
+  });
+
+  // Force state to Texas on mount
+  useEffect(() => {
+    if (state.customerInfo.state !== "TX") {
+      setCustomerInfo({ state: "TX" });
+    }
+  }, []);
 
   // Email validation
   const isValidEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  // Phone validation - requires 10 digits
+  const isValidPhone = (phone: string) => {
+    const digits = phone.replace(/\D/g, "");
+    return digits.length === 10;
   };
 
   // Phone formatting
@@ -39,59 +48,24 @@ export const CustomerInfoStep = () => {
     setCustomerInfo({ phone: formatted });
   };
 
-  const handleAddressSelect = (components: AddressComponents) => {
-    setCustomerInfo({
-      address: components.formattedAddress,
-      streetAddress: components.streetAddress,
-      formattedAddress: components.formattedAddress,
-      city: components.city,
-      county: components.county,
-      state: components.state,
-      zipCode: components.zipCode,
-      placeId: components.placeId,
-    });
+  // Address validation
+  const isAddressComplete = 
+    (state.customerInfo.streetAddress?.trim() || "") !== "" &&
+    (state.customerInfo.city?.trim() || "") !== "" &&
+    (state.customerInfo.zipCode?.trim() || "").length === 5;
 
-    // Set location for map preview
-    if (components.lat && components.lng) {
-      setSelectedLocation({
-        lat: components.lat,
-        lng: components.lng,
-        address: components.formattedAddress,
-        county: components.county,
-      });
-    }
-
-    setIsAddressValidated(true);
-    setContinueAnyway(false);
-
-    // Check service area
-    if (!isInServiceArea(components.county)) {
-      setAddressError(components.county);
-    } else {
-      setAddressError(null);
-    }
-  };
-
-  const handleAddressChange = (value: string) => {
-    setCustomerInfo({ address: value });
-    // Reset validation when manually typing
-    if (isAddressValidated) {
-      setIsAddressValidated(false);
-      setAddressError(null);
-      setContinueAnyway(false);
-      setSelectedLocation(null);
-    }
-  };
-
-  // All fields optional for testing
-  const isFormValid = !addressError || continueAnyway;
-
-  // Format service area counties for display
-  const serviceAreaList = SERVICE_AREA_COUNTIES.slice(0, -1).join(", ") + 
-    ", and " + SERVICE_AREA_COUNTIES[SERVICE_AREA_COUNTIES.length - 1];
+  const isFormValid = 
+    isValidPhone(state.customerInfo.phone) &&
+    isAddressComplete;
 
   const handleContinue = () => {
     if (isFormValid) {
+      // Build formatted address from components
+      const fullAddress = `${state.customerInfo.streetAddress}, ${state.customerInfo.city}, TX ${state.customerInfo.zipCode}`;
+      setCustomerInfo({ 
+        address: fullAddress,
+        formattedAddress: fullAddress 
+      });
       nextStep();
     }
   };
@@ -155,126 +129,93 @@ export const CustomerInfoStep = () => {
           <div className="grid gap-2">
             <Label htmlFor="phone" className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-muted-foreground" />
-              Phone
+              Phone <span className="text-red-500">*</span>
             </Label>
             <Input
               id="phone"
               type="tel"
               value={state.customerInfo.phone}
               onChange={(e) => handlePhoneChange(e.target.value)}
+              onBlur={() => setTouchedFields(prev => ({ ...prev, phone: true }))}
               placeholder="(555) 123-4567"
               autoComplete="tel"
+              className={touchedFields.phone && !isValidPhone(state.customerInfo.phone) ? "border-destructive" : ""}
             />
+            {touchedFields.phone && !isValidPhone(state.customerInfo.phone) && (
+              <p className="text-sm text-destructive">Please enter a valid 10-digit phone number</p>
+            )}
           </div>
 
-          {/* Address with Google Places */}
+          {/* Street Address */}
           <div className="grid gap-2">
-            <Label htmlFor="address" className="flex items-center gap-2">
+            <Label htmlFor="streetAddress" className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
-              Installation Address
+              Street Address <span className="text-red-500">*</span>
             </Label>
-            <AddressAutocomplete
-              value={state.customerInfo.address}
-              onChange={handleAddressChange}
-              onAddressSelect={handleAddressSelect}
-              placeholder="Start typing your address..."
+            <Input
+              id="streetAddress"
+              value={state.customerInfo.streetAddress || ""}
+              onChange={(e) => setCustomerInfo({ streetAddress: e.target.value })}
+              onBlur={() => setTouchedFields(prev => ({ ...prev, streetAddress: true }))}
+              placeholder="123 Main Street"
+              autoComplete="street-address"
+              className={touchedFields.streetAddress && !state.customerInfo.streetAddress?.trim() ? "border-destructive" : ""}
             />
-            
-            {/* Display separated address fields after selection */}
-            {isAddressValidated && !addressError && (
-              <div className="space-y-3 mt-3">
-                <div className="grid gap-2">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    Address
-                  </Label>
-                  <Input
-                    value={state.customerInfo.streetAddress || ""}
-                    disabled
-                    className="bg-muted/50"
-                  />
-                </div>
-                <div className="grid grid-cols-6 gap-3">
-                  <div className="col-span-3 grid gap-2">
-                    <Label className="text-xs text-muted-foreground">City</Label>
-                    <Input
-                      value={state.customerInfo.city || ""}
-                      disabled
-                      className="bg-muted/50"
-                    />
-                  </div>
-                  <div className="col-span-1 grid gap-2">
-                    <Label className="text-xs text-muted-foreground">St</Label>
-                    <Input
-                      value={state.customerInfo.state || ""}
-                      disabled
-                      className="bg-muted/50"
-                    />
-                  </div>
-                  <div className="col-span-2 grid gap-2">
-                    <Label className="text-xs text-muted-foreground">Zip</Label>
-                    <Input
-                      value={state.customerInfo.zipCode || ""}
-                      disabled
-                      className="bg-muted/50"
-                    />
-                  </div>
-                </div>
-              </div>
+            {touchedFields.streetAddress && !state.customerInfo.streetAddress?.trim() && (
+              <p className="text-sm text-destructive">Please enter your street address</p>
             )}
-            
-            {/* Service area error - Enhanced UI */}
-            {addressError && (
-              <div className="rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-4 mt-3 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-amber-100 rounded-full">
-                    <MapPinOff className="h-5 w-5 text-amber-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-amber-900 mb-1">
-                      Outside Our Service Area
-                    </h4>
-                    <p className="text-sm text-amber-800 mb-3">
-                      Your location ({addressError} County) is outside our primary coverage. 
-                      We currently service <span className="font-medium">{serviceAreaList}</span> counties in the DFW Metroplex.
-                    </p>
-                    
-                    {!continueAnyway ? (
-                      <button
-                        type="button"
-                        onClick={() => setContinueAnyway(true)}
-                        className="w-full py-2.5 px-4 bg-[#1e3a5f] text-white rounded-lg font-medium hover:bg-[#2a4a6f] transition-colors text-sm"
-                      >
-                        Request a Callback Anyway
-                      </button>
-                    ) : (
-                      <div className="flex items-center gap-2 p-2.5 bg-green-100 rounded-lg text-green-800 text-sm">
-                        <span className="text-green-600">✓</span>
-                        <span className="font-medium">We'll reach out to discuss service options for your area.</span>
-                      </div>
-                    )}
-                    
-                    <p className="text-xs text-amber-700 mt-2 text-center">
-                      Or call us directly: <a href="tel:9724020184" className="font-medium underline">(972) 402-0184</a>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+          </div>
 
-            {/* Map preview and success indicator */}
-            {isAddressValidated && !addressError && selectedLocation && (
-              <div className="mt-3 space-y-2">
-                <p className="text-xs text-[#a5a983] flex items-center gap-1 font-medium">
-                  ✓ Address verified – we service your area!
-                </p>
-                <MapPreview
-                  lat={selectedLocation.lat}
-                  lng={selectedLocation.lng}
-                  address={selectedLocation.address}
-                  county={selectedLocation.county}
-                />
-              </div>
-            )}
+          {/* City | State | ZIP row */}
+          <div className="grid grid-cols-6 gap-3">
+            {/* City - 3 columns */}
+            <div className="col-span-3 grid gap-2">
+              <Label htmlFor="city">City <span className="text-red-500">*</span></Label>
+              <Input
+                id="city"
+                value={state.customerInfo.city || ""}
+                onChange={(e) => setCustomerInfo({ city: e.target.value })}
+                onBlur={() => setTouchedFields(prev => ({ ...prev, city: true }))}
+                placeholder="Dallas"
+                autoComplete="address-level2"
+                className={touchedFields.city && !state.customerInfo.city?.trim() ? "border-destructive" : ""}
+              />
+              {touchedFields.city && !state.customerInfo.city?.trim() && (
+                <p className="text-sm text-destructive">Required</p>
+              )}
+            </div>
+            
+            {/* State - 1 column (locked to Texas) */}
+            <div className="col-span-1 grid gap-2">
+              <Label htmlFor="state">State</Label>
+              <Input
+                id="state"
+                value="TX"
+                disabled
+                className="bg-muted/50"
+              />
+            </div>
+            
+            {/* ZIP - 2 columns */}
+            <div className="col-span-2 grid gap-2">
+              <Label htmlFor="zipCode">ZIP <span className="text-red-500">*</span></Label>
+              <Input
+                id="zipCode"
+                value={state.customerInfo.zipCode || ""}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 5);
+                  setCustomerInfo({ zipCode: digits });
+                }}
+                onBlur={() => setTouchedFields(prev => ({ ...prev, zipCode: true }))}
+                placeholder="75248"
+                maxLength={5}
+                autoComplete="postal-code"
+                className={touchedFields.zipCode && (state.customerInfo.zipCode?.length || 0) !== 5 ? "border-destructive" : ""}
+              />
+              {touchedFields.zipCode && (state.customerInfo.zipCode?.length || 0) !== 5 && (
+                <p className="text-sm text-destructive">5 digits</p>
+              )}
+            </div>
           </div>
         </div>
 
