@@ -6,7 +6,7 @@ import { useDuctedPricing, formatMoney } from "../hooks/useDuctedPricing";
 import { HOME_TYPE_OPTIONS, HOME_LAYOUT_OPTIONS, SQUARE_FOOTAGE_OPTIONS } from "../types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AddressAutocomplete, AddressComponents } from "@/components/AddressAutocomplete";
+import { AddressAutocomplete, type AddressComponents } from "@/components/AddressAutocomplete";
 import { MapPreview } from "@/components/MapPreview";
 import { isInServiceArea, SERVICE_AREA_COUNTIES } from "@/pages/estimators/ductless/constants/serviceArea";
 import { supabase } from "@/integrations/supabase/client";
