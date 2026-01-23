@@ -6,6 +6,7 @@ const INITIAL_CUSTOMER_INFO: CustomerInfo = {
   email: "",
   phone: "",
   address: "",
+  streetAddress: "",
   formattedAddress: "",
   city: "",
   county: "",

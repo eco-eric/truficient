@@ -42,6 +42,7 @@ export const CustomerInfoStep = () => {
   const handleAddressSelect = (components: AddressComponents) => {
     setCustomerInfo({
       address: components.formattedAddress,
+      streetAddress: components.streetAddress,
       formattedAddress: components.formattedAddress,
       city: components.city,
       county: components.county,
@@ -178,6 +179,46 @@ export const CustomerInfoStep = () => {
               onAddressSelect={handleAddressSelect}
               placeholder="Start typing your address..."
             />
+            
+            {/* Display separated address fields after selection */}
+            {isAddressValidated && !addressError && (
+              <div className="space-y-3 mt-3 p-4 bg-muted/30 rounded-lg border border-border/50">
+                <div className="grid gap-2">
+                  <Label className="text-xs text-muted-foreground">Street Address</Label>
+                  <Input
+                    value={state.customerInfo.streetAddress || ""}
+                    disabled
+                    className="bg-background"
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-1 grid gap-2">
+                    <Label className="text-xs text-muted-foreground">City</Label>
+                    <Input
+                      value={state.customerInfo.city || ""}
+                      disabled
+                      className="bg-background"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-xs text-muted-foreground">State</Label>
+                    <Input
+                      value={state.customerInfo.state || ""}
+                      disabled
+                      className="bg-background"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-xs text-muted-foreground">ZIP</Label>
+                    <Input
+                      value={state.customerInfo.zipCode || ""}
+                      disabled
+                      className="bg-background"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* Service area error - Enhanced UI */}
             {addressError && (
