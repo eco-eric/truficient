@@ -12,7 +12,7 @@ import { useFormSourceTags } from "@/hooks/useFormSourceTags";
 import { addDays, format } from "date-fns";
 import { 
   Mail, Phone, MapPin, User, Shield, Clock, 
-  Loader2, Calendar 
+  Loader2, Calendar, CheckCircle2 
 } from "lucide-react";
 
 export const Step9CustomerInfo = () => {
@@ -309,14 +309,41 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
         </p>
 
         {/* Price summary bar */}
-        <div className="bg-[#1e3a5f] text-white rounded-xl p-4 mb-6 flex items-center justify-between">
-          <div>
-            <p className="text-white/70 text-sm">Your Estimate</p>
-            <p className="text-2xl font-bold">{formatMoney(pricing.finalTotal)}</p>
+        <div className="bg-[#1e3a5f] text-white rounded-xl p-5 mb-6">
+          <div className="text-center mb-4">
+            <p className="text-white/80 text-sm mb-1">Your Total Estimated Investment is:</p>
+            <p className="text-3xl font-bold">{formatMoney(pricing.finalTotal)}</p>
           </div>
-          <div className="text-right">
-            <p className="text-white/70 text-sm">Monthly Payment</p>
-            <p className="text-lg font-semibold">{formatMoney(pricing.monthlyFinancing)}/mo</p>
+          
+          {/* Includes list */}
+          <div className="border-t border-white/20 pt-4">
+            <p className="text-white/70 text-xs uppercase tracking-wide mb-2">Price Includes:</p>
+            <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm text-white/90">
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-3.5 w-3.5 text-green-400 flex-shrink-0" />
+                Installation Labor
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-3.5 w-3.5 text-green-400 flex-shrink-0" />
+                Equipment
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-3.5 w-3.5 text-green-400 flex-shrink-0" />
+                Smart Thermostat
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-3.5 w-3.5 text-green-400 flex-shrink-0" />
+                Taxes
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-3.5 w-3.5 text-green-400 flex-shrink-0" />
+                Removal & Disposal
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-3.5 w-3.5 text-green-400 flex-shrink-0" />
+                2-Year Labor Warranty
+              </li>
+            </ul>
           </div>
         </div>
 
