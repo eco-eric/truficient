@@ -3,6 +3,7 @@ import { StepContainer } from "@/pages/estimators/ductless/components/StepContai
 import { CTAButton } from "@/pages/estimators/ductless/components/CTAButton";
 import { useEstimator } from "../context/EstimatorContext";
 import { useDuctedPricing, formatMoney } from "../hooks/useDuctedPricing";
+import { HOME_TYPE_OPTIONS, HOME_LAYOUT_OPTIONS, SQUARE_FOOTAGE_OPTIONS } from "../types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AddressAutocomplete, AddressComponents } from "@/components/AddressAutocomplete";
@@ -11,6 +12,7 @@ import { isInServiceArea, SERVICE_AREA_COUNTIES } from "@/pages/estimators/ductl
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useFormSourceTags } from "@/hooks/useFormSourceTags";
+import { addDays, format } from "date-fns";
 import { 
   Mail, Phone, MapPin, User, Shield, Clock, MapPinOff, 
   Loader2, CheckCircle2, Calendar 
@@ -167,9 +169,77 @@ export const Step9CustomerInfo = () => {
       // Sync to GoHighLevel (non-blocking)
       const systemTypeLabel = state.heatingType === "gas_system" ? "Gas Furnace + AC" : "Heat Pump";
       const tierName = pricing.selectedTier?.display_name || "Standard";
+      const validUntil = format(addDays(new Date(), 30), "MMMM d, yyyy");
       
       // Build tags from dynamic configuration + heating type
       const tags = [...(dynamicTags || ['ducted-estimator']), state.heatingType || 'hvac'];
+      
+      // Build detailed labels for raw details
+      const homeTypeLabel = HOME_TYPE_OPTIONS.find((o) => o.value === state.homeType)?.label || "N/A";
+      const layoutLabel = HOME_LAYOUT_OPTIONS.find((o) => o.value === state.homeLayout)?.label || "N/A";
+      const sqftLabel = SQUARE_FOOTAGE_OPTIONS.find((o) => o.value === state.squareFootage)?.label || "N/A";
+      
+      // Build equipment components for raw details
+      const selectedEq = pricing.selectedEquipment;
+      const equipmentComponents = state.heatingType === "gas_system"
+        ? [
+            selectedEq?.condenser_model && `Condenser: ${selectedEq.condenser_model}`,
+            selectedEq?.furnace_model && `Furnace: ${selectedEq.furnace_model}`,
+            selectedEq?.evap_coil_model && `Evap Coil: ${selectedEq.evap_coil_model}`,
+          ].filter(Boolean).join('\n')
+        : [
+            selectedEq?.heat_pump_model && `Heat Pump: ${selectedEq.heat_pump_model}`,
+            selectedEq?.air_handler_model && `Air Handler: ${selectedEq.air_handler_model}`,
+            selectedEq?.heat_kit_model && `Heat Kit: ${selectedEq.heat_kit_model}`,
+          ].filter(Boolean).join('\n');
+      
+      const quoteRawDetails = `DUCTED HVAC ESTIMATE REQUEST
+============================
+Date: ${format(new Date(), "MMMM d, yyyy")}
+Valid Until: ${validUntil}
+
+CUSTOMER INFORMATION
+--------------------
+Name: ${state.customerInfo.name}
+Email: ${state.customerInfo.email}
+Phone: ${state.customerInfo.phone || 'Not provided'}
+Address: ${state.customerInfo.formattedAddress || state.customerInfo.address || 'Not provided'}
+Best Time to Call: ${state.customerInfo.bestTimeToCall || 'No preference'}
+
+SYSTEM CONFIGURATION
+--------------------
+System Type: ${systemTypeLabel}
+Efficiency Tier: ${tierName}
+System Size: ${pricing.recommendedTonnage} Ton
+
+SELECTED EQUIPMENT
+------------------
+${selectedEq?.system_name || 'Custom System'}
+Brand: ${selectedEq?.brand || 'TBD'}
+${selectedEq?.seer2_rating ? `SEER2: ${selectedEq.seer2_rating}` : ''}
+${selectedEq?.hspf2_rating && state.heatingType === "heat_pump" ? `HSPF2: ${selectedEq.hspf2_rating}` : ''}
+${selectedEq?.eer2_rating ? `EER2: ${selectedEq.eer2_rating}` : ''}
+Warranty: ${selectedEq?.warranty_years || 'Standard'} years
+
+System Components:
+${equipmentComponents || 'TBD during consultation'}
+
+HOME DETAILS
+------------
+Home Type: ${homeTypeLabel}
+Layout: ${layoutLabel}
+Square Footage: ${sqftLabel}
+
+PRICING BREAKDOWN
+-----------------
+Equipment Cost: ${formatMoney(pricing.equipmentCost)}
+Installation Cost: ${formatMoney(pricing.installationCost)}
+Add-ons: ${formatMoney(pricing.addonsCost)}
+Tax: ${formatMoney(pricing.taxAmount)}
+-----------------
+TOTAL: ${formatMoney(pricing.finalTotal)}
+
+Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financing`.trim();
       
       supabase.functions.invoke("sync-ghl-contact", {
         body: {
@@ -187,6 +257,17 @@ export const Step9CustomerInfo = () => {
 • Address: ${state.customerInfo.formattedAddress || state.customerInfo.address || "Not provided"}`,
           zipCode: state.customerInfo.zipCode || undefined,
           isDfw: !addressError || continueAnyway,
+          quote: {
+            systemType: `${systemTypeLabel} - ${tierName} Tier`,
+            tonnage: `${pricing.recommendedTonnage} Ton`,
+            equipment: selectedEq?.system_name || `${selectedEq?.brand || "Custom"} System`,
+            price: formatMoney(pricing.finalTotal),
+            monthlyPayment: `${formatMoney(pricing.monthlyFinancing)}/mo`,
+            homeDetails: `${homeTypeLabel}, ${layoutLabel}, ${sqftLabel}`,
+            validUntil,
+            tier: tierName,
+            quoteRawDetails,
+          },
         },
       }).then(async (response) => {
         // Update GHL sync status

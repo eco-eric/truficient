@@ -26,6 +26,7 @@ interface QuoteData {
   tier?: string;
   zones?: number;
   totalBtu?: number;
+  quoteRawDetails?: string;
 }
 
 interface ContactData {
@@ -272,6 +273,13 @@ serve(async (req) => {
         customFields.push({
           key: 'quote_total_btu',
           field_value: String(quote.totalBtu),
+        });
+      }
+
+      if (quote.quoteRawDetails) {
+        customFields.push({
+          key: 'quote_raw_details',
+          field_value: quote.quoteRawDetails,
         });
       }
     }

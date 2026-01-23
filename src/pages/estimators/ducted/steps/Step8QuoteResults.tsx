@@ -61,6 +61,66 @@ export const Step8QuoteResults = () => {
     setSelectedEquipmentId(id);
   };
 
+  // Build quote raw details text for GHL
+  const buildQuoteRawDetails = () => {
+    const selectedEq = matchingEquipment.find((eq) => eq.id === localSelectedId) || matchingEquipment[0];
+    const selectedPrice = selectedEq 
+      ? (selectedEq.equipment_cost + selectedEq.installation_labor)
+      : pricing.finalTotal;
+    const systemTypeLabel = state.heatingType === "gas_system" ? "Gas Furnace + AC" : "Heat Pump System";
+    const tierLabel = pricing.selectedTier?.display_name || "Standard";
+    const validUntil = format(addDays(new Date(), 30), "MMMM d, yyyy");
+    const homeTypeLabel = HOME_TYPE_OPTIONS.find((o) => o.value === state.homeType)?.label || "N/A";
+    const layoutLabel = HOME_LAYOUT_OPTIONS.find((o) => o.value === state.homeLayout)?.label || "N/A";
+    const sqftLabel = SQUARE_FOOTAGE_OPTIONS.find((o) => o.value === state.squareFootage)?.label || "N/A";
+
+    const equipmentComponents = state.heatingType === "gas_system"
+      ? [
+          selectedEq?.condenser_model && `Condenser: ${selectedEq.condenser_model}`,
+          selectedEq?.furnace_model && `Furnace: ${selectedEq.furnace_model}`,
+          selectedEq?.evap_coil_model && `Evap Coil: ${selectedEq.evap_coil_model}`,
+        ].filter(Boolean).join('\n')
+      : [
+          selectedEq?.heat_pump_model && `Heat Pump: ${selectedEq.heat_pump_model}`,
+          selectedEq?.air_handler_model && `Air Handler: ${selectedEq.air_handler_model}`,
+          selectedEq?.heat_kit_model && `Heat Kit: ${selectedEq.heat_kit_model}`,
+        ].filter(Boolean).join('\n');
+
+    return `DUCTED HVAC ESTIMATE
+====================
+Date: ${format(new Date(), "MMMM d, yyyy")}
+Valid Until: ${validUntil}
+
+SYSTEM CONFIGURATION
+--------------------
+System Type: ${systemTypeLabel}
+Efficiency Tier: ${tierLabel}
+System Size: ${pricing.effectiveTonnage} Ton
+
+SELECTED EQUIPMENT
+------------------
+${selectedEq?.system_name || 'Custom System'}
+Brand: ${selectedEq?.brand || 'TBD'}
+${selectedEq?.seer2_rating ? `SEER2: ${selectedEq.seer2_rating}` : ''}
+${selectedEq?.hspf2_rating && state.heatingType === "heat_pump" ? `HSPF2: ${selectedEq.hspf2_rating}` : ''}
+${selectedEq?.eer2_rating ? `EER2: ${selectedEq.eer2_rating}` : ''}
+Warranty: ${selectedEq?.warranty_years || 'Standard'} years
+
+System Components:
+${equipmentComponents || 'TBD during consultation'}
+
+HOME DETAILS
+------------
+Home Type: ${homeTypeLabel}
+Layout: ${layoutLabel}
+Square Footage: ${sqftLabel}
+
+PRICING BREAKDOWN
+-----------------
+Equipment & Installation: ${formatMoney(selectedPrice)}
+Monthly Payment Option: ${formatMoney(Math.round(selectedPrice / 60 * 1.05))}/mo (60 months)`.trim();
+  };
+
   const handleEmailQuote = async (email?: string) => {
     const emailToUse = email || emailForQuote;
     
@@ -89,6 +149,8 @@ export const Step8QuoteResults = () => {
       const layoutLabel = HOME_LAYOUT_OPTIONS.find((o) => o.value === state.homeLayout)?.label || "N/A";
       const sqftLabel = SQUARE_FOOTAGE_OPTIONS.find((o) => o.value === state.squareFootage)?.label || "N/A";
 
+      const quoteRawDetails = buildQuoteRawDetails();
+
       await supabase.functions.invoke("sync-ghl-contact", {
         body: {
           firstName,
@@ -106,6 +168,7 @@ export const Step8QuoteResults = () => {
             homeDetails: `${homeTypeLabel}, ${layoutLabel}, ${sqftLabel}`,
             validUntil,
             tier: tierLabel,
+            quoteRawDetails,
           },
         },
       });
