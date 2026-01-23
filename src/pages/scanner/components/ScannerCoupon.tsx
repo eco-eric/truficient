@@ -2,23 +2,24 @@ import { Card } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Ticket, Home, Snowflake, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
-
 interface ScannerCouponProps {
   variant?: 'full' | 'compact';
 }
-
-export function ScannerCoupon({ variant = 'full' }: ScannerCouponProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="space-y-2"
-    >
+export function ScannerCoupon({
+  variant = 'full'
+}: ScannerCouponProps) {
+  return <motion.div initial={{
+    opacity: 0,
+    y: 20
+  }} animate={{
+    opacity: 1,
+    y: 0
+  }} transition={{
+    duration: 0.4
+  }} className="space-y-2">
       {/* DFW Only Notice */}
       <p className="text-center text-sm font-medium text-muted-foreground">
-        For DFW Customers Only
-      </p>
+    </p>
       
       <Card className="overflow-hidden border-2 border-secondary/30 bg-gradient-to-br from-secondary/5 via-background to-primary/5">
         {/* Header Banner */}
@@ -98,6 +99,5 @@ export function ScannerCoupon({ variant = 'full' }: ScannerCouponProps) {
           </Accordion>
         </div>
       </Card>
-    </motion.div>
-  );
+    </motion.div>;
 }
