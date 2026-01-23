@@ -5,16 +5,11 @@ import { useEstimator } from "../context/EstimatorContext";
 import { useDuctedPricing, formatMoney } from "../hooks/useDuctedPricing";
 import { 
   Loader2, CheckCircle2, Award, Zap, Shield, Snowflake, Flame, Percent,
-  ThermometerSun, Wind, Wrench, Box, Mail
+  ThermometerSun, Wind, Wrench, Box
 } from "lucide-react";
 import { HOME_TYPE_OPTIONS, HOME_LAYOUT_OPTIONS, SQUARE_FOOTAGE_OPTIONS } from "../types";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { addDays, format } from "date-fns";
 
 export const Step8QuoteResults = () => {
   const { state, nextStep, prevStep, setTotals, setRecommendedTonnage, setSelectedEquipmentId } = useEstimator();
@@ -23,10 +18,6 @@ export const Step8QuoteResults = () => {
   // Local state for equipment selection in this view
   const [localSelectedId, setLocalSelectedId] = useState<string | null>(state.selectedEquipmentId);
   
-  // Email quote state
-  const [isSendingQuote, setIsSendingQuote] = useState(false);
-  const [showEmailInput, setShowEmailInput] = useState(false);
-  const [emailForQuote, setEmailForQuote] = useState("");
 
   // Update totals in context when pricing changes
   useEffect(() => {
@@ -61,130 +52,6 @@ export const Step8QuoteResults = () => {
     setSelectedEquipmentId(id);
   };
 
-  // Build quote raw details text for GHL
-  const buildQuoteRawDetails = () => {
-    const selectedEq = matchingEquipment.find((eq) => eq.id === localSelectedId) || matchingEquipment[0];
-    const selectedPrice = selectedEq 
-      ? (selectedEq.equipment_cost + selectedEq.installation_labor)
-      : pricing.finalTotal;
-    const systemTypeLabel = state.heatingType === "gas_system" ? "Gas Furnace + AC" : "Heat Pump System";
-    const tierLabel = pricing.selectedTier?.display_name || "Standard";
-    const validUntil = format(addDays(new Date(), 30), "MMMM d, yyyy");
-    const homeTypeLabel = HOME_TYPE_OPTIONS.find((o) => o.value === state.homeType)?.label || "N/A";
-    const layoutLabel = HOME_LAYOUT_OPTIONS.find((o) => o.value === state.homeLayout)?.label || "N/A";
-    const sqftLabel = SQUARE_FOOTAGE_OPTIONS.find((o) => o.value === state.squareFootage)?.label || "N/A";
-
-    const equipmentComponents = state.heatingType === "gas_system"
-      ? [
-          selectedEq?.condenser_model && `Condenser: ${selectedEq.condenser_model}`,
-          selectedEq?.furnace_model && `Furnace: ${selectedEq.furnace_model}`,
-          selectedEq?.evap_coil_model && `Evap Coil: ${selectedEq.evap_coil_model}`,
-        ].filter(Boolean).join('\n')
-      : [
-          selectedEq?.heat_pump_model && `Heat Pump: ${selectedEq.heat_pump_model}`,
-          selectedEq?.air_handler_model && `Air Handler: ${selectedEq.air_handler_model}`,
-          selectedEq?.heat_kit_model && `Heat Kit: ${selectedEq.heat_kit_model}`,
-        ].filter(Boolean).join('\n');
-
-    return `DUCTED HVAC ESTIMATE
-====================
-Date: ${format(new Date(), "MMMM d, yyyy")}
-Valid Until: ${validUntil}
-
-SYSTEM CONFIGURATION
---------------------
-System Type: ${systemTypeLabel}
-Efficiency Tier: ${tierLabel}
-System Size: ${pricing.effectiveTonnage} Ton
-
-SELECTED EQUIPMENT
-------------------
-${selectedEq?.system_name || 'Custom System'}
-Brand: ${selectedEq?.brand || 'TBD'}
-${selectedEq?.seer2_rating ? `SEER2: ${selectedEq.seer2_rating}` : ''}
-${selectedEq?.hspf2_rating && state.heatingType === "heat_pump" ? `HSPF2: ${selectedEq.hspf2_rating}` : ''}
-${selectedEq?.eer2_rating ? `EER2: ${selectedEq.eer2_rating}` : ''}
-Warranty: ${selectedEq?.warranty_years || 'Standard'} years
-
-System Components:
-${equipmentComponents || 'TBD during consultation'}
-
-HOME DETAILS
-------------
-Home Type: ${homeTypeLabel}
-Layout: ${layoutLabel}
-Square Footage: ${sqftLabel}
-
-PRICING BREAKDOWN
------------------
-Equipment & Installation: ${formatMoney(selectedPrice)}
-Monthly Payment Option: ${formatMoney(Math.round(selectedPrice / 60 * 1.05))}/mo (60 months)`.trim();
-  };
-
-  const handleEmailQuote = async (email?: string) => {
-    const emailToUse = email || emailForQuote;
-    
-    if (!emailToUse || !emailToUse.includes("@")) {
-      setShowEmailInput(true);
-      return;
-    }
-
-    setIsSendingQuote(true);
-
-    try {
-      const nameParts = emailToUse.split("@")[0].split(/[._-]/);
-      const firstName = nameParts[0] || "Homeowner";
-      const lastName = nameParts[1] || "";
-      
-      const systemTypeLabel = state.heatingType === "gas_system" ? "Gas Furnace + AC" : "Heat Pump System";
-      const tierLabel = pricing.selectedTier?.display_name || "Standard";
-      const validUntil = format(addDays(new Date(), 30), "MMMM d, yyyy");
-      
-      const selectedEq = matchingEquipment.find((eq) => eq.id === localSelectedId) || matchingEquipment[0];
-      const selectedPrice = selectedEq 
-        ? (selectedEq.equipment_cost + selectedEq.installation_labor)
-        : pricing.finalTotal;
-
-      const homeTypeLabel = HOME_TYPE_OPTIONS.find((o) => o.value === state.homeType)?.label || "N/A";
-      const layoutLabel = HOME_LAYOUT_OPTIONS.find((o) => o.value === state.homeLayout)?.label || "N/A";
-      const sqftLabel = SQUARE_FOOTAGE_OPTIONS.find((o) => o.value === state.squareFootage)?.label || "N/A";
-
-      const quoteRawDetails = buildQuoteRawDetails();
-
-      await supabase.functions.invoke("sync-ghl-contact", {
-        body: {
-          firstName,
-          lastName,
-          email: emailToUse,
-          source: "Ducted Estimator - Save Quote",
-          tags: ["save-quote-ducted", "ducted-estimator"],
-          message: `Quote saved for ${systemTypeLabel} - ${pricing.effectiveTonnage} Ton - ${tierLabel} Tier`,
-          quote: {
-            systemType: `${systemTypeLabel} - ${tierLabel} Tier`,
-            tonnage: `${pricing.effectiveTonnage} Ton`,
-            equipment: selectedEq?.system_name || `${selectedEq?.brand || "Custom"} System`,
-            price: formatMoney(selectedPrice),
-            monthlyPayment: `${formatMoney(Math.round(selectedPrice / 60 * 1.05))}/mo`,
-            homeDetails: `${homeTypeLabel}, ${layoutLabel}, ${sqftLabel}`,
-            validUntil,
-            tier: tierLabel,
-            quoteRawDetails,
-          },
-        },
-      });
-
-      toast.success(`Quote sent to ${emailToUse}!`, {
-        description: "Check your inbox for the estimate details.",
-      });
-      setShowEmailInput(false);
-      setEmailForQuote("");
-    } catch (err) {
-      console.error("Error sending quote:", err);
-      toast.error("Failed to send quote. Please try again.");
-    } finally {
-      setIsSendingQuote(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -442,45 +309,6 @@ Monthly Payment Option: ${formatMoney(Math.round(selectedPrice / 60 * 1.05))}/mo
           </div>
         </div>
 
-        {/* Save My Quote */}
-        <div className="rounded-xl border border-border p-4 mb-6">
-          <div className="flex items-center gap-3 mb-3">
-            <Mail className="h-5 w-5 text-[#1e3a5f]" />
-            <div>
-              <p className="font-medium text-foreground">Save This Quote</p>
-              <p className="text-sm text-muted-foreground">Get this estimate emailed to you for future reference</p>
-            </div>
-          </div>
-          
-          {showEmailInput ? (
-            <div className="flex gap-2">
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                value={emailForQuote}
-                onChange={(e) => setEmailForQuote(e.target.value)}
-                className="flex-1"
-              />
-              <Button
-                onClick={() => handleEmailQuote()}
-                disabled={isSendingQuote || !emailForQuote}
-                className="bg-[#1e3a5f] hover:bg-[#2a4a6f]"
-              >
-                {isSendingQuote ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
-              </Button>
-            </div>
-          ) : (
-            <Button
-              variant="outline"
-              onClick={() => handleEmailQuote()}
-              disabled={isSendingQuote}
-              className="w-full"
-            >
-              <Mail className="h-4 w-4 mr-2" />
-              {isSendingQuote ? "Sending..." : "Email My Quote"}
-            </Button>
-          )}
-        </div>
 
         {/* Trust signals */}
         <div className="flex flex-wrap justify-center gap-4 mb-8 text-xs text-muted-foreground">
