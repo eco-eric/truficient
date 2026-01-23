@@ -290,6 +290,21 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
         console.error("GHL sync error:", err);
       });
 
+      // Send internal notification email (non-blocking)
+      supabase.functions.invoke("send-estimator-notification", {
+        body: {
+          estimatorType: "ducted",
+          customerName: state.customerInfo.name,
+          customerEmail: state.customerInfo.email,
+          customerPhone: state.customerInfo.phone || undefined,
+          customerAddress: state.customerInfo.formattedAddress || state.customerInfo.address || undefined,
+          quoteTotal: formatMoney(pricing.finalTotal),
+          quoteDetails: quoteRawDetails,
+        },
+      }).catch((err) => {
+        console.error("Notification error:", err);
+      });
+
       toast.success("Your estimate request has been submitted!");
       nextStep();
     } catch (error) {
