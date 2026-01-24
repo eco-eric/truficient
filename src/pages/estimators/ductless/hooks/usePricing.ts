@@ -163,9 +163,6 @@ export function getBtuBreakdown(room: RoomConfig) {
   };
 }
 
-// Tax rate constant
-const TAX_RATE = 0.0825; // 8.25% Texas sales tax
-
 // Financing constants
 const FINANCING_TERM_MONTHS = 60;
 const FINANCING_APR = 0.0599; // 5.99% APR
@@ -303,11 +300,11 @@ export function usePricing(input: PricingInput): {
     
     const addonsTotal = addonsBreakdown.reduce((sum, a) => sum + a.total, 0);
 
-    // Calculate totals
+    // Calculate totals (tax-inclusive pricing)
     const subtotal = equipmentTotal + addonsTotal;
-    const taxAmount = subtotal * TAX_RATE;
+    const taxAmount = 0; // Tax included in pricing
     const rebates = 0; // TODO: Could add rebate logic based on efficiency tier
-    const finalTotal = subtotal + taxAmount - rebates;
+    const finalTotal = subtotal - rebates;
 
     // Calculate monthly financing
     const monthlyRate = FINANCING_APR / 12;
