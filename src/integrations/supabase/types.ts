@@ -1234,6 +1234,9 @@ export type Database = {
       equipment_systems: {
         Row: {
           ahri_number: string | null
+          air_handler_cfm: number | null
+          air_handler_model: string | null
+          air_handler_price: number | null
           capacity_btuh: number | null
           condenser_heat_pump_model: string | null
           condenser_price: number | null
@@ -1241,13 +1244,19 @@ export type Database = {
           eer2: number | null
           evap_coil_model: string | null
           evap_coil_price: number | null
+          furnace_afue: number | null
           furnace_air_handler_model: string | null
           furnace_air_handler_price: number | null
           furnace_air_handler_size: string | null
+          furnace_btu_input: number | null
+          furnace_model: string | null
+          furnace_price: number | null
           heat_kit: string | null
           heat_kit_price: number | null
+          heating_source: string | null
           hspf2: number | null
           id: string
+          needs_migration_review: boolean | null
           notes: string | null
           seer2: number | null
           system_name: string
@@ -1258,6 +1267,9 @@ export type Database = {
         }
         Insert: {
           ahri_number?: string | null
+          air_handler_cfm?: number | null
+          air_handler_model?: string | null
+          air_handler_price?: number | null
           capacity_btuh?: number | null
           condenser_heat_pump_model?: string | null
           condenser_price?: number | null
@@ -1265,13 +1277,19 @@ export type Database = {
           eer2?: number | null
           evap_coil_model?: string | null
           evap_coil_price?: number | null
+          furnace_afue?: number | null
           furnace_air_handler_model?: string | null
           furnace_air_handler_price?: number | null
           furnace_air_handler_size?: string | null
+          furnace_btu_input?: number | null
+          furnace_model?: string | null
+          furnace_price?: number | null
           heat_kit?: string | null
           heat_kit_price?: number | null
+          heating_source?: string | null
           hspf2?: number | null
           id?: string
+          needs_migration_review?: boolean | null
           notes?: string | null
           seer2?: number | null
           system_name: string
@@ -1282,6 +1300,9 @@ export type Database = {
         }
         Update: {
           ahri_number?: string | null
+          air_handler_cfm?: number | null
+          air_handler_model?: string | null
+          air_handler_price?: number | null
           capacity_btuh?: number | null
           condenser_heat_pump_model?: string | null
           condenser_price?: number | null
@@ -1289,13 +1310,19 @@ export type Database = {
           eer2?: number | null
           evap_coil_model?: string | null
           evap_coil_price?: number | null
+          furnace_afue?: number | null
           furnace_air_handler_model?: string | null
           furnace_air_handler_price?: number | null
           furnace_air_handler_size?: string | null
+          furnace_btu_input?: number | null
+          furnace_model?: string | null
+          furnace_price?: number | null
           heat_kit?: string | null
           heat_kit_price?: number | null
+          heating_source?: string | null
           hspf2?: number | null
           id?: string
+          needs_migration_review?: boolean | null
           notes?: string | null
           seer2?: number | null
           system_name?: string

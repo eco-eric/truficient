@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -11,20 +11,30 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Plus, Search, Download, Upload, Pencil, Trash2, FileText, FileSpreadsheet } from 'lucide-react';
+import { Plus, Search, Download, Upload, Pencil, Trash2, FileText, FileSpreadsheet, AlertTriangle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface EquipmentSystem {
   id: string;
   system_name: string;
   system_type: 'mini_split' | 'ducted';
+  heating_source: 'gas_furnace' | 'heat_pump' | null;
   tonnage: number | null;
   ahri_number: string | null;
   condenser_heat_pump_model: string | null;
-  furnace_air_handler_model: string | null;
+  // Furnace fields (gas systems)
+  furnace_model: string | null;
+  furnace_price: number | null;
+  furnace_btu_input: number | null;
+  furnace_afue: number | null;
+  // Air handler fields (heat pump systems)
+  air_handler_model: string | null;
+  air_handler_price: number | null;
+  air_handler_cfm: number | null;
+  // Common fields
   evap_coil_model: string | null;
   heat_kit: string | null;
   condenser_price: number | null;
-  furnace_air_handler_price: number | null;
   evap_coil_price: number | null;
   heat_kit_price: number | null;
   system_price: number | null;
@@ -32,10 +42,14 @@ interface EquipmentSystem {
   eer2: number | null;
   hspf2: number | null;
   capacity_btuh: number | null;
-  furnace_air_handler_size: string | null;
   notes: string | null;
+  needs_migration_review: boolean;
   created_at: string;
   updated_at: string;
+  // Deprecated fields (for migration)
+  furnace_air_handler_model?: string | null;
+  furnace_air_handler_price?: number | null;
+  furnace_air_handler_size?: string | null;
 }
 
 interface PriceBook {
@@ -48,19 +62,25 @@ interface PriceBook {
   uploaded_by: string | null;
 }
 
-type SystemFormData = Omit<EquipmentSystem, 'id' | 'created_at' | 'updated_at'>;
+type SystemFormData = Omit<EquipmentSystem, 'id' | 'created_at' | 'updated_at' | 'furnace_air_handler_model' | 'furnace_air_handler_price' | 'furnace_air_handler_size'>;
 
 const defaultFormData: SystemFormData = {
   system_name: '',
   system_type: 'ducted',
+  heating_source: null,
   tonnage: null,
   ahri_number: null,
   condenser_heat_pump_model: null,
-  furnace_air_handler_model: null,
+  furnace_model: null,
+  furnace_price: null,
+  furnace_btu_input: null,
+  furnace_afue: null,
+  air_handler_model: null,
+  air_handler_price: null,
+  air_handler_cfm: null,
   evap_coil_model: null,
   heat_kit: null,
   condenser_price: null,
-  furnace_air_handler_price: null,
   evap_coil_price: null,
   heat_kit_price: null,
   system_price: null,
@@ -68,8 +88,8 @@ const defaultFormData: SystemFormData = {
   eer2: null,
   hspf2: null,
   capacity_btuh: null,
-  furnace_air_handler_size: null,
   notes: null,
+  needs_migration_review: false,
 };
 
 const SystemPricing = () => {
@@ -79,6 +99,33 @@ const SystemPricing = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSystem, setEditingSystem] = useState<EquipmentSystem | null>(null);
   const [formData, setFormData] = useState<SystemFormData>(defaultFormData);
+
+  // Auto-calculate system price based on heating source
+  useEffect(() => {
+    if (formData.heating_source === 'gas_furnace') {
+      const total = (formData.condenser_price || 0) + 
+                   (formData.furnace_price || 0) + 
+                   (formData.evap_coil_price || 0);
+      if (total > 0) {
+        setFormData(prev => ({ ...prev, system_price: total }));
+      }
+    } else if (formData.heating_source === 'heat_pump') {
+      const total = (formData.condenser_price || 0) + 
+                   (formData.air_handler_price || 0) + 
+                   (formData.evap_coil_price || 0) + 
+                   (formData.heat_kit_price || 0);
+      if (total > 0) {
+        setFormData(prev => ({ ...prev, system_price: total }));
+      }
+    }
+  }, [
+    formData.heating_source, 
+    formData.condenser_price, 
+    formData.furnace_price, 
+    formData.air_handler_price, 
+    formData.evap_coil_price, 
+    formData.heat_kit_price
+  ]);
 
   // Fetch equipment systems
   const { data: systems = [], isLoading: systemsLoading } = useQuery({
@@ -90,7 +137,7 @@ const SystemPricing = () => {
         .order('system_name');
 
       if (searchTerm) {
-        query = query.or(`system_name.ilike.%${searchTerm}%,ahri_number.ilike.%${searchTerm}%,condenser_heat_pump_model.ilike.%${searchTerm}%,furnace_air_handler_model.ilike.%${searchTerm}%`);
+        query = query.or(`system_name.ilike.%${searchTerm}%,ahri_number.ilike.%${searchTerm}%,condenser_heat_pump_model.ilike.%${searchTerm}%,furnace_model.ilike.%${searchTerm}%,air_handler_model.ilike.%${searchTerm}%`);
       }
 
       if (typeFilter !== 'all') {
@@ -119,8 +166,11 @@ const SystemPricing = () => {
   // Create/Update mutation
   const saveMutation = useMutation({
     mutationFn: async (data: SystemFormData & { id?: string }) => {
+      // Set needs_migration_review to false for new/updated records
+      const submitData = { ...data, needs_migration_review: false };
+      
       if (data.id) {
-        const { id, ...updateData } = data;
+        const { id, ...updateData } = submitData;
         const { error } = await supabase
           .from('equipment_systems')
           .update(updateData)
@@ -129,7 +179,7 @@ const SystemPricing = () => {
       } else {
         const { error } = await supabase
           .from('equipment_systems')
-          .insert(data);
+          .insert(submitData);
         if (error) throw error;
       }
     },
@@ -227,14 +277,20 @@ const SystemPricing = () => {
     setFormData({
       system_name: system.system_name,
       system_type: system.system_type,
+      heating_source: system.heating_source,
       tonnage: system.tonnage,
       ahri_number: system.ahri_number,
       condenser_heat_pump_model: system.condenser_heat_pump_model,
-      furnace_air_handler_model: system.furnace_air_handler_model,
+      furnace_model: system.furnace_model,
+      furnace_price: system.furnace_price,
+      furnace_btu_input: system.furnace_btu_input,
+      furnace_afue: system.furnace_afue,
+      air_handler_model: system.air_handler_model,
+      air_handler_price: system.air_handler_price,
+      air_handler_cfm: system.air_handler_cfm,
       evap_coil_model: system.evap_coil_model,
       heat_kit: system.heat_kit,
       condenser_price: system.condenser_price,
-      furnace_air_handler_price: system.furnace_air_handler_price,
       evap_coil_price: system.evap_coil_price,
       heat_kit_price: system.heat_kit_price,
       system_price: system.system_price,
@@ -242,8 +298,8 @@ const SystemPricing = () => {
       eer2: system.eer2,
       hspf2: system.hspf2,
       capacity_btuh: system.capacity_btuh,
-      furnace_air_handler_size: system.furnace_air_handler_size,
       notes: system.notes,
+      needs_migration_review: system.needs_migration_review,
     });
     setIsFormOpen(true);
   };
@@ -252,6 +308,10 @@ const SystemPricing = () => {
     e.preventDefault();
     if (!formData.system_name) {
       toast.error('System name is required');
+      return;
+    }
+    if (formData.system_type === 'ducted' && !formData.heating_source) {
+      toast.error('Please select a heating source (Gas Furnace or Heat Pump)');
       return;
     }
     saveMutation.mutate(editingSystem ? { ...formData, id: editingSystem.id } : formData);
@@ -263,22 +323,26 @@ const SystemPricing = () => {
       {
         'System Name': '',
         'System Type': 'ducted',
+        'Heating Source': 'gas_furnace',
         'Tonnage': '',
         'AHRI Number': '',
         'Condenser/Heat Pump Model': '',
-        'Furnace/Air Handler Model': '',
+        'Furnace Model': '',
+        'Furnace Price': '',
+        'Furnace BTU Input': '',
+        'Furnace AFUE': '',
+        'Air Handler Model': '',
+        'Air Handler Price': '',
+        'Air Handler CFM': '',
         'Evap Coil Model': '',
-        'Heat Kit': '',
-        'Condenser Price': '',
-        'Furnace/Air Handler Price': '',
         'Evap Coil Price': '',
+        'Heat Kit': '',
         'Heat Kit Price': '',
         'System Price': '',
         'SEER2': '',
         'EER2': '',
         'HSPF2': '',
         'Capacity BTUh': '',
-        'Furnace/Air Handler Size': '',
         'Notes': '',
       },
     ];
@@ -304,31 +368,52 @@ const SystemPricing = () => {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
+        // Check for deprecated columns
+        const hasDeprecatedColumns = jsonData.some((row: any) => 
+          'Furnace/Air Handler Model' in row || 'furnace_air_handler_model' in row
+        );
+        
+        if (hasDeprecatedColumns) {
+          toast.warning('Import file uses deprecated columns. Please update to the new format with separate Furnace and Air Handler fields.');
+        }
+
         const columnMap: Record<string, keyof SystemFormData> = {
           'System Name': 'system_name',
           'system_name': 'system_name',
           'System Type': 'system_type',
           'system_type': 'system_type',
+          'Heating Source': 'heating_source',
+          'heating_source': 'heating_source',
           'Tonnage': 'tonnage',
           'tonnage': 'tonnage',
           'AHRI Number': 'ahri_number',
           'ahri_number': 'ahri_number',
           'Condenser/Heat Pump Model': 'condenser_heat_pump_model',
           'condenser_heat_pump_model': 'condenser_heat_pump_model',
-          'Furnace/Air Handler Model': 'furnace_air_handler_model',
-          'furnace_air_handler_model': 'furnace_air_handler_model',
+          'Furnace Model': 'furnace_model',
+          'furnace_model': 'furnace_model',
+          'Furnace Price': 'furnace_price',
+          'furnace_price': 'furnace_price',
+          'Furnace BTU Input': 'furnace_btu_input',
+          'furnace_btu_input': 'furnace_btu_input',
+          'Furnace AFUE': 'furnace_afue',
+          'furnace_afue': 'furnace_afue',
+          'Air Handler Model': 'air_handler_model',
+          'air_handler_model': 'air_handler_model',
+          'Air Handler Price': 'air_handler_price',
+          'air_handler_price': 'air_handler_price',
+          'Air Handler CFM': 'air_handler_cfm',
+          'air_handler_cfm': 'air_handler_cfm',
           'Evap Coil Model': 'evap_coil_model',
           'evap_coil_model': 'evap_coil_model',
-          'Heat Kit': 'heat_kit',
-          'heat_kit': 'heat_kit',
-          'Condenser Price': 'condenser_price',
-          'condenser_price': 'condenser_price',
-          'Furnace/Air Handler Price': 'furnace_air_handler_price',
-          'furnace_air_handler_price': 'furnace_air_handler_price',
           'Evap Coil Price': 'evap_coil_price',
           'evap_coil_price': 'evap_coil_price',
+          'Heat Kit': 'heat_kit',
+          'heat_kit': 'heat_kit',
           'Heat Kit Price': 'heat_kit_price',
           'heat_kit_price': 'heat_kit_price',
+          'Condenser Price': 'condenser_price',
+          'condenser_price': 'condenser_price',
           'System Price': 'system_price',
           'system_price': 'system_price',
           'SEER2': 'seer2',
@@ -339,8 +424,6 @@ const SystemPricing = () => {
           'hspf2': 'hspf2',
           'Capacity BTUh': 'capacity_btuh',
           'capacity_btuh': 'capacity_btuh',
-          'Furnace/Air Handler Size': 'furnace_air_handler_size',
-          'furnace_air_handler_size': 'furnace_air_handler_size',
           'Notes': 'notes',
           'notes': 'notes',
         };
@@ -361,9 +444,18 @@ const SystemPricing = () => {
                 }
               }
               
+              // Handle heating_source normalization
+              if (mappedKey === 'heating_source') {
+                value = String(value).toLowerCase().replace(/\s+/g, '_');
+                if (value !== 'gas_furnace' && value !== 'heat_pump') {
+                  value = null;
+                }
+              }
+              
               // Handle numeric fields
-              if (['tonnage', 'condenser_price', 'furnace_air_handler_price', 'evap_coil_price', 
-                   'heat_kit_price', 'system_price', 'seer2', 'eer2', 'hspf2', 'capacity_btuh'].includes(mappedKey)) {
+              if (['tonnage', 'condenser_price', 'furnace_price', 'air_handler_price', 
+                   'evap_coil_price', 'heat_kit_price', 'system_price', 'seer2', 'eer2', 
+                   'hspf2', 'capacity_btuh', 'furnace_btu_input', 'furnace_afue', 'air_handler_cfm'].includes(mappedKey)) {
                 value = value ? parseFloat(value) : null;
               }
               
@@ -442,11 +534,20 @@ const SystemPricing = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Count systems needing migration review
+  const systemsNeedingReview = systems.filter(s => s.needs_migration_review);
+
   return (
     <AdminLayout title="System Pricing">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">System Pricing</h1>
+          {systemsNeedingReview.length > 0 && (
+            <Badge variant="destructive" className="flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3" />
+              {systemsNeedingReview.length} systems need migration review
+            </Badge>
+          )}
         </div>
 
         <Tabs defaultValue="equipment" className="space-y-4">
@@ -539,6 +640,23 @@ const SystemPricing = () => {
                               </SelectContent>
                             </Select>
                           </div>
+                          {formData.system_type === 'ducted' && (
+                            <div>
+                              <Label htmlFor="heating_source">Heating Source *</Label>
+                              <Select 
+                                value={formData.heating_source || ''} 
+                                onValueChange={(value: 'gas_furnace' | 'heat_pump') => updateFormField('heating_source', value)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select heating source" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="gas_furnace">Gas Furnace (AC + Furnace)</SelectItem>
+                                  <SelectItem value="heat_pump">Heat Pump (+ Air Handler)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
                           <div>
                             <Label htmlFor="tonnage">Tonnage</Label>
                             <Input
@@ -569,12 +687,14 @@ const SystemPricing = () => {
                         </div>
                       </div>
 
-                      {/* Equipment Models & Pricing */}
+                      {/* Outdoor Unit */}
                       <div className="space-y-4">
-                        <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Equipment Models & Pricing</h3>
+                        <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Outdoor Unit</h3>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="condenser_heat_pump_model">Condenser/Heat Pump Model</Label>
+                            <Label htmlFor="condenser_heat_pump_model">
+                              {formData.heating_source === 'heat_pump' ? 'Heat Pump Model' : 'Condenser Model'}
+                            </Label>
                             <Input
                               id="condenser_heat_pump_model"
                               value={formData.condenser_heat_pump_model ?? ''}
@@ -582,7 +702,9 @@ const SystemPricing = () => {
                             />
                           </div>
                           <div>
-                            <Label htmlFor="condenser_price">Condenser Price</Label>
+                            <Label htmlFor="condenser_price">
+                              {formData.heating_source === 'heat_pump' ? 'Heat Pump Price' : 'Condenser Price'}
+                            </Label>
                             <Input
                               id="condenser_price"
                               type="number"
@@ -591,33 +713,95 @@ const SystemPricing = () => {
                               onChange={(e) => updateFormField('condenser_price', e.target.value ? parseFloat(e.target.value) : null)}
                             />
                           </div>
-                          <div>
-                            <Label htmlFor="furnace_air_handler_model">Furnace/Air Handler Model</Label>
-                            <Input
-                              id="furnace_air_handler_model"
-                              value={formData.furnace_air_handler_model ?? ''}
-                              onChange={(e) => updateFormField('furnace_air_handler_model', e.target.value || null)}
-                            />
+                        </div>
+                      </div>
+
+                      {/* Gas Furnace Section - Only show for gas_furnace */}
+                      {formData.heating_source === 'gas_furnace' && (
+                        <div className="space-y-4 p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-900">
+                          <h3 className="font-semibold text-sm text-orange-700 dark:text-orange-400 uppercase tracking-wide">Gas Furnace</h3>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="furnace_model">Furnace Model</Label>
+                              <Input
+                                id="furnace_model"
+                                value={formData.furnace_model ?? ''}
+                                onChange={(e) => updateFormField('furnace_model', e.target.value || null)}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="furnace_price">Furnace Price</Label>
+                              <Input
+                                id="furnace_price"
+                                type="number"
+                                step="0.01"
+                                value={formData.furnace_price ?? ''}
+                                onChange={(e) => updateFormField('furnace_price', e.target.value ? parseFloat(e.target.value) : null)}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="furnace_btu_input">BTU Input</Label>
+                              <Input
+                                id="furnace_btu_input"
+                                type="number"
+                                value={formData.furnace_btu_input ?? ''}
+                                onChange={(e) => updateFormField('furnace_btu_input', e.target.value ? parseInt(e.target.value) : null)}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="furnace_afue">AFUE (%)</Label>
+                              <Input
+                                id="furnace_afue"
+                                type="number"
+                                step="0.1"
+                                value={formData.furnace_afue ?? ''}
+                                onChange={(e) => updateFormField('furnace_afue', e.target.value ? parseFloat(e.target.value) : null)}
+                              />
+                            </div>
                           </div>
-                          <div>
-                            <Label htmlFor="furnace_air_handler_price">Furnace/Air Handler Price</Label>
-                            <Input
-                              id="furnace_air_handler_price"
-                              type="number"
-                              step="0.01"
-                              value={formData.furnace_air_handler_price ?? ''}
-                              onChange={(e) => updateFormField('furnace_air_handler_price', e.target.value ? parseFloat(e.target.value) : null)}
-                            />
+                        </div>
+                      )}
+
+                      {/* Air Handler Section - Only show for heat_pump */}
+                      {formData.heating_source === 'heat_pump' && (
+                        <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900">
+                          <h3 className="font-semibold text-sm text-blue-700 dark:text-blue-400 uppercase tracking-wide">Air Handler</h3>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="air_handler_model">Air Handler Model</Label>
+                              <Input
+                                id="air_handler_model"
+                                value={formData.air_handler_model ?? ''}
+                                onChange={(e) => updateFormField('air_handler_model', e.target.value || null)}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="air_handler_price">Air Handler Price</Label>
+                              <Input
+                                id="air_handler_price"
+                                type="number"
+                                step="0.01"
+                                value={formData.air_handler_price ?? ''}
+                                onChange={(e) => updateFormField('air_handler_price', e.target.value ? parseFloat(e.target.value) : null)}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="air_handler_cfm">CFM Rating</Label>
+                              <Input
+                                id="air_handler_cfm"
+                                type="number"
+                                value={formData.air_handler_cfm ?? ''}
+                                onChange={(e) => updateFormField('air_handler_cfm', e.target.value ? parseInt(e.target.value) : null)}
+                              />
+                            </div>
                           </div>
-                          <div>
-                            <Label htmlFor="furnace_air_handler_size">Furnace/Air Handler Size</Label>
-                            <Input
-                              id="furnace_air_handler_size"
-                              value={formData.furnace_air_handler_size ?? ''}
-                              onChange={(e) => updateFormField('furnace_air_handler_size', e.target.value || null)}
-                            />
-                          </div>
-                          <div></div>
+                        </div>
+                      )}
+
+                      {/* Evaporator Coil */}
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Evaporator Coil</h3>
+                        <div className="grid grid-cols-2 gap-4">
                           <div>
                             <Label htmlFor="evap_coil_model">Evap Coil Model</Label>
                             <Input
@@ -636,26 +820,35 @@ const SystemPricing = () => {
                               onChange={(e) => updateFormField('evap_coil_price', e.target.value ? parseFloat(e.target.value) : null)}
                             />
                           </div>
-                          <div>
-                            <Label htmlFor="heat_kit">Heat Kit</Label>
-                            <Input
-                              id="heat_kit"
-                              value={formData.heat_kit ?? ''}
-                              onChange={(e) => updateFormField('heat_kit', e.target.value || null)}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="heat_kit_price">Heat Kit Price</Label>
-                            <Input
-                              id="heat_kit_price"
-                              type="number"
-                              step="0.01"
-                              value={formData.heat_kit_price ?? ''}
-                              onChange={(e) => updateFormField('heat_kit_price', e.target.value ? parseFloat(e.target.value) : null)}
-                            />
-                          </div>
                         </div>
                       </div>
+
+                      {/* Heat Kit - Only show for heat_pump */}
+                      {formData.heating_source === 'heat_pump' && (
+                        <div className="space-y-4">
+                          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Electric Backup Heat</h3>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="heat_kit">Heat Kit Model</Label>
+                              <Input
+                                id="heat_kit"
+                                value={formData.heat_kit ?? ''}
+                                onChange={(e) => updateFormField('heat_kit', e.target.value || null)}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="heat_kit_price">Heat Kit Price</Label>
+                              <Input
+                                id="heat_kit_price"
+                                type="number"
+                                step="0.01"
+                                value={formData.heat_kit_price ?? ''}
+                                onChange={(e) => updateFormField('heat_kit_price', e.target.value ? parseFloat(e.target.value) : null)}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Efficiency Ratings */}
                       <div className="space-y-4">
@@ -681,16 +874,18 @@ const SystemPricing = () => {
                               onChange={(e) => updateFormField('eer2', e.target.value ? parseFloat(e.target.value) : null)}
                             />
                           </div>
-                          <div>
-                            <Label htmlFor="hspf2">HSPF2</Label>
-                            <Input
-                              id="hspf2"
-                              type="number"
-                              step="0.1"
-                              value={formData.hspf2 ?? ''}
-                              onChange={(e) => updateFormField('hspf2', e.target.value ? parseFloat(e.target.value) : null)}
-                            />
-                          </div>
+                          {formData.heating_source === 'heat_pump' && (
+                            <div>
+                              <Label htmlFor="hspf2">HSPF2</Label>
+                              <Input
+                                id="hspf2"
+                                type="number"
+                                step="0.1"
+                                value={formData.hspf2 ?? ''}
+                                onChange={(e) => updateFormField('hspf2', e.target.value ? parseFloat(e.target.value) : null)}
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -699,7 +894,7 @@ const SystemPricing = () => {
                         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Total System Price</h3>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="system_price">System Price</Label>
+                            <Label htmlFor="system_price">System Price (auto-calculated)</Label>
                             <Input
                               id="system_price"
                               type="number"
@@ -707,6 +902,13 @@ const SystemPricing = () => {
                               value={formData.system_price ?? ''}
                               onChange={(e) => updateFormField('system_price', e.target.value ? parseFloat(e.target.value) : null)}
                             />
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {formData.heating_source === 'gas_furnace' 
+                                ? 'Condenser + Furnace + Evap Coil' 
+                                : formData.heating_source === 'heat_pump'
+                                  ? 'Heat Pump + Air Handler + Evap Coil + Heat Kit'
+                                  : 'Select heating source for auto-calculation'}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -744,7 +946,7 @@ const SystemPricing = () => {
                     <TableHead>System Name</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Tonnage</TableHead>
-                    <TableHead>Models</TableHead>
+                    <TableHead>Indoor Unit</TableHead>
                     <TableHead>Ratings</TableHead>
                     <TableHead className="text-right">System Price</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -765,28 +967,53 @@ const SystemPricing = () => {
                     </TableRow>
                   ) : (
                     systems.map((system) => (
-                      <TableRow key={system.id}>
-                        <TableCell className="font-medium">{system.system_name}</TableCell>
+                      <TableRow key={system.id} className={system.needs_migration_review ? 'bg-yellow-50 dark:bg-yellow-950/20' : ''}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            {system.system_name}
+                            {system.needs_migration_review && (
+                              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>
-                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                            system.system_type === 'mini_split' 
-                              ? 'bg-blue-100 text-blue-800' 
-                              : 'bg-green-100 text-green-800'
-                          }`}>
-                            {system.system_type === 'mini_split' ? 'Mini Split' : 'AC/Heat Pump'}
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                              system.system_type === 'mini_split' 
+                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' 
+                                : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                            }`}>
+                              {system.system_type === 'mini_split' ? 'Mini Split' : 'Ducted'}
+                            </span>
+                            {system.heating_source && (
+                              <span className={`inline-flex px-2 py-0.5 rounded text-xs ${
+                                system.heating_source === 'gas_furnace'
+                                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
+                                  : 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                              }`}>
+                                {system.heating_source === 'gas_furnace' ? 'Gas' : 'Heat Pump'}
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>{system.tonnage ?? '-'}</TableCell>
                         <TableCell className="text-sm">
                           <div className="space-y-1">
                             {system.condenser_heat_pump_model && (
                               <div className="text-muted-foreground truncate max-w-[200px]" title={system.condenser_heat_pump_model}>
-                                C: {system.condenser_heat_pump_model}
+                                OD: {system.condenser_heat_pump_model}
                               </div>
                             )}
-                            {system.furnace_air_handler_model && (
-                              <div className="text-muted-foreground truncate max-w-[200px]" title={system.furnace_air_handler_model}>
-                                H: {system.furnace_air_handler_model}
+                            {system.furnace_model && (
+                              <div className="text-orange-600 dark:text-orange-400 truncate max-w-[200px]" title={system.furnace_model}>
+                                F: {system.furnace_model}
+                                {system.furnace_afue && ` (${system.furnace_afue}% AFUE)`}
+                              </div>
+                            )}
+                            {system.air_handler_model && (
+                              <div className="text-blue-600 dark:text-blue-400 truncate max-w-[200px]" title={system.air_handler_model}>
+                                AH: {system.air_handler_model}
+                                {system.air_handler_cfm && ` (${system.air_handler_cfm} CFM)`}
                               </div>
                             )}
                           </div>
