@@ -321,11 +321,6 @@ export const Step10ThankYou = () => {
               </div>
             </div>
 
-            {/* Financing */}
-            <div className="rounded-lg bg-gradient-to-r from-[#d4a84b]/20 to-[#d4a84b]/10 p-4 text-center">
-              <p className="text-2xl font-bold text-[#1e3a5f]">{formatMoney(pricing.monthlyFinancing)}/mo</p>
-              <p className="text-xs text-muted-foreground">with financing at 5.99% APR for 60 months</p>
-            </div>
 
             {/* Valid Until */}
             <p className="text-xs text-center text-muted-foreground">
