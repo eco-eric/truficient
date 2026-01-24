@@ -73,7 +73,7 @@ export const WelcomeHero = () => {
               className="text-center"
             >
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary mb-4 leading-tight">
-                Get Your Final Ductless Price
+                Get Your Instant Ductless Price
               </h1>
 
               <p className="text-muted-foreground text-lg mb-6 max-w-2xl mx-auto">
