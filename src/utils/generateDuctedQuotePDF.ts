@@ -94,8 +94,9 @@ export interface DuctedQuotePDFData {
     name: string;
     email: string;
     phone: string;
-    address: string;
+    address?: string;
     formattedAddress?: string;
+    streetAddress?: string;
     city?: string;
     state?: string;
     zipCode?: string;
@@ -184,7 +185,20 @@ export async function generateDuctedQuotePDF(data: DuctedQuotePDFData): Promise<
     imageToBase64(truficientLogo)
   ]);
 
-  const customerAddress = data.customerInfo.formattedAddress || data.customerInfo.address || "Not provided";
+  // Build address from separate fields if available, otherwise fall back to formattedAddress/address
+  const buildAddress = (): string => {
+    const { streetAddress, city, state, zipCode, formattedAddress, address } = data.customerInfo;
+    
+    // Try building from separate components first
+    if (streetAddress?.trim() && city?.trim() && zipCode?.trim()) {
+      return `${streetAddress.trim()}, ${city.trim()}, ${state || 'TX'} ${zipCode.trim()}`;
+    }
+    
+    // Fall back to existing address fields
+    return formattedAddress || address || "Not provided";
+  };
+
+  const customerAddress = buildAddress();
 
   // Calculate financing for each option
   const financingCalculations = financingOptions.map(opt => ({
