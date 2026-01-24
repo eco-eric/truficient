@@ -400,6 +400,7 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
               <span>Estimated Total</span>
               <span className="text-[#1e3a5f]">{formatMoney(pricing.finalTotal)}</span>
             </div>
+            <p className="text-xs text-muted-foreground text-center mt-2">Tax included in estimate</p>
           </div>
         </div>
 
