@@ -50,7 +50,7 @@ interface EquipmentPage {
   created_at: string;
 }
 
-const BRAND_TABS = ['all', 'carrier', 'trane', 'lennox', 'goodman', 'rheem', 'mitsubishi', 'other'];
+const BRAND_TABS = ['all', 'carrier', 'trane', 'lennox', 'goodman', 'rheem', 'mitsubishi', 'daikin', 'amana', 'other'];
 
 const EQUIPMENT_TYPES = [
   { value: 'all', label: 'All Types', icon: Factory },
@@ -92,7 +92,9 @@ export default function EquipmentLibrary() {
           .not('brand', 'ilike', '%lennox%')
           .not('brand', 'ilike', '%goodman%')
           .not('brand', 'ilike', '%rheem%')
-          .not('brand', 'ilike', '%mitsubishi%');
+          .not('brand', 'ilike', '%mitsubishi%')
+          .not('brand', 'ilike', '%daikin%')
+          .not('brand', 'ilike', '%amana%');
       }
 
       if (selectedType !== 'all') {
