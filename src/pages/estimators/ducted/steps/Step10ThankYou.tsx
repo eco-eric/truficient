@@ -83,8 +83,8 @@ export const Step10ThankYou = () => {
     },
   ];
 
-  const handleDownloadPDF = () => {
-    generateDuctedQuotePDF({
+  const handleDownloadPDF = async () => {
+    await generateDuctedQuotePDF({
       customerInfo: state.customerInfo,
       homeType: state.homeType,
       homeLayout: state.homeLayout,
@@ -94,6 +94,9 @@ export const Step10ThankYou = () => {
       atticInsulation: state.atticInsulation,
       windowType: state.windowType,
       homeAge: state.homeAge,
+      hotColdSpots: state.hotColdSpots,
+      winterTemp: state.winterTemp,
+      summerTemp: state.summerTemp,
       heatingType: state.heatingType,
       selectedTonnage: pricing.effectiveTonnage,
       equipment: pricing.selectedEquipment ? {
