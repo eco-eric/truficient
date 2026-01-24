@@ -21,6 +21,7 @@ interface EquipmentSystem {
   heating_source: 'gas_furnace' | 'heat_pump' | null;
   tonnage: number | null;
   ahri_number: string | null;
+  refrigerant: 'R-32' | 'R-454b' | null;
   condenser_heat_pump_model: string | null;
   // Furnace fields (gas systems)
   furnace_model: string | null;
@@ -34,6 +35,8 @@ interface EquipmentSystem {
   // Common fields
   evap_coil_model: string | null;
   heat_kit: string | null;
+  thermostat_model: string | null;
+  thermostat_price: number | null;
   condenser_price: number | null;
   evap_coil_price: number | null;
   heat_kit_price: number | null;
@@ -70,6 +73,7 @@ const defaultFormData: SystemFormData = {
   heating_source: null,
   tonnage: null,
   ahri_number: null,
+  refrigerant: null,
   condenser_heat_pump_model: null,
   furnace_model: null,
   furnace_price: null,
@@ -80,6 +84,8 @@ const defaultFormData: SystemFormData = {
   air_handler_cfm: null,
   evap_coil_model: null,
   heat_kit: null,
+  thermostat_model: null,
+  thermostat_price: null,
   condenser_price: null,
   evap_coil_price: null,
   heat_kit_price: null,
@@ -280,6 +286,7 @@ const SystemPricing = () => {
       heating_source: system.heating_source,
       tonnage: system.tonnage,
       ahri_number: system.ahri_number,
+      refrigerant: system.refrigerant,
       condenser_heat_pump_model: system.condenser_heat_pump_model,
       furnace_model: system.furnace_model,
       furnace_price: system.furnace_price,
@@ -290,6 +297,8 @@ const SystemPricing = () => {
       air_handler_cfm: system.air_handler_cfm,
       evap_coil_model: system.evap_coil_model,
       heat_kit: system.heat_kit,
+      thermostat_model: system.thermostat_model,
+      thermostat_price: system.thermostat_price,
       condenser_price: system.condenser_price,
       evap_coil_price: system.evap_coil_price,
       heat_kit_price: system.heat_kit_price,
@@ -326,6 +335,7 @@ const SystemPricing = () => {
         'Heating Source': 'gas_furnace',
         'Tonnage': '',
         'AHRI Number': '',
+        'Refrigerant': '',
         'Condenser/Heat Pump Model': '',
         'Furnace Model': '',
         'Furnace Price': '',
@@ -338,6 +348,8 @@ const SystemPricing = () => {
         'Evap Coil Price': '',
         'Heat Kit': '',
         'Heat Kit Price': '',
+        'Thermostat Model': '',
+        'Thermostat Price': '',
         'System Price': '',
         'SEER2': '',
         'EER2': '',
@@ -388,6 +400,8 @@ const SystemPricing = () => {
           'tonnage': 'tonnage',
           'AHRI Number': 'ahri_number',
           'ahri_number': 'ahri_number',
+          'Refrigerant': 'refrigerant',
+          'refrigerant': 'refrigerant',
           'Condenser/Heat Pump Model': 'condenser_heat_pump_model',
           'condenser_heat_pump_model': 'condenser_heat_pump_model',
           'Furnace Model': 'furnace_model',
@@ -412,6 +426,10 @@ const SystemPricing = () => {
           'heat_kit': 'heat_kit',
           'Heat Kit Price': 'heat_kit_price',
           'heat_kit_price': 'heat_kit_price',
+          'Thermostat Model': 'thermostat_model',
+          'thermostat_model': 'thermostat_model',
+          'Thermostat Price': 'thermostat_price',
+          'thermostat_price': 'thermostat_price',
           'Condenser Price': 'condenser_price',
           'condenser_price': 'condenser_price',
           'System Price': 'system_price',
@@ -452,9 +470,21 @@ const SystemPricing = () => {
                 }
               }
               
+              // Handle refrigerant normalization
+              if (mappedKey === 'refrigerant') {
+                const normalized = String(value).toUpperCase().replace(/\s+/g, '');
+                if (normalized === 'R-32' || normalized === 'R32') {
+                  value = 'R-32';
+                } else if (normalized === 'R-454B' || normalized === 'R454B') {
+                  value = 'R-454b';
+                } else {
+                  value = null;
+                }
+              }
+              
               // Handle numeric fields
               if (['tonnage', 'condenser_price', 'furnace_price', 'air_handler_price', 
-                   'evap_coil_price', 'heat_kit_price', 'system_price', 'seer2', 'eer2', 
+                   'evap_coil_price', 'heat_kit_price', 'thermostat_price', 'system_price', 'seer2', 'eer2', 
                    'hspf2', 'capacity_btuh', 'furnace_btu_input', 'furnace_afue', 'air_handler_cfm'].includes(mappedKey)) {
                 value = value ? parseFloat(value) : null;
               }
@@ -676,6 +706,21 @@ const SystemPricing = () => {
                             />
                           </div>
                           <div>
+                            <Label htmlFor="refrigerant">Refrigerant</Label>
+                            <Select 
+                              value={formData.refrigerant || ''} 
+                              onValueChange={(value: 'R-32' | 'R-454b') => updateFormField('refrigerant', value || null)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select refrigerant" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="R-32">R-32</SelectItem>
+                                <SelectItem value="R-454b">R-454b</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
                             <Label htmlFor="capacity_btuh">Capacity (BTUh)</Label>
                             <Input
                               id="capacity_btuh"
@@ -849,6 +894,31 @@ const SystemPricing = () => {
                           </div>
                         </div>
                       )}
+
+                      {/* Thermostat */}
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Thermostat</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="thermostat_model">Thermostat Model</Label>
+                            <Input
+                              id="thermostat_model"
+                              value={formData.thermostat_model ?? ''}
+                              onChange={(e) => updateFormField('thermostat_model', e.target.value || null)}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="thermostat_price">Thermostat Price</Label>
+                            <Input
+                              id="thermostat_price"
+                              type="number"
+                              step="0.01"
+                              value={formData.thermostat_price ?? ''}
+                              onChange={(e) => updateFormField('thermostat_price', e.target.value ? parseFloat(e.target.value) : null)}
+                            />
+                          </div>
+                        </div>
+                      </div>
 
                       {/* Efficiency Ratings */}
                       <div className="space-y-4">

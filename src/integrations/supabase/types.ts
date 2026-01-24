@@ -1258,10 +1258,13 @@ export type Database = {
           id: string
           needs_migration_review: boolean | null
           notes: string | null
+          refrigerant: string | null
           seer2: number | null
           system_name: string
           system_price: number | null
           system_type: string
+          thermostat_model: string | null
+          thermostat_price: number | null
           tonnage: number | null
           updated_at: string
         }
@@ -1291,10 +1294,13 @@ export type Database = {
           id?: string
           needs_migration_review?: boolean | null
           notes?: string | null
+          refrigerant?: string | null
           seer2?: number | null
           system_name: string
           system_price?: number | null
           system_type: string
+          thermostat_model?: string | null
+          thermostat_price?: number | null
           tonnage?: number | null
           updated_at?: string
         }
@@ -1324,10 +1330,13 @@ export type Database = {
           id?: string
           needs_migration_review?: boolean | null
           notes?: string | null
+          refrigerant?: string | null
           seer2?: number | null
           system_name?: string
           system_price?: number | null
           system_type?: string
+          thermostat_model?: string | null
+          thermostat_price?: number | null
           tonnage?: number | null
           updated_at?: string
         }
