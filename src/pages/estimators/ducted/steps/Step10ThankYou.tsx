@@ -8,13 +8,16 @@ import { motion } from "framer-motion";
 import { 
   CheckCircle, 
   Phone, 
-  Calendar, 
   FileText, 
   Wrench, 
   Download, 
   Eye,
   MessageSquare,
-  X
+  ClipboardCheck,
+  UserCheck,
+  Home,
+  Gauge,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,24 +51,35 @@ export const Step10ThankYou = () => {
 
   const steps = [
     {
-      icon: FileText,
-      title: "Review Your Quote",
-      description: "We're preparing a detailed proposal tailored to your home's needs.",
+      icon: ClipboardCheck,
+      title: "Expert Quote Review",
+      description: "Our team is reviewing your request now to ensure every detail of the estimate is accurate and tailored to your home's specific needs.",
     },
     {
-      icon: Phone,
-      title: "Expert Consultation",
-      description: "A comfort advisor will call within 1 business day to answer questions.",
+      icon: UserCheck,
+      title: "Personal Consultation",
+      description: "A Comfort Advisor will call you within one business day to walk through your quote, answer technical questions, and discuss financing if needed.",
     },
     {
-      icon: Calendar,
-      title: "Free In-Home Assessment",
-      description: "We'll schedule a no-obligation visit to confirm sizing and discuss options.",
+      icon: Home,
+      title: "Technical Site Assessment",
+      description: "We'll perform an on-site visit to verify equipment sizing and installation requirements. This ensures the system we quoted is the perfect fit for your space.",
     },
     {
       icon: Wrench,
-      title: "Professional Installation",
-      description: "Our licensed technicians will install your new system with care.",
+      title: "Precision Installation",
+      description: "Once approved, our trained team of installers will install your new system with surgical care, adhering to all local codes and manufacturer specifications.",
+    },
+    {
+      icon: Gauge,
+      title: "Performance Optimization",
+      description: "After installation, we conduct a rigorous post-install test. We calibrate the system to ensure it's operating at peak efficiency and providing maximum comfort for long term operation.",
+    },
+    {
+      icon: ShieldCheck,
+      title: "Warranty & Final Paperwork",
+      description: "warranty_step",
+      isFinal: true,
     },
   ];
 
@@ -175,15 +189,31 @@ export const Step10ThankYou = () => {
               key={step.title}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 + i * 0.15 }}
-              className="flex items-start gap-4 rounded-xl border p-4"
+              transition={{ delay: 0.3 + i * 0.1 }}
+              className={`flex items-start gap-4 rounded-xl border p-4 ${
+                step.isFinal 
+                  ? 'border-[#a5a983]/40 bg-gradient-to-r from-[#a5a983]/5 to-transparent' 
+                  : ''
+              }`}
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1e3a5f]/10 text-[#1e3a5f]">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                step.isFinal 
+                  ? 'bg-[#a5a983]/20 text-[#a5a983]'
+                  : 'bg-[#1e3a5f]/10 text-[#1e3a5f]'
+              }`}>
                 <step.icon className="h-5 w-5" />
               </div>
               <div>
                 <h4 className="font-semibold text-foreground">{step.title}</h4>
-                <p className="text-sm text-muted-foreground">{step.description}</p>
+                {step.description === "warranty_step" ? (
+                  <p className="text-sm text-muted-foreground">
+                    Relax—we've got the paperwork covered. We will register your equipment to secure your{" "}
+                    <span className="font-semibold text-[#1e3a5f]">10-12 year</span>{" "}
+                    parts warranty and provide you with a full digital report of your system's performance.
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">{step.description}</p>
+                )}
               </div>
             </motion.div>
           ))}
