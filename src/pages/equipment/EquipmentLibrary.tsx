@@ -83,14 +83,16 @@ export default function EquipmentLibrary() {
         .limit(50);
 
       if (selectedBrand !== 'all' && selectedBrand !== 'other') {
-        query = query.ilike('brand', selectedBrand);
+        // Use partial match to catch brand variations like "Mitsubishi Electric", "Trane/American Standard"
+        query = query.ilike('brand', `%${selectedBrand}%`);
       } else if (selectedBrand === 'other') {
-        query = query.not('brand', 'ilike', 'carrier')
-          .not('brand', 'ilike', 'trane')
-          .not('brand', 'ilike', 'lennox')
-          .not('brand', 'ilike', 'goodman')
-          .not('brand', 'ilike', 'rheem')
-          .not('brand', 'ilike', 'mitsubishi');
+        // Exclude all known brands (partial match)
+        query = query.not('brand', 'ilike', '%carrier%')
+          .not('brand', 'ilike', '%trane%')
+          .not('brand', 'ilike', '%lennox%')
+          .not('brand', 'ilike', '%goodman%')
+          .not('brand', 'ilike', '%rheem%')
+          .not('brand', 'ilike', '%mitsubishi%');
       }
 
       if (selectedType !== 'all') {
