@@ -141,7 +141,7 @@ export function Step0ZipCodeGate() {
             className="text-center mb-6"
           >
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3">
-              Get Your Final HVAC Price Online
+              Get Your Instant HVAC Price Online
             </h1>
             <p className="text-muted-foreground text-base sm:text-lg">
               Answer a few questions about your home and receive accurate, locked-in pricing for your new AC or heat pump system.
