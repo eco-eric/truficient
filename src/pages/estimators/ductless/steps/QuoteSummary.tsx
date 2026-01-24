@@ -74,7 +74,6 @@ Equipment (${pricing.zoneCount} zone${pricing.zoneCount !== 1 ? 's' : ''}): ${fo
 ${pricing.tierMultiplier !== 1 ? `Tier Adjustment (${selectedTier?.display_name} ${pricing.tierMultiplier}×): ${formatMoney(pricing.equipmentTotal)}` : ''}
 ${pricing.addonsBreakdown.length > 0 ? `Add-ons Total: ${formatMoney(pricing.addonsTotal)}` : ''}
 Subtotal: ${formatMoney(pricing.subtotal)}
-Tax (8.25%): ${formatMoney(pricing.taxAmount)}
 ${pricing.rebates > 0 ? `Rebates: -${formatMoney(pricing.rebates)}` : ''}
 -----------------
 TOTAL: ${formatMoney(pricing.finalTotal)}
@@ -391,14 +390,6 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
             )}
             
             <div className="border-t my-2" />
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Subtotal</span>
-              <span>{formatMoney(pricing.subtotal)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Estimated Tax (8.25%)</span>
-              <span>{formatMoney(pricing.taxAmount)}</span>
-            </div>
             {pricing.rebates > 0 && (
               <div className="flex justify-between text-[#d4a84b]">
                 <span>Available Rebates</span>
