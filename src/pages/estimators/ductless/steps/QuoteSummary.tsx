@@ -14,7 +14,6 @@ import { FinancingOptionsSection } from "@/components/estimators/FinancingOption
 export const QuoteSummary = () => {
   const { state, prevStep, nextStep, goToStep } = useQuote();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSendingQuote, setIsSendingQuote] = useState(false);
   const { data: dynamicTags } = useFormSourceTags('ductless');
 
   // Use the pricing engine
@@ -202,56 +201,6 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
     }
   };
 
-  const handleEmailQuote = async () => {
-    if (!state.customerInfo.email) {
-      toast.error("Please enter your email to save the quote.");
-      return;
-    }
-
-    setIsSendingQuote(true);
-
-    try {
-      const nameParts = state.customerInfo.name.trim().split(" ");
-      const firstName = nameParts[0] || "";
-      const lastName = nameParts.slice(1).join(" ") || "";
-      const validUntil = format(addDays(new Date(), 30), "MMMM d, yyyy");
-      const quoteRawDetails = buildQuoteRawDetails();
-
-      await supabase.functions.invoke("sync-ghl-contact", {
-        body: {
-          firstName,
-          lastName,
-          email: state.customerInfo.email,
-          phone: state.customerInfo.phone || undefined,
-          source: "Ductless Estimator - Save Quote",
-          tags: ["save-quote-ductless", "ductless-estimator"],
-          message: `Quote saved for ${pricing.zoneCount}-zone ductless system - ${selectedTier?.display_name || "Standard"} Tier`,
-          zipCode: state.customerInfo.zipCode || undefined,
-          isDfw: true,
-          quote: {
-            systemType: `Ductless Mini-Split - ${selectedTier?.display_name || "Standard"} Tier`,
-            zones: pricing.zoneCount,
-            totalBtu: pricing.totalBtu,
-            price: formatMoney(pricing.finalTotal),
-            monthlyPayment: `${formatMoney(pricing.monthlyFinancing)}/mo`,
-            validUntil,
-            tier: selectedTier?.display_name || "Standard",
-            quoteRawDetails,
-          },
-        },
-      });
-
-      toast.success(`Quote sent to ${state.customerInfo.email}!`, {
-        description: "Check your inbox for the estimate details.",
-      });
-    } catch (err) {
-      console.error("Error sending quote:", err);
-      toast.error("Failed to send quote. Please try again.");
-    } finally {
-      setIsSendingQuote(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <StepContainer className="px-4 pb-28 flex items-center justify-center min-h-[400px]">
@@ -409,26 +358,6 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
           estimatorType="ductless" 
           finalTotal={pricing.finalTotal} 
         />
-
-        {/* Save My Quote */}
-        <div className="rounded-xl border border-border p-4 mb-6">
-          <div className="flex items-center gap-3 mb-3">
-            <Mail className="h-5 w-5 text-[#1e3a5f]" />
-            <div>
-              <p className="font-medium text-foreground">Save This Quote</p>
-              <p className="text-sm text-muted-foreground">Get this estimate emailed to you for future reference</p>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            onClick={handleEmailQuote}
-            disabled={isSendingQuote || !state.customerInfo.email}
-            className="w-full"
-          >
-            <Mail className="h-4 w-4 mr-2" />
-            {isSendingQuote ? "Sending..." : "Email My Quote"}
-          </Button>
-        </div>
 
         {/* Navigation */}
         <div className="flex gap-3">
