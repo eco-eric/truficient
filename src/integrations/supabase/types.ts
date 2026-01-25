@@ -87,7 +87,7 @@ export type Database = {
           author_name: string | null
           author_profile_id: string | null
           canonical_url: string | null
-          category: string | null
+          category: string[] | null
           content: string | null
           created_at: string | null
           excerpt: string | null
@@ -114,7 +114,7 @@ export type Database = {
           author_name?: string | null
           author_profile_id?: string | null
           canonical_url?: string | null
-          category?: string | null
+          category?: string[] | null
           content?: string | null
           created_at?: string | null
           excerpt?: string | null
@@ -141,7 +141,7 @@ export type Database = {
           author_name?: string | null
           author_profile_id?: string | null
           canonical_url?: string | null
-          category?: string | null
+          category?: string[] | null
           content?: string | null
           created_at?: string | null
           excerpt?: string | null
