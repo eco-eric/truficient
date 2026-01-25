@@ -22,6 +22,10 @@ const statusConfig: Record<string, { label: string; className: string }> = {
     label: 'Closed',
     className: 'bg-gray-100 text-gray-800 hover:bg-gray-100',
   },
+  junk: {
+    label: 'Junk',
+    className: 'bg-red-100 text-red-800 hover:bg-red-100',
+  },
 };
 
 export const StatusBadge = ({ status }: StatusBadgeProps) => {
