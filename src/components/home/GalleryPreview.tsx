@@ -3,12 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Play } from 'lucide-react';
 
 interface GalleryImage {
   id: string;
   title: string;
   image_url: string;
+  thumbnail_url: string | null;
+  media_type: 'image' | 'video';
   alt_text: string | null;
 }
 
@@ -18,11 +20,11 @@ const GalleryPreview = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('gallery_images')
-        .select('id, title, image_url, alt_text')
+        .select('id, title, image_url, thumbnail_url, media_type, alt_text')
         .eq('is_active', true)
         .eq('is_featured', true)
         .order('sort_order')
-        .limit(6);
+        .limit(8);
       if (error) throw error;
       return data as GalleryImage[];
     },
@@ -51,27 +53,41 @@ const GalleryPreview = () => {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
-          {images.slice(0, 6).map((image, index) => (
-            <motion.div
-              key={image.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: index * 0.1 }}
-              viewport={{ once: true }}
-              className="group"
-            >
-              <Link to="/gallery" className="block">
-                <div className="aspect-square overflow-hidden rounded-lg bg-card">
-                  <img
-                    src={image.image_url}
-                    alt={image.alt_text || image.title}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
-              </Link>
-            </motion.div>
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-w-6xl mx-auto">
+          {images.slice(0, 8).map((image, index) => {
+            const isVideo = image.media_type === 'video';
+            const displayUrl = isVideo && image.thumbnail_url 
+              ? image.thumbnail_url 
+              : image.image_url;
+            
+            return (
+              <motion.div
+                key={image.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.05 }}
+                viewport={{ once: true }}
+                className="group"
+              >
+                <Link to="/gallery" className="block">
+                  <div className="aspect-square overflow-hidden rounded-lg bg-card relative">
+                    <img
+                      src={displayUrl}
+                      alt={image.alt_text || image.title}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    {isVideo && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="w-10 h-10 rounded-full bg-black/60 flex items-center justify-center">
+                          <Play className="w-5 h-5 text-white ml-0.5" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              </motion.div>
+            );
+          })}
         </div>
 
         <motion.div
