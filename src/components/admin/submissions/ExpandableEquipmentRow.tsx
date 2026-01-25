@@ -134,6 +134,7 @@ export const ExpandableEquipmentRow = ({
               <SelectItem value="scheduled">Scheduled</SelectItem>
               <SelectItem value="converted">Converted</SelectItem>
               <SelectItem value="closed">Closed</SelectItem>
+              <SelectItem value="junk">Junk</SelectItem>
             </SelectContent>
           </Select>
         </TableCell>
