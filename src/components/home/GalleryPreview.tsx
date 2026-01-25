@@ -22,8 +22,8 @@ const GalleryPreview = () => {
         .from('gallery_images')
         .select('id, title, image_url, thumbnail_url, media_type, alt_text')
         .eq('is_active', true)
-        .eq('is_featured', true)
-        .order('sort_order')
+        .order('is_featured', { ascending: false })
+        .order('sort_order', { ascending: true })
         .limit(8);
       if (error) throw error;
       return data as GalleryImage[];
