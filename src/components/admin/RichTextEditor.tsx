@@ -58,6 +58,7 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Start writing...' }: R
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
   const [altText, setAltText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isUpdatingRef = useRef(false);
 
   const editor = useEditor({
     extensions: [
@@ -84,7 +85,11 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Start writing...' }: R
     ],
     content: value,
     onUpdate: ({ editor }) => {
+      isUpdatingRef.current = true;
       onChange(editor.getHTML());
+      setTimeout(() => {
+        isUpdatingRef.current = false;
+      }, 0);
     },
     editorProps: {
       attributes: {
@@ -130,9 +135,9 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Start writing...' }: R
     },
   });
 
-  // Sync external value changes
+  // Sync external value changes (only when not from internal editor updates)
   useEffect(() => {
-    if (editor && value !== editor.getHTML()) {
+    if (editor && !isUpdatingRef.current && value !== editor.getHTML()) {
       editor.commands.setContent(value || '');
     }
   }, [value, editor]);
