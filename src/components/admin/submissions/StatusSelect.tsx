@@ -17,6 +17,7 @@ const statuses = [
   { value: 'reviewed', label: 'Reviewed' },
   { value: 'contacted', label: 'Contacted' },
   { value: 'closed', label: 'Closed' },
+  { value: 'junk', label: 'Junk' },
 ];
 
 export const StatusSelect = ({ value, onChange, disabled }: StatusSelectProps) => {

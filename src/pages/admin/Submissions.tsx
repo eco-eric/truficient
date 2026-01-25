@@ -117,6 +117,7 @@ const Submissions = () => {
               <SelectItem value="reviewed">Reviewed</SelectItem>
               <SelectItem value="contacted">Contacted</SelectItem>
               <SelectItem value="closed">Closed</SelectItem>
+              <SelectItem value="junk">Junk</SelectItem>
             </SelectContent>
           </Select>
 
