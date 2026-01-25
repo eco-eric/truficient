@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, Trash2, ImageIcon } from 'lucide-react';
 
 interface AuthorProfile {
   id: string;
@@ -37,9 +37,11 @@ const AuthorProfileDialog = ({
 }: AuthorProfileDialogProps) => {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (profile) {
@@ -52,6 +54,61 @@ const AuthorProfileDialog = ({
       setAvatarUrl('');
     }
   }, [profile, open]);
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Error',
+        description: 'Please select an image file.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'Error',
+        description: 'Image must be under 5MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `authors/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('blog_images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('blog_images')
+        .getPublicUrl(fileName);
+
+      setAvatarUrl(publicUrl);
+      toast({
+        title: 'Photo uploaded',
+        description: 'Author photo has been uploaded.',
+      });
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast({
+        title: 'Upload failed',
+        description: 'Failed to upload photo. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarUrl('');
+  };
 
   const handleSave = async () => {
     if (!displayName.trim()) {
@@ -158,23 +215,79 @@ const AuthorProfileDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="avatarUrl">Avatar URL</Label>
+            <Label>Author Photo</Label>
+            {avatarUrl ? (
+              <div className="flex items-center gap-4">
+                <img
+                  src={avatarUrl}
+                  alt="Author avatar"
+                  className="w-20 h-20 rounded-full object-cover border"
+                  onError={(e) => {
+                    e.currentTarget.src = '/placeholder.svg';
+                  }}
+                />
+                <div className="flex flex-col gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4 mr-2" />
+                    )}
+                    Replace
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveAvatar}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Remove
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <label
+                className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploading ? (
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                ) : (
+                  <>
+                    <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">Click to upload photo</p>
+                    <p className="text-xs text-muted-foreground">PNG, JPG up to 5MB</p>
+                  </>
+                )}
+              </label>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleAvatarUpload(file);
+                e.target.value = '';
+              }}
+            />
+            <p className="text-xs text-muted-foreground mt-2">
+              Or paste URL:
+            </p>
             <Input
-              id="avatarUrl"
               value={avatarUrl}
               onChange={(e) => setAvatarUrl(e.target.value)}
               placeholder="https://example.com/avatar.jpg"
             />
-            {avatarUrl && (
-              <img
-                src={avatarUrl}
-                alt="Avatar preview"
-                className="w-16 h-16 rounded-full object-cover mt-2"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            )}
           </div>
         </div>
 

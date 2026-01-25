@@ -23,6 +23,7 @@ import { Loader2, ArrowLeft, Save, Eye, Upload, Trash2, ChevronDown, CheckCircle
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import BlogPreview from '@/components/admin/BlogPreview';
 import TagSelector from '@/components/admin/TagSelector';
+import CategorySelector from '@/components/admin/CategorySelector';
 import AuthorSelector from '@/components/admin/AuthorSelector';
 
 interface AuthorProfile {
@@ -46,7 +47,7 @@ interface BlogPost {
   published_at: string | null;
   meta_title: string | null;
   meta_description: string | null;
-  category: string | null;
+  category: string[] | null;
   tags: string[] | null;
   focus_keyword: string | null;
   noindex: boolean;
@@ -58,16 +59,7 @@ interface BlogPost {
   og_image: string | null;
 }
 
-const CATEGORIES = [
-  'HVAC Tips',
-  'Energy Efficiency',
-  'Home Comfort',
-  'Maintenance',
-  'Industry News',
-  'Seasonal Advice',
-  'Technology',
-  'Case Studies',
-];
+// Categories are now managed in CategorySelector component
 
 const BlogPostEditor = () => {
   const { id } = useParams<{ id: string }>();
@@ -91,7 +83,7 @@ const BlogPostEditor = () => {
     status: 'draft',
     meta_title: '',
     meta_description: '',
-    category: '',
+    category: [],
     tags: [],
     focus_keyword: '',
     noindex: false,
@@ -232,7 +224,7 @@ const BlogPostEditor = () => {
         published_at: publishNow ? new Date().toISOString() : post.published_at,
         author_id: user?.id || null,
         author_profile_id: post.author_profile_id || null,
-        category: post.category || null,
+        category: post.category && post.category.length > 0 ? post.category : [],
         tags: post.tags || [],
         focus_keyword: post.focus_keyword || null,
         noindex: post.noindex || false,
@@ -518,22 +510,11 @@ const BlogPostEditor = () => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Category</Label>
-                      <Select
-                        value={post.category || ''}
-                        onValueChange={(value) => setPost(prev => ({ ...prev, category: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {CATEGORIES.map((cat) => (
-                            <SelectItem key={cat} value={cat}>
-                              {cat}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label>Categories</Label>
+                      <CategorySelector
+                        selectedCategories={post.category || []}
+                        onChange={(categories) => setPost(prev => ({ ...prev, category: categories }))}
+                      />
                     </div>
 
                     <div className="space-y-2">
@@ -758,7 +739,7 @@ const BlogPostEditor = () => {
               content={post.content || ''}
               featuredImage={post.featured_image || ''}
               featuredImageAlt={post.featured_image_alt || ''}
-              category={post.category || ''}
+              category={Array.isArray(post.category) ? post.category.join(', ') : (post.category || '')}
               tags={post.tags || []}
               publishedAt={post.published_at || undefined}
               authorName={post.author_name || ''}
