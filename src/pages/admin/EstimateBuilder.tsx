@@ -1200,11 +1200,7 @@ const EstimateBuilder = () => {
                   <p className="text-center py-4 text-muted-foreground">No equipment found</p>
                 ) : (
                   filteredEquipment.map((eq) => {
-                    const totalPrice = (Number(eq.system_price) || 0) +
-                      (Number(eq.condenser_price) || 0) +
-                      (Number(eq.furnace_air_handler_price) || 0) +
-                      (Number(eq.evap_coil_price) || 0) +
-                      (Number(eq.heat_kit_price) || 0);
+                    const totalPrice = Number(eq.system_price) || 0;
                     
                     return (
                       <div
