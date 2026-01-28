@@ -171,7 +171,7 @@ const SortableRow = ({ item, actualIndex, onUpdateItem, onRemoveItem }: Sortable
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: item.id || `${item.name}-${item.sort_order}` });
+  } = useSortable({ id: item.id || `new-${item.sort_order}` });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -277,8 +277,8 @@ export const EstimateSectionComponent = ({
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = items.findIndex(item => (item.id || `${item.name}-${item.sort_order}`) === active.id);
-      const newIndex = items.findIndex(item => (item.id || `${item.name}-${item.sort_order}`) === over.id);
+      const oldIndex = items.findIndex(item => (item.id || `new-${item.sort_order}`) === active.id);
+      const newIndex = items.findIndex(item => (item.id || `new-${item.sort_order}`) === over.id);
       
       if (oldIndex !== -1 && newIndex !== -1 && onReorderItems) {
         const newOrder = arrayMove(items, oldIndex, newIndex);
@@ -350,12 +350,12 @@ export const EstimateSectionComponent = ({
                 </TableHeader>
                 <TableBody>
                   <SortableContext
-                    items={items.map(item => item.id || `${item.name}-${item.sort_order}`)}
+                    items={items.map(item => item.id || `new-${item.sort_order}`)}
                     strategy={verticalListSortingStrategy}
                   >
                     {items.map((item) => (
                       <SortableRow
-                        key={item.id || `${item.name}-${item.sort_order}`}
+                        key={item.id || `new-${item.sort_order}`}
                         item={item}
                         actualIndex={getActualIndex(item)}
                         onUpdateItem={onUpdateItem}
