@@ -1,269 +1,145 @@
 
 
-## Heat Pump Advantage Page Implementation
-
-This plan converts the uploaded `HeatPumpAdvantagePage.jsx` (which uses inline styles) into a properly styled React TypeScript page that matches the existing Truficient website design system.
-
----
+## Clean Up Installation Cost Comparison - Use Real Database Pricing
 
 ### Overview
 
-The page will be created at `/heat-pump-advantage` and will include:
-- Interactive Gas vs Electric Calculator with real-time savings calculations
-- Atmos Energy rate crisis data and timeline
-- Climate advantage, technology, and rate stability sections
-- Real DFW homeowner testimonials
-- Myths debunked section
-- ROI comparison between gas furnace and heat pump
-- Call-to-action with credentials
-- Collapsible data sources section
+The ROIComparison component currently shows hardcoded placeholder pricing. This plan updates it to:
+1. Display line items WITHOUT individual prices (just the item names as a list)
+2. Show only the **total price** at the bottom
+3. Pull real Goodman 3-ton pricing from the `ducted_equipment` database table
 
----
+### Real Pricing Data (from database)
 
-### Files to Create
+| Item | Gas System | Heat Pump System |
+|------|------------|------------------|
+| Equipment Cost | $9,062 | $9,062 |
+| Installation Labor | $6,500 | $6,500 |
+| **Subtotal** | **$15,562** | **$15,562** |
+| Federal Tax Credit | N/A | -$2,000 |
+| **Final Total** | **$15,562** | **$13,562** |
+| **Savings** | | **$2,000** |
 
-| File | Purpose |
-|------|---------|
-| `src/pages/HeatPumpAdvantage.tsx` | Main page component with all sections |
-| `src/components/heat-pump/GasVsElectricCalculator.tsx` | Interactive calculator component |
-| `src/components/heat-pump/RateTimelineTable.tsx` | Atmos rate increase table |
-| `src/components/heat-pump/BenefitsGrid.tsx` | "Why Heat Pumps Win" cards |
-| `src/components/heat-pump/HomeownerReports.tsx` | Real user testimonials |
-| `src/components/heat-pump/MythsSection.tsx` | Myths busted cards |
-| `src/components/heat-pump/ROIComparison.tsx` | Financial comparison |
+### Visual Changes
 
----
+**Before (current):**
+```text
+Gas Furnace (80% AFUE)        $4,500
+Air Conditioner (14 SEER2)    $5,500
+Installation Labor            $3,500
+Gas Line & Venting            $1,500
+─────────────────────────────────────
+Total Investment              $15,000
+```
+
+**After (new design):**
+```text
+Included in your system:
+  • Goodman 16 SEER2 Inverter Air Conditioner
+  • 80% AFUE Gas Furnace  
+  • Evaporator Coil
+  • Connected Smart Thermostat
+  • Professional Installation
+  • 10-Year Warranty
+─────────────────────────────────────
+Total Investment              $15,562
+```
+
+### Technical Approach
+
+The component will fetch real-time data from the database using React Query, matching the existing pattern in `useDuctedPricing.ts`.
+
+**Data Fetching:**
+- Query `ducted_equipment` for Goodman 3-ton systems
+- Filter by `brand = 'Goodman'`, `tonnage = 3`, `is_active = true`
+- Get both `gas_system` and `heat_pump` system types
+
+**Component Updates:**
+- Add Supabase query using `useQuery`
+- Replace static arrays with dynamic data
+- Display line items as bullet points (no prices)
+- Show only total price in the highlighted box
+- Include loading state handling
 
 ### Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/App.tsx` | Add route for `/heat-pump-advantage` |
+| `src/components/heat-pump/ROIComparison.tsx` | Add database query, restructure UI to show items without prices |
 
----
+### UI Structure
 
-### Design Adaptations
+**Gas Furnace + AC Card:**
+- Header with flame icon
+- "What's Included:" bullet list:
+  - Goodman 16 SEER2 Inverter Air Conditioner
+  - 80% AFUE Gas Furnace (60,000 BTU)
+  - Evaporator Coil
+  - Connected Smart Thermostat
+  - Professional Installation
+  - 10-Year Warranty
+- Total box: **$15,562**
+- Cons list (no federal tax credits, separate systems, volatile gas prices)
 
-The uploaded file uses inline styles with colors like `#1e3a5f` (navy) and `#d4a437` (gold). These will be converted to use the existing Tailwind CSS design system:
+**Heat Pump System Card:**
+- "BEST VALUE" badge
+- Header with zap icon
+- "What's Included:" bullet list:
+  - Goodman 16 SEER2 Inverter Heat Pump
+  - Variable Speed Air Handler
+  - Backup Heat Kit
+  - Connected Smart Thermostat
+  - Professional Installation
+  - 10-Year Warranty
+- Subtotal: $15,562
+- Federal Tax Credit: -$2,000 (highlighted in green)
+- Total After Credits box: **$13,562**
+- Pros list (tax credit, one system, rate protection)
 
-| Original (Inline) | Converted (Tailwind) |
-|-------------------|---------------------|
-| `#1e3a5f` (navy) | `bg-primary`, `text-primary` |
-| `#d4a437` (gold) | `bg-secondary`, `text-secondary` |
-| `#ffffff` (white) | `bg-background`, `text-foreground` |
-| `#f0f9ff` (light blue) | `bg-muted` or custom gradient |
-| `rgba(...)` overlays | Tailwind opacity utilities |
-| Inline font styles | Existing font classes |
-| Custom shadows | Tailwind shadow utilities |
+**Savings Highlight Box:**
+- Show $2,000 immediate savings (the tax credit)
 
----
+### Code Pattern
 
-### Component Breakdown
-
-**1. Hero Section**
-- Full-width gradient background matching `bg-primary`
-- Badge component with lightning icon
-- Headline with gold gradient highlight
-- Stats comparison cards ($723 vs $150)
-- CTA button linking to calculator anchor
-
-**2. Crisis Alert Section**
-- Warning card with alert styling
-- Atmos rate timeline table showing 420% increase
-- Five-year cumulative data
-
-**3. Gas vs Electric Calculator**
-- Input panel with sliders (using existing `@/components/ui/slider`)
-- Home size (1,000-5,000 sq ft)
-- Thermostat setting (65-78°F)
-- Electric rate ($0.08-$0.18/kWh)
-- SEER tier buttons (Good/Better/Premium/Elite)
-- Results panel with live calculations
-- Monthly/annual/5-year savings display
-
-**4. Why Heat Pumps Win Section**
-- Three-column grid using Card components
-- Climate advantage with temperature distribution bars
-- Technology features list
-- Rate stability comparison
-
-**5. Real Homeowner Reports**
-- Two-column layout (Gas users vs Heat pump users)
-- Quote cards with location, bill amount, and details
-- Red/green accent borders for visual contrast
-
-**6. Myths Busted Section**
-- Dark navy background section
-- Four myth cards with icons
-- Yellow accent text for myth titles
-
-**7. ROI Comparison**
-- Side-by-side cost breakdown
-- Gas furnace + AC vs Heat pump
-- Highlight box showing immediate payback
-
-**8. CTA Section**
-- Reuses existing CTASection pattern
-- Buttons to `/estimate/ducted` and `/contact`
-- Credential badges
-
-**9. Data Sources (Collapsible)**
-- Uses Radix Collapsible component
-- Lists all sources and methodology
-- Disclaimer text
-
----
-
-### Technical Details
-
-**Calculator Logic (from uploaded file):**
 ```typescript
-// Constants
-const ATMOS_EFFECTIVE_RATE = 2.47; // $/Ccf
+// Query for Goodman 3-ton systems
+const { data: systems, isLoading } = useQuery({
+  queryKey: ['goodman-3-ton-comparison'],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from('ducted_equipment')
+      .select('*')
+      .eq('brand', 'Goodman')
+      .eq('tonnage', 3)
+      .eq('is_active', true);
+    if (error) throw error;
+    return data;
+  },
+});
+
+// Extract gas and heat pump systems
+const gasSystem = systems?.find(s => s.system_type === 'gas_system');
+const heatPumpSystem = systems?.find(s => s.system_type === 'heat_pump');
+
+// Calculate totals
+const gasTotal = (gasSystem?.equipment_cost || 0) + (gasSystem?.installation_labor || 0);
+const heatPumpSubtotal = (heatPumpSystem?.equipment_cost || 0) + (heatPumpSystem?.installation_labor || 0);
 const FEDERAL_TAX_CREDIT = 2000;
-const WINTER_MONTHS = 5;
-
-// Gas calculation
-const ccfPerMonth = (squareFootage / 2500) * 120 * (thermostatTemp - 65) / 7;
-const monthlyGasCost = ccfPerMonth * ATMOS_EFFECTIVE_RATE + 20;
-
-// Heat pump calculation
-const heatPumpCOP = heatPumpSEER >= 20 ? 3.2 : heatPumpSEER >= 16 ? 2.8 : 2.5;
-const btuNeeded = squareFootage * 30 * (thermostatTemp - 45) / 25;
-const kwhPerMonth = (btuNeeded / 3412 / heatPumpCOP) * 30;
-const monthlyHeatPumpCost = kwhPerMonth * electricRate;
+const heatPumpTotal = heatPumpSubtotal - FEDERAL_TAX_CREDIT;
+const savings = gasTotal - heatPumpTotal;
 ```
 
-**State Management:**
-```typescript
-const [squareFootage, setSquareFootage] = useState(2500);
-const [thermostatTemp, setThermostatTemp] = useState(72);
-const [electricRate, setElectricRate] = useState(0.13);
-const [heatPumpSEER, setHeatPumpSEER] = useState(18);
-```
+### Fallback Values
 
-**Animations:**
-- Uses Framer Motion for entrance animations (matching existing patterns)
-- `whileInView` triggers for scroll-based animations
-- `viewport={{ once: true }}` to prevent re-animation
+If the database query fails or returns no data, use these fallback values matching the current database:
+- Gas System Total: $15,562
+- Heat Pump Total: $13,562
+- Savings: $2,000
 
----
+### Benefits of This Approach
 
-### Route Addition
-
-```typescript
-// In src/App.tsx
-import HeatPumpAdvantage from "./pages/HeatPumpAdvantage";
-
-// Add to routes array:
-{ path: "/heat-pump-advantage", element: <HeatPumpAdvantage /> },
-```
-
----
-
-### Components Used from Existing Library
-
-- `Header` and `Footer` layout components
-- `Button` from `@/components/ui/button`
-- `Card`, `CardContent` from `@/components/ui/card`
-- `Slider` from `@/components/ui/slider`
-- `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent` from `@/components/ui/collapsible`
-- `motion` from Framer Motion
-- Lucide icons: `Zap`, `Flame`, `Thermometer`, `TrendingUp`, `CheckCircle`, `AlertTriangle`, `XCircle`, `ChevronDown`
-
----
-
-### Mobile Responsiveness
-
-All sections will use:
-- `grid lg:grid-cols-2` for two-column layouts
-- `grid-cols-1 md:grid-cols-2 lg:grid-cols-3` for multi-column grids
-- `text-3xl md:text-4xl lg:text-5xl` for responsive typography
-- `flex-col sm:flex-row` for button groups
-- `container mx-auto px-4` for consistent spacing
-
----
-
-### SEO Integration
-
-The page will include:
-```typescript
-import { usePageSEO } from '@/hooks/usePageSEO';
-
-// In component:
-usePageSEO();
-```
-
-This enables dynamic SEO metadata from the database.
-
----
-
-### Button Tracking Integration
-
-All CTA buttons will use the existing tracking hook:
-```typescript
-import { useButtonTracking } from '@/hooks/useButtonTracking';
-
-const { trackButtonClick } = useButtonTracking();
-
-const handleEstimateClick = () => {
-  trackButtonClick({
-    buttonName: 'Get Your Free Estimate',
-    buttonLocation: 'Heat Pump Advantage Page',
-    destinationUrl: '/estimate/ducted',
-  });
-};
-```
-
----
-
-### Data from Uploaded File
-
-**Rate Timeline Data:**
-```typescript
-const rateData = [
-  { year: '2022', increase: '+$4.17/mo', cumulative: '$4.17', change: '~4%' },
-  { year: '2023', increase: '+$5.73/mo', cumulative: '$9.90', change: '~5%' },
-  { year: '2024', increase: '+$13.69/mo', cumulative: '$23.59', change: '+14.94%' },
-  { year: '2025', increase: '+$7.83/mo', cumulative: '$31.42', change: '+7.93%' },
-  { year: '2026', increase: '+$11.25/mo', cumulative: '$42.67', change: '+10.4%' },
-];
-```
-
-**Myths Data:**
-```typescript
-const myths = [
-  { icon: '❄️', myth: "Heat pumps don't work in cold weather", truth: "Modern inverter heat pumps maintain full capacity to 5°F..." },
-  { icon: '💸', myth: "Electric heating is always more expensive", truth: "At 2026 gas rates, heat pumps cost 30-50% less to operate..." },
-  { icon: '🏠', myth: "Heat pumps can't heat a whole house", truth: "Properly sized heat pumps provide the same BTU output..." },
-  { icon: '⏰', myth: "Heat pumps take forever to heat up", truth: "Variable-speed compressors provide consistent temperature..." },
-];
-```
-
-**Homeowner Reports:**
-```typescript
-const gasReports = [
-  { location: 'Allen, TX', bill: '$723', sqft: '3,200 sqft', month: 'Jan 2026' },
-  { location: 'Plano, TX', bill: '$335', sqft: '2,100 sqft', month: 'Dec 2025' },
-  { location: 'Frisco, TX', bill: '$400+', sqft: '2,800 sqft', month: 'Jan 2026' },
-];
-
-const heatPumpReports = [
-  { location: 'Richardson, TX', bill: '$147', sqft: '2,400 sqft', month: 'Jan 2026' },
-  { location: 'McKinney, TX', bill: '$165', sqft: '3,100 sqft', month: 'Dec 2025' },
-  { location: 'Carrollton, TX', bill: '$182', sqft: '2,800 sqft', month: 'Jan 2026' },
-];
-```
-
----
-
-### Summary
-
-This implementation will create a compelling, data-driven landing page that:
-1. Matches the existing Truficient design system
-2. Provides an interactive calculator for personalized savings estimates
-3. Uses real 2026 Atmos rate data to demonstrate the cost advantage
-4. Includes social proof from real DFW homeowners
-5. Addresses common objections with the myths section
-6. Drives conversions with clear CTAs to the ducted estimator
+1. **Accuracy**: Prices always match the estimator database
+2. **Maintainability**: Price changes in admin panel automatically update this comparison
+3. **Cleaner Design**: Focuses on what's included rather than itemized costs
+4. **Single Source of Truth**: Uses same data source as the ducted estimator
 
