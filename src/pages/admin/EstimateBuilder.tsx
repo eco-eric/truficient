@@ -454,8 +454,19 @@ const EstimateBuilder = () => {
       return estimateId;
     },
     onSuccess: (estimateId) => {
-      // Update saved state to reset change tracking
-      setLastSavedState({ formData, lineItems });
+      // Clear isNew flags to prevent duplicate inserts on subsequent saves
+      // This fixes the race condition where saving again before refetch completes
+      // would re-insert items that still had isNew: true
+      const clearedLineItems = lineItems
+        .filter(item => !item.isDeleted) // Remove deleted items from state
+        .map(item => ({
+          ...item,
+          isNew: false,
+        }));
+      setLineItems(clearedLineItems);
+      
+      // Update saved state with cleared flags to reset change tracking
+      setLastSavedState({ formData, lineItems: clearedLineItems });
       setHasUnsavedChanges(false);
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
       queryClient.invalidateQueries({ queryKey: ['estimate', estimateId] });
