@@ -132,9 +132,9 @@ const HeatPumpAdvantage = () => {
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </a>
-                <Link to="/estimate/ducted" onClick={handleEstimateClick}>
-                  <Button size="lg" variant="outline" className="border-2 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary font-semibold text-lg px-8">
-                    Get Free Estimate
+                <Link to="/contact" onClick={handleEstimateClick}>
+                  <Button size="lg" variant="outline" className="border-2 border-primary bg-white text-primary hover:bg-secondary hover:border-secondary hover:text-secondary-foreground font-semibold text-lg px-8">
+                    Talk to an Expert
                   </Button>
                 </Link>
               </motion.div>
@@ -187,7 +187,7 @@ const HeatPumpAdvantage = () => {
                   </Button>
                 </Link>
                 <Link to="/contact" onClick={handleCTAContactClick}>
-                  <Button size="lg" variant="outline" className="border-2 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary font-semibold text-lg px-8">
+                  <Button size="lg" variant="outline" className="border-2 border-primary bg-white text-primary hover:bg-secondary hover:border-secondary hover:text-secondary-foreground font-semibold text-lg px-8">
                     Talk to an Expert
                   </Button>
                 </Link>
