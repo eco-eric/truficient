@@ -1,24 +1,63 @@
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Flame, Zap, CheckCircle, MinusCircle, DollarSign } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const gasSystemCosts = [
-  { item: 'Gas Furnace (80% AFUE)', cost: 4500 },
-  { item: 'Air Conditioner (14 SEER2)', cost: 5500 },
-  { item: 'Installation Labor', cost: 3500 },
-  { item: 'Gas Line & Venting', cost: 1500 },
+const FEDERAL_TAX_CREDIT = 2000;
+
+// Fallback values matching current database
+const FALLBACK_GAS_TOTAL = 15562;
+const FALLBACK_HEAT_PUMP_TOTAL = 13562;
+
+const gasSystemItems = [
+  'Goodman 16 SEER2 Inverter Air Conditioner',
+  '80% AFUE Gas Furnace (60,000 BTU)',
+  'Evaporator Coil',
+  'Connected Smart Thermostat',
+  'Professional Installation',
+  '10-Year Warranty',
 ];
 
-const heatPumpCosts = [
-  { item: 'Heat Pump (18 SEER2)', cost: 8500 },
-  { item: 'Air Handler w/ Backup', cost: 3000 },
-  { item: 'Installation Labor', cost: 3000 },
-  { item: 'Federal Tax Credit', cost: -2000 },
+const heatPumpItems = [
+  'Goodman 16 SEER2 Inverter Heat Pump',
+  'Variable Speed Air Handler',
+  'Backup Heat Kit',
+  'Connected Smart Thermostat',
+  'Professional Installation',
+  '10-Year Warranty',
 ];
 
 const ROIComparison = () => {
-  const gasTotal = gasSystemCosts.reduce((sum, item) => sum + item.cost, 0);
-  const heatPumpTotal = heatPumpCosts.reduce((sum, item) => sum + item.cost, 0);
+  const { data: systems, isLoading } = useQuery({
+    queryKey: ['goodman-3-ton-comparison'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ducted_equipment')
+        .select('*')
+        .eq('brand', 'Goodman')
+        .eq('tonnage', 3)
+        .eq('is_active', true);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Extract gas and heat pump systems
+  const gasSystem = systems?.find(s => s.system_type === 'gas_system');
+  const heatPumpSystem = systems?.find(s => s.system_type === 'heat_pump');
+
+  // Calculate totals with fallbacks
+  const gasTotal = gasSystem 
+    ? Number(gasSystem.equipment_cost || 0) + Number(gasSystem.installation_labor || 0)
+    : FALLBACK_GAS_TOTAL;
+  
+  const heatPumpSubtotal = heatPumpSystem 
+    ? Number(heatPumpSystem.equipment_cost || 0) + Number(heatPumpSystem.installation_labor || 0)
+    : FALLBACK_GAS_TOTAL;
+  
+  const heatPumpTotal = heatPumpSubtotal - FEDERAL_TAX_CREDIT;
   const savings = gasTotal - heatPumpTotal;
 
   return (
@@ -59,19 +98,26 @@ const ROIComparison = () => {
                   </div>
                 </div>
 
-                <div className="space-y-3 mb-6">
-                  {gasSystemCosts.map((item) => (
-                    <div key={item.item} className="flex justify-between items-center py-2 border-b border-border">
-                      <span className="text-foreground">{item.item}</span>
-                      <span className="font-semibold text-foreground">${item.cost.toLocaleString()}</span>
-                    </div>
-                  ))}
+                <div className="mb-6">
+                  <p className="text-sm font-medium text-muted-foreground mb-3">What's Included:</p>
+                  <ul className="space-y-2">
+                    {gasSystemItems.map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-foreground">
+                        <span className="text-muted-foreground mt-1">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
                 <div className="bg-destructive/10 rounded-lg p-4">
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-foreground">Total Investment</span>
-                    <span className="text-2xl font-bold text-destructive">${gasTotal.toLocaleString()}</span>
+                    {isLoading ? (
+                      <Skeleton className="h-8 w-24" />
+                    ) : (
+                      <span className="text-2xl font-bold text-destructive">${gasTotal.toLocaleString()}</span>
+                    )}
                   </div>
                 </div>
 
@@ -117,23 +163,42 @@ const ROIComparison = () => {
                   </div>
                 </div>
 
-                <div className="space-y-3 mb-6">
-                  {heatPumpCosts.map((item) => (
-                    <div key={item.item} className="flex justify-between items-center py-2 border-b border-border">
-                      <span className={item.cost < 0 ? 'text-secondary font-medium' : 'text-foreground'}>
-                        {item.item}
-                      </span>
-                      <span className={`font-semibold ${item.cost < 0 ? 'text-secondary' : 'text-foreground'}`}>
-                        {item.cost < 0 ? '-' : ''}${Math.abs(item.cost).toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
+                <div className="mb-6">
+                  <p className="text-sm font-medium text-muted-foreground mb-3">What's Included:</p>
+                  <ul className="space-y-2">
+                    {heatPumpItems.map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-foreground">
+                        <span className="text-muted-foreground mt-1">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Pricing breakdown */}
+                <div className="space-y-3 mb-4">
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span className="text-foreground">Subtotal</span>
+                    {isLoading ? (
+                      <Skeleton className="h-5 w-20" />
+                    ) : (
+                      <span className="font-semibold text-foreground">${heatPumpSubtotal.toLocaleString()}</span>
+                    )}
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span className="text-secondary font-medium">Federal Tax Credit</span>
+                    <span className="font-semibold text-secondary">-${FEDERAL_TAX_CREDIT.toLocaleString()}</span>
+                  </div>
                 </div>
 
                 <div className="bg-secondary/20 rounded-lg p-4">
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-foreground">Total After Credits</span>
-                    <span className="text-2xl font-bold text-secondary">${heatPumpTotal.toLocaleString()}</span>
+                    {isLoading ? (
+                      <Skeleton className="h-8 w-24" />
+                    ) : (
+                      <span className="text-2xl font-bold text-secondary">${heatPumpTotal.toLocaleString()}</span>
+                    )}
                   </div>
                 </div>
 
@@ -170,7 +235,11 @@ const ROIComparison = () => {
                 <DollarSign className="w-8 h-8" />
                 <div className="text-left">
                   <div className="text-sm opacity-80">Immediate Savings</div>
-                  <div className="text-3xl font-bold">${Math.abs(savings).toLocaleString()}</div>
+                  {isLoading ? (
+                    <Skeleton className="h-9 w-24 bg-secondary-foreground/20" />
+                  ) : (
+                    <div className="text-3xl font-bold">${Math.abs(savings).toLocaleString()}</div>
+                  )}
                 </div>
               </div>
               <p className="text-sm mt-2 opacity-90">
