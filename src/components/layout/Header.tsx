@@ -275,6 +275,15 @@ const Header = () => {
                       Savings Calculator
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/heat-pump-advantage" 
+                      className="cursor-pointer"
+                      onClick={() => handleTrackClick('Heat Pump Advantage', 'Header - Main Nav', '/heat-pump-advantage')}
+                    >
+                      Heat Pump Advantage
+                    </Link>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -503,6 +512,16 @@ const Header = () => {
                         }}
                       >
                         Savings Calculator
+                      </Link>
+                      <Link
+                        to="/heat-pump-advantage"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
+                        onClick={() => {
+                          handleTrackClick('Heat Pump Advantage', 'Header - Mobile Menu', '/heat-pump-advantage');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Heat Pump Advantage
                       </Link>
                     </CollapsibleContent>
                   </Collapsible>
