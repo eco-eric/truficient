@@ -1,145 +1,216 @@
 
 
-## Clean Up Installation Cost Comparison - Use Real Database Pricing
+## Import Equipment as Editable Itemized Line Items
 
 ### Overview
 
-The ROIComparison component currently shows hardcoded placeholder pricing. This plan updates it to:
-1. Display line items WITHOUT individual prices (just the item names as a list)
-2. Show only the **total price** at the bottom
-3. Pull real Goodman 3-ton pricing from the `ducted_equipment` database table
+When importing equipment from the System Pricing database into an estimate, instead of adding a single combined line item, the system will create multiple itemized line items for each component. This allows you to:
+- See the breakdown of costs (condenser, air handler, coil, etc.)
+- Edit individual component prices after import
+- Delete components that don't apply to a specific job
 
-### Real Pricing Data (from database)
+---
 
-| Item | Gas System | Heat Pump System |
-|------|------------|------------------|
-| Equipment Cost | $9,062 | $9,062 |
-| Installation Labor | $6,500 | $6,500 |
-| **Subtotal** | **$15,562** | **$15,562** |
-| Federal Tax Credit | N/A | -$2,000 |
-| **Final Total** | **$15,562** | **$13,562** |
-| **Savings** | | **$2,000** |
+### Current Behavior
 
-### Visual Changes
+When you click "Add" on a Mitsubishi 3 Ton system:
+- Creates 1 line item: "Mitsubishi 3 Ton SUZ| SVZ Ducted System"
+- Unit cost: Combined total of all components
 
-**Before (current):**
-```text
-Gas Furnace (80% AFUE)        $4,500
-Air Conditioner (14 SEER2)    $5,500
-Installation Labor            $3,500
-Gas Line & Venting            $1,500
-─────────────────────────────────────
-Total Investment              $15,000
-```
+### New Behavior
 
-**After (new design):**
-```text
-Included in your system:
-  • Goodman 16 SEER2 Inverter Air Conditioner
-  • 80% AFUE Gas Furnace  
-  • Evaporator Coil
-  • Connected Smart Thermostat
-  • Professional Installation
-  • 10-Year Warranty
-─────────────────────────────────────
-Total Investment              $15,562
-```
+When you click "Add" on a Mitsubishi 3 Ton system:
+- Creates multiple line items, one for each component with a price:
+  - **Outdoor Unit (SUZ-AA36NL)** — $2,599.35
+  - **Air Handler (SVZ-AP36NL)** — $1,821.03
+  - **Thermostat (MHK2)** — $320.00
+- Each line item is editable (you can change the price)
+- Total matches system_price: $4,420.38
 
-### Technical Approach
+---
 
-The component will fetch real-time data from the database using React Query, matching the existing pattern in `useDuctedPricing.ts`.
+### Component Breakdown Logic
 
-**Data Fetching:**
-- Query `ducted_equipment` for Goodman 3-ton systems
-- Filter by `brand = 'Goodman'`, `tonnage = 3`, `is_active = true`
-- Get both `gas_system` and `heat_pump` system types
+The import will check for these component fields and create a line item for each:
 
-**Component Updates:**
-- Add Supabase query using `useQuery`
-- Replace static arrays with dynamic data
-- Display line items as bullet points (no prices)
-- Show only total price in the highlighted box
-- Include loading state handling
+| Component | Field (Model) | Field (Price) | Line Item Name Format |
+|-----------|---------------|---------------|----------------------|
+| Outdoor Unit | `condenser_heat_pump_model` | `condenser_price` | "Outdoor Unit (MODEL)" |
+| Furnace | `furnace_model` | `furnace_price` | "Gas Furnace (MODEL)" |
+| Air Handler | `air_handler_model` | `air_handler_price` | "Air Handler (MODEL)" |
+| Evap Coil | `evap_coil_model` | `evap_coil_price` | "Evaporator Coil (MODEL)" |
+| Heat Kit | `heat_kit` | `heat_kit_price` | "Electric Heat Kit (MODEL)" |
+| Thermostat | `thermostat_model` | `thermostat_price` | "Thermostat (MODEL)" |
+
+Only components with a valid price (> 0) will be added as line items.
+
+---
+
+### UI Changes
+
+**Line Item Display:**
+- All equipment component line items will be editable (price input instead of static text)
+- Components are grouped together visually since they share the same `equipment_system_id`
+
+**Edit Capability:**
+- Change the unit_cost field to an editable input for equipment items
+- Changes automatically recalculate line_total and estimate totals
+
+---
 
 ### Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/heat-pump/ROIComparison.tsx` | Add database query, restructure UI to show items without prices |
+| `src/pages/admin/EstimateBuilder.tsx` | Update `handleAddEquipment` to create multiple line items for each component |
+| `src/components/admin/estimates/EstimateSection.tsx` | Update `SortableRow` to allow price editing for equipment items |
 
-### UI Structure
+---
 
-**Gas Furnace + AC Card:**
-- Header with flame icon
-- "What's Included:" bullet list:
-  - Goodman 16 SEER2 Inverter Air Conditioner
-  - 80% AFUE Gas Furnace (60,000 BTU)
-  - Evaporator Coil
-  - Connected Smart Thermostat
-  - Professional Installation
-  - 10-Year Warranty
-- Total box: **$15,562**
-- Cons list (no federal tax credits, separate systems, volatile gas prices)
+### Technical Details
 
-**Heat Pump System Card:**
-- "BEST VALUE" badge
-- Header with zap icon
-- "What's Included:" bullet list:
-  - Goodman 16 SEER2 Inverter Heat Pump
-  - Variable Speed Air Handler
-  - Backup Heat Kit
-  - Connected Smart Thermostat
-  - Professional Installation
-  - 10-Year Warranty
-- Subtotal: $15,562
-- Federal Tax Credit: -$2,000 (highlighted in green)
-- Total After Credits box: **$13,562**
-- Pros list (tax credit, one system, rate protection)
-
-**Savings Highlight Box:**
-- Show $2,000 immediate savings (the tax credit)
-
-### Code Pattern
+**Updated handleAddEquipment function:**
 
 ```typescript
-// Query for Goodman 3-ton systems
-const { data: systems, isLoading } = useQuery({
-  queryKey: ['goodman-3-ton-comparison'],
-  queryFn: async () => {
-    const { data, error } = await supabase
-      .from('ducted_equipment')
-      .select('*')
-      .eq('brand', 'Goodman')
-      .eq('tonnage', 3)
-      .eq('is_active', true);
-    if (error) throw error;
-    return data;
-  },
-});
+const handleAddEquipment = (equipment: any) => {
+  const newItems: LineItem[] = [];
+  const baseItem = {
+    item_type: 'equipment' as const,
+    material_id: null,
+    labor_rate_id: null,
+    admin_cost_id: null,
+    equipment_system_id: equipment.id,
+    quantity: 1,
+    unit: 'each',
+    section: 'equipment_controls' as EstimateSection,
+    isNew: true,
+  };
 
-// Extract gas and heat pump systems
-const gasSystem = systems?.find(s => s.system_type === 'gas_system');
-const heatPumpSystem = systems?.find(s => s.system_type === 'heat_pump');
+  // Add outdoor unit / condenser if present
+  if (equipment.condenser_price > 0) {
+    newItems.push({
+      ...baseItem,
+      name: `Outdoor Unit (${equipment.condenser_heat_pump_model || 'Heat Pump/Condenser'})`,
+      description: `${equipment.system_type} - ${equipment.tonnage}T`,
+      unit_cost: parseFloat(equipment.condenser_price),
+      line_total: parseFloat(equipment.condenser_price),
+      sort_order: lineItems.length + newItems.length,
+    });
+  }
 
-// Calculate totals
-const gasTotal = (gasSystem?.equipment_cost || 0) + (gasSystem?.installation_labor || 0);
-const heatPumpSubtotal = (heatPumpSystem?.equipment_cost || 0) + (heatPumpSystem?.installation_labor || 0);
-const FEDERAL_TAX_CREDIT = 2000;
-const heatPumpTotal = heatPumpSubtotal - FEDERAL_TAX_CREDIT;
-const savings = gasTotal - heatPumpTotal;
+  // Add furnace if present (gas systems)
+  if (equipment.furnace_price > 0) {
+    newItems.push({
+      ...baseItem,
+      name: `Gas Furnace (${equipment.furnace_model || 'Furnace'})`,
+      description: equipment.furnace_afue ? `${equipment.furnace_afue}% AFUE` : null,
+      unit_cost: parseFloat(equipment.furnace_price),
+      line_total: parseFloat(equipment.furnace_price),
+      sort_order: lineItems.length + newItems.length,
+    });
+  }
+
+  // Add air handler if present (heat pump systems)
+  if (equipment.air_handler_price > 0) {
+    newItems.push({
+      ...baseItem,
+      name: `Air Handler (${equipment.air_handler_model || 'Air Handler'})`,
+      description: equipment.air_handler_cfm ? `${equipment.air_handler_cfm} CFM` : null,
+      unit_cost: parseFloat(equipment.air_handler_price),
+      line_total: parseFloat(equipment.air_handler_price),
+      sort_order: lineItems.length + newItems.length,
+    });
+  }
+
+  // Add evap coil if present
+  if (equipment.evap_coil_price > 0) {
+    newItems.push({
+      ...baseItem,
+      name: `Evaporator Coil (${equipment.evap_coil_model || 'Evap Coil'})`,
+      description: null,
+      unit_cost: parseFloat(equipment.evap_coil_price),
+      line_total: parseFloat(equipment.evap_coil_price),
+      sort_order: lineItems.length + newItems.length,
+    });
+  }
+
+  // Add heat kit if present
+  if (equipment.heat_kit_price > 0) {
+    newItems.push({
+      ...baseItem,
+      name: `Electric Heat Kit (${equipment.heat_kit || 'Heat Kit'})`,
+      description: null,
+      unit_cost: parseFloat(equipment.heat_kit_price),
+      line_total: parseFloat(equipment.heat_kit_price),
+      sort_order: lineItems.length + newItems.length,
+    });
+  }
+
+  // Add thermostat if present
+  if (equipment.thermostat_price > 0) {
+    newItems.push({
+      ...baseItem,
+      name: `Thermostat (${equipment.thermostat_model || 'Thermostat'})`,
+      description: null,
+      unit_cost: parseFloat(equipment.thermostat_price),
+      line_total: parseFloat(equipment.thermostat_price),
+      sort_order: lineItems.length + newItems.length,
+    });
+  }
+
+  if (newItems.length === 0) {
+    toast.error('No priced components found for this system');
+    return;
+  }
+
+  setLineItems([...lineItems, ...newItems]);
+  setIsAddDialogOpen(false);
+  toast.success(`Added ${newItems.length} components from ${equipment.system_name}`);
+};
 ```
 
-### Fallback Values
+**Updated SortableRow to allow equipment price editing:**
 
-If the database query fails or returns no data, use these fallback values matching the current database:
-- Gas System Total: $15,562
-- Heat Pump Total: $13,562
-- Savings: $2,000
+```typescript
+// In EstimateSection.tsx, line ~222
+<TableCell className="text-right">
+  {item.item_type === 'custom' || item.item_type === 'admin_cost' || item.item_type === 'equipment' ? (
+    <Input
+      type="number"
+      min="0"
+      step="0.01"
+      value={item.unit_cost}
+      onChange={(e) => onUpdateItem(actualIndex, 'unit_cost', parseFloat(e.target.value) || 0)}
+      className="h-8 w-24 text-right"
+    />
+  ) : (
+    <span className="font-mono">{formatCurrency(item.unit_cost)}</span>
+  )}
+</TableCell>
+```
 
-### Benefits of This Approach
+---
 
-1. **Accuracy**: Prices always match the estimator database
-2. **Maintainability**: Price changes in admin panel automatically update this comparison
-3. **Cleaner Design**: Focuses on what's included rather than itemized costs
-4. **Single Source of Truth**: Uses same data source as the ducted estimator
+### Example: Mitsubishi 3 Ton System Import
+
+After clicking "Add" on the Mitsubishi system, the Equipment & Controls section will show:
+
+| Type | Item | Qty | Unit | Unit Cost | Line Total |
+|------|------|-----|------|-----------|------------|
+| 🔧 | Outdoor Unit (SUZ-AA36NL) | 1 | each | **$2,599.35** | $2,599.35 |
+| 🔧 | Air Handler (SVZ-AP36NL) | 1 | each | **$1,821.03** | $1,821.03 |
+| 🔧 | Thermostat (MHK2) | 1 | each | **$320.00** | $320.00 |
+
+**Bold = editable input field**
+
+You can then adjust any price as needed for the specific job.
+
+---
+
+### Benefits
+
+1. **Transparency**: See exactly what components make up the system cost
+2. **Flexibility**: Adjust individual component prices for negotiation or job-specific pricing
+3. **Accuracy**: Remove components that aren't needed for a specific installation
+4. **Audit Trail**: Clear breakdown for customer-facing estimates
 
