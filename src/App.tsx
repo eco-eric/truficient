@@ -10,6 +10,7 @@ import ResidentialServices from "./pages/services/ResidentialServices";
 import CommercialServices from "./pages/services/CommercialServices";
 import DuctlessServices from "./pages/services/DuctlessServices";
 import HvacEstimate from "./pages/HvacEstimate";
+import HeatPumpAdvantage from "./pages/HeatPumpAdvantage";
 import SizingCalculator from "./pages/estimators/SizingCalculator";
 import CostEstimator from "./pages/estimators/CostEstimator";
 import SavingsCalculator from "./pages/estimators/SavingsCalculator";
@@ -110,6 +111,7 @@ const router = createBrowserRouter([
       { path: "/service-areas/mid-cities-area", element: <MidCitiesArea /> },
       { path: "/service-areas/south-dallas-area", element: <SouthDallasArea /> },
       { path: "/hvac-estimate", element: <HvacEstimate /> },
+      { path: "/heat-pump-advantage", element: <HeatPumpAdvantage /> },
       { path: "/estimators/sizing", element: <SizingCalculator /> },
       { path: "/estimators/cost", element: <CostEstimator /> },
       { path: "/estimators/savings", element: <SavingsCalculator /> },
