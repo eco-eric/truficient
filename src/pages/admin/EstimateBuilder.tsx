@@ -619,31 +619,99 @@ const EstimateBuilder = () => {
   };
 
   const handleAddEquipment = (equipment: any) => {
-    const totalPrice = (parseFloat(equipment.system_price) || 0) +
-      (parseFloat(equipment.condenser_price) || 0) +
-      (parseFloat(equipment.furnace_air_handler_price) || 0) +
-      (parseFloat(equipment.evap_coil_price) || 0) +
-      (parseFloat(equipment.heat_kit_price) || 0);
-
-    const newItem: LineItem = {
-      item_type: 'equipment',
-      name: equipment.system_name,
-      description: `${equipment.system_type} - ${equipment.tonnage}T - SEER2: ${equipment.seer2}`,
+    const newItems: LineItem[] = [];
+    const baseItem = {
+      item_type: 'equipment' as const,
       material_id: null,
       labor_rate_id: null,
       admin_cost_id: null,
       equipment_system_id: equipment.id,
       quantity: 1,
-      unit: 'system',
-      unit_cost: totalPrice,
-      line_total: totalPrice,
-      sort_order: lineItems.length,
-      section: 'equipment_controls',
+      unit: 'each',
+      section: 'equipment_controls' as EstimateSection,
       isNew: true,
     };
-    setLineItems([...lineItems, newItem]);
+
+    // Add outdoor unit / condenser if present
+    if (parseFloat(equipment.condenser_price) > 0) {
+      newItems.push({
+        ...baseItem,
+        name: `Outdoor Unit (${equipment.condenser_heat_pump_model || 'Heat Pump/Condenser'})`,
+        description: `${equipment.system_type} - ${equipment.tonnage}T`,
+        unit_cost: parseFloat(equipment.condenser_price),
+        line_total: parseFloat(equipment.condenser_price),
+        sort_order: lineItems.length + newItems.length,
+      });
+    }
+
+    // Add furnace if present (gas systems)
+    if (parseFloat(equipment.furnace_price) > 0) {
+      newItems.push({
+        ...baseItem,
+        name: `Gas Furnace (${equipment.furnace_model || 'Furnace'})`,
+        description: equipment.furnace_afue ? `${equipment.furnace_afue}% AFUE` : null,
+        unit_cost: parseFloat(equipment.furnace_price),
+        line_total: parseFloat(equipment.furnace_price),
+        sort_order: lineItems.length + newItems.length,
+      });
+    }
+
+    // Add air handler if present (heat pump systems)
+    if (parseFloat(equipment.air_handler_price) > 0) {
+      newItems.push({
+        ...baseItem,
+        name: `Air Handler (${equipment.air_handler_model || 'Air Handler'})`,
+        description: equipment.air_handler_cfm ? `${equipment.air_handler_cfm} CFM` : null,
+        unit_cost: parseFloat(equipment.air_handler_price),
+        line_total: parseFloat(equipment.air_handler_price),
+        sort_order: lineItems.length + newItems.length,
+      });
+    }
+
+    // Add evap coil if present
+    if (parseFloat(equipment.evap_coil_price) > 0) {
+      newItems.push({
+        ...baseItem,
+        name: `Evaporator Coil (${equipment.evap_coil_model || 'Evap Coil'})`,
+        description: null,
+        unit_cost: parseFloat(equipment.evap_coil_price),
+        line_total: parseFloat(equipment.evap_coil_price),
+        sort_order: lineItems.length + newItems.length,
+      });
+    }
+
+    // Add heat kit if present
+    if (parseFloat(equipment.heat_kit_price) > 0) {
+      newItems.push({
+        ...baseItem,
+        name: `Electric Heat Kit (${equipment.heat_kit || 'Heat Kit'})`,
+        description: null,
+        unit_cost: parseFloat(equipment.heat_kit_price),
+        line_total: parseFloat(equipment.heat_kit_price),
+        sort_order: lineItems.length + newItems.length,
+      });
+    }
+
+    // Add thermostat if present
+    if (parseFloat(equipment.thermostat_price) > 0) {
+      newItems.push({
+        ...baseItem,
+        name: `Thermostat (${equipment.thermostat_model || 'Thermostat'})`,
+        description: null,
+        unit_cost: parseFloat(equipment.thermostat_price),
+        line_total: parseFloat(equipment.thermostat_price),
+        sort_order: lineItems.length + newItems.length,
+      });
+    }
+
+    if (newItems.length === 0) {
+      toast.error('No priced components found for this system');
+      return;
+    }
+
+    setLineItems([...lineItems, ...newItems]);
     setIsAddDialogOpen(false);
-    toast.success(`Added ${equipment.system_name}`);
+    toast.success(`Added ${newItems.length} components from ${equipment.system_name}`);
   };
 
   const handleAddCustomItem = (section: EstimateSection = 'miscellaneous_inside') => {
