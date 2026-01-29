@@ -7,10 +7,10 @@ import { Step2HomeDetails } from "./steps/Step2HomeDetails";
 import { Step3InsulationFactors } from "./steps/Step3InsulationFactors";
 import { Step4UsagePatterns } from "./steps/Step4UsagePatterns";
 import { Step5HeatingType } from "./steps/Step5HeatingType";
-import { Step6SystemSize } from "./steps/Step6SystemSize";
-import { Step7EfficiencyTier } from "./steps/Step7EfficiencyTier";
-import { Step8QuoteResults } from "./steps/Step8QuoteResults";
-import { Step9CustomerInfo } from "./steps/Step9CustomerInfo";
+import { Step6CustomerInfo } from "./steps/Step6CustomerInfo";
+import { Step7SystemSize } from "./steps/Step7SystemSize";
+import { Step8EfficiencyTier } from "./steps/Step8EfficiencyTier";
+import { Step9QuoteResults } from "./steps/Step9QuoteResults";
 import { Step10ThankYou } from "./steps/Step10ThankYou";
 import { Link } from "react-router-dom";
 import truficientLogo from "@/assets/truficient-logo.png";
@@ -24,10 +24,10 @@ const STEP_LABELS = [
   "Insulation",
   "Comfort",
   "Heating Type",
+  "Contact Info",
   "System Size",
   "Efficiency",
   "Your Quote",
-  "Contact Info",
   "Thank You",
 ];
 
@@ -50,13 +50,13 @@ const EstimatorContent = () => {
       case 5:
         return <Step5HeatingType />;
       case 6:
-        return <Step6SystemSize />;
+        return <Step6CustomerInfo />;
       case 7:
-        return <Step7EfficiencyTier />;
+        return <Step7SystemSize />;
       case 8:
-        return <Step8QuoteResults />;
+        return <Step8EfficiencyTier />;
       case 9:
-        return <Step9CustomerInfo />;
+        return <Step9QuoteResults />;
       case 10:
         return <Step10ThankYou />;
       default:

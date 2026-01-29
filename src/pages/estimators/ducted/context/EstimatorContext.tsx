@@ -77,6 +77,8 @@ const INITIAL_STATE: DuctedEstimatorState = {
   customerInfo: INITIAL_CUSTOMER_INFO,
   // Totals
   totals: INITIAL_TOTALS,
+  // Partial submission tracking
+  partialSubmissionId: null,
 };
 
 interface EstimatorContextValue {
@@ -118,6 +120,8 @@ interface EstimatorContextValue {
   setCustomerInfo: (info: Partial<CustomerInfo>) => void;
   // Totals
   setTotals: (totals: PricingTotals) => void;
+  // Partial submission
+  setPartialSubmissionId: (id: string | null) => void;
   // Reset
   resetEstimator: () => void;
 }
@@ -256,6 +260,11 @@ export const EstimatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setState((prev) => ({ ...prev, totals }));
   }, []);
 
+  // Partial submission tracking
+  const setPartialSubmissionId = useCallback((id: string | null) => {
+    setState((prev) => ({ ...prev, partialSubmissionId: id }));
+  }, []);
+
   // Reset
   const resetEstimator = useCallback(() => {
     setState(INITIAL_STATE);
@@ -301,6 +310,8 @@ export const EstimatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setCustomerInfo,
       // Totals
       setTotals,
+      // Partial submission
+      setPartialSubmissionId,
       // Reset
       resetEstimator,
     }),
@@ -333,6 +344,7 @@ export const EstimatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setSelectedAddonIds,
       setCustomerInfo,
       setTotals,
+      setPartialSubmissionId,
       resetEstimator,
     ]
   );

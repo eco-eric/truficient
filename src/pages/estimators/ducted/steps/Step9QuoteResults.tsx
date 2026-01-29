@@ -5,20 +5,26 @@ import { useEstimator } from "../context/EstimatorContext";
 import { useDuctedPricing, formatMoney } from "../hooks/useDuctedPricing";
 import { 
   Loader2, CheckCircle2, Award, Zap, Shield, Snowflake, Flame,
-  ThermometerSun, Wind, Wrench, Box
+  ThermometerSun, Wind, Wrench, Box, User, Mail, Phone, MapPin, Pencil
 } from "lucide-react";
 import { HOME_TYPE_OPTIONS, HOME_LAYOUT_OPTIONS, SQUARE_FOOTAGE_OPTIONS } from "../types";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { FinancingOptionsSection } from "@/components/estimators/FinancingOptionsSection";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useFormSourceTags } from "@/hooks/useFormSourceTags";
+import { addDays, format } from "date-fns";
 
-export const Step8QuoteResults = () => {
-  const { state, nextStep, prevStep, setTotals, setRecommendedTonnage, setSelectedEquipmentId } = useEstimator();
+export const Step9QuoteResults = () => {
+  const { state, nextStep, prevStep, goToStep, setTotals, setRecommendedTonnage, setSelectedEquipmentId } = useEstimator();
   const { pricing, isLoading, matchingEquipment } = useDuctedPricing(state);
+  const { data: dynamicTags } = useFormSourceTags('ducted');
   
-  // Local state for equipment selection in this view
+  // Local state for equipment selection and submission
   const [localSelectedId, setLocalSelectedId] = useState<string | null>(state.selectedEquipmentId);
-  
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Update totals in context when pricing changes
   useEffect(() => {
@@ -53,6 +59,234 @@ export const Step8QuoteResults = () => {
     setSelectedEquipmentId(id);
   };
 
+  // Build full address string
+  const getFullAddress = () => {
+    const street = state.customerInfo.streetAddress?.trim() || "";
+    const city = state.customerInfo.city?.trim() || "";
+    const zip = state.customerInfo.zipCode?.trim() || "";
+    if (street && city && zip) {
+      return `${street}, ${city}, TX ${zip}`;
+    }
+    return "";
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+
+    try {
+      const nameParts = state.customerInfo.name.trim().split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+      const fullAddress = getFullAddress();
+      const systemTypeLabel = state.heatingType === "gas_system" ? "Gas Furnace + AC" : "Heat Pump";
+      const tierName = pricing.selectedTier?.display_name || "Standard";
+      const validUntil = format(addDays(new Date(), 30), "MMMM d, yyyy");
+
+      // Build tags from dynamic configuration + heating type
+      const tags = [...(dynamicTags || ['ducted-estimator']), state.heatingType || 'hvac'];
+
+      // Build detailed labels for raw details
+      const homeTypeLabel = HOME_TYPE_OPTIONS.find((o) => o.value === state.homeType)?.label || "N/A";
+      const layoutLabel = HOME_LAYOUT_OPTIONS.find((o) => o.value === state.homeLayout)?.label || "N/A";
+      const sqftLabel = SQUARE_FOOTAGE_OPTIONS.find((o) => o.value === state.squareFootage)?.label || "N/A";
+
+      // Build equipment components for raw details
+      const selectedEq = pricing.selectedEquipment;
+      const equipmentComponents = state.heatingType === "gas_system"
+        ? [
+            selectedEq?.condenser_model && `Condenser: ${selectedEq.condenser_model}`,
+            selectedEq?.furnace_model && `Furnace: ${selectedEq.furnace_model}`,
+            selectedEq?.evap_coil_model && `Evap Coil: ${selectedEq.evap_coil_model}`,
+          ].filter(Boolean).join('\n')
+        : [
+            selectedEq?.heat_pump_model && `Heat Pump: ${selectedEq.heat_pump_model}`,
+            selectedEq?.air_handler_model && `Air Handler: ${selectedEq.air_handler_model}`,
+            selectedEq?.heat_kit_model && `Heat Kit: ${selectedEq.heat_kit_model}`,
+          ].filter(Boolean).join('\n');
+
+      const quoteRawDetails = `DUCTED HVAC ESTIMATE REQUEST
+============================
+Date: ${format(new Date(), "MMMM d, yyyy")}
+Valid Until: ${validUntil}
+
+CUSTOMER INFORMATION
+--------------------
+Name: ${state.customerInfo.name}
+Email: ${state.customerInfo.email}
+Phone: ${state.customerInfo.phone || 'Not provided'}
+Address: ${fullAddress || 'Not provided'}
+Best Time to Call: ${state.customerInfo.bestTimeToCall || 'No preference'}
+
+SYSTEM CONFIGURATION
+--------------------
+System Type: ${systemTypeLabel}
+Efficiency Tier: ${tierName}
+System Size: ${pricing.recommendedTonnage} Ton
+
+SELECTED EQUIPMENT
+------------------
+${selectedEq?.system_name || 'Custom System'}
+Brand: ${selectedEq?.brand || 'TBD'}
+${selectedEq?.seer2_rating ? `SEER2: ${selectedEq.seer2_rating}` : ''}
+${selectedEq?.hspf2_rating && state.heatingType === "heat_pump" ? `HSPF2: ${selectedEq.hspf2_rating}` : ''}
+${selectedEq?.eer2_rating ? `EER2: ${selectedEq.eer2_rating}` : ''}
+Warranty: ${selectedEq?.warranty_years || 'Standard'} years
+
+System Components:
+${equipmentComponents || 'TBD during consultation'}
+
+HOME DETAILS
+------------
+Home Type: ${homeTypeLabel}
+Layout: ${layoutLabel}
+Square Footage: ${sqftLabel}
+
+PRICING BREAKDOWN
+-----------------
+Equipment Cost: ${formatMoney(pricing.equipmentCost)}
+Installation Cost: ${formatMoney(pricing.installationCost)}
+Add-ons: ${formatMoney(pricing.addonsCost)}
+Tax: ${formatMoney(pricing.taxAmount)}
+-----------------
+TOTAL: ${formatMoney(pricing.finalTotal)}
+
+Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financing`.trim();
+
+      // Update the partial submission with final quote details
+      if (state.partialSubmissionId) {
+        const { error } = await supabase
+          .from("ducted_estimate_submissions")
+          .update({
+            efficiency_tier_id: state.efficiencyTierId || null,
+            equipment_id: pricing.selectedEquipment?.id || null,
+            recommended_tonnage: pricing.recommendedTonnage || null,
+            selected_addons: state.selectedAddonIds.length > 0 
+              ? pricing.addonsBreakdown.map((a) => ({ id: a.id, name: a.name, price: a.price }))
+              : null,
+            equipment_cost: pricing.equipmentCost || 0,
+            installation_cost: pricing.installationCost || 0,
+            addons_cost: pricing.addonsCost || 0,
+            tax_amount: pricing.taxAmount || 0,
+            final_total: pricing.finalTotal || 0,
+            status: "new",
+            wants_backup_quote: state.customerInfo.wantsBackupQuote || false,
+          })
+          .eq("id", state.partialSubmissionId);
+
+        if (error) {
+          console.error("Failed to update submission:", error);
+          throw error;
+        }
+
+        // Sync to GHL
+        supabase.functions.invoke("sync-ghl-contact", {
+          body: {
+            firstName,
+            lastName,
+            email: state.customerInfo.email,
+            phone: state.customerInfo.phone || undefined,
+            source: "Ducted HVAC Estimator",
+            tags,
+            message: `Ducted HVAC Estimate Request:
+• System: ${systemTypeLabel} - ${tierName} Tier
+• Size: ${pricing.recommendedTonnage} Ton
+• Home: ${state.homeType}, ${state.homeLayout}, ${state.squareFootage} sq ft
+• Estimate: $${pricing.finalTotal.toLocaleString()}
+• Address: ${fullAddress || "Not provided"}`,
+            zipCode: state.customerInfo.zipCode || undefined,
+            isDfw: true,
+            quote: {
+              systemType: `${systemTypeLabel} - ${tierName} Tier`,
+              tonnage: `${pricing.recommendedTonnage} Ton`,
+              equipment: selectedEq?.system_name || `${selectedEq?.brand || "Custom"} System`,
+              price: formatMoney(pricing.finalTotal),
+              monthlyPayment: `${formatMoney(pricing.monthlyFinancing)}/mo`,
+              homeDetails: `${homeTypeLabel}, ${layoutLabel}, ${sqftLabel}`,
+              validUntil,
+              tier: tierName,
+              quoteRawDetails,
+            },
+          },
+        }).then(async (response) => {
+          if (response.data?.contactId) {
+            await supabase
+              .from("ducted_estimate_submissions")
+              .update({ 
+                ghl_contact_id: response.data.contactId,
+                ghl_sync_status: "synced" 
+              })
+              .eq("id", state.partialSubmissionId);
+
+            // Send internal notification
+            supabase.functions.invoke("send-estimator-notification", {
+              body: {
+                estimatorType: "ducted",
+                customerName: state.customerInfo.name,
+                customerEmail: state.customerInfo.email,
+                customerPhone: state.customerInfo.phone || undefined,
+                customerAddress: fullAddress || undefined,
+                quoteTotal: formatMoney(pricing.finalTotal),
+                quoteDetails: quoteRawDetails,
+              },
+            }).catch((err) => {
+              console.error("Notification error (non-blocking):", err);
+            });
+          }
+        }).catch((err) => {
+          console.error("GHL sync error (non-blocking):", err);
+        });
+      } else {
+        // No partial submission, create new one
+        const submissionData = {
+          customer_name: state.customerInfo.name?.trim() || "",
+          customer_email: state.customerInfo.email?.trim() || "",
+          customer_phone: state.customerInfo.phone?.trim() || null,
+          customer_address: fullAddress?.trim() || null,
+          best_time_to_call: state.customerInfo.bestTimeToCall || null,
+          wants_backup_quote: state.customerInfo.wantsBackupQuote || false,
+          home_type: state.homeType || "single_family",
+          home_layout: state.homeLayout || "1_story",
+          square_footage: state.squareFootage || "1600_2000",
+          hot_cold_spots: state.hotColdSpots || null,
+          winter_temp: state.winterTemp || null,
+          summer_temp: state.summerTemp || null,
+          heating_type: state.heatingType || "gas_system",
+          coverage: state.coverage || "entire_home",
+          system_count: state.systemCount || 1,
+          efficiency_tier_id: state.efficiencyTierId || null,
+          equipment_id: pricing.selectedEquipment?.id || null,
+          recommended_tonnage: pricing.recommendedTonnage || null,
+          selected_addons: state.selectedAddonIds.length > 0 
+            ? pricing.addonsBreakdown.map((a) => ({ id: a.id, name: a.name, price: a.price }))
+            : null,
+          equipment_cost: pricing.equipmentCost || 0,
+          installation_cost: pricing.installationCost || 0,
+          addons_cost: pricing.addonsCost || 0,
+          tax_amount: pricing.taxAmount || 0,
+          final_total: pricing.finalTotal || 0,
+          status: "new",
+          ghl_sync_status: "pending",
+        };
+
+        const { error } = await supabase
+          .from("ducted_estimate_submissions")
+          .insert(submissionData);
+
+        if (error) {
+          console.error("Failed to create submission:", error);
+          throw error;
+        }
+      }
+
+      toast.success("Your estimate request has been submitted!");
+      nextStep();
+    } catch (error) {
+      console.error("Submission failed:", error);
+      toast.error("Failed to submit. Please try again or call us at (817) 349-8549.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -294,6 +528,44 @@ export const Step8QuoteResults = () => {
           </div>
         </div>
 
+        {/* Customer Contact Summary */}
+        <div className="bg-[#1e3a5f]/5 rounded-xl p-4 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-medium text-[#1e3a5f]">Your Contact Information</h4>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => goToStep(6)}
+              className="text-[#1e3a5f] hover:text-[#1e3a5f]/80 h-8 px-2"
+            >
+              <Pencil className="h-3.5 w-3.5 mr-1" />
+              Edit
+            </Button>
+          </div>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span>{state.customerInfo.name}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <span>{state.customerInfo.email}</span>
+            </div>
+            {state.customerInfo.phone && (
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <span>{state.customerInfo.phone}</span>
+              </div>
+            )}
+            {getFullAddress() && (
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <span>{getFullAddress()}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Financing Options Section */}
         <FinancingOptionsSection 
           estimatorType="ducted" 
@@ -318,11 +590,18 @@ export const Step8QuoteResults = () => {
 
         {/* Navigation */}
         <div className="flex gap-3">
-          <CTAButton variant="outline" onClick={prevStep} className="flex-1">
+          <CTAButton variant="outline" onClick={prevStep} className="flex-1" disabled={isSubmitting}>
             Back
           </CTAButton>
-          <CTAButton onClick={nextStep} className="flex-1">
-            Get Your Quote
+          <CTAButton onClick={handleSubmit} disabled={isSubmitting} className="flex-1">
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Submitting...
+              </>
+            ) : (
+              "Submit Quote Request"
+            )}
           </CTAButton>
         </div>
       </div>
