@@ -276,6 +276,8 @@ export interface DuctedEstimatorState {
   customerInfo: CustomerInfo;
   // Calculated totals
   totals: PricingTotals;
+  // Partial submission tracking for abandoned cart
+  partialSubmissionId: string | null;
 }
 
 // Helper function to get square footage midpoint for calculations
