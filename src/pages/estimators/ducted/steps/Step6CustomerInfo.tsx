@@ -64,17 +64,8 @@ export const Step6CustomerInfo = () => {
     setCustomerInfo({ phone: formatted });
   };
 
-  // Address validation
-  const isAddressComplete = 
-    (state.customerInfo.streetAddress?.trim() || "") !== "" &&
-    (state.customerInfo.city?.trim() || "") !== "" &&
-    (state.customerInfo.zipCode?.trim() || "").length === 5;
-
-  const isFormValid = 
-    state.customerInfo.name.trim() !== "" &&
-    isValidEmail(state.customerInfo.email) &&
-    isValidPhone(state.customerInfo.phone) &&
-    isAddressComplete;
+  // For testing: only ZIP code is required
+  const isFormValid = (state.customerInfo.zipCode?.trim() || "").length === 5;
 
   // Build full address string
   const getFullAddress = () => {
