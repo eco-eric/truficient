@@ -24,8 +24,8 @@ const STEP_LABELS = [
   "Insulation",
   "Comfort",
   "Heating Type",
-  "Contact Info",
   "System Size",
+  "Contact Info",
   "Efficiency",
   "Your Quote",
   "Thank You",
@@ -50,9 +50,9 @@ const EstimatorContent = () => {
       case 5:
         return <Step5HeatingType />;
       case 6:
-        return <Step6CustomerInfo />;
-      case 7:
         return <Step7SystemSize />;
+      case 7:
+        return <Step6CustomerInfo />;
       case 8:
         return <Step8EfficiencyTier />;
       case 9:
