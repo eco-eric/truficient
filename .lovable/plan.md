@@ -1,98 +1,187 @@
 
+## Ducted Estimator Flow Restructuring
 
-## Fix Custom Item Typing Bug - Focus Loss Issue
+### Summary of Changes
 
-### Problem
+You want to:
+1. Move the customer info form from Step 9 to a new Step 6 (collecting contact info earlier)
+2. Keep Step 8 but show a read-only summary of customer info instead of the form
+3. Auto-populate the ZIP code from the initial entry
+4. Add abandoned cart capture after the new customer info step
 
-When typing in a custom item's name field, the input loses focus after each keystroke, requiring you to click back into the field to continue typing.
-
-### Root Cause
-
-The component uses an unstable key for items that don't have a database ID:
-```typescript
-key={item.id || `${item.name}-${item.sort_order}`}
-```
-
-For new custom items (which don't have an `id` yet), the key includes `item.name`. When you type, the name changes, which changes the key, causing React to:
-1. Unmount the old row component
-2. Mount a new row component
-3. The input in the new component is not focused
-
-This happens in multiple places:
-- Line 174: `useSortable({ id: item.id || \`${item.name}-${item.sort_order}\` })`
-- Line 353: `items.map(item => item.id || \`${item.name}-${item.sort_order}\`)`
-- Line 358: `key={item.id || \`${item.name}-${item.sort_order}\`}`
-
-### Solution
-
-Use a stable identifier that doesn't change when the item name changes. Options:
-
-1. **Use only `sort_order`** - Already unique within the context since items are mapped by position
-2. **Generate a stable temporary ID** - Create a UUID when the item is first added
-
-The cleanest fix is to use `sort_order` as the stable identifier for items without a database ID:
-```typescript
-item.id || `new-${item.sort_order}`
-```
-
-This ensures the key stays constant while typing, preventing the focus loss.
+This is all possible and a great approach for lead capture!
 
 ---
 
-### Files to Modify
+### Current vs New Step Flow
 
-| File | Lines | Change |
-|------|-------|--------|
-| `src/components/admin/estimates/EstimateSection.tsx` | 174, 280-281, 353, 358 | Replace `${item.name}-${item.sort_order}` with `new-${item.sort_order}` |
-
----
-
-### Code Changes
-
-**Line 174** - useSortable hook:
-```typescript
-// Before
-useSortable({ id: item.id || `${item.name}-${item.sort_order}` });
-
-// After
-useSortable({ id: item.id || `new-${item.sort_order}` });
-```
-
-**Lines 280-281** - handleDragEnd:
-```typescript
-// Before
-const oldIndex = items.findIndex(item => (item.id || `${item.name}-${item.sort_order}`) === active.id);
-const newIndex = items.findIndex(item => (item.id || `${item.name}-${item.sort_order}`) === over.id);
-
-// After
-const oldIndex = items.findIndex(item => (item.id || `new-${item.sort_order}`) === active.id);
-const newIndex = items.findIndex(item => (item.id || `new-${item.sort_order}`) === over.id);
-```
-
-**Line 353** - SortableContext items:
-```typescript
-// Before
-items={items.map(item => item.id || `${item.name}-${item.sort_order}`)}
-
-// After
-items={items.map(item => item.id || `new-${item.sort_order}`)}
-```
-
-**Line 358** - SortableRow key:
-```typescript
-// Before
-key={item.id || `${item.name}-${item.sort_order}`}
-
-// After
-key={item.id || `new-${item.sort_order}`}
-```
+| Step | Current Flow | New Flow |
+|------|--------------|----------|
+| 0 | ZIP Code Gate | ZIP Code Gate |
+| 1 | Home Type | Home Type |
+| 2 | Home Details | Home Details |
+| 3 | Insulation Factors | Insulation Factors |
+| 4 | Usage Patterns | Usage Patterns |
+| 5 | Heating Type | Heating Type |
+| 6 | System Size | **Customer Info Form** (NEW) |
+| 7 | Efficiency Tier | System Size |
+| 8 | Quote Results | Efficiency Tier |
+| 9 | Customer Info Form | Quote Results (with read-only customer summary) |
+| 10 | Thank You | Thank You |
 
 ---
 
-### Why This Works
+### Implementation Details
 
-- `sort_order` is assigned when the item is created and stays constant
-- The key `new-{sort_order}` remains stable while you edit the name
-- Once saved, the item gets a real database `id` which is used instead
-- Drag-and-drop still works because the identifiers remain consistent
+#### 1. Create New Step 6: Customer Info Form (Early Capture)
 
+A new step file `Step6CustomerInfo.tsx` that contains:
+- Name, Email, Phone, Address fields (the form portion only)
+- ZIP code auto-populated from state.zipCode
+- City auto-populated from state.zipCity
+- No pricing display (just the form)
+- Validation before proceeding
+
+#### 2. Rename/Shift Existing Steps
+
+| Old File | New File |
+|----------|----------|
+| Step6SystemSize.tsx | Step7SystemSize.tsx |
+| Step7EfficiencyTier.tsx | Step8EfficiencyTier.tsx |
+| Step8QuoteResults.tsx | Step9QuoteResults.tsx |
+| Step9CustomerInfo.tsx | Refactored to Step9QuoteResults |
+| Step10ThankYou.tsx | Step10ThankYou.tsx (no change) |
+
+#### 3. Modify Step 9 (Quote Results) to Show Read-Only Customer Summary
+
+Add a read-only card at the bottom of the quote results showing:
+- Customer name
+- Email
+- Phone
+- Address
+
+With an "Edit" button that navigates back to Step 6 if they need to change info.
+
+#### 4. Abandoned Cart Capture Strategy
+
+After Step 6 (customer info), we have valid contact details. Two options:
+
+**Option A: Save as "partial" submission immediately (Recommended)**
+- Insert a database record with `status: 'partial'` right after Step 6
+- Include all home details + customer info collected so far
+- If they complete the full flow, update the record to `status: 'new'`
+- This gives you a list of abandoned carts in the admin panel
+
+**Option B: Browser-based capture with beforeunload**
+- Store customer info in localStorage
+- On page unload, trigger an API call to save partial data
+- Less reliable than Option A
+
+I recommend **Option A** for reliability.
+
+---
+
+### Database Changes
+
+Add a new status value to track partial submissions:
+- Add `status: 'partial'` option alongside 'new', 'contacted', etc.
+- This allows filtering abandoned carts in the admin panel
+
+---
+
+### Files to Create/Modify
+
+| File | Action |
+|------|--------|
+| `src/pages/estimators/ducted/steps/Step6CustomerInfo.tsx` | **Create** - New customer info form step |
+| `src/pages/estimators/ducted/steps/Step7SystemSize.tsx` | **Rename** from Step6 + update step number |
+| `src/pages/estimators/ducted/steps/Step8EfficiencyTier.tsx` | **Rename** from Step7 + update step number |
+| `src/pages/estimators/ducted/steps/Step9QuoteResults.tsx` | **Rename** from Step8 + add read-only customer summary |
+| `src/pages/estimators/ducted/steps/Step10ThankYou.tsx` | No change (already correct step number) |
+| `src/pages/estimators/ducted/steps/Step9CustomerInfo.tsx` | **Delete** (form moves to Step6, submission logic moves to Step9) |
+| `src/pages/estimators/ducted/DuctedEstimator.tsx` | Update step labels and switch statement |
+| `src/pages/estimators/ducted/context/EstimatorContext.tsx` | Add `partialSubmissionId` to track if we already saved a partial |
+
+---
+
+### New Step 6 Customer Info Features
+
+- Auto-populate ZIP from `state.zipCode`
+- Auto-populate City from `state.zipCity`
+- State locked to "TX"
+- Form validation same as current
+- On "Continue" - save partial submission to database, then proceed
+
+---
+
+### Step 9 Quote Results Updates
+
+After showing the quote and equipment options, add:
+
+```
+┌─────────────────────────────────────────┐
+│ Your Contact Information                │
+│                                         │
+│ Name: John Smith                        │
+│ Email: john@example.com                 │
+│ Phone: (555) 123-4567                   │
+│ Address: 123 Main St, Dallas, TX 75248  │
+│                                         │
+│                          [Edit] button  │
+└─────────────────────────────────────────┘
+```
+
+The "Edit" button navigates back to Step 6.
+
+---
+
+### Submission Flow Update
+
+1. **Step 6 (Customer Info)**: Save partial submission with status `'partial'`
+2. **Step 9 (Quote Results)**: "Get Your Quote" button proceeds to Step 10
+3. **Step 10 (Thank You)**: Before showing thank you:
+   - Update the partial submission with final quote details
+   - Change status from `'partial'` to `'new'`
+   - Trigger GHL sync and notifications
+
+This ensures you capture leads even if they abandon after providing contact info.
+
+---
+
+### Progress Labels Update
+
+```typescript
+const STEP_LABELS = [
+  "Location",      // 0
+  "Home Type",     // 1
+  "Home Details",  // 2
+  "Insulation",    // 3
+  "Comfort",       // 4
+  "Heating Type",  // 5
+  "Contact Info",  // 6 (NEW)
+  "System Size",   // 7
+  "Efficiency",    // 8
+  "Your Quote",    // 9
+  "Thank You",     // 10
+];
+```
+
+---
+
+### Admin Panel Enhancement (Optional)
+
+The existing submissions table will automatically show partial submissions. You could add:
+- A filter for "Abandoned" (status = 'partial')
+- Visual indicator for incomplete submissions
+- Re-engagement actions
+
+---
+
+### Summary
+
+This restructuring:
+1. Captures customer info earlier (Step 6)
+2. Creates a partial submission immediately for abandoned cart tracking
+3. Shows a read-only summary in the quote step for confirmation
+4. Auto-populates ZIP from the initial entry
+5. Maintains the full quote flow with all current functionality
