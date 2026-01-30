@@ -71,7 +71,7 @@ const INCLUDED_ITEMS = [
 const TRUST_BADGES = [
   { icon: Diamond, label: "Mitsubishi Diamond" },
   { icon: Home, label: "HERS Certified" },
-  { icon: Star, label: "A+ BBB Rating" },
+  { icon: Star, label: "4.9★ Google Rating" },
   { icon: BadgeCheck, label: "Licensed & Insured" },
 ];
 
