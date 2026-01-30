@@ -1,91 +1,85 @@
 
-## Ducted Estimator Flow Restructuring
 
-### Summary of Changes
+## Add "What's Included" Step to Ducted Estimator
 
-You want to:
-1. Move the customer info form from Step 9 to a new Step 6 (collecting contact info earlier)
-2. Keep Step 8 but show a read-only summary of customer info instead of the form
-3. Auto-populate the ZIP code from the initial entry
-4. Add abandoned cart capture after the new customer info step
+### Overview
 
-This is all possible and a great approach for lead capture!
+Add a new trust-building step (Step 7) that showcases everything included with every Truficient installation. This step features your photo, an owner quote, 8 value proposition cards, and trust badges.
 
 ---
 
-### Current vs New Step Flow
+### Step Flow Changes
 
-| Step | Current Flow | New Flow |
-|------|--------------|----------|
-| 0 | ZIP Code Gate | ZIP Code Gate |
-| 1 | Home Type | Home Type |
-| 2 | Home Details | Home Details |
-| 3 | Insulation Factors | Insulation Factors |
-| 4 | Usage Patterns | Usage Patterns |
-| 5 | Heating Type | Heating Type |
-| 6 | System Size | **Customer Info Form** (NEW) |
-| 7 | Efficiency Tier | System Size |
-| 8 | Quote Results | Efficiency Tier |
-| 9 | Customer Info Form | Quote Results (with read-only customer summary) |
-| 10 | Thank You | Thank You |
-
----
-
-### Implementation Details
-
-#### 1. Create New Step 6: Customer Info Form (Early Capture)
-
-A new step file `Step6CustomerInfo.tsx` that contains:
-- Name, Email, Phone, Address fields (the form portion only)
-- ZIP code auto-populated from state.zipCode
-- City auto-populated from state.zipCity
-- No pricing display (just the form)
-- Validation before proceeding
-
-#### 2. Rename/Shift Existing Steps
-
-| Old File | New File |
-|----------|----------|
-| Step6SystemSize.tsx | Step7SystemSize.tsx |
-| Step7EfficiencyTier.tsx | Step8EfficiencyTier.tsx |
-| Step8QuoteResults.tsx | Step9QuoteResults.tsx |
-| Step9CustomerInfo.tsx | Refactored to Step9QuoteResults |
-| Step10ThankYou.tsx | Step10ThankYou.tsx (no change) |
-
-#### 3. Modify Step 9 (Quote Results) to Show Read-Only Customer Summary
-
-Add a read-only card at the bottom of the quote results showing:
-- Customer name
-- Email
-- Phone
-- Address
-
-With an "Edit" button that navigates back to Step 6 if they need to change info.
-
-#### 4. Abandoned Cart Capture Strategy
-
-After Step 6 (customer info), we have valid contact details. Two options:
-
-**Option A: Save as "partial" submission immediately (Recommended)**
-- Insert a database record with `status: 'partial'` right after Step 6
-- Include all home details + customer info collected so far
-- If they complete the full flow, update the record to `status: 'new'`
-- This gives you a list of abandoned carts in the admin panel
-
-**Option B: Browser-based capture with beforeunload**
-- Store customer info in localStorage
-- On page unload, trigger an API call to save partial data
-- Less reliable than Option A
-
-I recommend **Option A** for reliability.
+| Step | Label | Component | Notes |
+|------|-------|-----------|-------|
+| 0 | Location | Step0ZipCodeGate.tsx | No change |
+| 1 | Home Type | Step1HomeType.tsx | No change |
+| 2 | Home Details | Step2HomeDetails.tsx | No change |
+| 3 | Insulation | Step3InsulationFactors.tsx | No change |
+| 4 | Comfort | Step4UsagePatterns.tsx | No change |
+| 5 | Heating Type | Step5HeatingType.tsx | No change |
+| 6 | System Size | Step6SystemSize.tsx | Rename from Step7SystemSize.tsx |
+| **7** | **What's Included** | **Step7WhatsIncluded.tsx** | **NEW STEP** |
+| 8 | Contact Info | Step8CustomerInfo.tsx | Rename from Step6CustomerInfo.tsx |
+| 9 | Efficiency | Step9EfficiencyTier.tsx | Rename from Step8EfficiencyTier.tsx |
+| 10 | Your Quote | Step10QuoteResults.tsx | Rename from Step9QuoteResults.tsx |
+| 11 | Thank You | Step11ThankYou.tsx | Rename from Step10ThankYou.tsx |
 
 ---
 
-### Database Changes
+### New Step 7: "What's Included" Layout
 
-Add a new status value to track partial submissions:
-- Add `status: 'partial'` option alongside 'new', 'contacted', etc.
-- This allows filtering abandoned carts in the admin panel
+```text
++--------------------------------------------------+
+|            Every Truficient Installation         |
+|                    Includes                      |
+|  We don't cut corners. Here's what sets us apart |
++--------------------------------------------------+
+|                                                  |
+|  +------------+  +----------------------------+  |
+|  |            |  | "I personally stand behind |  |
+|  |   [Your    |  |  every installation..."    |  |
+|  |   Photo]   |  |                            |  |
+|  |            |  | - Eric, Owner              |  |
+|  +------------+  | [Diamond] [HERS] [1000+]   |  |
+|                  +----------------------------+  |
+|                                                  |
++--------------------------------------------------+
+|                 8-ITEM VALUE GRID                |
+|  +----------+  +----------+  +----------+  +--+  |
+|  | Surge    |  | Air      |  | Dampers  |  |..|  |
+|  | Protector|  | Balance  |  | $175     |  |  |  |
+|  | $150     |  | $200     |  |          |  |  |  |
+|  +----------+  +----------+  +----------+  +--+  |
+|  +----------+  +----------+  +----------+  +--+  |
+|  | Plenum   |  | Report   |  | 2-Year   |  |..|  |
+|  | Sealing  |  | Included |  | Warranty |  |  |  |
+|  | $125     |  |          |  |          |  |  |  |
+|  +----------+  +----------+  +----------+  +--+  |
++--------------------------------------------------+
+|       Total Added Value: Over $900               |
+|   Other contractors charge extra for these       |
++--------------------------------------------------+
+|   [Mitsubishi Diamond] [HERS] [A+ BBB] [Licensed]|
++--------------------------------------------------+
+|        [ Back ]          [ Continue ]            |
++--------------------------------------------------+
+```
+
+---
+
+### 8 Value Proposition Cards
+
+| # | Icon | Title | Description | Badge |
+|---|------|-------|-------------|-------|
+| 1 | Zap | Whole-System Surge Protector | Protects your investment from power surges | $150 Value |
+| 2 | Wind | Professional Air Balancing | Every room tested for optimal airflow | $200 Value |
+| 3 | SlidersHorizontal | Balancing Dampers | Precision airflow control for consistent temps | $175 Value |
+| 4 | Shield | Plenum Air Sealing | Complete sealing to maximize efficiency | $125 Value |
+| 5 | FileCheck | Full Commissioning Report | Detailed documentation of system performance | Included |
+| 6 | BadgeCheck | 2-Year Labor Warranty | Any issues? We fix them at no cost | Peace of Mind |
+| 7 | Wifi | WiFi Smart Thermostat | Control your comfort from anywhere | $250 Value |
+| 8 | Award | Performance Guarantee | If it doesn't perform as promised, we make it right | 100% Guaranteed |
 
 ---
 
@@ -93,95 +87,101 @@ Add a new status value to track partial submissions:
 
 | File | Action |
 |------|--------|
-| `src/pages/estimators/ducted/steps/Step6CustomerInfo.tsx` | **Create** - New customer info form step |
-| `src/pages/estimators/ducted/steps/Step7SystemSize.tsx` | **Rename** from Step6 + update step number |
-| `src/pages/estimators/ducted/steps/Step8EfficiencyTier.tsx` | **Rename** from Step7 + update step number |
-| `src/pages/estimators/ducted/steps/Step9QuoteResults.tsx` | **Rename** from Step8 + add read-only customer summary |
-| `src/pages/estimators/ducted/steps/Step10ThankYou.tsx` | No change (already correct step number) |
-| `src/pages/estimators/ducted/steps/Step9CustomerInfo.tsx` | **Delete** (form moves to Step6, submission logic moves to Step9) |
-| `src/pages/estimators/ducted/DuctedEstimator.tsx` | Update step labels and switch statement |
-| `src/pages/estimators/ducted/context/EstimatorContext.tsx` | Add `partialSubmissionId` to track if we already saved a partial |
+| `src/assets/owner-eric.jpg` | Copy your uploaded photo here |
+| `src/pages/estimators/ducted/steps/Step7WhatsIncluded.tsx` | **Create** - New step component |
+| `src/pages/estimators/ducted/steps/Step6SystemSize.tsx` | Rename from Step7SystemSize.tsx |
+| `src/pages/estimators/ducted/steps/Step8CustomerInfo.tsx` | Rename from Step6CustomerInfo.tsx |
+| `src/pages/estimators/ducted/steps/Step9EfficiencyTier.tsx` | Rename from Step8EfficiencyTier.tsx |
+| `src/pages/estimators/ducted/steps/Step10QuoteResults.tsx` | Rename from Step9QuoteResults.tsx |
+| `src/pages/estimators/ducted/steps/Step11ThankYou.tsx` | Rename from Step10ThankYou.tsx |
+| `src/pages/estimators/ducted/DuctedEstimator.tsx` | Update imports, labels, and switch cases for 12 steps |
 
 ---
 
-### New Step 6 Customer Info Features
+### Technical Details
 
-- Auto-populate ZIP from `state.zipCode`
-- Auto-populate City from `state.zipCity`
-- State locked to "TX"
-- Form validation same as current
-- On "Continue" - save partial submission to database, then proceed
+#### New Step Component Structure
 
----
+```typescript
+// Step7WhatsIncluded.tsx
+import { motion } from "framer-motion";
+import { useEstimator } from "../context/EstimatorContext";
+import ownerImage from "@/assets/owner-eric.jpg";
 
-### Step 9 Quote Results Updates
+const INCLUDED_ITEMS = [
+  { icon: Zap, title: "Whole-System Surge Protector", ... },
+  // ... 7 more items
+];
 
-After showing the quote and equipment options, add:
-
+export const Step7WhatsIncluded = () => {
+  const { nextStep, prevStep } = useEstimator();
+  
+  return (
+    <StepContainer>
+      {/* Header Section */}
+      {/* Owner Photo + Quote Section */}
+      {/* 8-Item Grid (2 cols mobile, 4 cols desktop) */}
+      {/* Total Value Banner */}
+      {/* Trust Badges Row */}
+      {/* Navigation Buttons */}
+    </StepContainer>
+  );
+};
 ```
-┌─────────────────────────────────────────┐
-│ Your Contact Information                │
-│                                         │
-│ Name: John Smith                        │
-│ Email: john@example.com                 │
-│ Phone: (555) 123-4567                   │
-│ Address: 123 Main St, Dallas, TX 75248  │
-│                                         │
-│                          [Edit] button  │
-└─────────────────────────────────────────┘
-```
 
-The "Edit" button navigates back to Step 6.
-
----
-
-### Submission Flow Update
-
-1. **Step 6 (Customer Info)**: Save partial submission with status `'partial'`
-2. **Step 9 (Quote Results)**: "Get Your Quote" button proceeds to Step 10
-3. **Step 10 (Thank You)**: Before showing thank you:
-   - Update the partial submission with final quote details
-   - Change status from `'partial'` to `'new'`
-   - Trigger GHL sync and notifications
-
-This ensures you capture leads even if they abandon after providing contact info.
-
----
-
-### Progress Labels Update
+#### Updated Step Labels
 
 ```typescript
 const STEP_LABELS = [
-  "Location",      // 0
-  "Home Type",     // 1
-  "Home Details",  // 2
-  "Insulation",    // 3
-  "Comfort",       // 4
-  "Heating Type",  // 5
-  "Contact Info",  // 6 (NEW)
-  "System Size",   // 7
-  "Efficiency",    // 8
-  "Your Quote",    // 9
-  "Thank You",     // 10
+  "Location",       // 0
+  "Home Type",      // 1
+  "Home Details",   // 2
+  "Insulation",     // 3
+  "Comfort",        // 4
+  "Heating Type",   // 5
+  "System Size",    // 6
+  "What's Included",// 7 - NEW
+  "Contact Info",   // 8
+  "Efficiency",     // 9
+  "Your Quote",     // 10
+  "Thank You",      // 11
 ];
+```
+
+#### Updated Layout Logic
+
+```typescript
+// Progress shown on steps 1-10 (11 total progress steps)
+const showProgress = currentStep > 0 && currentStep < 11;
+
+// Compact header on steps 1-10
+const showCompactHeader = currentStep > 0 && currentStep < 11;
+
+// Standard footer on step 0 and step 11
+const showStandardFooter = currentStep === 0 || currentStep === 11;
 ```
 
 ---
 
-### Admin Panel Enhancement (Optional)
+### Animations
 
-The existing submissions table will automatically show partial submissions. You could add:
-- A filter for "Abandoned" (status = 'partial')
-- Visual indicator for incomplete submissions
-- Re-engagement actions
+- Owner section fades in from the left
+- Grid items stagger with 0.1s delay between each
+- Total value section slides up
+- All using Framer Motion's `motion.div` with variants
 
 ---
 
-### Summary
+### Mobile Responsiveness
 
-This restructuring:
-1. Captures customer info earlier (Step 6)
-2. Creates a partial submission immediately for abandoned cart tracking
-3. Shows a read-only summary in the quote step for confirmation
-4. Auto-populates ZIP from the initial entry
-5. Maintains the full quote flow with all current functionality
+- Owner photo stacks above quote on mobile
+- Grid: 2 columns on mobile, 4 columns on desktop
+- Value badges wrap to new line on small screens
+- Reduced padding on mobile (p-4 vs p-6)
+
+---
+
+### Your Photo
+
+Your uploaded photo will be saved to `src/assets/owner-eric.jpg` and imported as an ES6 module for optimal bundling and display.
+
