@@ -19,7 +19,7 @@ import { toast } from "sonner";
 
 type InputView = 'main' | 'camera' | 'upload' | 'manual';
 
-export const Step7SystemSize = () => {
+export const Step6SystemSize = () => {
   const { 
     state, 
     setSelectedTonnage, 

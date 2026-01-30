@@ -11,7 +11,7 @@ import {
   Loader2, Calendar
 } from "lucide-react";
 
-export const Step6CustomerInfo = () => {
+export const Step8CustomerInfo = () => {
   const { state, setCustomerInfo, setPartialSubmissionId, nextStep, prevStep } = useEstimator();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
