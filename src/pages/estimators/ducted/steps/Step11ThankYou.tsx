@@ -44,7 +44,7 @@ const HEATING_TYPE_LABELS: Record<string, string> = {
   heat_pump: "Heat Pump System",
 };
 
-export const Step10ThankYou = () => {
+export const Step11ThankYou = () => {
   const { resetEstimator, state } = useEstimator();
   const { pricing, isLoading } = useDuctedPricing(state);
   const [showQuoteDialog, setShowQuoteDialog] = useState(false);

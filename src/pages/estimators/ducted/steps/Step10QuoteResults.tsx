@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { useFormSourceTags } from "@/hooks/useFormSourceTags";
 import { addDays, format } from "date-fns";
 
-export const Step9QuoteResults = () => {
+export const Step10QuoteResults = () => {
   const { state, nextStep, prevStep, goToStep, setTotals, setRecommendedTonnage, setSelectedEquipmentId } = useEstimator();
   const { pricing, isLoading, matchingEquipment } = useDuctedPricing(state);
   const { data: dynamicTags } = useFormSourceTags('ducted');

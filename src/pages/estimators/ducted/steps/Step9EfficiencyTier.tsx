@@ -65,7 +65,7 @@ interface DuctedEquipment {
   efficiency_tier_id: string | null;
 }
 
-export const Step8EfficiencyTier = () => {
+export const Step9EfficiencyTier = () => {
   const { state, setEfficiencyTierId, nextStep, prevStep } = useEstimator();
 
   // Fetch efficiency tiers

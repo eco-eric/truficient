@@ -7,28 +7,30 @@ import { Step2HomeDetails } from "./steps/Step2HomeDetails";
 import { Step3InsulationFactors } from "./steps/Step3InsulationFactors";
 import { Step4UsagePatterns } from "./steps/Step4UsagePatterns";
 import { Step5HeatingType } from "./steps/Step5HeatingType";
-import { Step6CustomerInfo } from "./steps/Step6CustomerInfo";
-import { Step7SystemSize } from "./steps/Step7SystemSize";
-import { Step8EfficiencyTier } from "./steps/Step8EfficiencyTier";
-import { Step9QuoteResults } from "./steps/Step9QuoteResults";
-import { Step10ThankYou } from "./steps/Step10ThankYou";
+import { Step6SystemSize } from "./steps/Step6SystemSize";
+import { Step7WhatsIncluded } from "./steps/Step7WhatsIncluded";
+import { Step8CustomerInfo } from "./steps/Step8CustomerInfo";
+import { Step9EfficiencyTier } from "./steps/Step9EfficiencyTier";
+import { Step10QuoteResults } from "./steps/Step10QuoteResults";
+import { Step11ThankYou } from "./steps/Step11ThankYou";
 import { Link } from "react-router-dom";
 import truficientLogo from "@/assets/truficient-logo.png";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 
 const STEP_LABELS = [
-  "Location",
-  "Home Type",
-  "Home Details",
-  "Insulation",
-  "Comfort",
-  "Heating Type",
-  "System Size",
-  "Contact Info",
-  "Efficiency",
-  "Your Quote",
-  "Thank You",
+  "Location",        // 0
+  "Home Type",       // 1
+  "Home Details",    // 2
+  "Insulation",      // 3
+  "Comfort",         // 4
+  "Heating Type",    // 5
+  "System Size",     // 6
+  "What's Included", // 7 - NEW
+  "Contact Info",    // 8
+  "Efficiency",      // 9
+  "Your Quote",      // 10
+  "Thank You",       // 11
 ];
 
 const EstimatorContent = () => {
@@ -50,38 +52,40 @@ const EstimatorContent = () => {
       case 5:
         return <Step5HeatingType />;
       case 6:
-        return <Step7SystemSize />;
+        return <Step6SystemSize />;
       case 7:
-        return <Step6CustomerInfo />;
+        return <Step7WhatsIncluded />;
       case 8:
-        return <Step8EfficiencyTier />;
+        return <Step8CustomerInfo />;
       case 9:
-        return <Step9QuoteResults />;
+        return <Step9EfficiencyTier />;
       case 10:
-        return <Step10ThankYou />;
+        return <Step10QuoteResults />;
+      case 11:
+        return <Step11ThankYou />;
       default:
         return <Step0ZipCodeGate />;
     }
   };
 
-  // Show progress on steps 1-9 (after zip gate, before thank you)
-  const showProgress = currentStep > 0 && currentStep < 10;
+  // Show progress on steps 1-10 (after zip gate, before thank you)
+  const showProgress = currentStep > 0 && currentStep < 11;
 
-  // Show compact custom header on steps 1-9 (middle steps)
-  const showCompactHeader = currentStep > 0 && currentStep < 10;
+  // Show compact custom header on steps 1-10 (middle steps)
+  const showCompactHeader = currentStep > 0 && currentStep < 11;
 
   // Show standard website header on step 0 (welcome)
   const showStandardHeader = currentStep === 0;
 
-  // Show standard website footer on step 0 and step 10 (welcome and thank you)
-  const showStandardFooter = currentStep === 0 || currentStep === 10;
+  // Show standard website footer on step 0 and step 11 (welcome and thank you)
+  const showStandardFooter = currentStep === 0 || currentStep === 11;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Standard website header - shown on step 0 (welcome) */}
       {showStandardHeader && <Header />}
 
-      {/* Compact header - shown on steps 1-9 */}
+      {/* Compact header - shown on steps 1-10 */}
       {showCompactHeader && (
         <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b">
           <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
@@ -106,8 +110,8 @@ const EstimatorContent = () => {
       {showProgress && (
         <ProgressIndicator
           currentStep={currentStep - 1}
-          totalSteps={9}
-          labels={STEP_LABELS.slice(1, 10)}
+          totalSteps={10}
+          labels={STEP_LABELS.slice(1, 11)}
         />
       )}
 
@@ -116,7 +120,7 @@ const EstimatorContent = () => {
         <AnimatePresence mode="wait">{renderStep()}</AnimatePresence>
       </main>
 
-      {/* Standard website footer - shown on step 0 and step 10 */}
+      {/* Standard website footer - shown on step 0 and step 11 */}
       {showStandardFooter && <Footer />}
     </div>
   );
