@@ -150,7 +150,7 @@ const SizingCalculator = () => {
               </p>
             </motion.div>
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
               {sizingFactors.map((factor, index) => (
                 <motion.div
                   key={factor.title}
