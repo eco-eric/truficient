@@ -23,11 +23,6 @@ const sizingFactors = [
     title: "Climate Zone",
     description: "Dallas-Fort Worth's hot summers require specific cooling capacity calculations"
   },
-  {
-    icon: Wind,
-    title: "Insulation & Windows",
-    description: "Your home's envelope affects how much heating and cooling you need"
-  }
 ];
 
 const systemFactors = [
