@@ -169,7 +169,7 @@ const Financing = () => {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="font-semibold border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10"
+                  className="font-semibold border-secondary bg-secondary text-navy hover:bg-secondary/90"
                   onClick={() =>
                     handleTrackClick("Talk to an Expert - Hero", "tel:214-238-4349")
                   }
