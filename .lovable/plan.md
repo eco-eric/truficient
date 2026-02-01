@@ -1,46 +1,35 @@
 
 
-## Add Scanner Promo Section to Sizing Calculator
+## Add "Your Home is A System" as Subtitle in Sizing Factors Section
 
 ### Overview
 
-Add a visually appealing scanner promotion section to the bottom of the Sizing Calculator page. Since the scanner requires its own context provider (`ScannerProvider`), the cleanest approach is to create an attractive "teaser" card that links to the full scanner page.
+Integrate the 6 system factor cards into the existing "What Determines System Size?" section as a subtitle/subsection, rather than creating a separate section. This keeps the content cohesive and shows that these factors all work together.
 
 ---
 
-### Recommended Approach: Scanner Teaser Card
-
-Rather than embedding zip code entry (which would require the ScannerProvider and duplicate validation logic), we'll create an eye-catching promo section that:
-1. Shows what the scanner does
-2. Displays example data plate images
-3. Links directly to the `/scanner` page
-
-This keeps the sizing page focused while promoting the scanner tool effectively.
-
----
-
-### New Section Layout
+### Updated Section Structure
 
 ```text
 +----------------------------------------------------------+
+|           What Determines System Size?                   |
+|  Proper HVAC sizing involves more than just square       |
+|  footage                                                 |
++----------------------------------------------------------+
 |                                                          |
-|  Don't Know Your Current System Size?                    |
-|  Scan your data plate to find out instantly              |
+|  [3 EXISTING CARDS: Sq Footage, Climate, Insulation]     |
 |                                                          |
 +----------------------------------------------------------+
 |                                                          |
-|  +--------+  +--------+  +--------+  +--------+          |
-|  |Carrier |  | Trane  |  |Lennox  |  |Goodman |          |
-|  | [img]  |  | [img]  |  | [img]  |  | [img]  |          |
-|  +--------+  +--------+  +--------+  +--------+          |
+|  ── Your Home is A System ──                             |
+|  Every component works together to determine your        |
+|  comfort and efficiency                                  |
 |                                                          |
-|  [ScanLine Icon]                                         |
++----------------------------------------------------------+
 |                                                          |
-|  Our free scanner identifies your system's:              |
-|  • Brand & Model     • System Size (Tonnage)             |
-|  • Age & Year        • Refrigerant Type                  |
-|                                                          |
-|          [ Scan Your Equipment → ]                       |
+|  [6 NEW CARDS in 3x2 grid]                              |
+|  Thermostat | Insulation | Windows                       |
+|  Duct Quality | Orientation | Tree Coverage              |
 |                                                          |
 +----------------------------------------------------------+
 ```
@@ -54,88 +43,59 @@ This keeps the sizing page focused while promoting the scanner tool effectively.
 
 #### Changes
 
-1. **Add Imports**
-   - Add `ScanLine` to lucide-react imports
-   - Import data plate images from `@/assets/data-plates/`
+1. **Add New Icon Imports** (line 2)
+   - Add `Settings`, `Compass`, `Trees`, `Gauge` to existing lucide-react imports
 
-2. **Add Scanner Promo Section**
-   - Insert new section between Quick Reference and CTA sections
-   - Use Framer Motion for entrance animations
-   - Display 4 sample data plate images in a row
-   - List scanner capabilities
-   - Large CTA button linking to `/scanner`
+2. **Add New Data Array** (after `sizingFactors` array, around line 31)
+   ```typescript
+   const systemFactors = [
+     { icon: Settings, title: "Thermostat Setting", description: "Your preferred indoor temperature affects system capacity requirements and runtime efficiency" },
+     { icon: Wind, title: "Insulation", description: "Proper attic and wall insulation reduces heating and cooling loads significantly" },
+     { icon: Gauge, title: "Windows", description: "Double-pane, low-E windows minimize heat transfer and improve comfort" },
+     { icon: Wind, title: "Duct Quality & Air Leakage", description: "Sealed, insulated ductwork ensures efficient air delivery throughout your home" },
+     { icon: Compass, title: "Orientation of House", description: "South and west-facing rooms receive more sun exposure, requiring additional cooling capacity" },
+     { icon: Trees, title: "Tree Coverage", description: "Shade from mature trees can reduce cooling loads by up to 25% in summer months" },
+   ];
+   ```
 
----
-
-### Component Structure
-
-```typescript
-// New imports
-import { ScanLine } from "lucide-react";
-import carrierPlate from '@/assets/data-plates/carrier.jpg';
-import tranePlate from '@/assets/data-plates/trane.jpg';
-import lennoxPlate from '@/assets/data-plates/lennox.jpg';
-import goodmanPlate from '@/assets/data-plates/goodman.jpg';
-
-// Sample plates array (subset for visual teaser)
-const samplePlates = [
-  { brand: 'Carrier', image: carrierPlate },
-  { brand: 'Trane', image: tranePlate },
-  { brand: 'Lennox', image: lennoxPlate },
-  { brand: 'Goodman', image: goodmanPlate },
-];
-
-// New section (add after Quick Reference, before CTA)
-<section className="py-16 lg:py-20 bg-secondary/5">
-  <div className="container mx-auto px-4">
-    <motion.div ...>
-      {/* Header */}
-      <h2>Don't Know Your Current System Size?</h2>
-      <p>Scan your data plate to find out instantly</p>
-      
-      {/* Sample Plates Row */}
-      <div className="flex justify-center gap-3">
-        {samplePlates.map(...)}
-      </div>
-      
-      {/* Icon */}
-      <ScanLine className="h-12 w-12 text-secondary" />
-      
-      {/* Capabilities List */}
-      <div className="grid grid-cols-2 gap-2">
-        <span>• Brand & Model</span>
-        <span>• System Size (Tonnage)</span>
-        <span>• Age & Year</span>
-        <span>• Refrigerant Type</span>
-      </div>
-      
-      {/* CTA Button */}
-      <Button asChild>
-        <Link to="/scanner">
-          <ScanLine className="mr-2" />
-          Scan Your Equipment
-        </Link>
-      </Button>
-    </motion.div>
-  </div>
-</section>
-```
+3. **Expand Sizing Factors Section** (lines 108-151)
+   - Keep existing 3 cards
+   - Add subtitle "Your Home is A System" with description
+   - Add 6 new system factor cards below in same section
 
 ---
 
-### Design Notes
+### Updated Section Layout
 
-- Uses `bg-secondary/5` for subtle brand color background
-- Sample plates show rounded thumbnails (4 of the 6 brands)
-- Grid layout for capability list (2 columns)
-- Large primary CTA button matches page style
-- Button click tracking integrated
+The single section will contain:
+1. **Main heading**: "What Determines System Size?"
+2. **Existing 3 cards** (Square Footage, Climate Zone, Insulation & Windows)
+3. **Subtitle**: "Your Home is A System" with supporting text
+4. **6 new cards** showing additional factors
 
 ---
 
-### Mobile Responsiveness
+### Visual Hierarchy
 
-- Sample plates: 4 columns on desktop, 4 smaller on mobile
-- Capability grid: 2 columns on all sizes
-- Padding adjusts for mobile (`py-12` vs `py-16`)
+| Element | Style |
+|---------|-------|
+| Main H2 | `text-3xl md:text-4xl font-bold` (existing) |
+| Subtitle H3 | `text-2xl md:text-3xl font-semibold` |
+| Subtitle description | `text-lg text-muted-foreground` |
+| Cards | Same style as existing sizing factor cards |
+
+---
+
+### Responsive Grid
+
+- **Existing 3 cards**: `grid md:grid-cols-3` (unchanged)
+- **New 6 cards**: `grid md:grid-cols-2 lg:grid-cols-3` (2 cols on tablet, 3 on desktop)
+
+---
+
+### Animation
+
+- Subtitle fades in when scrolled into view
+- 6 new cards use staggered animation (0.1s delay between each)
+- Matches existing animation pattern
 
