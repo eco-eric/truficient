@@ -1,187 +1,141 @@
 
 
-## Add "What's Included" Step to Ducted Estimator
+## Add Scanner Promo Section to Sizing Calculator
 
 ### Overview
 
-Add a new trust-building step (Step 7) that showcases everything included with every Truficient installation. This step features your photo, an owner quote, 8 value proposition cards, and trust badges.
+Add a visually appealing scanner promotion section to the bottom of the Sizing Calculator page. Since the scanner requires its own context provider (`ScannerProvider`), the cleanest approach is to create an attractive "teaser" card that links to the full scanner page.
 
 ---
 
-### Step Flow Changes
+### Recommended Approach: Scanner Teaser Card
 
-| Step | Label | Component | Notes |
-|------|-------|-----------|-------|
-| 0 | Location | Step0ZipCodeGate.tsx | No change |
-| 1 | Home Type | Step1HomeType.tsx | No change |
-| 2 | Home Details | Step2HomeDetails.tsx | No change |
-| 3 | Insulation | Step3InsulationFactors.tsx | No change |
-| 4 | Comfort | Step4UsagePatterns.tsx | No change |
-| 5 | Heating Type | Step5HeatingType.tsx | No change |
-| 6 | System Size | Step6SystemSize.tsx | Rename from Step7SystemSize.tsx |
-| **7** | **What's Included** | **Step7WhatsIncluded.tsx** | **NEW STEP** |
-| 8 | Contact Info | Step8CustomerInfo.tsx | Rename from Step6CustomerInfo.tsx |
-| 9 | Efficiency | Step9EfficiencyTier.tsx | Rename from Step8EfficiencyTier.tsx |
-| 10 | Your Quote | Step10QuoteResults.tsx | Rename from Step9QuoteResults.tsx |
-| 11 | Thank You | Step11ThankYou.tsx | Rename from Step10ThankYou.tsx |
+Rather than embedding zip code entry (which would require the ScannerProvider and duplicate validation logic), we'll create an eye-catching promo section that:
+1. Shows what the scanner does
+2. Displays example data plate images
+3. Links directly to the `/scanner` page
+
+This keeps the sizing page focused while promoting the scanner tool effectively.
 
 ---
 
-### New Step 7: "What's Included" Layout
+### New Section Layout
 
 ```text
-+--------------------------------------------------+
-|            Every Truficient Installation         |
-|                    Includes                      |
-|  We don't cut corners. Here's what sets us apart |
-+--------------------------------------------------+
-|                                                  |
-|  +------------+  +----------------------------+  |
-|  |            |  | "I personally stand behind |  |
-|  |   [Your    |  |  every installation..."    |  |
-|  |   Photo]   |  |                            |  |
-|  |            |  | - Eric, Owner              |  |
-|  +------------+  | [Diamond] [HERS] [1000+]   |  |
-|                  +----------------------------+  |
-|                                                  |
-+--------------------------------------------------+
-|                 8-ITEM VALUE GRID                |
-|  +----------+  +----------+  +----------+  +--+  |
-|  | Surge    |  | Air      |  | Dampers  |  |..|  |
-|  | Protector|  | Balance  |  | $175     |  |  |  |
-|  | $150     |  | $200     |  |          |  |  |  |
-|  +----------+  +----------+  +----------+  +--+  |
-|  +----------+  +----------+  +----------+  +--+  |
-|  | Plenum   |  | Report   |  | 2-Year   |  |..|  |
-|  | Sealing  |  | Included |  | Warranty |  |  |  |
-|  | $125     |  |          |  |          |  |  |  |
-|  +----------+  +----------+  +----------+  +--+  |
-+--------------------------------------------------+
-|       Total Added Value: Over $900               |
-|   Other contractors charge extra for these       |
-+--------------------------------------------------+
-|   [Mitsubishi Diamond] [HERS] [A+ BBB] [Licensed]|
-+--------------------------------------------------+
-|        [ Back ]          [ Continue ]            |
-+--------------------------------------------------+
++----------------------------------------------------------+
+|                                                          |
+|  Don't Know Your Current System Size?                    |
+|  Scan your data plate to find out instantly              |
+|                                                          |
++----------------------------------------------------------+
+|                                                          |
+|  +--------+  +--------+  +--------+  +--------+          |
+|  |Carrier |  | Trane  |  |Lennox  |  |Goodman |          |
+|  | [img]  |  | [img]  |  | [img]  |  | [img]  |          |
+|  +--------+  +--------+  +--------+  +--------+          |
+|                                                          |
+|  [ScanLine Icon]                                         |
+|                                                          |
+|  Our free scanner identifies your system's:              |
+|  • Brand & Model     • System Size (Tonnage)             |
+|  • Age & Year        • Refrigerant Type                  |
+|                                                          |
+|          [ Scan Your Equipment → ]                       |
+|                                                          |
++----------------------------------------------------------+
 ```
 
 ---
 
-### 8 Value Proposition Cards
+### Implementation Details
 
-| # | Icon | Title | Description | Badge |
-|---|------|-------|-------------|-------|
-| 1 | Zap | Whole-System Surge Protector | Protects your investment from power surges | $150 Value |
-| 2 | Wind | Professional Air Balancing | Every room tested for optimal airflow | $200 Value |
-| 3 | SlidersHorizontal | Balancing Dampers | Precision airflow control for consistent temps | $175 Value |
-| 4 | Shield | Plenum Air Sealing | Complete sealing to maximize efficiency | $125 Value |
-| 5 | FileCheck | Full Commissioning Report | Detailed documentation of system performance | Included |
-| 6 | BadgeCheck | 2-Year Labor Warranty | Any issues? We fix them at no cost | Peace of Mind |
-| 7 | Wifi | WiFi Smart Thermostat | Control your comfort from anywhere | $250 Value |
-| 8 | Award | Performance Guarantee | If it doesn't perform as promised, we make it right | 100% Guaranteed |
+#### File to Modify
+- `src/pages/estimators/SizingCalculator.tsx`
 
----
+#### Changes
 
-### Files to Create/Modify
+1. **Add Imports**
+   - Add `ScanLine` to lucide-react imports
+   - Import data plate images from `@/assets/data-plates/`
 
-| File | Action |
-|------|--------|
-| `src/assets/owner-eric.jpg` | Copy your uploaded photo here |
-| `src/pages/estimators/ducted/steps/Step7WhatsIncluded.tsx` | **Create** - New step component |
-| `src/pages/estimators/ducted/steps/Step6SystemSize.tsx` | Rename from Step7SystemSize.tsx |
-| `src/pages/estimators/ducted/steps/Step8CustomerInfo.tsx` | Rename from Step6CustomerInfo.tsx |
-| `src/pages/estimators/ducted/steps/Step9EfficiencyTier.tsx` | Rename from Step8EfficiencyTier.tsx |
-| `src/pages/estimators/ducted/steps/Step10QuoteResults.tsx` | Rename from Step9QuoteResults.tsx |
-| `src/pages/estimators/ducted/steps/Step11ThankYou.tsx` | Rename from Step10ThankYou.tsx |
-| `src/pages/estimators/ducted/DuctedEstimator.tsx` | Update imports, labels, and switch cases for 12 steps |
+2. **Add Scanner Promo Section**
+   - Insert new section between Quick Reference and CTA sections
+   - Use Framer Motion for entrance animations
+   - Display 4 sample data plate images in a row
+   - List scanner capabilities
+   - Large CTA button linking to `/scanner`
 
 ---
 
-### Technical Details
-
-#### New Step Component Structure
+### Component Structure
 
 ```typescript
-// Step7WhatsIncluded.tsx
-import { motion } from "framer-motion";
-import { useEstimator } from "../context/EstimatorContext";
-import ownerImage from "@/assets/owner-eric.jpg";
+// New imports
+import { ScanLine } from "lucide-react";
+import carrierPlate from '@/assets/data-plates/carrier.jpg';
+import tranePlate from '@/assets/data-plates/trane.jpg';
+import lennoxPlate from '@/assets/data-plates/lennox.jpg';
+import goodmanPlate from '@/assets/data-plates/goodman.jpg';
 
-const INCLUDED_ITEMS = [
-  { icon: Zap, title: "Whole-System Surge Protector", ... },
-  // ... 7 more items
+// Sample plates array (subset for visual teaser)
+const samplePlates = [
+  { brand: 'Carrier', image: carrierPlate },
+  { brand: 'Trane', image: tranePlate },
+  { brand: 'Lennox', image: lennoxPlate },
+  { brand: 'Goodman', image: goodmanPlate },
 ];
 
-export const Step7WhatsIncluded = () => {
-  const { nextStep, prevStep } = useEstimator();
-  
-  return (
-    <StepContainer>
-      {/* Header Section */}
-      {/* Owner Photo + Quote Section */}
-      {/* 8-Item Grid (2 cols mobile, 4 cols desktop) */}
-      {/* Total Value Banner */}
-      {/* Trust Badges Row */}
-      {/* Navigation Buttons */}
-    </StepContainer>
-  );
-};
-```
-
-#### Updated Step Labels
-
-```typescript
-const STEP_LABELS = [
-  "Location",       // 0
-  "Home Type",      // 1
-  "Home Details",   // 2
-  "Insulation",     // 3
-  "Comfort",        // 4
-  "Heating Type",   // 5
-  "System Size",    // 6
-  "What's Included",// 7 - NEW
-  "Contact Info",   // 8
-  "Efficiency",     // 9
-  "Your Quote",     // 10
-  "Thank You",      // 11
-];
-```
-
-#### Updated Layout Logic
-
-```typescript
-// Progress shown on steps 1-10 (11 total progress steps)
-const showProgress = currentStep > 0 && currentStep < 11;
-
-// Compact header on steps 1-10
-const showCompactHeader = currentStep > 0 && currentStep < 11;
-
-// Standard footer on step 0 and step 11
-const showStandardFooter = currentStep === 0 || currentStep === 11;
+// New section (add after Quick Reference, before CTA)
+<section className="py-16 lg:py-20 bg-secondary/5">
+  <div className="container mx-auto px-4">
+    <motion.div ...>
+      {/* Header */}
+      <h2>Don't Know Your Current System Size?</h2>
+      <p>Scan your data plate to find out instantly</p>
+      
+      {/* Sample Plates Row */}
+      <div className="flex justify-center gap-3">
+        {samplePlates.map(...)}
+      </div>
+      
+      {/* Icon */}
+      <ScanLine className="h-12 w-12 text-secondary" />
+      
+      {/* Capabilities List */}
+      <div className="grid grid-cols-2 gap-2">
+        <span>• Brand & Model</span>
+        <span>• System Size (Tonnage)</span>
+        <span>• Age & Year</span>
+        <span>• Refrigerant Type</span>
+      </div>
+      
+      {/* CTA Button */}
+      <Button asChild>
+        <Link to="/scanner">
+          <ScanLine className="mr-2" />
+          Scan Your Equipment
+        </Link>
+      </Button>
+    </motion.div>
+  </div>
+</section>
 ```
 
 ---
 
-### Animations
+### Design Notes
 
-- Owner section fades in from the left
-- Grid items stagger with 0.1s delay between each
-- Total value section slides up
-- All using Framer Motion's `motion.div` with variants
+- Uses `bg-secondary/5` for subtle brand color background
+- Sample plates show rounded thumbnails (4 of the 6 brands)
+- Grid layout for capability list (2 columns)
+- Large primary CTA button matches page style
+- Button click tracking integrated
 
 ---
 
 ### Mobile Responsiveness
 
-- Owner photo stacks above quote on mobile
-- Grid: 2 columns on mobile, 4 columns on desktop
-- Value badges wrap to new line on small screens
-- Reduced padding on mobile (p-4 vs p-6)
-
----
-
-### Your Photo
-
-Your uploaded photo will be saved to `src/assets/owner-eric.jpg` and imported as an ES6 module for optimal bundling and display.
+- Sample plates: 4 columns on desktop, 4 smaller on mobile
+- Capability grid: 2 columns on all sizes
+- Padding adjusts for mobile (`py-12` vs `py-16`)
 
