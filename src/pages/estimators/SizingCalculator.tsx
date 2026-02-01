@@ -1,5 +1,9 @@
 import { motion } from "framer-motion";
-import { Ruler, Home, Thermometer, Wind, Phone, CalendarCheck, CheckCircle } from "lucide-react";
+import { Ruler, Home, Thermometer, Wind, Phone, CalendarCheck, CheckCircle, ScanLine } from "lucide-react";
+import carrierPlate from '@/assets/data-plates/carrier.jpg';
+import tranePlate from '@/assets/data-plates/trane.jpg';
+import lennoxPlate from '@/assets/data-plates/lennox.jpg';
+import goodmanPlate from '@/assets/data-plates/goodman.jpg';
 import { Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -34,6 +38,13 @@ const tonageGuide = [
   { sqft: "1,800-2,100", tons: "4 Ton", note: "Most common size" },
   { sqft: "2,100-2,500", tons: "5+ Ton", note: "Typical Ranch Style homes" },
   { sqft: "2,500+", tons: "—", note: "May need multiple systems" },
+];
+
+const samplePlates = [
+  { brand: 'Carrier', image: carrierPlate },
+  { brand: 'Trane', image: tranePlate },
+  { brand: 'Lennox', image: lennoxPlate },
+  { brand: 'Goodman', image: goodmanPlate },
 ];
 
 const SizingCalculator = () => {
@@ -202,6 +213,77 @@ const SizingCalculator = () => {
                 </CardContent>
               </Card>
             </div>
+          </div>
+        </section>
+
+        {/* Scanner Promo Section */}
+        <section className="py-12 lg:py-16 bg-secondary/5">
+          <div className="container mx-auto px-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="max-w-2xl mx-auto text-center"
+            >
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                Don't Know Your Current System Size?
+              </h2>
+              <p className="text-lg text-muted-foreground mb-8">
+                Scan your data plate to find out instantly
+              </p>
+
+              {/* Sample Data Plates */}
+              <div className="flex justify-center gap-3 mb-8">
+                {samplePlates.map((plate) => (
+                  <div 
+                    key={plate.brand}
+                    className="w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 border-secondary/20 shadow-sm"
+                  >
+                    <img 
+                      src={plate.image} 
+                      alt={`${plate.brand} data plate`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Scanner Icon */}
+              <div className="flex justify-center mb-6">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-secondary/10">
+                  <ScanLine className="h-8 w-8 text-secondary" />
+                </div>
+              </div>
+
+              {/* Capabilities */}
+              <p className="text-sm text-muted-foreground mb-4">
+                Our free scanner identifies your system's:
+              </p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 max-w-sm mx-auto mb-8 text-sm text-foreground">
+                <span>• Brand & Model</span>
+                <span>• System Size (Tonnage)</span>
+                <span>• Age & Year</span>
+                <span>• Refrigerant Type</span>
+              </div>
+
+              {/* CTA Button */}
+              <Button 
+                size="lg" 
+                variant="secondary"
+                asChild
+                onClick={() => trackButtonClick({
+                  buttonName: "Scan Your Equipment",
+                  buttonLocation: "Sizing Calculator Scanner Promo",
+                  destinationUrl: "/scanner"
+                })}
+              >
+                <Link to="/scanner">
+                  <ScanLine className="mr-2 h-5 w-5" />
+                  Scan Your Equipment
+                </Link>
+              </Button>
+            </motion.div>
           </div>
         </section>
 
