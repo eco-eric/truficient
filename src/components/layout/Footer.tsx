@@ -152,6 +152,11 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/financing" className="hover:text-secondary transition-colors inline-block">
+                  Financing
+                </Link>
+              </li>
+              <li>
                 <Link to="/privacy-policy" className="hover:text-secondary transition-colors inline-block">
                   Privacy Policy
                 </Link>

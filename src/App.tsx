@@ -27,6 +27,7 @@ import FriscoMcKinneyArea from "./pages/service-areas/FriscoMcKinneyArea";
 import MidCitiesArea from "./pages/service-areas/MidCitiesArea";
 import SouthDallasArea from "./pages/service-areas/SouthDallasArea";
 import Careers from "./pages/Careers";
+import Financing from "./pages/Financing";
 
 // Admin imports
 import AdminLogin from "./pages/admin/Login";
@@ -118,6 +119,7 @@ const router = createBrowserRouter([
       { path: "/estimate/ductless", element: <DuctlessEstimator /> },
       { path: "/estimate/ducted", element: <DuctedEstimator /> },
       { path: "/careers", element: <Careers /> },
+      { path: "/financing", element: <Financing /> },
       { path: "/privacy-policy", element: <PrivacyPolicy /> },
       { path: "/terms-of-service", element: <TermsOfService /> },
       
