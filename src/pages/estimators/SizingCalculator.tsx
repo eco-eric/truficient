@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Ruler, Home, Thermometer, Wind, Phone, CalendarCheck, CheckCircle, ScanLine } from "lucide-react";
+import { Ruler, Home, Thermometer, Wind, Phone, CalendarCheck, CheckCircle, ScanLine, Settings, Compass, Trees, Gauge } from "lucide-react";
 import carrierPlate from '@/assets/data-plates/carrier.jpg';
 import tranePlate from '@/assets/data-plates/trane.jpg';
 import lennoxPlate from '@/assets/data-plates/lennox.jpg';
@@ -27,6 +27,39 @@ const sizingFactors = [
     icon: Wind,
     title: "Insulation & Windows",
     description: "Your home's envelope affects how much heating and cooling you need"
+  }
+];
+
+const systemFactors = [
+  {
+    icon: Settings,
+    title: "Thermostat Setting",
+    description: "Your preferred indoor temperature affects system capacity requirements and runtime efficiency"
+  },
+  {
+    icon: Wind,
+    title: "Insulation",
+    description: "Proper attic and wall insulation reduces heating and cooling loads significantly"
+  },
+  {
+    icon: Gauge,
+    title: "Windows",
+    description: "Double-pane, low-E windows minimize heat transfer and improve comfort"
+  },
+  {
+    icon: Wind,
+    title: "Duct Quality & Air Leakage",
+    description: "Sealed, insulated ductwork ensures efficient air delivery throughout your home"
+  },
+  {
+    icon: Compass,
+    title: "Orientation of House",
+    description: "South and west-facing rooms receive more sun exposure, requiring additional cooling capacity"
+  },
+  {
+    icon: Trees,
+    title: "Tree Coverage",
+    description: "Shade from mature trees can reduce cooling loads by up to 25% in summer months"
   }
 ];
 
@@ -124,6 +157,48 @@ const SizingCalculator = () => {
 
             <div className="grid md:grid-cols-3 gap-6">
               {sizingFactors.map((factor, index) => (
+                <motion.div
+                  key={factor.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                >
+                  <Card className="h-full text-center hover:shadow-lg transition-shadow">
+                    <CardContent className="pt-6">
+                      <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-4">
+                        <factor.icon className="h-7 w-7 text-primary" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                        {factor.title}
+                      </h3>
+                      <p className="text-muted-foreground text-sm">
+                        {factor.description}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Your Home is A System Subtitle */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="mt-16 text-center"
+            >
+              <h3 className="text-2xl md:text-3xl font-semibold text-foreground mb-4">
+                Your Home is A System
+              </h3>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-10">
+                Every component works together to determine your comfort and efficiency
+              </p>
+            </motion.div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {systemFactors.map((factor, index) => (
                 <motion.div
                   key={factor.title}
                   initial={{ opacity: 0, y: 20 }}
