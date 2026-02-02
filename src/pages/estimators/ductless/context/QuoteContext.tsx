@@ -21,6 +21,8 @@ const INITIAL_TOTALS: PricingTotals = {
   rebates: 0,
   finalTotal: 0,
   monthlyFinancing: 0,
+  perZonePrices: [],
+  totalSavings: 0,
 };
 
 const INITIAL_STATE: QuoteState = {

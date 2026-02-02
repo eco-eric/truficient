@@ -283,27 +283,54 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
           </div>
         </div>
 
-        {/* Rooms list with BTU and unit type */}
+        {/* Rooms list with BTU, unit type, and discount badges */}
         <div className="rounded-xl border p-4 mb-6">
           <h4 className="font-semibold text-foreground mb-3">Configured Zones</h4>
           <ul className="space-y-3">
-            {state.selectedRooms.map((room) => (
-              <li key={room.id} className="text-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-[#a5a983]" />
-                    <span className="font-medium">{room.label}</span>
+            {state.selectedRooms.map((room) => {
+              const zonePrice = pricing.perZonePrices.find(z => z.roomId === room.id);
+              const hasDiscount = (zonePrice?.discountRate || 0) > 0;
+              
+              return (
+                <li key={room.id} className="text-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-[#a5a983]" />
+                      <span className="font-medium">{room.label}</span>
+                      {hasDiscount && (
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                          25% OFF
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      {hasDiscount && zonePrice && (
+                        <span className="text-xs text-muted-foreground line-through mr-2">
+                          {formatMoney(zonePrice.basePrice)}
+                        </span>
+                      )}
+                      <span className={hasDiscount ? "text-green-700 font-medium" : "text-muted-foreground"}>
+                        {formatMoney(zonePrice?.finalPrice || 0)}
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-muted-foreground">
-                    {room.recommendedBtu.toLocaleString()} BTU
-                  </span>
-                </div>
-                <div className="ml-6 text-xs text-muted-foreground">
-                  {getUnitTypeName(room)}
-                </div>
-              </li>
-            ))}
+                  <div className="ml-6 flex justify-between text-xs text-muted-foreground">
+                    <span>{getUnitTypeName(room)}</span>
+                    <span>{room.recommendedBtu.toLocaleString()} BTU</span>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
+          
+          {/* Multi-zone savings banner */}
+          {pricing.totalSavings > 0 && (
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-700 font-medium text-center">
+                🎉 Multi-Zone Discount: You're saving {formatMoney(pricing.totalSavings)}!
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Pricing breakdown */}
@@ -316,6 +343,12 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
               </span>
               <span>{formatMoney(pricing.baseEquipmentCost)}</span>
             </div>
+            {pricing.totalSavings > 0 && (
+              <div className="flex justify-between text-green-600 text-xs">
+                <span className="pl-3">Multi-zone discount (25% off zones 2-4, etc.)</span>
+                <span>-{formatMoney(pricing.totalSavings)}</span>
+              </div>
+            )}
             {pricing.tierMultiplier !== 1 && (
               <div className="flex justify-between text-muted-foreground text-xs">
                 <span className="pl-3">× {selectedTier?.display_name} tier ({pricing.tierMultiplier}×)</span>

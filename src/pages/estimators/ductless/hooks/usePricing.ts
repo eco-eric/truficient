@@ -1,11 +1,27 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { RoomConfig, RoomSize, SunExposure, RoomType, GarageConfig, DuctlessUnitType, DuctlessSystemTier, DuctlessAddon } from "../types";
+import type { RoomConfig, RoomSize, SunExposure, RoomType, GarageConfig, DuctlessUnitType, DuctlessSystemTier, DuctlessAddon, ZonePrice } from "../types";
 
 // BTU calculation constants
 const BTU_PER_SQFT_BASE = 25; // Base BTU per sq ft
 const CEILING_HEIGHT_BASELINE = 9; // Standard ceiling height (updated to 9ft)
+
+// Multi-zone discount configuration
+const MULTI_ZONE_DISCOUNT_RATE = 0.25; // 25% off
+const FULL_PRICE_INTERVAL = 4; // Every 4th zone starting from 1 is full price
+
+/**
+ * Determine if a zone (1-indexed position) gets a discount
+ * Pattern: Zone 1 = full, Zones 2-4 = discount, Zone 5 = full, Zones 6-8 = discount, etc.
+ */
+function getZoneDiscount(zonePosition: number): number {
+  // Position within the 4-zone cycle (0-3)
+  const positionInCycle = (zonePosition - 1) % FULL_PRICE_INTERVAL;
+  
+  // First position in each cycle (0) = full price, rest get discount
+  return positionInCycle === 0 ? 0 : MULTI_ZONE_DISCOUNT_RATE;
+}
 
 // Room size square footage estimates
 const ROOM_SIZE_SQFT: Record<RoomSize, number> = {
@@ -200,6 +216,10 @@ interface PricingBreakdown {
   // Metadata
   zoneCount: number;
   totalBtu: number;
+  
+  // Multi-zone discount tracking
+  perZonePrices: ZonePrice[];
+  totalSavings: number;
 }
 
 /**
@@ -271,18 +291,40 @@ export function usePricing(input: PricingInput): {
       return sum + calculateRoomBtu(room.size, room.ceilingHeight, room.sunExposure, room.roomType, room.garageConfig);
     }, 0);
 
-    // Calculate base equipment cost from per-room unit type selections
-    // If rooms have individual unit types, use those; otherwise fall back to global unitTypeId
-    const baseEquipmentCost = input.rooms.reduce((sum, room) => {
-      const roomUnitType = unitTypes.find(u => u.id === room.unitTypeId);
-      // Use room's unit type if set, otherwise fall back to global selection or 0
-      const unitPrice = roomUnitType?.base_price || selectedUnit?.base_price || 0;
-      return sum + unitPrice;
-    }, 0);
+    // Calculate per-zone pricing with multi-zone discounts
+    let totalEquipmentAfterDiscount = 0;
+    let totalSavings = 0;
+    let baseEquipmentCost = 0;
     
-    // Apply tier multiplier
+    const perZonePrices: ZonePrice[] = input.rooms.map((room, index) => {
+      const zonePosition = index + 1; // 1-indexed
+      const roomUnitType = unitTypes.find(u => u.id === room.unitTypeId);
+      const basePrice = roomUnitType?.base_price || selectedUnit?.base_price || 0;
+      
+      const discountRate = getZoneDiscount(zonePosition);
+      const discountAmount = basePrice * discountRate;
+      const finalPrice = basePrice - discountAmount;
+      
+      baseEquipmentCost += basePrice;
+      totalEquipmentAfterDiscount += finalPrice;
+      totalSavings += discountAmount;
+      
+      return {
+        roomId: room.id,
+        roomLabel: room.label,
+        basePrice,
+        discountRate,
+        discountAmount,
+        finalPrice,
+        zonePosition,
+      };
+    });
+    
+    // Apply tier multiplier to discounted equipment total
     const tierMultiplier = selectedTier?.price_multiplier || 1;
-    const equipmentTotal = baseEquipmentCost * tierMultiplier;
+    const equipmentTotal = totalEquipmentAfterDiscount * tierMultiplier;
+    // Also apply tier multiplier to savings for accurate display
+    const adjustedSavings = totalSavings * tierMultiplier;
 
     // Calculate add-ons
     const addonsBreakdown = selectedAddons.map((addon) => {
@@ -326,6 +368,8 @@ export function usePricing(input: PricingInput): {
       monthlyFinancing: Math.round(monthlyFinancing),
       zoneCount,
       totalBtu,
+      perZonePrices,
+      totalSavings: adjustedSavings,
     };
   }, [input.rooms, selectedUnit, selectedTier, selectedAddons, unitTypes]);
 

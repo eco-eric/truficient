@@ -114,6 +114,17 @@ export interface CustomerInfo {
   placeId?: string;
 }
 
+// Per-zone pricing with discount info
+export interface ZonePrice {
+  roomId: string;
+  roomLabel: string;
+  basePrice: number;
+  discountRate: number;      // 0 or 0.25
+  discountAmount: number;    // Saved amount
+  finalPrice: number;        // After discount
+  zonePosition: number;      // 1-indexed position
+}
+
 // Pricing totals
 export interface PricingTotals {
   subtotal: number;
@@ -121,6 +132,9 @@ export interface PricingTotals {
   rebates: number;
   finalTotal: number;
   monthlyFinancing: number;
+  // Multi-zone discount tracking
+  perZonePrices: ZonePrice[];
+  totalSavings: number;      // Sum of all discounts
 }
 
 // Full quote state
