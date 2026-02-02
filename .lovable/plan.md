@@ -1,205 +1,217 @@
 
 
-## Add Abandoned Cart View to Admin Dashboard
+## Fix Abandoned Cart Capture for Ducted Estimator
 
-### Overview
+### Problem Summary
 
-Create a dedicated Abandoned Cart admin page at `/admin/abandoned-carts` that displays leads who started but didn't complete the ducted estimator flow. These are users who submitted their contact info (Step 8) but never completed the final quote submission (Step 10).
+The partial submission (abandoned cart) tracking is **not working** because:
 
----
-
-### Current State
-
-| Component | Status |
-|-----------|--------|
-| Ducted partial submissions | ✅ Implemented - saves with `status: "partial"` at Step 8 |
-| Ductless partial submissions | ❌ Not implemented - only saves on final submit |
-| Admin view for partial leads | ❌ Missing - no dedicated abandoned cart page |
-| Status filter in UnifiedSubmissions | Partial - "partial" not in status dropdown |
-
-Currently, all 10 ducted submissions have `status: "new"`, meaning users have been completing the full flow. The "partial" status would appear when a user abandons after Step 8.
+1. **Only triggers on "Continue" click** - The partial submission code only runs when the user clicks the Continue button in Step 8
+2. **No exit detection** - There are no event listeners to capture when users:
+   - Click the Truficient logo to go home
+   - Close the browser tab
+   - Navigate away using browser back button
+   - Switch to another app on mobile
+3. **Database confirms the issue** - All 10+ ducted submissions have `status: "new"` (completed flow) with zero `status: "partial"` records
 
 ---
 
-### Page Layout
+### Root Cause Analysis
+
+| Scenario | Current Behavior | Expected Behavior |
+|----------|-----------------|-------------------|
+| User clicks Continue on Step 8 | Creates partial submission, then proceeds | Works (if code runs) |
+| User closes browser tab | Nothing saved | Should save partial |
+| User clicks Truficient logo | Navigates to home, nothing saved | Should save partial |
+| User presses browser back button | Navigates away, nothing saved | Should save partial |
+| User switches mobile apps | Nothing saved | Should save partial |
+
+---
+
+### Solution Architecture
 
 ```text
 +----------------------------------------------------------+
-|  Admin Sidebar  |  ABANDONED CARTS                        |
-|                 |  [Search] [Date Range] [Source Filter]  |
-+-----------------+-----------------------------------------+
-|                 |                                         |
-|  Overview       |  STATS CARDS                            |
-|  Submissions    |  +--------+ +--------+ +--------+       |
-|  > Abandoned ←  |  | Today  | | 7 Days | | 30 Days|       |
-|  DFW Watch      |  +--------+ +--------+ +--------+       |
-|                 |                                         |
-|  Content        |  TABLE                                  |
-|  ...            |  Date | Customer | Email | Phone |      |
-|                 |        Home Details | Source | Actions  |
-|                 |                                         |
-|                 |  [Detail Sheet on Row Click]            |
-|                 |                                         |
-+-----------------+-----------------------------------------+
+|                  DuctedEstimator.tsx                      |
+|  +----------------------------------------------------+  |
+|  |  AbandonedCartTracker Component (NEW)              |  |
+|  |  - Listens for visibilitychange, beforeunload      |  |
+|  |  - Watches currentStep and customerInfo            |  |
+|  |  - Auto-saves partial when user exits after Step 8 |  |
+|  +----------------------------------------------------+  |
+|                                                          |
+|  +----------------------------------------------------+  |
+|  |  Step8CustomerInfo.tsx                             |  |
+|  |  - Continue button: saves partial, then proceeds   |  |
+|  |  - Data exposed to context for tracker to access   |  |
+|  +----------------------------------------------------+  |
++----------------------------------------------------------+
 ```
 
 ---
 
-### Files to Create/Modify
+### Files to Modify
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `src/pages/admin/AbandonedCarts.tsx` | CREATE | New admin page |
-| `src/App.tsx` | MODIFY | Add route `/admin/abandoned-carts` |
-| `src/components/admin/adminNavConfig.ts` | MODIFY | Add nav item under Overview |
-| `src/pages/admin/UnifiedSubmissions.tsx` | MODIFY | Add "partial" to status dropdown |
+| `src/pages/estimators/ducted/DuctedEstimator.tsx` | MODIFY | Add AbandonedCartTracker component |
+| `src/pages/estimators/ducted/context/EstimatorContext.tsx` | MODIFY | Add helper to check if contact info is complete |
+| `src/pages/estimators/ducted/steps/Step8CustomerInfo.tsx` | MINOR FIX | Ensure partial submission works correctly |
 
 ---
 
-### Page Features
+### Implementation Details
 
-#### 1. Stats Summary Cards
-Display counts for different time periods:
-- **Today**: Abandoned carts from today
-- **Last 7 Days**: Weekly view
-- **Last 30 Days**: Monthly view
-- **Total**: All-time partial submissions
+#### 1. Create Abandoned Cart Tracker Component
 
-#### 2. Data Table Columns
-| Column | Content |
-|--------|---------|
-| Date | Created timestamp |
-| Customer | Name (or "Not provided") |
-| Contact | Email + Phone |
-| Home Details | Type, Size, Heating preference |
-| Source | Ducted / Ductless (future) |
-| Age | Time since abandonment (e.g., "2 hours ago") |
-| Actions | View details, Mark as contacted |
-
-#### 3. Detail Sheet (Side Panel)
-When clicking a row:
-- Full customer info (name, email, phone, address)
-- Home configuration captured
-- Best time to call preference
-- Quick actions: Mark contacted, Convert to full lead, Send follow-up
-
-#### 4. Filters
-- **Search**: By name, email, or phone
-- **Date Range**: Today, Last 7 days, Last 30 days, Custom
-- **Source**: Ducted, Ductless (when implemented)
-
-#### 5. Status Actions
-- **Mark as Contacted**: Change status to "contacted" 
-- **Convert to Lead**: Change status to "new" (moves to main submissions)
-- **Mark as Junk**: Filter out test/spam entries
-
----
-
-### Component Structure
+Add a new component inside `DuctedEstimator.tsx` that:
+- Uses `useEffect` with `visibilitychange` and `beforeunload` event listeners
+- Tracks when user has entered Step 8+ and filled contact info
+- Auto-saves partial submission when user exits/hides page
+- Uses refs to access latest state (avoids stale closure issues)
 
 ```typescript
-// src/pages/admin/AbandonedCarts.tsx
+// Inside DuctedEstimator.tsx
 
-const AbandonedCarts = () => {
-  // Query ducted submissions with status = 'partial'
-  const { data: ductedPartials } = useQuery({
-    queryKey: ['abandoned-carts', 'ducted'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('ducted_estimate_submissions')
-        .select('*')
-        .eq('status', 'partial')
-        .order('created_at', { ascending: false });
-      return data;
-    }
-  });
+const AbandonedCartTracker: React.FC = () => {
+  const { state } = useEstimator();
+  const stateRef = useRef(state);
+  
+  // Keep ref updated with latest state
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
-  // Future: Add ductless when implemented
-  // const { data: ductlessPartials } = useQuery({...});
+  useEffect(() => {
+    const savePartialSubmission = async () => {
+      const s = stateRef.current;
+      
+      // Only save if:
+      // 1. User is on Step 8 or beyond (has seen contact form)
+      // 2. Has entered at least some contact info (phone or email)
+      // 3. No partial submission exists OR needs updating
+      // 4. Submission hasn't been finalized (step < 11)
+      
+      if (s.currentStep >= 8 && s.currentStep < 11) {
+        const hasContactInfo = s.customerInfo.phone || s.customerInfo.email;
+        
+        if (hasContactInfo && !s.partialSubmissionId) {
+          // Save to database (fire-and-forget)
+          await supabase.from("ducted_estimate_submissions").insert({
+            customer_name: s.customerInfo.name?.trim() || "",
+            customer_email: s.customerInfo.email?.trim() || "",
+            customer_phone: s.customerInfo.phone?.trim() || null,
+            // ... other fields
+            status: "partial",
+          });
+        }
+      }
+    };
 
+    // Handle page visibility changes (tab switch, minimize, close)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        savePartialSubmission();
+      }
+    };
+
+    // Handle page unload (browser close, navigation)
+    const handleBeforeUnload = () => {
+      savePartialSubmission();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
+
+  return null; // No UI, just tracking
+};
+```
+
+#### 2. Update DuctedEstimator Component
+
+Add the tracker inside the EstimatorProvider:
+
+```typescript
+const DuctedEstimator = () => {
   return (
-    <AdminLayout title="Abandoned Carts">
-      {/* Stats Cards */}
-      {/* Filters */}
-      {/* Data Table */}
-      {/* Detail Sheet */}
-    </AdminLayout>
+    <EstimatorProvider>
+      <AbandonedCartTracker />
+      <EstimatorContent />
+    </EstimatorProvider>
   );
 };
 ```
 
----
+#### 3. Handle Logo Click Navigation
 
-### Navigation Update
-
-Add to `adminNavConfig.ts` under Overview section:
+Add navigation intercept for the Truficient logo in the compact header:
 
 ```typescript
-{
-  title: 'Overview',
-  items: [
-    { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, adminOnly: false },
-    { label: 'Submissions', href: '/admin/submissions', icon: FileText, adminOnly: false },
-    { label: 'Abandoned Carts', href: '/admin/abandoned-carts', icon: ShoppingCart, adminOnly: true }, // NEW
-    { label: 'DFW Watch List', href: '/admin/dfw-watchlist', icon: Target, adminOnly: true },
-  ],
-},
+// In DuctedEstimator.tsx compact header section
+const handleLogoClick = (e: React.MouseEvent) => {
+  // The AbandonedCartTracker will handle saving via beforeunload
+  // Just let navigation proceed normally
+};
+
+// Or use react-router's useBlocker for confirmation dialog
 ```
 
 ---
 
-### Route Addition
+### Event Handling Strategy
 
-```typescript
-// In App.tsx
-import AdminAbandonedCarts from "./pages/admin/AbandonedCarts";
-
-// Add route
-{ path: "/admin/abandoned-carts", element: <ProtectedRoute><AdminAbandonedCarts /></ProtectedRoute> },
-```
+| Event | When it Fires | Action |
+|-------|--------------|--------|
+| `visibilitychange` (hidden) | Tab switch, app switch, minimize | Save partial async |
+| `beforeunload` | Tab close, browser close, navigation | Save partial (sync or sendBeacon) |
+| Continue button click | User proceeds to Step 9 | Save partial via existing code |
 
 ---
 
-### UnifiedSubmissions Enhancement
+### Technical Considerations
 
-Add "partial" to the status filter dropdown:
-
-```typescript
-<SelectContent>
-  <SelectItem value="all">All Statuses</SelectItem>
-  <SelectItem value="new">New</SelectItem>
-  <SelectItem value="partial">Partial (Abandoned)</SelectItem>  // NEW
-  <SelectItem value="contacted">Contacted</SelectItem>
-  ...
-</SelectContent>
-```
+1. **Use `navigator.sendBeacon`** for `beforeunload` events since async requests may be cancelled
+2. **Debounce auto-saves** to avoid spamming database if user rapidly switches tabs
+3. **Check `partialSubmissionId`** to update existing record vs creating duplicates
+4. **Use refs for state access** to avoid stale closures in event handlers
 
 ---
 
-### Mobile Responsiveness
+### Testing Scenarios
 
-| Section | Desktop | Tablet | Mobile |
-|---------|---------|--------|--------|
-| Stats | 4 cols | 2 cols | 2 cols |
-| Table | Full | Scrollable | Card view |
-| Detail Sheet | Side panel | Side panel | Full screen |
+After implementation, verify these scenarios create partial submissions:
 
----
-
-### Future Enhancements (Not in this scope)
-
-1. **Ductless Abandoned Cart Tracking**: Add partial submission logic to ductless CustomerInfoStep
-2. **Automated Follow-up**: Integration with GHL for automatic follow-up emails/SMS
-3. **Dashboard Widget**: Show abandoned cart count on main dashboard
-4. **Time-based Alerts**: Highlight leads abandoned within last hour (high conversion potential)
+1. Fill contact form on Step 8, then close browser tab
+2. Fill contact form on Step 8, then click Truficient logo
+3. Fill contact form on Step 8, then press browser back button
+4. Fill contact form on Step 8, then click Continue (existing flow)
+5. Get to Step 9, then close browser tab
+6. On mobile: fill form, then switch apps
 
 ---
 
-### Key Implementation Details
+### Existing Step 8 Code Assessment
 
-1. **Query Filter**: Use `status = 'partial'` to fetch only incomplete submissions
-2. **Age Calculation**: Use `date-fns` formatDistanceToNow for "2 hours ago" style display
-3. **Status Updates**: Reuse existing mutation patterns from UnifiedSubmissions
-4. **Styling**: Match existing admin page patterns (navy theme, card layouts)
-5. **Empty State**: Friendly message when no abandoned carts exist
+The current `Step8CustomerInfo.tsx` code at lines 81-159 has correct partial submission logic, but it only triggers on Continue button click. The fix adds automatic exit detection as a safety net.
+
+The existing code correctly:
+- Creates new partial submissions with `status: "partial"`
+- Updates existing partial submissions using `partialSubmissionId`
+- Stores the submission ID in context for Step 10 to update
+
+---
+
+### Expected Outcome
+
+After implementation:
+- Abandoned carts will appear in the new Admin dashboard view
+- Partial submissions will show `status: "partial"` 
+- Leads who complete the flow will have `status: "new"` (unchanged)
+- No duplicate submissions from the same session
 
