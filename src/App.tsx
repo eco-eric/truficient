@@ -65,6 +65,7 @@ import AdminEquipmentLibrary from "./pages/admin/EquipmentLibrary";
 import AdminDFWWatchList from "./pages/admin/DFWWatchList";
 import AdminCustomerEquipment from "./pages/admin/CustomerEquipment";
 import AdminTrashBin from "./pages/admin/TrashBin";
+import AdminAbandonedCarts from "./pages/admin/AbandonedCarts";
 import { Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
@@ -136,6 +137,7 @@ const router = createBrowserRouter([
       { path: "/admin/login", element: <AdminLogin /> },
       { path: "/admin", element: <ProtectedRoute><AdminDashboard /></ProtectedRoute> },
       { path: "/admin/submissions", element: <ProtectedRoute><AdminUnifiedSubmissions /></ProtectedRoute> },
+      { path: "/admin/abandoned-carts", element: <ProtectedRoute><AdminAbandonedCarts /></ProtectedRoute> },
       { path: "/admin/dfw-watchlist", element: <ProtectedRoute><AdminDFWWatchList /></ProtectedRoute> },
       { path: "/admin/blog", element: <ProtectedRoute><AdminBlogPosts /></ProtectedRoute> },
       { path: "/admin/blog/:id", element: <ProtectedRoute><AdminBlogPostEditor /></ProtectedRoute> },
