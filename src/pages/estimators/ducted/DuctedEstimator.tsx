@@ -17,6 +17,14 @@ import { Link } from "react-router-dom";
 import truficientLogo from "@/assets/truficient-logo.png";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { useAbandonedCartTracker } from "./hooks/useAbandonedCartTracker";
+
+// Component that enables abandoned cart tracking
+const AbandonedCartTracker = () => {
+  const { state, setPartialSubmissionId } = useEstimator();
+  useAbandonedCartTracker(state, setPartialSubmissionId);
+  return null;
+};
 
 const STEP_LABELS = [
   "Location",        // 0
@@ -129,6 +137,7 @@ const EstimatorContent = () => {
 const DuctedEstimator = () => {
   return (
     <EstimatorProvider>
+      <AbandonedCartTracker />
       <EstimatorContent />
     </EstimatorProvider>
   );
