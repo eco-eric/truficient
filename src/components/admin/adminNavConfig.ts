@@ -23,7 +23,8 @@ import {
   Library,
   Target,
   Trash2,
-  ScanLine
+  ScanLine,
+  ShoppingCart
 } from 'lucide-react';
 
 export interface NavItem {
@@ -45,6 +46,7 @@ export const navSections: NavSection[] = [
     items: [
       { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, adminOnly: false },
       { label: 'Submissions', href: '/admin/submissions', icon: FileText, adminOnly: false },
+      { label: 'Abandoned Carts', href: '/admin/abandoned-carts', icon: ShoppingCart, adminOnly: true },
       { label: 'DFW Watch List', href: '/admin/dfw-watchlist', icon: Target, adminOnly: true },
     ],
   },

@@ -465,6 +465,7 @@ const UnifiedSubmissions = () => {
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="new">New</SelectItem>
+              <SelectItem value="partial">Partial (Abandoned)</SelectItem>
               <SelectItem value="contacted">Contacted</SelectItem>
               <SelectItem value="reviewed">Reviewed</SelectItem>
               <SelectItem value="scheduled">Scheduled</SelectItem>
