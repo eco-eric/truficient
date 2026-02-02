@@ -1,110 +1,46 @@
 
-## Add Financing Page Under Resources
+
+## Add Abandoned Cart View to Admin Dashboard
 
 ### Overview
 
-Create a new public-facing Financing page at `/financing` that explains Truficient's partnership with Synchrony and the types of financing programs available, without listing specific rates or terms (which vary by promotion). The page will include all required Synchrony and federal (TILA/Reg Z) disclosures.
+Create a dedicated Abandoned Cart admin page at `/admin/abandoned-carts` that displays leads who started but didn't complete the ducted estimator flow. These are users who submitted their contact info (Step 8) but never completed the final quote submission (Step 10).
 
 ---
 
-### Navigation Updates
+### Current State
 
-| Location | Change |
-|----------|--------|
-| Header (Resources dropdown) | Add "Financing" link with CreditCard icon |
-| Footer (Company column) | Add "Financing" link |
+| Component | Status |
+|-----------|--------|
+| Ducted partial submissions | ✅ Implemented - saves with `status: "partial"` at Step 8 |
+| Ductless partial submissions | ❌ Not implemented - only saves on final submit |
+| Admin view for partial leads | ❌ Missing - no dedicated abandoned cart page |
+| Status filter in UnifiedSubmissions | Partial - "partial" not in status dropdown |
+
+Currently, all 10 ducted submissions have `status: "new"`, meaning users have been completing the full flow. The "partial" status would appear when a user abandons after Step 8.
 
 ---
 
-### Page Structure
+### Page Layout
 
 ```text
 +----------------------------------------------------------+
-|                      HERO SECTION                         |
-|  "Flexible Financing Options"                            |
-|  Make your comfort upgrade affordable                    |
-|  [Synchrony Logo]                                        |
-+----------------------------------------------------------+
-
-+----------------------------------------------------------+
-|                   WHY FINANCE?                            |
-|  Grid of 4 benefits:                                     |
-|  • Low Monthly Payments  • Quick Application             |
-|  • Flexible Terms        • Promotional Options           |
-+----------------------------------------------------------+
-
-+----------------------------------------------------------+
-|              FINANCING PROGRAMS OVERVIEW                  |
-|  3 Program Type Cards (no specific rates):               |
-|  • Deferred Interest (No Interest if Paid in Full)       |
-|  • Reduced APR / Fixed Pay                               |
-|  • Equal Pay / No Interest                               |
-+----------------------------------------------------------+
-
-+----------------------------------------------------------+
-|                  HOW IT WORKS                             |
-|  4-step process:                                         |
-|  1. Get Your Estimate → 2. Apply for Financing          |
-|  3. Instant Decision → 4. Start Your Project            |
-+----------------------------------------------------------+
-
-+----------------------------------------------------------+
-|              IMPORTANT INFORMATION                        |
-|  Deferred Interest Warning Box                           |
-|  (Required Synchrony disclosure)                         |
-+----------------------------------------------------------+
-
-+----------------------------------------------------------+
-|                    CTA SECTION                            |
-|  "Ready to Get Started?"                                 |
-|  [Get Your Estimate] [Talk to an Expert]                |
-+----------------------------------------------------------+
-
-+----------------------------------------------------------+
-|           LEGAL DISCLOSURES (Footer Section)              |
-|  All required Synchrony and federal disclosures          |
-+----------------------------------------------------------+
-```
-
----
-
-### Required Synchrony Disclosures
-
-Based on research of Synchrony requirements and TILA/Regulation Z:
-
-#### 1. Primary Credit Disclosure (Always Required)
-```
-*Subject to credit approval. Minimum monthly payments required.
-See store associate for details. Financing provided by Synchrony Bank.
-```
-
-#### 2. Equal Opportunity Disclosure
-```
-Synchrony Bank is an Equal Housing Lender.
-Equal Opportunity Lender.
-```
-
-#### 3. Deferred Interest Warning (Required for "No Interest if Paid in Full" programs)
-```
-For deferred interest promotions: With this promotional financing offer,
-interest accrues (adds up) on your account from the purchase date, but is
-only charged if you do not pay off your promotional balance within the
-defined promotional period. If you do not pay the promotional balance in
-full by the end of the promotional period, all accrued interest will be
-charged to your account.
-```
-
-#### 4. Fair Lending Statement
-```
-It is important that financing be offered to ALL customers to ensure
-compliance with Fair Lending guidelines.
-```
-
-#### 5. Program Availability Notice
-```
-Promotional financing programs and terms are subject to change.
-Specific promotional offers vary by installation type and are
-presented during the estimate process. Not all applicants will qualify.
+|  Admin Sidebar  |  ABANDONED CARTS                        |
+|                 |  [Search] [Date Range] [Source Filter]  |
++-----------------+-----------------------------------------+
+|                 |                                         |
+|  Overview       |  STATS CARDS                            |
+|  Submissions    |  +--------+ +--------+ +--------+       |
+|  > Abandoned ←  |  | Today  | | 7 Days | | 30 Days|       |
+|  DFW Watch      |  +--------+ +--------+ +--------+       |
+|                 |                                         |
+|  Content        |  TABLE                                  |
+|  ...            |  Date | Customer | Email | Phone |      |
+|                 |        Home Details | Source | Actions  |
+|                 |                                         |
+|                 |  [Detail Sheet on Row Click]            |
+|                 |                                         |
++-----------------+-----------------------------------------+
 ```
 
 ---
@@ -113,74 +49,130 @@ presented during the estimate process. Not all applicants will qualify.
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `src/pages/Financing.tsx` | CREATE | New financing page |
-| `src/App.tsx` | MODIFY | Add route for /financing |
-| `src/components/layout/Header.tsx` | MODIFY | Add Financing to Resources dropdown |
-| `src/components/layout/Footer.tsx` | MODIFY | Add Financing link to Company column |
+| `src/pages/admin/AbandonedCarts.tsx` | CREATE | New admin page |
+| `src/App.tsx` | MODIFY | Add route `/admin/abandoned-carts` |
+| `src/components/admin/adminNavConfig.ts` | MODIFY | Add nav item under Overview |
+| `src/pages/admin/UnifiedSubmissions.tsx` | MODIFY | Add "partial" to status dropdown |
 
 ---
 
-### Page Component Structure
+### Page Features
+
+#### 1. Stats Summary Cards
+Display counts for different time periods:
+- **Today**: Abandoned carts from today
+- **Last 7 Days**: Weekly view
+- **Last 30 Days**: Monthly view
+- **Total**: All-time partial submissions
+
+#### 2. Data Table Columns
+| Column | Content |
+|--------|---------|
+| Date | Created timestamp |
+| Customer | Name (or "Not provided") |
+| Contact | Email + Phone |
+| Home Details | Type, Size, Heating preference |
+| Source | Ducted / Ductless (future) |
+| Age | Time since abandonment (e.g., "2 hours ago") |
+| Actions | View details, Mark as contacted |
+
+#### 3. Detail Sheet (Side Panel)
+When clicking a row:
+- Full customer info (name, email, phone, address)
+- Home configuration captured
+- Best time to call preference
+- Quick actions: Mark contacted, Convert to full lead, Send follow-up
+
+#### 4. Filters
+- **Search**: By name, email, or phone
+- **Date Range**: Today, Last 7 days, Last 30 days, Custom
+- **Source**: Ducted, Ductless (when implemented)
+
+#### 5. Status Actions
+- **Mark as Contacted**: Change status to "contacted" 
+- **Convert to Lead**: Change status to "new" (moves to main submissions)
+- **Mark as Junk**: Filter out test/spam entries
+
+---
+
+### Component Structure
 
 ```typescript
-// src/pages/Financing.tsx
+// src/pages/admin/AbandonedCarts.tsx
 
-const Financing = () => {
-  usePageSEO();
-  const { trackButtonClick } = useButtonTracking();
+const AbandonedCarts = () => {
+  // Query ducted submissions with status = 'partial'
+  const { data: ductedPartials } = useQuery({
+    queryKey: ['abandoned-carts', 'ducted'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('ducted_estimate_submissions')
+        .select('*')
+        .eq('status', 'partial')
+        .order('created_at', { ascending: false });
+      return data;
+    }
+  });
 
-  const benefits = [
-    { icon: DollarSign, title: "Low Monthly Payments", description: "..." },
-    { icon: Clock, title: "Quick Application", description: "..." },
-    { icon: Calendar, title: "Flexible Terms", description: "..." },
-    { icon: Sparkles, title: "Promotional Options", description: "..." },
-  ];
-
-  const programTypes = [
-    {
-      title: "Deferred Interest",
-      subtitle: "No Interest if Paid in Full",
-      description: "Pay no interest if you pay the promotional balance...",
-      icon: Percent,
-    },
-    {
-      title: "Reduced APR",
-      subtitle: "Fixed Monthly Payments",
-      description: "Predictable payments at a reduced interest rate...",
-      icon: TrendingDown,
-    },
-    {
-      title: "Equal Pay",
-      subtitle: "No Interest",
-      description: "Fixed monthly payments with 0% APR...",
-      icon: CheckCircle,
-    },
-  ];
-
-  const steps = [
-    { step: 1, title: "Get Your Estimate", description: "..." },
-    { step: 2, title: "Apply for Financing", description: "..." },
-    { step: 3, title: "Instant Decision", description: "..." },
-    { step: 4, title: "Start Your Project", description: "..." },
-  ];
+  // Future: Add ductless when implemented
+  // const { data: ductlessPartials } = useQuery({...});
 
   return (
-    // Hero → Benefits Grid → Program Cards → How It Works → 
-    // Important Info Box → CTA → Legal Disclosures
+    <AdminLayout title="Abandoned Carts">
+      {/* Stats Cards */}
+      {/* Filters */}
+      {/* Data Table */}
+      {/* Detail Sheet */}
+    </AdminLayout>
   );
 };
 ```
 
 ---
 
-### Styling Approach
+### Navigation Update
 
-- **Hero**: `bg-primary` with Synchrony partner badge
-- **Benefits Grid**: 4-column responsive grid with icon cards
-- **Program Cards**: 3-column grid, each with icon, title, and description
-- **How It Works**: Numbered step cards with connecting visual
-- **Warning Box**: Yellow/amber alert-style card for deferred interest warning
-- **Disclosures**: Small text at bottom in muted style
+Add to `adminNavConfig.ts` under Overview section:
+
+```typescript
+{
+  title: 'Overview',
+  items: [
+    { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, adminOnly: false },
+    { label: 'Submissions', href: '/admin/submissions', icon: FileText, adminOnly: false },
+    { label: 'Abandoned Carts', href: '/admin/abandoned-carts', icon: ShoppingCart, adminOnly: true }, // NEW
+    { label: 'DFW Watch List', href: '/admin/dfw-watchlist', icon: Target, adminOnly: true },
+  ],
+},
+```
+
+---
+
+### Route Addition
+
+```typescript
+// In App.tsx
+import AdminAbandonedCarts from "./pages/admin/AbandonedCarts";
+
+// Add route
+{ path: "/admin/abandoned-carts", element: <ProtectedRoute><AdminAbandonedCarts /></ProtectedRoute> },
+```
+
+---
+
+### UnifiedSubmissions Enhancement
+
+Add "partial" to the status filter dropdown:
+
+```typescript
+<SelectContent>
+  <SelectItem value="all">All Statuses</SelectItem>
+  <SelectItem value="new">New</SelectItem>
+  <SelectItem value="partial">Partial (Abandoned)</SelectItem>  // NEW
+  <SelectItem value="contacted">Contacted</SelectItem>
+  ...
+</SelectContent>
+```
 
 ---
 
@@ -188,72 +180,26 @@ const Financing = () => {
 
 | Section | Desktop | Tablet | Mobile |
 |---------|---------|--------|--------|
-| Benefits | 4 cols | 2 cols | 1 col |
-| Programs | 3 cols | 2 cols | 1 col |
-| Steps | 4 cols | 2 cols | 1 col (stacked) |
+| Stats | 4 cols | 2 cols | 2 cols |
+| Table | Full | Scrollable | Card view |
+| Detail Sheet | Side panel | Side panel | Full screen |
 
 ---
 
-### Header Navigation Update
+### Future Enhancements (Not in this scope)
 
-Add to Resources dropdown (after Equipment Library):
-
-```tsx
-<DropdownMenuItem asChild>
-  <Link 
-    to="/financing" 
-    className="cursor-pointer flex items-center gap-2"
-    onClick={() => handleTrackClick('Financing', 'Header - Main Nav', '/financing')}
-  >
-    <CreditCard className="w-4 h-4 text-secondary" />
-    Financing
-  </Link>
-</DropdownMenuItem>
-```
+1. **Ductless Abandoned Cart Tracking**: Add partial submission logic to ductless CustomerInfoStep
+2. **Automated Follow-up**: Integration with GHL for automatic follow-up emails/SMS
+3. **Dashboard Widget**: Show abandoned cart count on main dashboard
+4. **Time-based Alerts**: Highlight leads abandoned within last hour (high conversion potential)
 
 ---
 
-### Footer Update
+### Key Implementation Details
 
-Add to Company column links (after Blog, before Privacy Policy):
+1. **Query Filter**: Use `status = 'partial'` to fetch only incomplete submissions
+2. **Age Calculation**: Use `date-fns` formatDistanceToNow for "2 hours ago" style display
+3. **Status Updates**: Reuse existing mutation patterns from UnifiedSubmissions
+4. **Styling**: Match existing admin page patterns (navy theme, card layouts)
+5. **Empty State**: Friendly message when no abandoned carts exist
 
-```tsx
-<li>
-  <Link to="/financing" className="hover:text-secondary transition-colors inline-block">
-    Financing
-  </Link>
-</li>
-```
-
----
-
-### Route Addition
-
-```tsx
-// In App.tsx router config
-{ path: "/financing", element: <Financing /> },
-```
-
----
-
-### Legal Compliance Summary
-
-The page will include these federally-required and Synchrony-required disclosures:
-
-1. Credit approval disclaimer
-2. Minimum payment requirement
-3. Synchrony Bank as lender
-4. Equal opportunity/housing lender statement
-5. Deferred interest explanation (for promotional programs)
-6. No specific rates shown (rates vary by promotion and are disclosed during estimate)
-7. Subject to change notice
-
----
-
-### Key Design Decisions
-
-1. **No specific rates listed** - Rates vary by promotion and installation type, shown during estimate process
-2. **General program descriptions only** - Explains types of financing without committing to specific terms
-3. **Prominent deferred interest warning** - Synchrony requires clear disclosure of how deferred interest works
-4. **CTAs to estimators** - Drive traffic to estimate process where specific financing options are shown
-5. **Synchrony branding** - Include "Powered by Synchrony" badge as required by partnership
