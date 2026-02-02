@@ -1,52 +1,50 @@
 
 
-## Fix Abandoned Cart Capture for Ducted Estimator
+## Add Multi-Zone Discount to Ductless Estimator
 
-### Problem Summary
+### Overview
 
-The partial submission (abandoned cart) tracking is **not working** because:
+Implement a tiered discount system for the ductless estimator where customers receive a 25% discount on certain zones based on a repeating pattern:
 
-1. **Only triggers on "Continue" click** - The partial submission code only runs when the user clicks the Continue button in Step 8
-2. **No exit detection** - There are no event listeners to capture when users:
-   - Click the Truficient logo to go home
-   - Close the browser tab
-   - Navigate away using browser back button
-   - Switch to another app on mobile
-3. **Database confirms the issue** - All 10+ ducted submissions have `status: "new"` (completed flow) with zero `status: "partial"` records
+| Zone Position | Discount |
+|--------------|----------|
+| Zone 1 | Full price (0%) |
+| Zones 2-4 | 25% off |
+| Zone 5 | Full price (0%) |
+| Zones 6-8 | 25% off |
+| Zone 9 | Full price (0%) |
+| Zones 10-12 | 25% off |
+| ... | Pattern repeats |
 
----
-
-### Root Cause Analysis
-
-| Scenario | Current Behavior | Expected Behavior |
-|----------|-----------------|-------------------|
-| User clicks Continue on Step 8 | Creates partial submission, then proceeds | Works (if code runs) |
-| User closes browser tab | Nothing saved | Should save partial |
-| User clicks Truficient logo | Navigates to home, nothing saved | Should save partial |
-| User presses browser back button | Navigates away, nothing saved | Should save partial |
-| User switches mobile apps | Nothing saved | Should save partial |
+**Pattern Logic**: Every group of 4 zones, the first zone is full price and the next 3 are discounted.
 
 ---
 
-### Solution Architecture
+### Current Pricing Flow
 
 ```text
-+----------------------------------------------------------+
-|                  DuctedEstimator.tsx                      |
-|  +----------------------------------------------------+  |
-|  |  AbandonedCartTracker Component (NEW)              |  |
-|  |  - Listens for visibilitychange, beforeunload      |  |
-|  |  - Watches currentStep and customerInfo            |  |
-|  |  - Auto-saves partial when user exits after Step 8 |  |
-|  +----------------------------------------------------+  |
-|                                                          |
-|  +----------------------------------------------------+  |
-|  |  Step8CustomerInfo.tsx                             |  |
-|  |  - Continue button: saves partial, then proceeds   |  |
-|  |  - Data exposed to context for tracker to access   |  |
-|  +----------------------------------------------------+  |
-+----------------------------------------------------------+
+RoomSelector → usePricing hook → PricingBreakdown
+                    ↓
+           baseEquipmentCost = sum of each room's unit_type.base_price
+                    ↓
+           equipmentTotal = baseEquipmentCost × tierMultiplier
+                    ↓
+           finalTotal = equipmentTotal + addonsTotal - rebates
 ```
+
+Currently, all zones are priced at full `base_price` regardless of quantity.
+
+---
+
+### Solution Approach
+
+#### Option A: Hardcoded in Pricing Hook (Recommended - Simplest)
+Add a discount calculation function directly in `usePricing.ts` with the 25% discount constant. Quick to implement and easy to modify later.
+
+#### Option B: Database-Driven Configuration
+Create a new `ductless_pricing_config` table to store discount settings, making them admin-configurable. More flexible but requires additional admin UI.
+
+**Recommendation**: Start with Option A for immediate implementation. The 25% discount is hardcoded but clearly defined in one place. Admin UI can be added later if discount values need frequent adjustment.
 
 ---
 
@@ -54,164 +52,201 @@ The partial submission (abandoned cart) tracking is **not working** because:
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `src/pages/estimators/ducted/DuctedEstimator.tsx` | MODIFY | Add AbandonedCartTracker component |
-| `src/pages/estimators/ducted/context/EstimatorContext.tsx` | MODIFY | Add helper to check if contact info is complete |
-| `src/pages/estimators/ducted/steps/Step8CustomerInfo.tsx` | MINOR FIX | Ensure partial submission works correctly |
+| `src/pages/estimators/ductless/hooks/usePricing.ts` | MODIFY | Add zone discount calculation |
+| `src/pages/estimators/ductless/steps/QuoteSummary.tsx` | MODIFY | Display per-zone pricing with discounts |
+| `src/pages/estimators/ductless/types/index.ts` | MODIFY | Add discount info to PricingBreakdown type |
 
 ---
 
 ### Implementation Details
 
-#### 1. Create Abandoned Cart Tracker Component
+#### 1. Discount Calculation Function
 
-Add a new component inside `DuctedEstimator.tsx` that:
-- Uses `useEffect` with `visibilitychange` and `beforeunload` event listeners
-- Tracks when user has entered Step 8+ and filled contact info
-- Auto-saves partial submission when user exits/hides page
-- Uses refs to access latest state (avoids stale closure issues)
+Add to `usePricing.ts`:
 
 ```typescript
-// Inside DuctedEstimator.tsx
+// Multi-zone discount configuration
+const MULTI_ZONE_DISCOUNT_RATE = 0.25; // 25% off
+const FULL_PRICE_INTERVAL = 4; // Every 4th zone starting from 1 is full price
 
-const AbandonedCartTracker: React.FC = () => {
-  const { state } = useEstimator();
-  const stateRef = useRef(state);
+/**
+ * Determine if a zone (1-indexed position) gets a discount
+ * Pattern: Zone 1 = full, Zones 2-4 = discount, Zone 5 = full, Zones 6-8 = discount, etc.
+ */
+function getZoneDiscount(zonePosition: number): number {
+  // Position within the 4-zone cycle (0-3)
+  const positionInCycle = (zonePosition - 1) % FULL_PRICE_INTERVAL;
   
-  // Keep ref updated with latest state
-  useEffect(() => {
-    stateRef.current = state;
-  }, [state]);
+  // First position in each cycle (0) = full price, rest get discount
+  return positionInCycle === 0 ? 0 : MULTI_ZONE_DISCOUNT_RATE;
+}
 
-  useEffect(() => {
-    const savePartialSubmission = async () => {
-      const s = stateRef.current;
-      
-      // Only save if:
-      // 1. User is on Step 8 or beyond (has seen contact form)
-      // 2. Has entered at least some contact info (phone or email)
-      // 3. No partial submission exists OR needs updating
-      // 4. Submission hasn't been finalized (step < 11)
-      
-      if (s.currentStep >= 8 && s.currentStep < 11) {
-        const hasContactInfo = s.customerInfo.phone || s.customerInfo.email;
-        
-        if (hasContactInfo && !s.partialSubmissionId) {
-          // Save to database (fire-and-forget)
-          await supabase.from("ducted_estimate_submissions").insert({
-            customer_name: s.customerInfo.name?.trim() || "",
-            customer_email: s.customerInfo.email?.trim() || "",
-            customer_phone: s.customerInfo.phone?.trim() || null,
-            // ... other fields
-            status: "partial",
-          });
-        }
-      }
+/**
+ * Calculate per-zone pricing with discounts
+ */
+function calculateZonePricing(
+  rooms: RoomConfig[],
+  unitTypes: DuctlessUnitType[],
+  globalUnitTypeId: string | null
+): { perZonePrices: ZonePrice[]; totalEquipment: number; totalSavings: number } {
+  let totalEquipment = 0;
+  let totalSavings = 0;
+  
+  const perZonePrices = rooms.map((room, index) => {
+    const zonePosition = index + 1; // 1-indexed
+    const roomUnitType = unitTypes.find(u => u.id === room.unitTypeId);
+    const basePrice = roomUnitType?.base_price || 0;
+    
+    const discountRate = getZoneDiscount(zonePosition);
+    const discountAmount = basePrice * discountRate;
+    const finalPrice = basePrice - discountAmount;
+    
+    totalEquipment += finalPrice;
+    totalSavings += discountAmount;
+    
+    return {
+      roomId: room.id,
+      roomLabel: room.label,
+      basePrice,
+      discountRate,
+      discountAmount,
+      finalPrice,
+      zonePosition,
     };
-
-    // Handle page visibility changes (tab switch, minimize, close)
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        savePartialSubmission();
-      }
-    };
-
-    // Handle page unload (browser close, navigation)
-    const handleBeforeUnload = () => {
-      savePartialSubmission();
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, []);
-
-  return null; // No UI, just tracking
-};
+  });
+  
+  return { perZonePrices, totalEquipment, totalSavings };
+}
 ```
 
-#### 2. Update DuctedEstimator Component
+#### 2. Updated PricingBreakdown Type
 
-Add the tracker inside the EstimatorProvider:
+Add to `types/index.ts`:
 
 ```typescript
-const DuctedEstimator = () => {
+export interface ZonePrice {
+  roomId: string;
+  roomLabel: string;
+  basePrice: number;
+  discountRate: number;      // 0 or 0.25
+  discountAmount: number;    // Saved amount
+  finalPrice: number;        // After discount
+  zonePosition: number;      // 1-indexed position
+}
+
+export interface PricingBreakdown {
+  // ... existing fields ...
+  
+  // Multi-zone discount tracking
+  perZonePrices: ZonePrice[];
+  totalSavings: number;      // Sum of all discounts
+}
+```
+
+#### 3. Quote Summary Display Updates
+
+Show discounts in the "Configured Zones" section:
+
+```tsx
+{state.selectedRooms.map((room, index) => {
+  const zonePrice = pricing.perZonePrices.find(z => z.roomId === room.id);
+  const hasDiscount = (zonePrice?.discountRate || 0) > 0;
+  
   return (
-    <EstimatorProvider>
-      <AbandonedCartTracker />
-      <EstimatorContent />
-    </EstimatorProvider>
+    <li key={room.id} className="text-sm">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <CheckCircle className="h-4 w-4 text-[#a5a983]" />
+          <span className="font-medium">{room.label}</span>
+          {hasDiscount && (
+            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+              25% OFF
+            </span>
+          )}
+        </div>
+        <div className="text-right">
+          {hasDiscount && (
+            <span className="text-xs text-muted-foreground line-through mr-2">
+              {formatMoney(zonePrice.basePrice)}
+            </span>
+          )}
+          <span>{formatMoney(zonePrice?.finalPrice || 0)}</span>
+        </div>
+      </div>
+    </li>
   );
-};
-```
+})}
 
-#### 3. Handle Logo Click Navigation
-
-Add navigation intercept for the Truficient logo in the compact header:
-
-```typescript
-// In DuctedEstimator.tsx compact header section
-const handleLogoClick = (e: React.MouseEvent) => {
-  // The AbandonedCartTracker will handle saving via beforeunload
-  // Just let navigation proceed normally
-};
-
-// Or use react-router's useBlocker for confirmation dialog
+{/* Show total savings if applicable */}
+{pricing.totalSavings > 0 && (
+  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+    <p className="text-sm text-green-700 font-medium">
+      Multi-Zone Discount: You're saving {formatMoney(pricing.totalSavings)}!
+    </p>
+  </div>
+)}
 ```
 
 ---
 
-### Event Handling Strategy
+### Example Calculations
 
-| Event | When it Fires | Action |
-|-------|--------------|--------|
-| `visibilitychange` (hidden) | Tab switch, app switch, minimize | Save partial async |
-| `beforeunload` | Tab close, browser close, navigation | Save partial (sync or sendBeacon) |
-| Continue button click | User proceeds to Step 9 | Save partial via existing code |
+| Scenario | Zone 1 | Zone 2 | Zone 3 | Zone 4 | Zone 5 | Total |
+|----------|--------|--------|--------|--------|--------|-------|
+| Base Price ($3,000 each) | $3,000 | $3,000 | $3,000 | $3,000 | $3,000 | $15,000 |
+| After Discount | $3,000 | $2,250 | $2,250 | $2,250 | $3,000 | $12,750 |
+| Savings | $0 | $750 | $750 | $750 | $0 | $2,250 |
+
+---
+
+### Visual Indicator in Room Selector
+
+Optionally, show discount preview as users select rooms:
+
+```text
++-------------------------------+
+| 3 zones selected              |
+| Zone 1: Full price            |
+| Zones 2-3: 25% off            |
+| Add more rooms for discounts! |
++-------------------------------+
+```
+
+---
+
+### Investment Summary Updates
+
+The "Investment Summary" section will show:
+
+```text
+Equipment (5 zones)                    $12,750
+  └ Multi-zone discount applied         -$2,250
+
++ Add-ons Total                        $X,XXX
+-----------------------------------------
+TOTAL                                  $XX,XXX
+```
 
 ---
 
 ### Technical Considerations
 
-1. **Use `navigator.sendBeacon`** for `beforeunload` events since async requests may be cancelled
-2. **Debounce auto-saves** to avoid spamming database if user rapidly switches tabs
-3. **Check `partialSubmissionId`** to update existing record vs creating duplicates
-4. **Use refs for state access** to avoid stale closures in event handlers
+1. **Order-independent**: Discounts are based on position in the rooms array, so the order rooms are added determines which get discounts
+2. **Tier multiplier applies after discount**: Equipment cost after discounts is then multiplied by the tier factor
+3. **Display consistency**: Both the per-zone list and totals will reflect discounted prices
+4. **GHL sync**: The quote details sent to CRM will include discount information
 
 ---
 
 ### Testing Scenarios
 
-After implementation, verify these scenarios create partial submissions:
+After implementation, verify these scenarios:
 
-1. Fill contact form on Step 8, then close browser tab
-2. Fill contact form on Step 8, then click Truficient logo
-3. Fill contact form on Step 8, then press browser back button
-4. Fill contact form on Step 8, then click Continue (existing flow)
-5. Get to Step 9, then close browser tab
-6. On mobile: fill form, then switch apps
-
----
-
-### Existing Step 8 Code Assessment
-
-The current `Step8CustomerInfo.tsx` code at lines 81-159 has correct partial submission logic, but it only triggers on Continue button click. The fix adds automatic exit detection as a safety net.
-
-The existing code correctly:
-- Creates new partial submissions with `status: "partial"`
-- Updates existing partial submissions using `partialSubmissionId`
-- Stores the submission ID in context for Step 10 to update
-
----
-
-### Expected Outcome
-
-After implementation:
-- Abandoned carts will appear in the new Admin dashboard view
-- Partial submissions will show `status: "partial"` 
-- Leads who complete the flow will have `status: "new"` (unchanged)
-- No duplicate submissions from the same session
+| Zones | Full Price Zones | Discounted Zones | Expected Savings |
+|-------|-----------------|------------------|------------------|
+| 1 | 1 | 0 | $0 |
+| 2 | 1 | 1 | 25% of Zone 2 |
+| 4 | 1 | 3 | 25% of Zones 2-4 |
+| 5 | 2 | 3 | 25% of Zones 2-4 |
+| 8 | 2 | 6 | 25% of Zones 2-4 + 6-8 |
 
