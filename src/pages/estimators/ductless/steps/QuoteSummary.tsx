@@ -149,6 +149,7 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
           lastName,
           email: state.customerInfo.email,
           phone: state.customerInfo.phone || undefined,
+          address: state.customerInfo.formattedAddress || state.customerInfo.address || undefined,
           source: "Ductless Mini-Split Estimator",
           tags: dynamicTags || ['ductless-estimator'],
           message: `Ductless Estimate Request:
