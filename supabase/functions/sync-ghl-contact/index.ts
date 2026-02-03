@@ -34,6 +34,7 @@ interface ContactData {
   lastName: string;
   email: string;
   phone?: string;
+  address?: string;
   serviceType?: string;
   message?: string;
   tags?: string[];
@@ -115,6 +116,11 @@ serve(async (req) => {
       ghlPayload.phone = contactData.phone;
     }
 
+    // Add address to native GHL field
+    if (contactData.address) {
+      ghlPayload.address1 = contactData.address;
+    }
+
     // Add custom fields for service type and message
     const customFields: { key: string; field_value: string }[] = [];
     
@@ -152,6 +158,14 @@ serve(async (req) => {
       customFields.push({
         key: 'is_dfw',
         field_value: contactData.isDfw ? 'Yes' : 'No',
+      });
+    }
+
+    // Add customer address to custom field
+    if (contactData.address) {
+      customFields.push({
+        key: 'customer_address',
+        field_value: contactData.address,
       });
     }
 
