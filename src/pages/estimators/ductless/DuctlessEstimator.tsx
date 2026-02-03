@@ -127,6 +127,7 @@ const EstimatorContent = () => {
           showRange={showRange}
           lowAmount={pricing.finalTotal}
           highAmount={pricing.finalTotal}
+          savings={pricing.totalSavings}
         />
       )}
 
