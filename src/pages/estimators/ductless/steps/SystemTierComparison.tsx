@@ -15,18 +15,15 @@ const tierLevelLabel: Record<string, string> = {
 export const SystemTierComparison = () => {
   const { state, setSystemTierId, nextStep, prevStep } = useQuote();
 
-  const { tiers, unitTypes, isLoading } = usePricing({
+  const { tiers, unitTypes, pricing, isLoading } = usePricing({
     rooms: state.selectedRooms,
     unitTypeId: state.unitTypeId,
     systemTierId: state.systemTierId,
     selectedAddonIds: state.selectedAddonIds,
   });
 
-  // Calculate base equipment cost from per-room unit type selections
-  const baseEquipmentCost = state.selectedRooms.reduce((sum, room) => {
-    const roomUnitType = unitTypes.find(u => u.id === room.unitTypeId);
-    return sum + (roomUnitType?.base_price || 0);
-  }, 0);
+  // Use the discounted equipment total from pricing engine
+  const discountedBaseEquipment = pricing.baseEquipmentCost - pricing.totalSavings;
 
   const handleSelect = (id: string) => {
     setSystemTierId(id);
@@ -42,6 +39,15 @@ export const SystemTierComparison = () => {
           All systems include professional installation. Select the tier that meets your comfort and efficiency goals.
         </p>
 
+        {/* Show savings banner if multi-zone discount applies */}
+        {pricing.totalSavings > 0 && (
+          <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-sm text-green-700 font-medium text-center">
+              Multi-Zone Discount: Saving {formatMoney(pricing.totalSavings)} on equipment!
+            </p>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -50,7 +56,8 @@ export const SystemTierComparison = () => {
           <div className="space-y-4 mb-6">
             {tiers.map((tier) => {
               const features: string[] = Array.isArray(tier.features) ? tier.features : [];
-              const tierPrice = Math.round(baseEquipmentCost * tier.price_multiplier);
+              const tierPrice = Math.round(discountedBaseEquipment * tier.price_multiplier);
+              const originalTierPrice = Math.round(pricing.baseEquipmentCost * tier.price_multiplier);
 
               return (
                 <SelectableCard
@@ -78,12 +85,12 @@ export const SystemTierComparison = () => {
                         )}
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-bold text-[#1e3a5f]">{formatMoney(tierPrice)}</div>
-                        {tier.price_multiplier !== 1 && (
-                          <div className="text-xs text-muted-foreground">
-                            {tier.price_multiplier}× base price
+                        {pricing.totalSavings > 0 && (
+                          <div className="text-xs text-muted-foreground line-through">
+                            {formatMoney(originalTierPrice)}
                           </div>
                         )}
+                        <div className="text-lg font-bold text-[#1e3a5f]">{formatMoney(tierPrice)}</div>
                       </div>
                     </div>
 

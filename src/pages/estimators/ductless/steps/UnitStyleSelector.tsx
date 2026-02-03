@@ -152,12 +152,23 @@ export const UnitStyleSelector = () => {
           </div>
         )}
 
+        {/* Multi-Zone Discount Banner */}
+        {!isSingleRoom && state.selectedRooms.length >= 2 && (
+          <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-lg text-center">
+            <p className="text-sm text-green-700 font-medium">
+              Multi-Zone Discount Active: 25% off zones 2-4, 6-8, and beyond!
+            </p>
+          </div>
+        )}
+
         {/* Multi Room: Per-Room Selection */}
         {!isSingleRoom && (
           <div className="space-y-4 mb-8">
-            {state.selectedRooms.map((room) => {
+            {state.selectedRooms.map((room, index) => {
               const selectedUnitId = room.unitTypeId || "";
               const selectedUnit = unitTypes.find(u => u.id === selectedUnitId);
+              const zonePosition = index + 1;
+              const hasDiscount = (zonePosition - 1) % 4 !== 0; // Zones 2-4, 6-8, etc.
 
               return (
                 <div
@@ -168,9 +179,17 @@ export const UnitStyleSelector = () => {
                 >
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-foreground">{room.label}</h4>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium text-foreground">{room.label}</h4>
+                        {hasDiscount && (
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                            25% OFF
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         {room.recommendedBtu.toLocaleString()} BTU
+                        {hasDiscount && " • Zone discount applies"}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
