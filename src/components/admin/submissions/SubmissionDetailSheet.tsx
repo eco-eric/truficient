@@ -14,7 +14,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Mail, Phone, Calendar } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Mail, Phone, Calendar, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { UnifiedSubmission, SubmissionSource } from "@/pages/admin/UnifiedSubmissions";
 import { ContactSubmissionDetail } from "./ContactSubmissionDetail";
@@ -28,6 +39,7 @@ interface SubmissionDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onStatusChange: (submission: UnifiedSubmission, status: string) => void;
+  onDelete?: (submission: UnifiedSubmission) => void;
 }
 
 const sourceLabels: Record<SubmissionSource, string> = {
@@ -51,6 +63,7 @@ export const SubmissionDetailSheet = ({
   open,
   onOpenChange,
   onStatusChange,
+  onDelete,
 }: SubmissionDetailSheetProps) => {
   if (!submission) return null;
 
@@ -160,6 +173,41 @@ export const SubmissionDetailSheet = ({
           )}
           {submission.source === "scanner" && (
             <ScannerSubmissionDetail metadata={submission.metadata} />
+          )}
+
+          {/* Delete Button */}
+          {onDelete && (
+            <>
+              <Separator />
+              <div className="pt-2">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Submission
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete this submission?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will move "{submission.customerName}" to the trash bin. 
+                        You can restore it within 30 days from the Trash Bin.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => onDelete(submission)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Move to Trash
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </>
           )}
         </div>
       </SheetContent>

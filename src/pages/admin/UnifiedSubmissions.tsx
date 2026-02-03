@@ -21,10 +21,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, Search, X, Eye, Inbox } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Loader2, Search, X, Eye, Inbox, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { SubmissionDetailSheet } from "@/components/admin/submissions/SubmissionDetailSheet";
 import { ExpandableEquipmentRow } from "@/components/admin/submissions/ExpandableEquipmentRow";
+import { toast } from "sonner";
+import type { Json } from "@/integrations/supabase/types";
 
 export type SubmissionSource = "ducted" | "contact" | "landing_page" | "ductless" | "scanner";
 
@@ -53,6 +66,15 @@ const sourceColors: Record<SubmissionSource, string> = {
   landing_page: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
   ductless: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
   scanner: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
+};
+
+// Map submission source to database table name
+const sourceToTable: Record<SubmissionSource, string> = {
+  ducted: "ducted_estimate_submissions",
+  contact: "contact_submissions",
+  landing_page: "landing_page_submissions",
+  ductless: "ductless_estimate_submissions",
+  scanner: "equipment_scans",
 };
 
 const UnifiedSubmissions = () => {
@@ -389,6 +411,99 @@ const UnifiedSubmissions = () => {
     }
   };
 
+  // Delete mutation - soft delete to trash bin
+  const deleteSubmission = useMutation({
+    mutationFn: async (submission: UnifiedSubmission) => {
+      const tableName = sourceToTable[submission.source];
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData?.user?.id;
+
+      // For scanner, delete all equipment scans for this customer
+      if (submission.source === "scanner") {
+        const allEquipment = submission.metadata.allEquipment as Array<Record<string, unknown>> | undefined;
+        const equipmentToDelete = allEquipment || [{ id: submission.id, ...submission.metadata }];
+        
+        for (const equip of equipmentToDelete) {
+          // Get full record data
+          const { data: fullRecord, error: fetchError } = await supabase
+            .from("equipment_scans")
+            .select("*")
+            .eq("id", equip.id as string)
+            .single();
+          
+          if (fetchError) throw fetchError;
+          
+          // Insert into trash_bin
+          const { error: trashError } = await supabase
+            .from("trash_bin")
+            .insert({
+              original_table: tableName,
+              original_id: equip.id as string,
+              data: fullRecord as Json,
+              deleted_by: userId,
+            });
+          
+          if (trashError) throw trashError;
+          
+          // Delete from original table
+          const { error: deleteError } = await supabase
+            .from("equipment_scans")
+            .delete()
+            .eq("id", equip.id as string);
+          
+          if (deleteError) throw deleteError;
+        }
+      } else {
+        // Standard submission delete
+        // First get the full record
+        const { data: fullRecord, error: fetchError } = await supabase
+          .from(tableName as "contact_submissions")
+          .select("*")
+          .eq("id", submission.id)
+          .single();
+        
+        if (fetchError) throw fetchError;
+        
+        // Insert into trash_bin
+        const { error: trashError } = await supabase
+          .from("trash_bin")
+          .insert({
+            original_table: tableName,
+            original_id: submission.id,
+            data: fullRecord as Json,
+            deleted_by: userId,
+          });
+        
+        if (trashError) throw trashError;
+        
+        // Delete from original table
+        const { error: deleteError } = await supabase
+          .from(tableName as "contact_submissions")
+          .delete()
+          .eq("id", submission.id);
+        
+        if (deleteError) throw deleteError;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contact_submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["landing_page_submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["ductless_estimate_submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["ducted_estimate_submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["scanner_submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["trash_bin"] });
+      setSelectedSubmission(null);
+      toast.success("Submission moved to trash");
+    },
+    onError: (e: Error) => {
+      toast.error(e.message || "Failed to delete submission");
+    },
+  });
+
+  const handleDelete = (submission: UnifiedSubmission) => {
+    deleteSubmission.mutate(submission);
+  };
+
   const isLoading = ductedQuery.isLoading || contactQuery.isLoading || landingPageQuery.isLoading || ductlessQuery.isLoading || scannerQuery.isLoading;
 
   const clearFilters = () => {
@@ -600,9 +715,41 @@ const UnifiedSubmissions = () => {
                           {format(new Date(submission.createdAt), "MMM d, yyyy")}
                         </TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Submission?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will move the submission from {submission.customerName} to the trash bin. 
+                                    You can restore it within 30 days.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDelete(submission)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Move to Trash
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </TableCell>
                       </TableRow>
                     )
@@ -619,6 +766,7 @@ const UnifiedSubmissions = () => {
           open={!!selectedSubmission}
           onOpenChange={(open) => !open && setSelectedSubmission(null)}
           onStatusChange={handleStatusChange}
+          onDelete={handleDelete}
         />
       </div>
     </AdminLayout>

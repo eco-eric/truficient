@@ -34,11 +34,30 @@ const TABLE_LABELS: Record<string, string> = {
   materials_catalog: "Materials",
   labor_rates: "Labor Rates",
   admin_costs: "Admin Costs",
+  // Submissions
+  contact_submissions: "Contact Submission",
+  landing_page_submissions: "Landing Page Submission",
+  ductless_estimate_submissions: "Ductless Submission",
+  ducted_estimate_submissions: "Ducted Submission",
+  equipment_scans: "Scanner Submission",
 };
 
 const getTableLabel = (tableName: string) => TABLE_LABELS[tableName] || tableName;
 
 const getItemName = (data: Record<string, unknown>): string => {
+  // Try submission-specific name fields first
+  if (data.customer_name && typeof data.customer_name === "string") {
+    return data.customer_name as string;
+  }
+  if (data.first_name && data.last_name) {
+    return `${data.first_name} ${data.last_name}`;
+  }
+  if (data.customer_email && typeof data.customer_email === "string") {
+    return data.customer_email as string;
+  }
+  if (data.email && typeof data.email === "string") {
+    return data.email as string;
+  }
   // Try common name fields
   const nameFields = ["name", "system_name", "title", "display_name", "brand"];
   for (const field of nameFields) {
