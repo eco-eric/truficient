@@ -7,6 +7,12 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+interface GHLResponse {
+  contact?: {
+    id: string;
+  };
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -55,6 +61,8 @@ serve(async (req) => {
       ghl_sync_status: "pending",
     };
 
+    let submissionId: string;
+
     // Check if we should update existing or insert new
     if (data.partial_submission_id) {
       // Update existing partial submission
@@ -68,11 +76,8 @@ serve(async (req) => {
         throw error;
       }
 
-      console.log("Updated partial submission:", data.partial_submission_id);
-      return new Response(
-        JSON.stringify({ success: true, id: data.partial_submission_id, action: "updated" }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      submissionId = data.partial_submission_id;
+      console.log("Updated partial submission:", submissionId);
     } else {
       // Insert new partial submission
       const { data: insertedData, error } = await supabaseAdmin
@@ -86,12 +91,120 @@ serve(async (req) => {
         throw error;
       }
 
-      console.log("Created partial submission:", insertedData.id);
-      return new Response(
-        JSON.stringify({ success: true, id: insertedData.id, action: "created" }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      submissionId = insertedData.id;
+      console.log("Created partial submission:", submissionId);
     }
+
+    // ========== GHL SYNC ==========
+    const GHL_API_KEY = Deno.env.get('GHL_API_Key_Contact');
+    const GHL_LOCATION_ID = Deno.env.get('GHL_LOCATION_ID');
+
+    if (GHL_API_KEY && GHL_LOCATION_ID) {
+      try {
+        // Parse name into first/last
+        const nameParts = (data.customer_name || "").trim().split(" ");
+        const firstName = nameParts[0] || "";
+        const lastName = nameParts.slice(1).join(" ") || "";
+
+        // Build GHL payload
+        const ghlPayload: Record<string, unknown> = {
+          firstName,
+          lastName,
+          email: data.customer_email || undefined,
+          phone: data.customer_phone || undefined,
+          address1: data.customer_address || undefined,
+          locationId: GHL_LOCATION_ID,
+          source: "Ducted Estimator - Abandoned Cart",
+          tags: ["abandoned-cart", "ducted-estimator", "website-lead"],
+        };
+
+        // Build custom fields array
+        const customFields: { key: string; field_value: string }[] = [];
+
+        if (data.home_type) {
+          customFields.push({ key: "home_type", field_value: data.home_type });
+        }
+        if (data.square_footage) {
+          customFields.push({ key: "square_footage", field_value: data.square_footage });
+        }
+        if (data.home_layout) {
+          customFields.push({ key: "home_layout", field_value: data.home_layout });
+        }
+        if (data.heating_type) {
+          customFields.push({ key: "heating_type", field_value: data.heating_type });
+        }
+        if (data.customer_address) {
+          customFields.push({ key: "customer_address", field_value: data.customer_address });
+        }
+        if (data.best_time_to_call) {
+          customFields.push({ key: "best_time_to_call", field_value: data.best_time_to_call });
+        }
+        if (data.coverage) {
+          customFields.push({ key: "coverage", field_value: data.coverage });
+        }
+
+        if (customFields.length > 0) {
+          ghlPayload.customFields = customFields;
+        }
+
+        console.log("GHL payload:", JSON.stringify(ghlPayload, null, 2));
+
+        // Call GHL Contacts Upsert API
+        const ghlResponse = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${GHL_API_KEY}`,
+            'Content-Type': 'application/json',
+            'Version': '2021-07-28',
+          },
+          body: JSON.stringify(ghlPayload),
+        });
+
+        const responseText = await ghlResponse.text();
+        console.log('GHL API response status:', ghlResponse.status);
+        console.log('GHL API response:', responseText);
+
+        let ghlContactId: string | null = null;
+        let syncStatus = "failed";
+
+        if (ghlResponse.ok) {
+          const ghlData: GHLResponse = JSON.parse(responseText);
+          ghlContactId = ghlData.contact?.id || null;
+          syncStatus = "synced";
+          console.log("GHL sync successful. Contact ID:", ghlContactId);
+        } else {
+          console.error("GHL API error:", responseText);
+        }
+
+        // Update sync status in database
+        await supabaseAdmin
+          .from('ducted_estimate_submissions')
+          .update({ 
+            ghl_sync_status: syncStatus,
+            ghl_contact_id: ghlContactId,
+          })
+          .eq('id', submissionId);
+
+      } catch (ghlError) {
+        console.error("GHL sync error:", ghlError);
+        // Update status to failed but don't throw - we still saved the submission
+        await supabaseAdmin
+          .from('ducted_estimate_submissions')
+          .update({ ghl_sync_status: "failed" })
+          .eq('id', submissionId);
+      }
+    } else {
+      console.warn("GHL credentials not configured - skipping sync");
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        id: submissionId, 
+        action: data.partial_submission_id ? "updated" : "created" 
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
     console.error("Error saving abandoned cart:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
