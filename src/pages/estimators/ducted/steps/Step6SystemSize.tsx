@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { 
   Loader2, Lightbulb, Camera, CheckCircle2, Zap, Upload, 
   Keyboard, ArrowLeft, X, RotateCcw, Check, Search,
-  Image as ImageIcon
+  Image as ImageIcon, Info
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -168,9 +168,17 @@ export const Step6SystemSize = () => {
         <h2 className="text-2xl font-bold text-[#1e3a5f] mb-2">
           Select System Size
         </h2>
-        <p className="text-muted-foreground mb-6">
-          Choose your system tonnage. We'll verify sizing during our home assessment.
+        <p className="text-muted-foreground mb-4">
+          Choose your system tonnage.
         </p>
+
+        {/* Sizing Verification Notice */}
+        <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 mb-6 flex items-center gap-2">
+          <Info className="h-5 w-5 text-blue-600 flex-shrink-0" />
+          <p className="text-sm text-blue-800 font-medium">
+            We'll verify sizing during your Home Assessment | Pre-Install Inspection
+          </p>
+        </div>
 
         {/* Tonnage Grid */}
         <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-6">
