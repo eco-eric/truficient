@@ -127,7 +127,8 @@ export const useAbandonedCartTracker = (
     }
   }, [buildSubmissionData, hasMinimumContactInfo, setPartialSubmissionId]);
 
-  // Synchronous save using sendBeacon for beforeunload events
+  // Synchronous save using fetch with keepalive for beforeunload events
+  // Uses Edge Function which doesn't require auth headers
   const savePartialSubmissionSync = useCallback(() => {
     const s = stateRef.current;
     
@@ -140,41 +141,32 @@ export const useAbandonedCartTracker = (
       return;
     }
 
-    const submissionData = buildSubmissionData(s);
+    const submissionData = {
+      ...buildSubmissionData(s),
+      partial_submission_id: s.partialSubmissionId || undefined,
+    };
 
-    // Use sendBeacon for reliable delivery during page unload
-    // We need to construct the Supabase REST API call manually
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error("Missing Supabase config for sendBeacon");
+    if (!supabaseUrl) {
+      console.error("Missing VITE_SUPABASE_URL for abandoned cart save");
       return;
     }
 
-    // If we already have a partial submission ID, we could update it
-    // But sendBeacon only supports POST, so we'll just create a new one if needed
-    // The UI can dedupe later based on email/phone
-    if (!s.partialSubmissionId) {
-      const url = `${supabaseUrl}/rest/v1/ducted_estimate_submissions`;
-      const blob = new Blob([JSON.stringify(submissionData)], { type: "application/json" });
+    const edgeFunctionUrl = `${supabaseUrl}/functions/v1/save-abandoned-cart`;
+
+    // Use fetch with keepalive for reliable delivery during page unload
+    // Edge Function doesn't require auth headers, solving the sendBeacon limitation
+    try {
+      fetch(edgeFunctionUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(submissionData),
+        keepalive: true, // Ensures request completes even during page unload
+      }).catch(e => console.error('Abandoned cart save failed:', e));
       
-      // Create headers as query params since sendBeacon doesn't support custom headers directly
-      // We'll use a form that includes the auth info
-      const formData = new FormData();
-      
-      // Actually, sendBeacon with fetch headers is tricky. Let's try the blob approach with proper headers
-      try {
-        navigator.sendBeacon(
-          url + `?apikey=${supabaseKey}`,
-          new Blob([JSON.stringify(submissionData)], { 
-            type: "application/json" 
-          })
-        );
-        console.log("Partial submission sent via sendBeacon");
-      } catch (e) {
-        console.error("sendBeacon failed:", e);
-      }
+      console.log("Abandoned cart save initiated via Edge Function");
+    } catch (e) {
+      console.error("Failed to initiate abandoned cart save:", e);
     }
   }, [buildSubmissionData, hasMinimumContactInfo]);
 
