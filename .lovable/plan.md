@@ -1,189 +1,124 @@
 
 
-## Fix Abandoned Cart Tracking + Add Admin Testing Settings
+## Sync Abandoned Carts to GoHighLevel
 
-### Problem Summary
+### Problem
 
-The abandoned cart feature has two issues:
-1. **`sendBeacon` doesn't work reliably** - Supabase REST API requires headers that `sendBeacon` cannot send
-2. **No way to test/configure the triggers** - Admins need settings to adjust thresholds for testing
+The abandoned cart feature saves partial submissions to the database, but never syncs them to GoHighLevel. The existing `sync-ghl-contact` function requires user authentication, which is not available during page unload events (when abandoned carts are captured).
 
 ---
 
-### Solution Overview
+### Solution
 
-| Component | Change |
-|-----------|--------|
-| Fix `sendBeacon` | Replace with Edge Function that handles unauthenticated partial saves |
-| Admin Settings Section | Add configurable triggers in Abandoned Carts admin page |
-| Testing Mode | Allow manual trigger button for testing |
+Enhance the `save-abandoned-cart` Edge Function to directly call the GHL API after saving to the database. This ensures abandoned cart leads appear in your CRM immediately.
 
 ---
 
-### Technical Implementation
+### File to Modify
 
-#### 1. Create Edge Function for Abandoned Cart Saves
-
-Create `supabase/functions/save-abandoned-cart/index.ts`:
-- Accepts partial submission data
-- Uses service role key to insert directly
-- Returns success/failure
-- This solves the `sendBeacon` header limitation
-
-#### 2. Update `useAbandonedCartTracker.ts`
-
-Replace the `sendBeacon` direct Supabase call with a call to the new Edge Function:
-- Use `fetch` with `keepalive: true` for `beforeunload` events
-- Fall back to Edge Function endpoint which doesn't require auth headers
-- Ensure proper error handling
-
-#### 3. Add Admin Settings UI
-
-In `/admin/abandoned-carts`, add a settings panel:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ ⚙️ Abandoned Cart Settings                        [Collapse ▲] │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│ Trigger Conditions                                              │
-│ ─────────────────────────────────────────────────────────────   │
-│ Minimum Step Required:          [8 ▼] (Contact Info step)       │
-│ Require Email:                  [✓]                             │
-│ Require Phone:                  [✓] (either email OR phone)     │
-│ Debounce Interval:              [5] seconds                     │
-│                                                                 │
-│ ─────────────────────────────────────────────────────────────   │
-│ Testing Tools                                                   │
-│ ─────────────────────────────────────────────────────────────   │
-│ [🧪 Create Test Abandoned Cart]  [🗑️ Clear Test Data]           │
-│                                                                 │
-│ How to Test Manually:                                           │
-│ 1. Open /estimator/ducted in a new tab                          │
-│ 2. Complete steps 0-8 (enter contact info)                      │
-│ 3. Close the tab OR switch tabs OR click away                   │
-│ 4. Return here and refresh to see the partial submission        │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+| File | Action | Purpose |
+|------|--------|---------|
+| `supabase/functions/save-abandoned-cart/index.ts` | MODIFY | Add GHL sync logic after database save |
 
 ---
 
-### Files to Create
+### Implementation Details
 
-| File | Purpose |
-|------|---------|
-| `supabase/functions/save-abandoned-cart/index.ts` | Edge function for reliable partial saves during page unload |
+After successfully inserting/updating the partial submission in the database, the Edge Function will:
 
-### Files to Modify
+1. **Extract contact details** from the submission data
+2. **Build GHL payload** with appropriate tags (`abandoned-cart`, `ducted-estimator`)
+3. **Call GHL upsert API** to create/update the contact
+4. **Update sync status** in the database to reflect success/failure
+5. **Return result** without blocking the main save operation
 
-| File | Changes |
-|------|---------|
-| `src/pages/estimators/ducted/hooks/useAbandonedCartTracker.ts` | Use Edge Function endpoint instead of direct sendBeacon to Supabase |
-| `src/pages/admin/AbandonedCarts.tsx` | Add settings panel with testing tools |
-
----
-
-### Edge Function Implementation
+#### Key Changes
 
 ```typescript
-// supabase/functions/save-abandoned-cart/index.ts
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// After successful database save...
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+// Build GHL contact data
+const nameParts = (data.customer_name || "").split(" ");
+const firstName = nameParts[0] || "";
+const lastName = nameParts.slice(1).join(" ") || "";
+
+const ghlPayload = {
+  firstName,
+  lastName,
+  email: data.customer_email,
+  phone: data.customer_phone || undefined,
+  address1: data.customer_address || undefined,
+  locationId: GHL_LOCATION_ID,
+  source: "Ducted Estimator - Abandoned Cart",
+  tags: ["abandoned-cart", "ducted-estimator", "website-lead"],
+  customFields: [
+    { key: "home_type", field_value: data.home_type },
+    { key: "square_footage", field_value: data.square_footage },
+    { key: "heating_type", field_value: data.heating_type },
+    // ... other available fields
+  ]
 };
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  try {
-    const data = await req.json();
-    
-    // Create admin client to bypass RLS
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
-
-    const { error } = await supabaseAdmin
-      .from('ducted_estimate_submissions')
-      .insert({
-        ...data,
-        status: 'partial',
-        ghl_sync_status: 'pending',
-      });
-
-    if (error) throw error;
-
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
+// Call GHL API
+const ghlResponse = await fetch("https://services.leadconnectorhq.com/contacts/upsert", {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${GHL_API_KEY}`,
+    "Content-Type": "application/json",
+    "Version": "2021-07-28",
+  },
+  body: JSON.stringify(ghlPayload),
 });
+
+// Update sync status in database
+await supabaseAdmin
+  .from("ducted_estimate_submissions")
+  .update({ 
+    ghl_sync_status: ghlResponse.ok ? "synced" : "failed" 
+  })
+  .eq("id", submissionId);
 ```
 
 ---
 
-### Updated Tracker Hook
+### GHL Contact Tags
 
-Key changes to `useAbandonedCartTracker.ts`:
-- Replace `sendBeacon` with `fetch(..., { keepalive: true })` to Edge Function
-- The Edge Function URL doesn't require auth headers
-- Add console logging for debugging
+Abandoned cart contacts will be tagged with:
+- `abandoned-cart` - Identifies these as incomplete leads
+- `ducted-estimator` - Source of the lead
+- `website-lead` - General website attribution
 
-```typescript
-// In savePartialSubmissionSync:
-const savePartialSubmissionSync = useCallback(() => {
-  // ... validation checks ...
-
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/save-abandoned-cart`;
-
-  // Use fetch with keepalive for reliable delivery
-  fetch(edgeFunctionUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(submissionData),
-    keepalive: true, // Ensures request completes even during page unload
-  }).catch(e => console.error('Abandoned cart save failed:', e));
-}, [buildSubmissionData, hasMinimumContactInfo]);
-```
+This allows filtering and automation in GHL (e.g., automated follow-up sequences for abandoned carts).
 
 ---
 
-### Admin Testing Features
+### Custom Fields Synced
 
-1. **Create Test Abandoned Cart Button**
-   - Inserts a mock `partial` submission with test data
-   - Useful for verifying the admin view works
-
-2. **Clear Test Data Button**
-   - Deletes submissions where `customer_email` contains `@test` or similar marker
-   - Keeps production data safe
-
-3. **Testing Instructions**
-   - Clear, step-by-step guide for manually testing the flow
-   - Explains what events trigger saves
+The following data will be synced to GHL custom fields when available:
+- Home type
+- Square footage
+- Home layout
+- Heating type
+- Customer address
+- Best time to call
 
 ---
 
-### Testing Checklist
+### Error Handling
+
+- GHL sync failures won't block the database save
+- Sync status will be set to `failed` if GHL API returns an error
+- Errors are logged for debugging
+- The function continues to return success if database save worked
+
+---
+
+### Testing
 
 After implementation:
-1. [ ] Open estimator in new tab, complete through Step 8
-2. [ ] Close tab (without completing) - check admin for partial submission
-3. [ ] Switch tabs at Step 9 - verify `visibilitychange` saves
-4. [ ] Use "Create Test Abandoned Cart" button - verify it appears
-5. [ ] Verify completed submissions (Step 11) show as "new" not "partial"
+1. Open ducted estimator and complete through Step 8
+2. Enter contact info (email and/or phone)
+3. Close the tab or navigate away
+4. Check GHL for the new contact with `abandoned-cart` tag
+5. Verify the submission in admin shows `ghl_sync_status: synced`
 
