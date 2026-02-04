@@ -3,6 +3,7 @@ import { QuoteProvider, useQuote } from "./context/QuoteContext";
 import { ProgressIndicator } from "./components/ProgressIndicator";
 import { PriceBar } from "./components/PriceBar";
 import { usePricing } from "./hooks/usePricing";
+import { useDuctlessAbandonedCartTracker } from "./hooks/useDuctlessAbandonedCartTracker";
 import { WelcomeHero } from "./steps/WelcomeHero";
 import { CustomerInfoStep } from "./steps/CustomerInfoStep";
 import { RoomSelector } from "./steps/RoomSelector";
@@ -16,6 +17,13 @@ import { Link } from "react-router-dom";
 import truficientLogo from "@/assets/truficient-logo.png";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+
+// Abandoned cart tracker component - must be inside QuoteProvider
+const AbandonedCartTracker = () => {
+  const { state, setPartialSubmissionId } = useQuote();
+  useDuctlessAbandonedCartTracker(state, setPartialSubmissionId);
+  return null;
+};
 
 const STEP_LABELS = [
   "Welcome",
@@ -140,6 +148,7 @@ const EstimatorContent = () => {
 const DuctlessEstimator = () => {
   return (
     <QuoteProvider>
+      <AbandonedCartTracker />
       <EstimatorContent />
     </QuoteProvider>
   );

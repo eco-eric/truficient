@@ -33,6 +33,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Loader2, 
   Search, 
@@ -53,11 +54,13 @@ import {
   FlaskConical,
   Info,
   ExternalLink,
+  Wind,
+  Thermometer,
 } from "lucide-react";
 import { format, formatDistanceToNow, startOfDay, subDays, isAfter } from "date-fns";
 import { toast } from "sonner";
 
-interface AbandonedCart {
+interface DuctedAbandonedCart {
   id: string;
   customer_name: string;
   customer_email: string;
@@ -71,50 +74,103 @@ interface AbandonedCart {
   coverage: string;
   status: string;
   created_at: string;
+  source: "ducted";
 }
+
+interface DuctlessAbandonedCart {
+  id: string;
+  customer_name: string | null;
+  customer_email: string | null;
+  customer_phone: string | null;
+  customer_address: string | null;
+  customer_city: string | null;
+  customer_zip: string | null;
+  zone_count: number;
+  final_total: number;
+  status: string;
+  created_at: string;
+  source: "ductless";
+}
+
+type AbandonedCart = DuctedAbandonedCart | DuctlessAbandonedCart;
+
+type EstimatorType = "all" | "ducted" | "ductless";
 
 const AbandonedCarts = () => {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
+  const [estimatorType, setEstimatorType] = useState<EstimatorType>("all");
   const [selectedCart, setSelectedCart] = useState<AbandonedCart | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isCreatingTest, setIsCreatingTest] = useState(false);
   const [isClearingTest, setIsClearingTest] = useState(false);
 
   // Fetch ducted submissions with status = 'partial'
-  const { data: abandonedCarts, isLoading } = useQuery({
-    queryKey: ["abandoned-carts"],
+  const { data: ductedCarts, isLoading: ductedLoading } = useQuery({
+    queryKey: ["abandoned-carts-ducted"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ducted_estimate_submissions")
-        .select("*")
+        .select("id, customer_name, customer_email, customer_phone, customer_address, best_time_to_call, home_type, home_layout, square_footage, heating_type, coverage, status, created_at")
         .eq("status", "partial")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as AbandonedCart[];
+      return (data || []).map(item => ({ ...item, source: "ducted" as const }));
     },
   });
 
-  // Update status mutation
+  // Fetch ductless submissions with status = 'partial'
+  const { data: ductlessCarts, isLoading: ductlessLoading } = useQuery({
+    queryKey: ["abandoned-carts-ductless"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ductless_estimate_submissions")
+        .select("id, customer_name, customer_email, customer_phone, customer_address, customer_city, customer_zip, zone_count, final_total, status, created_at")
+        .eq("status", "partial")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []).map(item => ({ ...item, source: "ductless" as const }));
+    },
+  });
+
+  const isLoading = ductedLoading || ductlessLoading;
+
+  // Combine and sort all carts
+  const allCarts = useMemo(() => {
+    const ducted = ductedCarts || [];
+    const ductless = ductlessCarts || [];
+    return [...ducted, ...ductless].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [ductedCarts, ductlessCarts]);
+
+  // Update status mutation - handles both tables
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status, source }: { id: string; status: string; source: "ducted" | "ductless" }) => {
+      const tableName = source === "ductless" ? "ductless_estimate_submissions" : "ducted_estimate_submissions";
       const { error } = await supabase
-        .from("ducted_estimate_submissions")
+        .from(tableName)
         .update({ status })
         .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["abandoned-carts"] });
+      queryClient.invalidateQueries({ queryKey: ["abandoned-carts-ducted"] });
+      queryClient.invalidateQueries({ queryKey: ["abandoned-carts-ductless"] });
       queryClient.invalidateQueries({ queryKey: ["ducted_estimate_submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["ductless_estimate_submissions"] });
       setSelectedCart(null);
     },
   });
 
   // Calculate stats
   const stats = useMemo(() => {
-    if (!abandonedCarts) return { today: 0, week: 0, month: 0, total: 0 };
+    const cartsToCount = estimatorType === "all" 
+      ? allCarts 
+      : allCarts.filter(c => c.source === estimatorType);
+    
+    if (!cartsToCount.length) return { today: 0, week: 0, month: 0, total: 0 };
     
     const now = new Date();
     const todayStart = startOfDay(now);
@@ -122,18 +178,21 @@ const AbandonedCarts = () => {
     const monthAgo = subDays(now, 30);
 
     return {
-      today: abandonedCarts.filter(c => isAfter(new Date(c.created_at), todayStart)).length,
-      week: abandonedCarts.filter(c => isAfter(new Date(c.created_at), weekAgo)).length,
-      month: abandonedCarts.filter(c => isAfter(new Date(c.created_at), monthAgo)).length,
-      total: abandonedCarts.length,
+      today: cartsToCount.filter(c => isAfter(new Date(c.created_at), todayStart)).length,
+      week: cartsToCount.filter(c => isAfter(new Date(c.created_at), weekAgo)).length,
+      month: cartsToCount.filter(c => isAfter(new Date(c.created_at), monthAgo)).length,
+      total: cartsToCount.length,
     };
-  }, [abandonedCarts]);
+  }, [allCarts, estimatorType]);
 
   // Apply filters
   const filteredCarts = useMemo(() => {
-    if (!abandonedCarts) return [];
-    
-    let filtered = [...abandonedCarts];
+    let filtered = [...allCarts];
+
+    // Estimator type filter
+    if (estimatorType !== "all") {
+      filtered = filtered.filter(c => c.source === estimatorType);
+    }
 
     // Date filter
     if (dateFilter !== "all") {
@@ -160,16 +219,16 @@ const AbandonedCarts = () => {
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (c) =>
-          c.customer_name.toLowerCase().includes(query) ||
-          c.customer_email.toLowerCase().includes(query) ||
-          (c.customer_phone && c.customer_phone.includes(query))
-      );
+      filtered = filtered.filter((c) => {
+        const name = c.customer_name?.toLowerCase() || "";
+        const email = c.customer_email?.toLowerCase() || "";
+        const phone = c.customer_phone || "";
+        return name.includes(query) || email.includes(query) || phone.includes(query);
+      });
     }
 
     return filtered;
-  }, [abandonedCarts, dateFilter, searchQuery]);
+  }, [allCarts, estimatorType, dateFilter, searchQuery]);
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -177,45 +236,66 @@ const AbandonedCarts = () => {
   };
 
   const handleMarkContacted = (cart: AbandonedCart) => {
-    updateStatus.mutate({ id: cart.id, status: "contacted" });
+    updateStatus.mutate({ id: cart.id, status: "contacted", source: cart.source });
   };
 
   const handleConvertToLead = (cart: AbandonedCart) => {
-    updateStatus.mutate({ id: cart.id, status: "new" });
+    updateStatus.mutate({ id: cart.id, status: "new", source: cart.source });
   };
 
   const handleMarkJunk = (cart: AbandonedCart) => {
-    updateStatus.mutate({ id: cart.id, status: "junk" });
+    updateStatus.mutate({ id: cart.id, status: "junk", source: cart.source });
   };
 
   // Create test abandoned cart for testing purposes
-  const handleCreateTestCart = async () => {
+  const handleCreateTestCart = async (type: "ducted" | "ductless") => {
     setIsCreatingTest(true);
     try {
-      const testData = {
-        customer_name: "Test User",
-        customer_email: `test-${Date.now()}@test.example.com`,
-        customer_phone: "555-0100",
-        customer_address: "123 Test Street, Dallas, TX 75001",
-        best_time_to_call: "Morning",
-        home_type: "single_family",
-        home_layout: "1_story",
-        square_footage: "2000_2400",
-        heating_type: "gas_system",
-        coverage: "entire_home",
-        system_count: 1,
-        status: "partial",
-        ghl_sync_status: "pending",
-      };
+      if (type === "ducted") {
+        const testData = {
+          customer_name: "Test User",
+          customer_email: `test-${Date.now()}@test.example.com`,
+          customer_phone: "555-0100",
+          customer_address: "123 Test Street, Dallas, TX 75001",
+          best_time_to_call: "Morning",
+          home_type: "single_family",
+          home_layout: "1_story",
+          square_footage: "2000_2400",
+          heating_type: "gas_system",
+          coverage: "entire_home",
+          system_count: 1,
+          status: "partial",
+          ghl_sync_status: "pending",
+        };
 
-      const { error } = await supabase
-        .from("ducted_estimate_submissions")
-        .insert(testData);
+        const { error } = await supabase
+          .from("ducted_estimate_submissions")
+          .insert(testData);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        const testData = {
+          customer_name: "Test User Ductless",
+          customer_email: `test-ductless-${Date.now()}@test.example.com`,
+          customer_phone: "555-0200",
+          customer_address: "456 Test Ave, Dallas, TX 75002",
+          customer_city: "Dallas",
+          customer_zip: "75002",
+          zone_count: 2,
+          status: "partial",
+          ghl_sync_status: "pending",
+        };
+
+        const { error } = await supabase
+          .from("ductless_estimate_submissions")
+          .insert(testData);
+
+        if (error) throw error;
+      }
       
-      toast.success("Test abandoned cart created successfully");
-      queryClient.invalidateQueries({ queryKey: ["abandoned-carts"] });
+      toast.success(`Test ${type} abandoned cart created successfully`);
+      queryClient.invalidateQueries({ queryKey: ["abandoned-carts-ducted"] });
+      queryClient.invalidateQueries({ queryKey: ["abandoned-carts-ductless"] });
     } catch (error) {
       console.error("Failed to create test cart:", error);
       toast.error("Failed to create test cart");
@@ -228,15 +308,24 @@ const AbandonedCarts = () => {
   const handleClearTestData = async () => {
     setIsClearingTest(true);
     try {
-      const { error } = await supabase
+      // Clear from both tables
+      const { error: ductedError } = await supabase
         .from("ducted_estimate_submissions")
         .delete()
         .like("customer_email", "%@test%");
 
-      if (error) throw error;
+      if (ductedError) throw ductedError;
+
+      const { error: ductlessError } = await supabase
+        .from("ductless_estimate_submissions")
+        .delete()
+        .like("customer_email", "%@test%");
+
+      if (ductlessError) throw ductlessError;
       
       toast.success("Test data cleared successfully");
-      queryClient.invalidateQueries({ queryKey: ["abandoned-carts"] });
+      queryClient.invalidateQueries({ queryKey: ["abandoned-carts-ducted"] });
+      queryClient.invalidateQueries({ queryKey: ["abandoned-carts-ductless"] });
     } catch (error) {
       console.error("Failed to clear test data:", error);
       toast.error("Failed to clear test data");
@@ -244,6 +333,8 @@ const AbandonedCarts = () => {
       setIsClearingTest(false);
     }
   };
+
+  const isDucted = (cart: AbandonedCart): cart is DuctedAbandonedCart => cart.source === "ducted";
 
   if (isLoading) {
     return (
@@ -258,6 +349,24 @@ const AbandonedCarts = () => {
   return (
     <AdminLayout title="Abandoned Carts">
       <div className="space-y-6">
+        {/* Estimator Type Tabs */}
+        <Tabs value={estimatorType} onValueChange={(v) => setEstimatorType(v as EstimatorType)}>
+          <TabsList>
+            <TabsTrigger value="all" className="gap-2">
+              <ShoppingCart className="h-4 w-4" />
+              All ({allCarts.length})
+            </TabsTrigger>
+            <TabsTrigger value="ducted" className="gap-2">
+              <Wind className="h-4 w-4" />
+              Ducted ({ductedCarts?.length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="ductless" className="gap-2">
+              <Thermometer className="h-4 w-4" />
+              Ductless ({ductlessCarts?.length || 0})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
@@ -327,11 +436,12 @@ const AbandonedCarts = () => {
                   <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 space-y-2">
                     <p>Abandoned carts are saved automatically when a user:</p>
                     <ul className="list-disc list-inside space-y-1 ml-2">
-                      <li>Reaches Step 8 (Contact Info) and enters at least email or phone</li>
+                      <li><strong>Ducted:</strong> Reaches Step 8 (Contact Info) and enters at least email or phone</li>
+                      <li><strong>Ductless:</strong> Reaches Step 1 (Contact Info) and enters at least email or phone</li>
                       <li><strong>Closes or navigates away from the tab</strong> (beforeunload/pagehide events)</li>
                       <li><strong>Switches to another tab or minimizes browser</strong> (visibilitychange event)</li>
                     </ul>
-                    <p className="mt-2">If the user completes the estimator (Step 11), the status changes to "new" — not partial.</p>
+                    <p className="mt-2">If the user completes the estimator, the status changes to "new" — not partial.</p>
                   </div>
                 </div>
 
@@ -340,16 +450,16 @@ const AbandonedCarts = () => {
                   <h4 className="text-sm font-medium">Current Trigger Conditions</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                     <div className="bg-muted/50 rounded p-2">
-                      <span className="text-muted-foreground block">Min Step</span>
+                      <span className="text-muted-foreground block">Ducted Min Step</span>
                       <span className="font-medium">Step 8</span>
+                    </div>
+                    <div className="bg-muted/50 rounded p-2">
+                      <span className="text-muted-foreground block">Ductless Min Step</span>
+                      <span className="font-medium">Step 1</span>
                     </div>
                     <div className="bg-muted/50 rounded p-2">
                       <span className="text-muted-foreground block">Required Contact</span>
                       <span className="font-medium">Email OR Phone</span>
-                    </div>
-                    <div className="bg-muted/50 rounded p-2">
-                      <span className="text-muted-foreground block">Max Step</span>
-                      <span className="font-medium">&lt; Step 11</span>
                     </div>
                     <div className="bg-muted/50 rounded p-2">
                       <span className="text-muted-foreground block">Debounce</span>
@@ -368,15 +478,28 @@ const AbandonedCarts = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={handleCreateTestCart}
+                      onClick={() => handleCreateTestCart("ducted")}
                       disabled={isCreatingTest}
                     >
                       {isCreatingTest ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       ) : (
-                        <FlaskConical className="h-4 w-4 mr-2" />
+                        <Wind className="h-4 w-4 mr-2" />
                       )}
-                      Create Test Abandoned Cart
+                      Create Test Ducted Cart
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCreateTestCart("ductless")}
+                      disabled={isCreatingTest}
+                    >
+                      {isCreatingTest ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Thermometer className="h-4 w-4 mr-2" />
+                      )}
+                      Create Test Ductless Cart
                     </Button>
                     <Button
                       variant="outline"
@@ -392,6 +515,8 @@ const AbandonedCarts = () => {
                       )}
                       Clear Test Data (@test emails)
                     </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
                     <Button
                       variant="outline"
                       size="sm"
@@ -399,7 +524,17 @@ const AbandonedCarts = () => {
                     >
                       <a href="/estimator/ducted" target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="h-4 w-4 mr-2" />
-                        Open Estimator in New Tab
+                        Open Ducted Estimator
+                      </a>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      asChild
+                    >
+                      <a href="/estimator/ductless" target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Open Ductless Estimator
                       </a>
                     </Button>
                   </div>
@@ -409,8 +544,9 @@ const AbandonedCarts = () => {
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium">How to Test Manually</h4>
                   <ol className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 space-y-1 list-decimal list-inside">
-                    <li>Click "Open Estimator in New Tab" above</li>
-                    <li>Complete Steps 0-8 (enter your contact info at Step 8)</li>
+                    <li>Click "Open Ducted/Ductless Estimator" above</li>
+                    <li>For Ducted: Complete Steps 0-8 (enter contact info at Step 8)</li>
+                    <li>For Ductless: Complete Step 1 (enter contact info)</li>
                     <li>Close the tab, switch tabs, or navigate away</li>
                     <li>Return here and refresh to see the partial submission</li>
                   </ol>
@@ -453,7 +589,7 @@ const AbandonedCarts = () => {
 
         {/* Results count */}
         <p className="text-sm text-muted-foreground">
-          Showing {filteredCarts.length} of {abandonedCarts?.length || 0} abandoned carts
+          Showing {filteredCarts.length} of {allCarts.length} abandoned carts
         </p>
 
         {/* Empty State */}
@@ -462,7 +598,7 @@ const AbandonedCarts = () => {
             <ShoppingCart className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
             <h3 className="text-lg font-semibold mb-2">No abandoned carts</h3>
             <p className="text-muted-foreground">
-              {searchQuery || dateFilter !== "all"
+              {searchQuery || dateFilter !== "all" || estimatorType !== "all"
                 ? "No abandoned carts match your filters"
                 : "Great news! No customers have abandoned the estimator yet."}
             </p>
@@ -474,9 +610,10 @@ const AbandonedCarts = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
+                  <TableHead>Source</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead className="hidden md:table-cell">Contact</TableHead>
-                  <TableHead className="hidden lg:table-cell">Home Details</TableHead>
+                  <TableHead className="hidden lg:table-cell">Details</TableHead>
                   <TableHead>Age</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -484,7 +621,7 @@ const AbandonedCarts = () => {
               <TableBody>
                 {filteredCarts.map((cart) => (
                   <TableRow
-                    key={cart.id}
+                    key={`${cart.source}-${cart.id}`}
                     className="cursor-pointer hover:bg-muted/50"
                     onClick={() => setSelectedCart(cart)}
                   >
@@ -495,24 +632,48 @@ const AbandonedCarts = () => {
                       </div>
                     </TableCell>
                     <TableCell>
+                      <Badge variant={cart.source === "ducted" ? "default" : "secondary"} className="whitespace-nowrap">
+                        {cart.source === "ducted" ? (
+                          <><Wind className="h-3 w-3 mr-1" /> Ducted</>
+                        ) : (
+                          <><Thermometer className="h-3 w-3 mr-1" /> Ductless</>
+                        )}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
                       <div className="font-medium">{cart.customer_name || "Not provided"}</div>
                       <div className="text-sm text-muted-foreground md:hidden">
-                        {cart.customer_email}
+                        {cart.customer_email || "No email"}
                       </div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      <div className="text-sm">{cart.customer_email}</div>
+                      <div className="text-sm">{cart.customer_email || "No email"}</div>
                       {cart.customer_phone && (
                         <div className="text-sm text-muted-foreground">{cart.customer_phone}</div>
                       )}
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
-                      <div className="text-sm">
-                        {cart.home_type} • {cart.square_footage} sq ft
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {cart.heating_type} heating
-                      </div>
+                      {isDucted(cart) ? (
+                        <>
+                          <div className="text-sm">
+                            {cart.home_type} • {cart.square_footage} sq ft
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {cart.heating_type} heating
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-sm">
+                            {cart.zone_count} zone{cart.zone_count !== 1 ? "s" : ""}
+                          </div>
+                          {cart.final_total > 0 && (
+                            <div className="text-sm text-muted-foreground">
+                              ${cart.final_total.toLocaleString()}
+                            </div>
+                          )}
+                        </>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="whitespace-nowrap">
@@ -544,7 +705,12 @@ const AbandonedCarts = () => {
             {selectedCart && (
               <>
                 <SheetHeader>
-                  <SheetTitle>Abandoned Cart Details</SheetTitle>
+                  <SheetTitle className="flex items-center gap-2">
+                    Abandoned Cart Details
+                    <Badge variant={selectedCart.source === "ducted" ? "default" : "secondary"}>
+                      {selectedCart.source === "ducted" ? "Ducted" : "Ductless"}
+                    </Badge>
+                  </SheetTitle>
                   <SheetDescription>
                     Abandoned {formatDistanceToNow(new Date(selectedCart.created_at), { addSuffix: true })}
                   </SheetDescription>
@@ -562,12 +728,14 @@ const AbandonedCarts = () => {
                         <User className="h-4 w-4 text-muted-foreground" />
                         <span>{selectedCart.customer_name || "Not provided"}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <a href={`mailto:${selectedCart.customer_email}`} className="text-primary hover:underline">
-                          {selectedCart.customer_email}
-                        </a>
-                      </div>
+                      {selectedCart.customer_email && (
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          <a href={`mailto:${selectedCart.customer_email}`} className="text-primary hover:underline">
+                            {selectedCart.customer_email}
+                          </a>
+                        </div>
+                      )}
                       {selectedCart.customer_phone && (
                         <div className="flex items-center gap-2">
                           <Phone className="h-4 w-4 text-muted-foreground" />
@@ -582,7 +750,7 @@ const AbandonedCarts = () => {
                           <span>{selectedCart.customer_address}</span>
                         </div>
                       )}
-                      {selectedCart.best_time_to_call && (
+                      {isDucted(selectedCart) && selectedCart.best_time_to_call && (
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-muted-foreground" />
                           <span>Best time to call: {selectedCart.best_time_to_call}</span>
@@ -591,33 +759,62 @@ const AbandonedCarts = () => {
                     </div>
                   </div>
 
-                  {/* Home Details */}
+                  {/* Details - varies by type */}
                   <div className="space-y-4">
                     <h4 className="font-semibold flex items-center gap-2">
                       <Home className="h-4 w-4" />
-                      Home Configuration
+                      {isDucted(selectedCart) ? "Home Configuration" : "Quote Details"}
                     </h4>
                     <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Home Type</span>
-                        <p className="font-medium capitalize">{selectedCart.home_type}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Layout</span>
-                        <p className="font-medium capitalize">{selectedCart.home_layout}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Square Footage</span>
-                        <p className="font-medium">{selectedCart.square_footage} sq ft</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Heating Type</span>
-                        <p className="font-medium capitalize">{selectedCart.heating_type}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Coverage</span>
-                        <p className="font-medium capitalize">{selectedCart.coverage}</p>
-                      </div>
+                      {isDucted(selectedCart) ? (
+                        <>
+                          <div>
+                            <span className="text-muted-foreground">Home Type</span>
+                            <p className="font-medium capitalize">{selectedCart.home_type}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Layout</span>
+                            <p className="font-medium capitalize">{selectedCart.home_layout}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Square Footage</span>
+                            <p className="font-medium">{selectedCart.square_footage} sq ft</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Heating Type</span>
+                            <p className="font-medium capitalize">{selectedCart.heating_type}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Coverage</span>
+                            <p className="font-medium capitalize">{selectedCart.coverage}</p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div>
+                            <span className="text-muted-foreground">Zones</span>
+                            <p className="font-medium">{selectedCart.zone_count}</p>
+                          </div>
+                          {selectedCart.final_total > 0 && (
+                            <div>
+                              <span className="text-muted-foreground">Estimated Total</span>
+                              <p className="font-medium">${selectedCart.final_total.toLocaleString()}</p>
+                            </div>
+                          )}
+                          {selectedCart.customer_city && (
+                            <div>
+                              <span className="text-muted-foreground">City</span>
+                              <p className="font-medium">{selectedCart.customer_city}</p>
+                            </div>
+                          )}
+                          {selectedCart.customer_zip && (
+                            <div>
+                              <span className="text-muted-foreground">ZIP Code</span>
+                              <p className="font-medium">{selectedCart.customer_zip}</p>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
 
