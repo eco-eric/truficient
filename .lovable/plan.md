@@ -1,105 +1,189 @@
 
 
-## Add Sizing Verification Notice to Step 6
+## Fix Abandoned Cart Tracking + Add Admin Testing Settings
 
-### Overview
+### Problem Summary
 
-Add a highlighted notice banner between the "Choose your system" description and the tonnage selection grid to reassure customers that their sizing will be professionally verified during the home assessment.
-
----
-
-### File to Modify
-
-| File | Action | Purpose |
-|------|---------|---------|
-| `src/pages/estimators/ducted/steps/Step6SystemSize.tsx` | MODIFY | Add highlighted notice after description, before tonnage grid |
+The abandoned cart feature has two issues:
+1. **`sendBeacon` doesn't work reliably** - Supabase REST API requires headers that `sendBeacon` cannot send
+2. **No way to test/configure the triggers** - Admins need settings to adjust thresholds for testing
 
 ---
 
-### Current Layout (Lines 168-176)
+### Solution Overview
 
-```tsx
-<h2 className="text-2xl font-bold text-[#1e3a5f] mb-2">
-  Select System Size
-</h2>
-<p className="text-muted-foreground mb-6">
-  Choose your system tonnage. We'll verify sizing during our home assessment.
-</p>
+| Component | Change |
+|-----------|--------|
+| Fix `sendBeacon` | Replace with Edge Function that handles unauthenticated partial saves |
+| Admin Settings Section | Add configurable triggers in Abandoned Carts admin page |
+| Testing Mode | Allow manual trigger button for testing |
 
-{/* Tonnage Grid */}
-<div className="grid grid-cols-4 gap-2 sm:gap-3 mb-6">
+---
+
+### Technical Implementation
+
+#### 1. Create Edge Function for Abandoned Cart Saves
+
+Create `supabase/functions/save-abandoned-cart/index.ts`:
+- Accepts partial submission data
+- Uses service role key to insert directly
+- Returns success/failure
+- This solves the `sendBeacon` header limitation
+
+#### 2. Update `useAbandonedCartTracker.ts`
+
+Replace the `sendBeacon` direct Supabase call with a call to the new Edge Function:
+- Use `fetch` with `keepalive: true` for `beforeunload` events
+- Fall back to Edge Function endpoint which doesn't require auth headers
+- Ensure proper error handling
+
+#### 3. Add Admin Settings UI
+
+In `/admin/abandoned-carts`, add a settings panel:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ ⚙️ Abandoned Cart Settings                        [Collapse ▲] │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│ Trigger Conditions                                              │
+│ ─────────────────────────────────────────────────────────────   │
+│ Minimum Step Required:          [8 ▼] (Contact Info step)       │
+│ Require Email:                  [✓]                             │
+│ Require Phone:                  [✓] (either email OR phone)     │
+│ Debounce Interval:              [5] seconds                     │
+│                                                                 │
+│ ─────────────────────────────────────────────────────────────   │
+│ Testing Tools                                                   │
+│ ─────────────────────────────────────────────────────────────   │
+│ [🧪 Create Test Abandoned Cart]  [🗑️ Clear Test Data]           │
+│                                                                 │
+│ How to Test Manually:                                           │
+│ 1. Open /estimator/ducted in a new tab                          │
+│ 2. Complete steps 0-8 (enter contact info)                      │
+│ 3. Close the tab OR switch tabs OR click away                   │
+│ 4. Return here and refresh to see the partial submission        │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Proposed Layout
+### Files to Create
 
-```tsx
-<h2 className="text-2xl font-bold text-[#1e3a5f] mb-2">
-  Select System Size
-</h2>
-<p className="text-muted-foreground mb-4">
-  Choose your system tonnage.
-</p>
+| File | Purpose |
+|------|---------|
+| `supabase/functions/save-abandoned-cart/index.ts` | Edge function for reliable partial saves during page unload |
 
-{/* NEW: Sizing Verification Notice */}
-<div className="rounded-lg bg-blue-50 border border-blue-200 p-3 mb-6 flex items-center gap-2">
-  <Info className="h-5 w-5 text-blue-600 flex-shrink-0" />
-  <p className="text-sm text-blue-800 font-medium">
-    We'll verify sizing during your Home Assessment | Pre-Install Inspection
-  </p>
-</div>
+### Files to Modify
 
-{/* Tonnage Grid */}
-<div className="grid grid-cols-4 gap-2 sm:gap-3 mb-6">
+| File | Changes |
+|------|---------|
+| `src/pages/estimators/ducted/hooks/useAbandonedCartTracker.ts` | Use Edge Function endpoint instead of direct sendBeacon to Supabase |
+| `src/pages/admin/AbandonedCarts.tsx` | Add settings panel with testing tools |
+
+---
+
+### Edge Function Implementation
+
+```typescript
+// supabase/functions/save-abandoned-cart/index.ts
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const data = await req.json();
+    
+    // Create admin client to bypass RLS
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
+    const { error } = await supabaseAdmin
+      .from('ducted_estimate_submissions')
+      .insert({
+        ...data,
+        status: 'partial',
+        ghl_sync_status: 'pending',
+      });
+
+    if (error) throw error;
+
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});
 ```
 
 ---
 
-### Implementation Details
+### Updated Tracker Hook
 
-1. **Import `Info` icon** from lucide-react (already importing other icons)
+Key changes to `useAbandonedCartTracker.ts`:
+- Replace `sendBeacon` with `fetch(..., { keepalive: true })` to Edge Function
+- The Edge Function URL doesn't require auth headers
+- Add console logging for debugging
 
-2. **Update description text** - Remove the duplicate "We'll verify sizing" from the description since it will now be in the highlighted notice
+```typescript
+// In savePartialSubmissionSync:
+const savePartialSubmissionSync = useCallback(() => {
+  // ... validation checks ...
 
-3. **Add highlighted notice** - Blue-themed banner with:
-   - Rounded corners matching the card design
-   - Light blue background (`bg-blue-50`)
-   - Blue border (`border-blue-200`)
-   - Info icon in blue
-   - Bold/medium weight text for emphasis
-   - Positioned between description and tonnage grid
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/save-abandoned-cart`;
 
----
-
-### Visual Design
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ Select System Size                                          │
-│                                                             │
-│ Choose your system tonnage.                                 │
-│                                                             │
-│ ┌─────────────────────────────────────────────────────────┐ │
-│ │ ℹ️  We'll verify sizing during your Home Assessment |   │ │
-│ │     Pre-Install Inspection                              │ │
-│ └─────────────────────────────────────────────────────────┘ │
-│                                                             │
-│  ┌───┐ ┌───┐ ┌───┐ ┌───┐                                   │
-│  │ 1 │ │1.5│ │ 2 │ │2.5│                                   │
-│  └───┘ └───┘ └───┘ └───┘                                   │
-│  ┌───┐ ┌───┐ ┌───┐ ┌───┐                                   │
-│  │ 3 │ │3.5│ │ 4 │ │ 5 │                                   │
-│  └───┘ └───┘ └───┘ └───┘                                   │
-└─────────────────────────────────────────────────────────────┘
+  // Use fetch with keepalive for reliable delivery
+  fetch(edgeFunctionUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(submissionData),
+    keepalive: true, // Ensures request completes even during page unload
+  }).catch(e => console.error('Abandoned cart save failed:', e));
+}, [buildSubmissionData, hasMinimumContactInfo]);
 ```
 
 ---
 
-### Changes Summary
+### Admin Testing Features
 
-- Add `Info` to the existing lucide-react imports
-- Update paragraph text to just "Choose your system tonnage." (removing duplicate verification message)
-- Insert new highlighted notice div between description and tonnage grid
-- The notice uses blue styling to indicate informational/trust messaging
+1. **Create Test Abandoned Cart Button**
+   - Inserts a mock `partial` submission with test data
+   - Useful for verifying the admin view works
+
+2. **Clear Test Data Button**
+   - Deletes submissions where `customer_email` contains `@test` or similar marker
+   - Keeps production data safe
+
+3. **Testing Instructions**
+   - Clear, step-by-step guide for manually testing the flow
+   - Explains what events trigger saves
+
+---
+
+### Testing Checklist
+
+After implementation:
+1. [ ] Open estimator in new tab, complete through Step 8
+2. [ ] Close tab (without completing) - check admin for partial submission
+3. [ ] Switch tabs at Step 9 - verify `visibilitychange` saves
+4. [ ] Use "Create Test Abandoned Cart" button - verify it appears
+5. [ ] Verify completed submissions (Step 11) show as "new" not "partial"
 
