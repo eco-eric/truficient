@@ -134,6 +134,137 @@ Deno.serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
 
+    } else if (action === 'invite_google_user') {
+      // Pre-authorize a Google user by creating them without a password
+      console.log('Inviting Google user with email:', email, 'role:', role);
+
+      if (!email || !role) {
+        return new Response(
+          JSON.stringify({ error: 'Missing email or role' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Validate role
+      if (!['admin', 'manager'].includes(role)) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid role. Must be admin or manager' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Check if user already exists
+      const { data: existingUsers } = await adminClient.auth.admin.listUsers();
+      const existingUser = existingUsers?.users.find(u => u.email === email);
+
+      if (existingUser) {
+        // User exists - just add/update their role
+        const { data: existingRole } = await adminClient
+          .from('user_roles')
+          .select('id')
+          .eq('user_id', existingUser.id)
+          .single();
+
+        if (existingRole) {
+          // Update existing role
+          const { error: updateError } = await adminClient
+            .from('user_roles')
+            .update({ role: role })
+            .eq('user_id', existingUser.id);
+
+          if (updateError) {
+            console.error('Error updating role:', updateError);
+            return new Response(
+              JSON.stringify({ error: 'Failed to update role: ' + updateError.message }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        } else {
+          // Insert new role
+          const { error: insertError } = await adminClient
+            .from('user_roles')
+            .insert({ user_id: existingUser.id, role: role });
+
+          if (insertError) {
+            console.error('Error assigning role:', insertError);
+            return new Response(
+              JSON.stringify({ error: 'Failed to assign role: ' + insertError.message }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        }
+
+        console.log('Role assigned to existing user:', existingUser.id);
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'Role assigned to existing user',
+            user: {
+              id: existingUser.id,
+              email: existingUser.email,
+              role: role,
+            }
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Create user with a random secure password (they'll use Google OAuth)
+      const randomPassword = crypto.randomUUID() + crypto.randomUUID();
+      const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
+        email: email,
+        password: randomPassword,
+        email_confirm: true,
+      });
+
+      if (createError) {
+        console.error('Error creating user:', createError);
+        return new Response(
+          JSON.stringify({ error: createError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!newUser.user) {
+        return new Response(
+          JSON.stringify({ error: 'Failed to create user' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Google user created successfully:', newUser.user.id);
+
+      // Assign the role
+      const { error: roleError } = await adminClient
+        .from('user_roles')
+        .insert({
+          user_id: newUser.user.id,
+          role: role,
+        });
+
+      if (roleError) {
+        console.error('Error assigning role:', roleError);
+        await adminClient.auth.admin.deleteUser(newUser.user.id);
+        return new Response(
+          JSON.stringify({ error: 'User created but failed to assign role: ' + roleError.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Role assigned successfully for Google user:', newUser.user.id);
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Google user invited successfully',
+          user: {
+            id: newUser.user.id,
+            email: newUser.user.email,
+            role: role,
+          }
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+
     } else if (action === 'create_user') {
       // Create a new user with email and password
       console.log('Creating new user with email:', email, 'role:', role);
