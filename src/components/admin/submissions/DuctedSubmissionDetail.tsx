@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Home, Thermometer, DollarSign, Clock, MapPin } from "lucide-react";
+import { Home, Thermometer, DollarSign, Clock, MapPin, FileText } from "lucide-react";
 
 interface DuctedSubmissionDetailProps {
   metadata: Record<string, unknown>;
@@ -26,6 +26,7 @@ export const DuctedSubmissionDetail = ({ metadata }: DuctedSubmissionDetailProps
   const bestTimeToCall = metadata.bestTimeToCall as string | undefined;
   const address = metadata.address as string | undefined;
   const ghlSyncStatus = metadata.ghlSyncStatus as string | undefined;
+  const notes = metadata.notes as string | undefined;
 
   return (
     <div className="space-y-6">
@@ -130,6 +131,19 @@ export const DuctedSubmissionDetail = ({ metadata }: DuctedSubmissionDetailProps
           </h4>
           <div className="bg-muted/50 rounded-lg p-4 text-sm capitalize">
             {bestTimeToCall.replace(/_/g, " ")}
+          </div>
+        </div>
+      )}
+
+      {/* Customer Notes */}
+      {notes && (
+        <div>
+          <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            Customer Notes
+          </h4>
+          <div className="bg-muted/50 rounded-lg p-4 text-sm whitespace-pre-wrap">
+            {notes}
           </div>
         </div>
       )}
