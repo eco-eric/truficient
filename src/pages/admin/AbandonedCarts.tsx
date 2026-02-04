@@ -28,6 +28,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { 
   Loader2, 
   Search, 
@@ -43,8 +48,14 @@ import {
   CheckCircle,
   Trash2,
   ArrowRight,
+  Settings,
+  ChevronDown,
+  FlaskConical,
+  Info,
+  ExternalLink,
 } from "lucide-react";
 import { format, formatDistanceToNow, startOfDay, subDays, isAfter } from "date-fns";
+import { toast } from "sonner";
 
 interface AbandonedCart {
   id: string;
@@ -67,6 +78,9 @@ const AbandonedCarts = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
   const [selectedCart, setSelectedCart] = useState<AbandonedCart | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [isCreatingTest, setIsCreatingTest] = useState(false);
+  const [isClearingTest, setIsClearingTest] = useState(false);
 
   // Fetch ducted submissions with status = 'partial'
   const { data: abandonedCarts, isLoading } = useQuery({
@@ -174,6 +188,63 @@ const AbandonedCarts = () => {
     updateStatus.mutate({ id: cart.id, status: "junk" });
   };
 
+  // Create test abandoned cart for testing purposes
+  const handleCreateTestCart = async () => {
+    setIsCreatingTest(true);
+    try {
+      const testData = {
+        customer_name: "Test User",
+        customer_email: `test-${Date.now()}@test.example.com`,
+        customer_phone: "555-0100",
+        customer_address: "123 Test Street, Dallas, TX 75001",
+        best_time_to_call: "Morning",
+        home_type: "single_family",
+        home_layout: "1_story",
+        square_footage: "2000_2400",
+        heating_type: "gas_system",
+        coverage: "entire_home",
+        system_count: 1,
+        status: "partial",
+        ghl_sync_status: "pending",
+      };
+
+      const { error } = await supabase
+        .from("ducted_estimate_submissions")
+        .insert(testData);
+
+      if (error) throw error;
+      
+      toast.success("Test abandoned cart created successfully");
+      queryClient.invalidateQueries({ queryKey: ["abandoned-carts"] });
+    } catch (error) {
+      console.error("Failed to create test cart:", error);
+      toast.error("Failed to create test cart");
+    } finally {
+      setIsCreatingTest(false);
+    }
+  };
+
+  // Clear test data (emails containing @test)
+  const handleClearTestData = async () => {
+    setIsClearingTest(true);
+    try {
+      const { error } = await supabase
+        .from("ducted_estimate_submissions")
+        .delete()
+        .like("customer_email", "%@test%");
+
+      if (error) throw error;
+      
+      toast.success("Test data cleared successfully");
+      queryClient.invalidateQueries({ queryKey: ["abandoned-carts"] });
+    } catch (error) {
+      console.error("Failed to clear test data:", error);
+      toast.error("Failed to clear test data");
+    } finally {
+      setIsClearingTest(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <AdminLayout title="Abandoned Carts">
@@ -230,6 +301,124 @@ const AbandonedCarts = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Testing & Settings Panel */}
+        <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Testing & Settings
+                  </CardTitle>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${settingsOpen ? 'rotate-180' : ''}`} />
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0 space-y-6">
+                {/* How It Works */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <Info className="h-4 w-4 text-blue-500" />
+                    How Abandoned Cart Tracking Works
+                  </h4>
+                  <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 space-y-2">
+                    <p>Abandoned carts are saved automatically when a user:</p>
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                      <li>Reaches Step 8 (Contact Info) and enters at least email or phone</li>
+                      <li><strong>Closes or navigates away from the tab</strong> (beforeunload/pagehide events)</li>
+                      <li><strong>Switches to another tab or minimizes browser</strong> (visibilitychange event)</li>
+                    </ul>
+                    <p className="mt-2">If the user completes the estimator (Step 11), the status changes to "new" — not partial.</p>
+                  </div>
+                </div>
+
+                {/* Trigger Conditions */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Current Trigger Conditions</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div className="bg-muted/50 rounded p-2">
+                      <span className="text-muted-foreground block">Min Step</span>
+                      <span className="font-medium">Step 8</span>
+                    </div>
+                    <div className="bg-muted/50 rounded p-2">
+                      <span className="text-muted-foreground block">Required Contact</span>
+                      <span className="font-medium">Email OR Phone</span>
+                    </div>
+                    <div className="bg-muted/50 rounded p-2">
+                      <span className="text-muted-foreground block">Max Step</span>
+                      <span className="font-medium">&lt; Step 11</span>
+                    </div>
+                    <div className="bg-muted/50 rounded p-2">
+                      <span className="text-muted-foreground block">Debounce</span>
+                      <span className="font-medium">5 seconds</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Testing Tools */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <FlaskConical className="h-4 w-4 text-purple-500" />
+                    Testing Tools
+                  </h4>
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCreateTestCart}
+                      disabled={isCreatingTest}
+                    >
+                      {isCreatingTest ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <FlaskConical className="h-4 w-4 mr-2" />
+                      )}
+                      Create Test Abandoned Cart
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClearTestData}
+                      disabled={isClearingTest}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      {isClearingTest ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4 mr-2" />
+                      )}
+                      Clear Test Data (@test emails)
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      asChild
+                    >
+                      <a href="/estimator/ducted" target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Open Estimator in New Tab
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Manual Testing Instructions */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">How to Test Manually</h4>
+                  <ol className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 space-y-1 list-decimal list-inside">
+                    <li>Click "Open Estimator in New Tab" above</li>
+                    <li>Complete Steps 0-8 (enter your contact info at Step 8)</li>
+                    <li>Close the tab, switch tabs, or navigate away</li>
+                    <li>Return here and refresh to see the partial submission</li>
+                  </ol>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">

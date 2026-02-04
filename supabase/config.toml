@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.verify-ghl-custom-fields]
 verify_jwt = false
+
+[functions.save-abandoned-cart]
+verify_jwt = false
