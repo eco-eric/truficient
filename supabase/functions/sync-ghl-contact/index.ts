@@ -44,6 +44,7 @@ interface ContactData {
   isDfw?: boolean;
   equipment?: EquipmentData;
   quote?: QuoteData;
+  notes?: string;
 }
 
 interface GHLResponse {
@@ -166,6 +167,14 @@ serve(async (req) => {
       customFields.push({
         key: 'customer_address',
         field_value: contactData.address,
+      });
+    }
+
+    // Add customer notes
+    if (contactData.notes) {
+      customFields.push({
+        key: 'customer_notes',
+        field_value: contactData.notes,
       });
     }
 

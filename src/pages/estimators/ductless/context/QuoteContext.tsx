@@ -13,6 +13,7 @@ const INITIAL_CUSTOMER_INFO: CustomerInfo = {
   state: "",
   zipCode: "",
   placeId: "",
+  notes: "",
 };
 
 const INITIAL_TOTALS: PricingTotals = {

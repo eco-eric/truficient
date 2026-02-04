@@ -123,6 +123,7 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
         rebates: pricing.rebates,
         final_total: pricing.finalTotal,
         status: "new",
+        notes: state.customerInfo.notes?.trim() || null,
       };
 
       const { error } = await supabase
@@ -150,6 +151,7 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
           email: state.customerInfo.email,
           phone: state.customerInfo.phone || undefined,
           address: state.customerInfo.formattedAddress || state.customerInfo.address || undefined,
+          notes: state.customerInfo.notes || undefined,
           source: "Ductless Mini-Split Estimator",
           tags: dynamicTags || ['ductless-estimator'],
           message: `Ductless Estimate Request:

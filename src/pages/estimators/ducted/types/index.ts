@@ -227,6 +227,8 @@ export interface CustomerInfo {
   placeId?: string;
   bestTimeToCall: 'morning' | 'afternoon' | 'evening' | null;
   wantsBackupQuote: boolean;
+  // Optional notes for customer to share setup details, issues, or promo codes
+  notes?: string;
 }
 
 // Pricing totals
