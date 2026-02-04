@@ -1,193 +1,247 @@
 
 
-## Add Google OAuth with Invite-Only Admin Access
+## Fix Abandoned Cart Tracking for Both Estimators
 
-### Overview
+### Problem Summary
 
-Add Google authentication to the admin login page while ensuring **only invited users** (those already in your `user_roles` table) can access the admin area. This means:
+Testing revealed two distinct issues:
 
-- Users can sign in with Google
-- But they must be pre-invited (have a role in `user_roles`) to access the admin dashboard
-- No self-signup - you control who gets access
+| Estimator | Dashboard | GHL Sync |
+|-----------|-----------|----------|
+| **Ducted** | Working | NOT syncing to GHL |
+| **Ductless** | NOT working | NOT syncing to GHL |
 
 ---
 
-### How It Works
+### Root Cause Analysis
+
+**Ducted (GHL Sync Failing):**
+- The Edge Function logs show NO recent calls to `save-abandoned-cart`
+- This suggests the `fetch` with `keepalive` may be failing silently in certain browsers
+- Need to add better error handling and verify the Edge Function is receiving calls
+
+**Ductless (No Tracking At All):**
+- The `DuctlessEstimator.tsx` never implemented abandoned cart tracking
+- The `QuoteContext.tsx` doesn't have a `partialSubmissionId` field for tracking
+- The `ductless_estimate_submissions` table is missing columns for GHL sync
+- Table has NOT NULL constraints that prevent partial saves (zone_count, subtotal, etc. are required)
+
+---
+
+### Solution Overview
+
+```text
+   DUCTED FIX                          DUCTLESS NEW IMPLEMENTATION
+   ──────────────                      ─────────────────────────────
+   ┌─────────────────────┐             ┌─────────────────────────────┐
+   │ Update Edge Function │             │ 1. Add DB columns          │
+   │ - Better logging     │             │ 2. Create ductless hook     │
+   │ - Debug GHL call     │             │ 3. Update Edge Function     │
+   │ - Handle errors      │             │ 4. Add tracker component    │
+   └─────────────────────┘             └─────────────────────────────┘
+```
+
+---
+
+### Database Changes (Ductless)
+
+Add columns to `ductless_estimate_submissions`:
+
+```sql
+ALTER TABLE ductless_estimate_submissions
+  -- Allow partial saves with minimal data
+  ALTER COLUMN zone_count SET DEFAULT 0,
+  ALTER COLUMN subtotal SET DEFAULT 0,
+  ALTER COLUMN tax_amount SET DEFAULT 0,
+  ALTER COLUMN rebates SET DEFAULT 0,
+  ALTER COLUMN final_total SET DEFAULT 0,
+  ALTER COLUMN customer_name DROP NOT NULL,
+  ALTER COLUMN customer_email DROP NOT NULL,
+  -- Add GHL tracking columns
+  ADD COLUMN IF NOT EXISTS ghl_sync_status TEXT DEFAULT 'pending',
+  ADD COLUMN IF NOT EXISTS ghl_contact_id TEXT;
+```
+
+---
+
+### Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/pages/estimators/ductless/hooks/useDuctlessAbandonedCartTracker.ts` | Track ductless abandoned carts (mirrors ducted implementation) |
+
+### Files to Modify
+
+| File | Changes |
+|------|---------|
+| `supabase/functions/save-abandoned-cart/index.ts` | Add ductless support + better logging |
+| `src/pages/estimators/ductless/context/QuoteContext.tsx` | Add `partialSubmissionId` state |
+| `src/pages/estimators/ductless/DuctlessEstimator.tsx` | Add abandoned cart tracker component |
+| `src/pages/estimators/ductless/types/index.ts` | Add `partialSubmissionId` to QuoteState |
+| `src/pages/admin/AbandonedCarts.tsx` | Add ductless abandoned carts tab |
+
+---
+
+### Edge Function Updates
+
+Modify `save-abandoned-cart` to handle both estimators:
+
+```typescript
+// Add estimator_type parameter
+const estimatorType = data.estimator_type || 'ducted'; // default to ducted for backwards compat
+
+// Insert to appropriate table
+const tableName = estimatorType === 'ductless' 
+  ? 'ductless_estimate_submissions' 
+  : 'ducted_estimate_submissions';
+
+// Build appropriate payload based on estimator type
+const submissionData = estimatorType === 'ductless'
+  ? buildDuctlessSubmission(data)
+  : buildDuctedSubmission(data);
+
+// GHL tags vary by estimator
+const tags = estimatorType === 'ductless'
+  ? ["abandoned-cart", "ductless-estimator", "website-lead"]
+  : ["abandoned-cart", "ducted-estimator", "website-lead"];
+```
+
+Add enhanced logging for debugging:
+
+```typescript
+console.log("=== ABANDONED CART SAVE START ===");
+console.log("Estimator type:", estimatorType);
+console.log("Has GHL credentials:", Boolean(GHL_API_KEY && GHL_LOCATION_ID));
+// ... log each step
+console.log("=== ABANDONED CART SAVE END ===");
+```
+
+---
+
+### Ductless Abandoned Cart Hook
+
+Create `useDuctlessAbandonedCartTracker.ts` mirroring the ducted version:
+
+```typescript
+export const useDuctlessAbandonedCartTracker = (
+  state: QuoteState,
+  setPartialSubmissionId: (id: string | null) => void
+) => {
+  // Same pattern as ducted:
+  // - Listen for visibilitychange, beforeunload, pagehide
+  // - Save when currentStep >= 1 (after customer info) and < 8 (before thank you)
+  // - Call Edge Function with estimator_type: 'ductless'
+};
+```
+
+The ductless flow captures contact info at **Step 1**, so tracking starts earlier than ducted.
+
+---
+
+### QuoteContext Updates
+
+Add partial submission tracking:
+
+```typescript
+// In types/index.ts - add to QuoteState
+export interface QuoteState {
+  // ... existing fields ...
+  partialSubmissionId: string | null; // NEW
+}
+
+// In context/QuoteContext.tsx
+const INITIAL_STATE: QuoteState = {
+  // ... existing ...
+  partialSubmissionId: null,
+};
+
+// Add setter function
+const setPartialSubmissionId = useCallback((id: string | null) => {
+  setState((prev) => ({ ...prev, partialSubmissionId: id }));
+}, []);
+```
+
+---
+
+### DuctlessEstimator Integration
+
+```typescript
+// In DuctlessEstimator.tsx
+import { useDuctlessAbandonedCartTracker } from "./hooks/useDuctlessAbandonedCartTracker";
+
+// Add tracker component
+const AbandonedCartTracker = () => {
+  const { state, setPartialSubmissionId } = useQuote();
+  useDuctlessAbandonedCartTracker(state, setPartialSubmissionId);
+  return null;
+};
+
+// Wrap in provider
+const DuctlessEstimator = () => {
+  return (
+    <QuoteProvider>
+      <AbandonedCartTracker /> {/* NEW */}
+      <EstimatorContent />
+    </QuoteProvider>
+  );
+};
+```
+
+---
+
+### Admin Dashboard Updates
+
+Modify `AbandonedCarts.tsx` to show both estimator types:
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         Login Flow                                  │
+│ Abandoned Carts                                                     │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
-│  User clicks "Sign in with Google"                                  │
-│           │                                                         │
-│           ▼                                                         │
-│  Google OAuth completes → User created in auth.users                │
-│           │                                                         │
-│           ▼                                                         │
-│  Check: Does user have a role in user_roles table?                  │
-│           │                                                         │
-│     ┌─────┴─────┐                                                   │
-│     │           │                                                   │
-│    YES          NO                                                  │
-│     │           │                                                   │
-│     ▼           ▼                                                   │
-│  Dashboard   "Access Denied - Contact admin for access"             │
+│  [Ducted] [Ductless] [All]  ← Tab switcher                          │
+│                                                                     │
+│  ┌─────────┬────────┬────────┬────────┐                             │
+│  │ Today   │ Week   │ Month  │ Total  │  ← Stats per selected type  │
+│  └─────────┴────────┴────────┴────────┘                             │
+│                                                                     │
+│  ... table with Source column showing Ducted/Ductless ...           │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Inviting Users (Your Workflow)
-
-When you want to give someone admin access:
-
-1. Go to Admin → Users
-2. Click "Add User" (creates user with email/password) **OR**
-3. Click "Invite Google User" → Enter their Google email → Select role
-4. When they sign in with that Google email, they automatically get access
-
----
-
-### Changes Summary
-
-| File | Change |
-|------|--------|
-| `src/pages/admin/Login.tsx` | Add "Sign in with Google" button |
-| `src/hooks/useAuth.ts` | Add `signInWithGoogle` function |
-| `src/pages/admin/Users.tsx` | Add "Invite Google User" dialog (email + role only, no password) |
-| `supabase/functions/admin-password-reset/index.ts` | Add `invite_google_user` action |
-
----
-
 ### Technical Details
 
-#### 1. Configure Google OAuth
+**Ductless Contact Info Step:** Step 1 (vs Ducted Step 8)
 
-The Lovable Cloud managed Google OAuth will be used - no additional Google Cloud Console setup required from you.
+| Field | Ducted Step | Ductless Step |
+|-------|-------------|---------------|
+| Contact Info | Step 8 | Step 1 |
+| Trigger Step | >= 8 | >= 1 |
+| Completion Step | 11 | 8 |
 
-#### 2. Login Page Changes
-
-Add a Google sign-in button below the existing email/password form:
-
-```text
-┌─────────────────────────────────────────────────────┐
-│                  🔧 Admin Login                     │
-├─────────────────────────────────────────────────────┤
-│                                                     │
-│  Email: [________________________]                  │
-│  Password: [____________________]                   │
-│                                                     │
-│         [ Sign In ]                                 │
-│                                                     │
-│  ─────────────── OR ───────────────                 │
-│                                                     │
-│         [ 🔵 Sign in with Google ]                  │
-│                                                     │
-│         [ Go to Home Page ]                         │
-│                                                     │
-└─────────────────────────────────────────────────────┘
-```
-
-#### 3. useAuth Hook Updates
-
-Add a new `signInWithGoogle` function that uses the Lovable Cloud OAuth:
-
-```typescript
-const signInWithGoogle = async () => {
-  const { error } = await lovable.auth.signInWithOAuth("google", {
-    redirect_uri: window.location.origin + "/admin",
-  });
-  return { error };
-};
-```
-
-#### 4. Invite Google User Flow
-
-New dialog in Admin → Users:
-
-```text
-┌─────────────────────────────────────────────────────┐
-│           Invite Google User                        │
-├─────────────────────────────────────────────────────┤
-│                                                     │
-│  This will pre-authorize a Google account to        │
-│  access the admin dashboard.                        │
-│                                                     │
-│  Google Email: [user@gmail.com___________]          │
-│                                                     │
-│  Role: [ Admin ▼ ]                                  │
-│                                                     │
-│  Note: The user will sign in with their Google      │
-│  account. They won't need a password.               │
-│                                                     │
-│         [ Cancel ]  [ Send Invite ]                 │
-│                                                     │
-└─────────────────────────────────────────────────────┘
-```
-
-#### 5. Edge Function: Invite Action
-
-Add new action to `admin-password-reset`:
-
-```typescript
-else if (action === 'invite_google_user') {
-  // Create user with a random secure password (they'll use Google OAuth)
-  const { data: newUser, error } = await adminClient.auth.admin.createUser({
-    email: email,
-    email_confirm: true,
-    // No password - they must use Google
-  });
-  
-  // Assign role
-  await adminClient.from('user_roles').insert({
-    user_id: newUser.user.id,
-    role: role,
-  });
-}
-```
+**GHL Custom Fields for Ductless:**
+- `zone_count` - Number of rooms/zones
+- `unit_type` - Wall mount, ceiling, etc.
+- `system_tier` - Good/Better/Best
+- `customer_address` - Full formatted address
 
 ---
 
-### Linking Existing Users to Google
+### Testing Checklist
 
-For your 4 existing users:
-- If they already use the same email for their password login as their Google account, Google OAuth will automatically link to their existing account
-- The `user_roles` table already has their permissions, so they'll have immediate access
-- They can use either email/password OR Google to sign in
+After implementation:
 
----
+**Ducted:**
+1. Open `/estimator/ducted`, complete through Step 8
+2. Enter contact info, then close tab
+3. Check Edge Function logs for "ABANDONED CART SAVE START"
+4. Verify GHL has contact with `abandoned-cart` tag
 
-### Security Considerations
-
-1. **No Self-Signup**: The `ProtectedRoute` already checks `hasAccess` (role exists in `user_roles`). Users without a role see "Access Denied"
-
-2. **Role Verification**: Happens server-side via the `useUserRole` hook querying the database
-
-3. **OAuth Security**: Google handles the authentication; we only authorize based on your `user_roles` table
-
-4. **Dual Auth Support**: Keep email/password as a fallback (useful if Google is down or for service accounts)
-
----
-
-### Files to Modify
-
-| File | Action |
-|------|--------|
-| Run `supabase--configure-social-auth` tool | Configure Google OAuth with Lovable Cloud |
-| `src/pages/admin/Login.tsx` | Add Google sign-in button with divider |
-| `src/hooks/useAuth.ts` | Add `signInWithGoogle` function using lovable module |
-| `src/pages/admin/Users.tsx` | Add "Invite Google User" dialog |
-| `supabase/functions/admin-password-reset/index.ts` | Add `invite_google_user` action |
-
----
-
-### Testing After Implementation
-
-1. Sign out if logged in
-2. Go to `/admin/login`
-3. Click "Sign in with Google"
-4. Verify you're redirected to admin dashboard (since your email has a role)
-5. Try with an email NOT in user_roles - should see "Access Denied"
+**Ductless:**
+1. Open `/estimator/ductless`, complete Step 1 (enter contact info)
+2. Close tab without completing
+3. Check Abandoned Carts admin page for ductless entry
+4. Verify GHL has contact with `ductless-estimator` + `abandoned-cart` tags
 
