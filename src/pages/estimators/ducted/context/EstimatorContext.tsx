@@ -30,6 +30,7 @@ const INITIAL_CUSTOMER_INFO: CustomerInfo = {
   placeId: "",
   bestTimeToCall: null,
   wantsBackupQuote: false,
+  notes: "",
 };
 
 const INITIAL_TOTALS: PricingTotals = {

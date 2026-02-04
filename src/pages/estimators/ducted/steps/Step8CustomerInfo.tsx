@@ -4,11 +4,12 @@ import { CTAButton } from "@/pages/estimators/ductless/components/CTAButton";
 import { useEstimator } from "../context/EstimatorContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { 
   Mail, Phone, MapPin, User, Shield, Clock, 
-  Loader2, Calendar
+  Loader2, Calendar, FileText
 } from "lucide-react";
 
 export const Step8CustomerInfo = () => {
@@ -97,6 +98,7 @@ export const Step8CustomerInfo = () => {
         customer_phone: state.customerInfo.phone?.trim() || null,
         customer_address: fullAddress?.trim() || null,
         best_time_to_call: state.customerInfo.bestTimeToCall || null,
+        notes: state.customerInfo.notes?.trim() || null,
         
         // Home details collected so far
         home_type: state.homeType || "single_family",
@@ -335,6 +337,30 @@ export const Step8CustomerInfo = () => {
                 <p className="text-sm text-destructive">5 digits</p>
               )}
             </div>
+          </div>
+
+          {/* Additional Notes */}
+          <div className="grid gap-2 mt-5">
+            <Label htmlFor="notes" className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              Additional Notes <span className="text-muted-foreground text-xs">(Optional)</span>
+            </Label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Help us prepare by sharing details about your current setup, comfort issues 
+              (hot/cold spots, noises, dust/allergens), or any promo codes from our ads.
+            </p>
+            <Textarea
+              id="notes"
+              value={state.customerInfo.notes || ""}
+              onChange={(e) => setCustomerInfo({ notes: e.target.value })}
+              placeholder="e.g., My AC is 15 years old and making a strange noise. The upstairs bedroom is always too hot in summer. I saw promo code SUMMER100 in your ad..."
+              rows={4}
+              maxLength={1000}
+              className="resize-none"
+            />
+            <p className="text-xs text-muted-foreground text-right">
+              {(state.customerInfo.notes?.length || 0)}/1000
+            </p>
           </div>
         </div>
 

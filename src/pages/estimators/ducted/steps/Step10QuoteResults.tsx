@@ -170,6 +170,7 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
             final_total: pricing.finalTotal || 0,
             status: "new",
             wants_backup_quote: state.customerInfo.wantsBackupQuote || false,
+            notes: state.customerInfo.notes?.trim() || null,
           })
           .eq("id", state.partialSubmissionId);
 
@@ -186,6 +187,7 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
             email: state.customerInfo.email,
             phone: state.customerInfo.phone || undefined,
             address: fullAddress || undefined,
+            notes: state.customerInfo.notes || undefined,
             source: "Ducted HVAC Estimator",
             tags,
             message: `Ducted HVAC Estimate Request:

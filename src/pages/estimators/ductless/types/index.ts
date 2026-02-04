@@ -112,6 +112,8 @@ export interface CustomerInfo {
   state?: string;
   zipCode?: string;
   placeId?: string;
+  // Optional notes for customer to share setup details, issues, or promo codes
+  notes?: string;
 }
 
 // Per-zone pricing with discount info

@@ -4,7 +4,8 @@ import { CTAButton } from "../components/CTAButton";
 import { useQuote } from "../context/QuoteContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Phone, MapPin, User, Shield, Clock } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Mail, Phone, MapPin, User, Shield, Clock, FileText } from "lucide-react";
 
 export const CustomerInfoStep = () => {
   const { state, setCustomerInfo, nextStep, prevStep } = useQuote();
@@ -216,6 +217,30 @@ export const CustomerInfoStep = () => {
                 <p className="text-sm text-destructive">5 digits</p>
               )}
             </div>
+          </div>
+
+          {/* Additional Notes */}
+          <div className="grid gap-2 mt-5">
+            <Label htmlFor="notes" className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              Additional Notes <span className="text-muted-foreground text-xs">(Optional)</span>
+            </Label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Help us prepare by sharing details about your current setup, comfort issues 
+              (hot/cold spots, noises, dust/allergens), or any promo codes from our ads.
+            </p>
+            <Textarea
+              id="notes"
+              value={state.customerInfo.notes || ""}
+              onChange={(e) => setCustomerInfo({ notes: e.target.value })}
+              placeholder="e.g., My AC is 15 years old and making a strange noise. The upstairs bedroom is always too hot in summer. I saw promo code SUMMER100 in your ad..."
+              rows={4}
+              maxLength={1000}
+              className="resize-none"
+            />
+            <p className="text-xs text-muted-foreground text-right">
+              {(state.customerInfo.notes?.length || 0)}/1000
+            </p>
           </div>
         </div>
 
