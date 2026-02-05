@@ -144,6 +144,9 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
       const quoteRawDetails = buildQuoteRawDetails();
       
       // Sync to GHL first, then send notification after contact exists
+      // Include 'save-quote-ductless' tag for completed quote submissions
+      const ghlTags = [...(dynamicTags || ['ductless-estimator']), 'save-quote-ductless'];
+      
       supabase.functions.invoke("sync-ghl-contact", {
         body: {
           firstName,
@@ -153,7 +156,7 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
           address: state.customerInfo.formattedAddress || state.customerInfo.address || undefined,
           notes: state.customerInfo.notes || undefined,
           source: "Ductless Mini-Split Estimator",
-          tags: dynamicTags || ['ductless-estimator'],
+          tags: ghlTags,
           message: `Ductless Estimate Request:
 • Zones: ${pricing.zoneCount}
 • Total BTU: ${pricing.totalBtu.toLocaleString()}

@@ -82,8 +82,8 @@ export const Step10QuoteResults = () => {
       const tierName = pricing.selectedTier?.display_name || "Standard";
       const validUntil = format(addDays(new Date(), 30), "MMMM d, yyyy");
 
-      // Build tags from dynamic configuration + heating type
-      const tags = [...(dynamicTags || ['ducted-estimator']), state.heatingType || 'hvac'];
+      // Build tags from dynamic configuration + heating type + save-quote tag
+      const tags = [...(dynamicTags || ['ducted-estimator']), state.heatingType || 'hvac', 'save-quote-ducted'];
 
       // Build detailed labels for raw details
       const homeTypeLabel = HOME_TYPE_OPTIONS.find((o) => o.value === state.homeType)?.label || "N/A";

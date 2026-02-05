@@ -157,6 +157,14 @@ serve(async (req) => {
     const GHL_LOCATION_ID = Deno.env.get('GHL_LOCATION_ID');
     const tableName = isDuctless ? 'ductless_estimate_submissions' : 'ducted_estimate_submissions';
 
+    // Debug logging for credentials
+    console.log("GHL credentials check:", {
+      hasApiKey: !!GHL_API_KEY,
+      apiKeyLength: GHL_API_KEY?.length || 0,
+      hasLocationId: !!GHL_LOCATION_ID,
+      locationIdLength: GHL_LOCATION_ID?.length || 0,
+    });
+
     if (GHL_API_KEY && GHL_LOCATION_ID) {
       try {
         // Parse name into first/last
