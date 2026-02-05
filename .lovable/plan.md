@@ -1,65 +1,48 @@
 
 
-## Fix Abandoned Cart Tracking for Both Estimators
-
-### Problem Summary
-
-Testing revealed two distinct issues:
-
-| Estimator | Dashboard | GHL Sync |
-|-----------|-----------|----------|
-| **Ducted** | Working | NOT syncing to GHL |
-| **Ductless** | NOT working | NOT syncing to GHL |
-
----
+## Fix Multiple GoTrueClient Instances and Mobile Auth Issues
 
 ### Root Cause Analysis
 
-**Ducted (GHL Sync Failing):**
-- The Edge Function logs show NO recent calls to `save-abandoned-cart`
-- This suggests the `fetch` with `keepalive` may be failing silently in certain browsers
-- Need to add better error handling and verify the Edge Function is receiving calls
+The investigation found **two critical issues**:
 
-**Ductless (No Tracking At All):**
-- The `DuctlessEstimator.tsx` never implemented abandoned cart tracking
-- The `QuoteContext.tsx` doesn't have a `partialSubmissionId` field for tracking
-- The `ductless_estimate_submissions` table is missing columns for GHL sync
-- Table has NOT NULL constraints that prevent partial saves (zone_count, subtotal, etc. are required)
+| Issue | Impact |
+|-------|--------|
+| **No AuthContext/Provider** | Each component calling `useAuth()` creates its own `onAuthStateChange` subscription |
+| **React StrictMode double rendering** | Components mount twice, creating duplicate auth listeners |
+
+Currently, `useAuth()` is called in **8 different components**, each setting up its own independent auth listener:
+- `ProtectedRoute.tsx`
+- `AdminSidebar.tsx`
+- `AdminHeader.tsx`
+- `MobileAdminNav.tsx`
+- `Login.tsx`
+- `Settings.tsx`
+- `BlogPostEditor.tsx`
+- `useUserRole.ts` (which then calls `useAuth()` internally)
+
+This results in **multiple concurrent subscriptions** to auth state changes, causing race conditions especially on mobile devices with slower localStorage access.
 
 ---
 
-### Solution Overview
+### Solution: Create Auth Context with Single Subscription
 
 ```text
-   DUCTED FIX                          DUCTLESS NEW IMPLEMENTATION
-   ──────────────                      ─────────────────────────────
-   ┌─────────────────────┐             ┌─────────────────────────────┐
-   │ Update Edge Function │             │ 1. Add DB columns          │
-   │ - Better logging     │             │ 2. Create ductless hook     │
-   │ - Debug GHL call     │             │ 3. Update Edge Function     │
-   │ - Handle errors      │             │ 4. Add tracker component    │
-   └─────────────────────┘             └─────────────────────────────┘
-```
-
----
-
-### Database Changes (Ductless)
-
-Add columns to `ductless_estimate_submissions`:
-
-```sql
-ALTER TABLE ductless_estimate_submissions
-  -- Allow partial saves with minimal data
-  ALTER COLUMN zone_count SET DEFAULT 0,
-  ALTER COLUMN subtotal SET DEFAULT 0,
-  ALTER COLUMN tax_amount SET DEFAULT 0,
-  ALTER COLUMN rebates SET DEFAULT 0,
-  ALTER COLUMN final_total SET DEFAULT 0,
-  ALTER COLUMN customer_name DROP NOT NULL,
-  ALTER COLUMN customer_email DROP NOT NULL,
-  -- Add GHL tracking columns
-  ADD COLUMN IF NOT EXISTS ghl_sync_status TEXT DEFAULT 'pending',
-  ADD COLUMN IF NOT EXISTS ghl_contact_id TEXT;
+BEFORE (Current - Broken)               AFTER (Fixed)
+─────────────────────────────           ───────────────────────────
+                                        
+  ┌─────────────┐                          ┌─────────────────┐
+  │ Component A │──┐                       │  AuthProvider   │ ← Single subscription
+  └─────────────┘  │                       └────────┬────────┘
+                   │                                │
+  ┌─────────────┐  ├──▶ onAuthStateChange   ┌──────┴──────┐
+  │ Component B │──┤     (MULTIPLE!)        │  AuthContext │
+  └─────────────┘  │                        └──────┬──────┘
+                   │                               │
+  ┌─────────────┐  │                    ┌──────────┼──────────┐
+  │ Component C │──┘                    │          │          │
+  └─────────────┘                       ▼          ▼          ▼
+                                   Component  Component  Component
 ```
 
 ---
@@ -68,164 +51,201 @@ ALTER TABLE ductless_estimate_submissions
 
 | File | Purpose |
 |------|---------|
-| `src/pages/estimators/ductless/hooks/useDuctlessAbandonedCartTracker.ts` | Track ductless abandoned carts (mirrors ducted implementation) |
+| `src/contexts/AuthContext.tsx` | AuthProvider with single auth subscription + context |
 
 ### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `supabase/functions/save-abandoned-cart/index.ts` | Add ductless support + better logging |
-| `src/pages/estimators/ductless/context/QuoteContext.tsx` | Add `partialSubmissionId` state |
-| `src/pages/estimators/ductless/DuctlessEstimator.tsx` | Add abandoned cart tracker component |
-| `src/pages/estimators/ductless/types/index.ts` | Add `partialSubmissionId` to QuoteState |
-| `src/pages/admin/AbandonedCarts.tsx` | Add ductless abandoned carts tab |
+| `src/hooks/useAuth.ts` | Convert to use context instead of direct subscription |
+| `src/App.tsx` | Wrap app with AuthProvider |
 
 ---
 
-### Edge Function Updates
+### Implementation Details
 
-Modify `save-abandoned-cart` to handle both estimators:
-
-```typescript
-// Add estimator_type parameter
-const estimatorType = data.estimator_type || 'ducted'; // default to ducted for backwards compat
-
-// Insert to appropriate table
-const tableName = estimatorType === 'ductless' 
-  ? 'ductless_estimate_submissions' 
-  : 'ducted_estimate_submissions';
-
-// Build appropriate payload based on estimator type
-const submissionData = estimatorType === 'ductless'
-  ? buildDuctlessSubmission(data)
-  : buildDuctedSubmission(data);
-
-// GHL tags vary by estimator
-const tags = estimatorType === 'ductless'
-  ? ["abandoned-cart", "ductless-estimator", "website-lead"]
-  : ["abandoned-cart", "ducted-estimator", "website-lead"];
-```
-
-Add enhanced logging for debugging:
+**1. Create AuthContext.tsx**
 
 ```typescript
-console.log("=== ABANDONED CART SAVE START ===");
-console.log("Estimator type:", estimatorType);
-console.log("Has GHL credentials:", Boolean(GHL_API_KEY && GHL_LOCATION_ID));
-// ... log each step
-console.log("=== ABANDONED CART SAVE END ===");
-```
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { lovable } from '@/integrations/lovable';
 
----
-
-### Ductless Abandoned Cart Hook
-
-Create `useDuctlessAbandonedCartTracker.ts` mirroring the ducted version:
-
-```typescript
-export const useDuctlessAbandonedCartTracker = (
-  state: QuoteState,
-  setPartialSubmissionId: (id: string | null) => void
-) => {
-  // Same pattern as ducted:
-  // - Listen for visibilitychange, beforeunload, pagehide
-  // - Save when currentStep >= 1 (after customer info) and < 8 (before thank you)
-  // - Call Edge Function with estimator_type: 'ductless'
-};
-```
-
-The ductless flow captures contact info at **Step 1**, so tracking starts earlier than ducted.
-
----
-
-### QuoteContext Updates
-
-Add partial submission tracking:
-
-```typescript
-// In types/index.ts - add to QuoteState
-export interface QuoteState {
-  // ... existing fields ...
-  partialSubmissionId: string | null; // NEW
+interface AuthState {
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
+  isAdmin: boolean;
 }
 
-// In context/QuoteContext.tsx
-const INITIAL_STATE: QuoteState = {
-  // ... existing ...
-  partialSubmissionId: null,
-};
+interface AuthContextType extends AuthState {
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
+  signOut: () => Promise<{ error: Error | null }>;
+  signInWithGoogle: () => Promise<{ error: Error | null }>;
+}
 
-// Add setter function
-const setPartialSubmissionId = useCallback((id: string | null) => {
-  setState((prev) => ({ ...prev, partialSubmissionId: id }));
-}, []);
-```
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
----
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [authState, setAuthState] = useState<AuthState>({
+    user: null,
+    session: null,
+    loading: true,
+    isAdmin: false,
+  });
 
-### DuctlessEstimator Integration
+  // Single checkAdminRole function
+  const checkAdminRole = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .maybeSingle();
+      return !error && data !== null;
+    } catch {
+      return false;
+    }
+  }, []);
 
-```typescript
-// In DuctlessEstimator.tsx
-import { useDuctlessAbandonedCartTracker } from "./hooks/useDuctlessAbandonedCartTracker";
+  // SINGLE auth subscription for the entire app
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        // Sync update - no setTimeout needed when using context
+        if (session?.user) {
+          const isAdmin = await checkAdminRole(session.user.id);
+          setAuthState({
+            session,
+            user: session.user,
+            isAdmin,
+            loading: false,
+          });
+        } else {
+          setAuthState({
+            session: null,
+            user: null,
+            isAdmin: false,
+            loading: false,
+          });
+        }
+      }
+    );
 
-// Add tracker component
-const AbandonedCartTracker = () => {
-  const { state, setPartialSubmissionId } = useQuote();
-  useDuctlessAbandonedCartTracker(state, setPartialSubmissionId);
-  return null;
-};
+    // Check existing session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const isAdmin = await checkAdminRole(session.user.id);
+        setAuthState({
+          session,
+          user: session.user,
+          isAdmin,
+          loading: false,
+        });
+      } else {
+        setAuthState({
+          session: null,
+          user: null,
+          isAdmin: false,
+          loading: false,
+        });
+      }
+    });
 
-// Wrap in provider
-const DuctlessEstimator = () => {
+    return () => subscription.unsubscribe();
+  }, [checkAdminRole]);
+
+  // Auth methods...
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return { error };
+  };
+
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    return { error };
+  };
+
+  const signInWithGoogle = async () => {
+    const { error } = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin + "/admin",
+    });
+    return { error: error ?? null };
+  };
+
   return (
-    <QuoteProvider>
-      <AbandonedCartTracker /> {/* NEW */}
-      <EstimatorContent />
-    </QuoteProvider>
+    <AuthContext.Provider value={{ ...authState, signIn, signUp, signOut, signInWithGoogle }}>
+      {children}
+    </AuthContext.Provider>
   );
 };
+
+export const useAuthContext = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+```
+
+**2. Update useAuth.ts**
+
+Convert to a thin wrapper that uses the context:
+
+```typescript
+import { useAuthContext } from '@/contexts/AuthContext';
+
+// Re-export for backwards compatibility
+export const useAuth = useAuthContext;
+```
+
+**3. Update App.tsx**
+
+Wrap the app with AuthProvider:
+
+```typescript
+import { AuthProvider } from '@/contexts/AuthContext';
+
+const App = () => (
+  <AuthProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        {/* ... rest of app ... */}
+      </QueryClientProvider>
+    </ThemeProvider>
+  </AuthProvider>
+);
 ```
 
 ---
 
-### Admin Dashboard Updates
+### Why This Fixes the Issues
 
-Modify `AbandonedCarts.tsx` to show both estimator types:
-
-```text
-┌─────────────────────────────────────────────────────────────────────┐
-│ Abandoned Carts                                                     │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  [Ducted] [Ductless] [All]  ← Tab switcher                          │
-│                                                                     │
-│  ┌─────────┬────────┬────────┬────────┐                             │
-│  │ Today   │ Week   │ Month  │ Total  │  ← Stats per selected type  │
-│  └─────────┴────────┴────────┴────────┘                             │
-│                                                                     │
-│  ... table with Source column showing Ducted/Ductless ...           │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
+| Problem | Solution |
+|---------|----------|
+| Multiple `onAuthStateChange` listeners | Single listener in AuthProvider |
+| Race conditions on localStorage | One source of truth for auth state |
+| React StrictMode double mount | Context persists across re-renders |
+| Mobile stuck spinner | Synchronous state updates from context |
 
 ---
 
-### Technical Details
+### Additional Optimization: useUserRole
 
-**Ductless Contact Info Step:** Step 1 (vs Ducted Step 8)
+The `useUserRole` hook also calls `useAuth()` internally. With the context pattern, this becomes efficient:
 
-| Field | Ducted Step | Ductless Step |
-|-------|-------------|---------------|
-| Contact Info | Step 8 | Step 1 |
-| Trigger Step | >= 8 | >= 1 |
-| Completion Step | 11 | 8 |
-
-**GHL Custom Fields for Ductless:**
-- `zone_count` - Number of rooms/zones
-- `unit_type` - Wall mount, ceiling, etc.
-- `system_tier` - Good/Better/Best
-- `customer_address` - Full formatted address
+```typescript
+// useUserRole.ts - no changes needed, it will automatically
+// use the shared context instead of creating its own subscription
+export const useUserRole = () => {
+  const { user } = useAuth(); // Now uses context
+  // ... rest of hook
+};
+```
 
 ---
 
@@ -233,15 +253,8 @@ Modify `AbandonedCarts.tsx` to show both estimator types:
 
 After implementation:
 
-**Ducted:**
-1. Open `/estimator/ducted`, complete through Step 8
-2. Enter contact info, then close tab
-3. Check Edge Function logs for "ABANDONED CART SAVE START"
-4. Verify GHL has contact with `abandoned-cart` tag
-
-**Ductless:**
-1. Open `/estimator/ductless`, complete Step 1 (enter contact info)
-2. Close tab without completing
-3. Check Abandoned Carts admin page for ductless entry
-4. Verify GHL has contact with `ductless-estimator` + `abandoned-cart` tags
+1. **Desktop**: Test email/password login and Google OAuth
+2. **Mobile**: Test both login methods - should no longer hang
+3. **Console**: Verify no "Multiple GoTrueClient instances" warnings
+4. **Navigation**: Test navigating between admin pages while logged in
 
