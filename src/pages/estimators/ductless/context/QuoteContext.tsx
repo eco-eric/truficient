@@ -35,6 +35,7 @@ const INITIAL_STATE: QuoteState = {
   customerInfo: INITIAL_CUSTOMER_INFO,
   totals: INITIAL_TOTALS,
   applyUnitTypeToAll: true,
+  partialSubmissionId: null,
 };
 
 interface QuoteContextValue {
@@ -59,6 +60,8 @@ interface QuoteContextValue {
   setCustomerInfo: (info: Partial<CustomerInfo>) => void;
   // Totals
   setTotals: (totals: PricingTotals) => void;
+  // Abandoned cart tracking
+  setPartialSubmissionId: (id: string | null) => void;
   // Reset
   resetQuote: () => void;
 }
@@ -150,6 +153,11 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setState((prev) => ({ ...prev, totals }));
   }, []);
 
+  // Abandoned cart tracking
+  const setPartialSubmissionId = useCallback((id: string | null) => {
+    setState((prev) => ({ ...prev, partialSubmissionId: id }));
+  }, []);
+
   // Reset
   const resetQuote = useCallback(() => {
     setState(INITIAL_STATE);
@@ -172,6 +180,7 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setSelectedAddonIds,
       setCustomerInfo,
       setTotals,
+      setPartialSubmissionId,
       resetQuote,
     }),
     [
@@ -190,6 +199,7 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setSelectedAddonIds,
       setCustomerInfo,
       setTotals,
+      setPartialSubmissionId,
       resetQuote,
     ]
   );

@@ -143,6 +143,7 @@ export const useAbandonedCartTracker = (
 
     const submissionData = {
       ...buildSubmissionData(s),
+      estimator_type: "ducted", // Identify this as ducted for the Edge Function
       partial_submission_id: s.partialSubmissionId || undefined,
     };
 
