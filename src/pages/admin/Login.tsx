@@ -47,7 +47,7 @@ export const AdminLogin = () => {
         }
       }
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +62,7 @@ export const AdminLogin = () => {
         setError(error.message);
       }
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.');
     } finally {
       setIsGoogleLoading(false);
     }
