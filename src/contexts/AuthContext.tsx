@@ -2,6 +2,7 @@
  import { User, Session, AuthError } from '@supabase/supabase-js';
  import { supabase } from '@/integrations/supabase/client';
  import { lovable } from '@/integrations/lovable';
+  import { diagnoseAuthFetchFailure } from '@/utils/authDiagnostics';
  
  interface AuthState {
    user: User | null;
@@ -89,41 +90,70 @@
  
      return () => subscription.unsubscribe();
    }, [checkAdminRole]);
+
+    const normalizeNetworkAuthError = async (err: unknown, context: string) => {
+      if (err instanceof TypeError && (err.message === 'Failed to fetch' || err.message.includes('Failed to fetch'))) {
+        throw await diagnoseAuthFetchFailure(context);
+      }
+      if (err instanceof Error) throw err;
+      throw new Error(String(err));
+    };
  
    const signIn = async (email: string, password: string) => {
-     const { error } = await supabase.auth.signInWithPassword({
-       email,
-       password,
-     });
-     return { error };
+      try {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        return { error };
+      } catch (err) {
+        await normalizeNetworkAuthError(err, 'signInWithPassword');
+        // unreachable
+        return { error: null };
+      }
    };
  
    const signUp = async (email: string, password: string, fullName?: string) => {
      const redirectUrl = `${window.location.origin}/admin`;
      
-     const { error } = await supabase.auth.signUp({
-       email,
-       password,
-       options: {
-         emailRedirectTo: redirectUrl,
-         data: {
-           full_name: fullName,
-         },
-       },
-     });
-     return { error };
+      try {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              full_name: fullName,
+            },
+          },
+        });
+        return { error };
+      } catch (err) {
+        await normalizeNetworkAuthError(err, 'signUp');
+        return { error: null };
+      }
    };
  
    const signOut = async () => {
-     const { error } = await supabase.auth.signOut();
-     return { error };
+      try {
+        const { error } = await supabase.auth.signOut();
+        return { error };
+      } catch (err) {
+        await normalizeNetworkAuthError(err, 'signOut');
+        return { error: null };
+      }
    };
  
    const signInWithGoogle = async () => {
-     const { error } = await lovable.auth.signInWithOAuth("google", {
-       redirect_uri: window.location.origin + "/admin",
-     });
-     return { error: error ?? null };
+      try {
+        const { error } = await lovable.auth.signInWithOAuth("google", {
+          redirect_uri: window.location.origin + "/admin",
+        });
+        return { error: error ?? null };
+      } catch (err) {
+        await normalizeNetworkAuthError(err, 'googleOAuth');
+        return { error: null };
+      }
    };
  
    return (
