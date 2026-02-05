@@ -1,184 +1,115 @@
 
 
-## Fix Abandoned Cart Tracking for Both Estimators
+## Fix Abandoned Cart Tracking & GHL Sync
 
-### Summary
+### Summary of Issues Found
 
-Your GHL sync guy correctly identified two distinct issues:
-
-1. **Ducted**: Saves to dashboard but GHL sync may be failing after the revert
-2. **Ductless**: Has NO abandoned cart tracking implemented at all - it's completely missing
-
----
-
-### Root Cause Analysis
-
-| Estimator | Database Save | GHL Sync | Status |
-|-----------|--------------|----------|--------|
-| Ducted | Works via `useAbandonedCartTracker` hook | May need re-deployment | Partial fix needed |
-| Ductless | **Not implemented** | **Not implemented** | Full implementation needed |
-
-The ducted estimator has the `useAbandonedCartTracker` hook and `save-abandoned-cart` Edge Function, but after your revert, the function may not be deployed with the GHL sync logic.
-
-The ductless estimator was **never set up** with abandoned cart tracking - the `QuoteContext` doesn't track `partialSubmissionId` and there's no hook to save partial submissions.
+| Issue | Status | Root Cause |
+|-------|--------|------------|
+| Ductless abandoned cart saves | ❌ FAILING | Database constraint violation - `partial` status not allowed |
+| Ducted GHL sync | ❌ NOT SYNCING | GHL credentials may not be reaching Edge Function, or sync code missing |
+| Save quote tags | ❌ MISSING | Tags `save-quote-ducted` and `save-quote-ductless` not implemented |
 
 ---
 
-### Solution Overview
+### Part 1: Fix Ductless Database Constraint
 
-#### Part 1: Re-deploy the Ducted Edge Function
+The `ductless_estimate_submissions` table only allows these status values:
+- `new`, `contacted`, `scheduled`, `converted`, `closed`
 
-Ensure `save-abandoned-cart` is deployed with the GHL sync logic that was added. This will fix the ducted → GHL sync.
+The ducted table allows:
+- `new`, **`partial`**, `contacted`, `scheduled`, `quoted`, `converted`, `lost`, `junk`
 
-#### Part 2: Add Ductless Abandoned Cart Tracking
+**Solution:** Add `partial` and `junk` statuses to the ductless constraint for consistency.
 
-Implement the same pattern used for ducted:
+```sql
+ALTER TABLE ductless_estimate_submissions 
+DROP CONSTRAINT ductless_estimate_submissions_status_check;
 
-1. Add `partialSubmissionId` to the ductless `QuoteContext`
-2. Create `useAbandonedCartTracker` hook for ductless
-3. Update the Edge Function to handle ductless submissions
-4. Wire it up in the `DuctlessEstimator` component
+ALTER TABLE ductless_estimate_submissions 
+ADD CONSTRAINT ductless_estimate_submissions_status_check 
+CHECK (status = ANY (ARRAY['new', 'partial', 'contacted', 'scheduled', 'quoted', 'converted', 'closed', 'junk']));
+```
+
+---
+
+### Part 2: Debug & Fix GHL Sync
+
+The Edge Function logs show it's receiving data but we need to verify GHL credentials are available.
+
+**Diagnostic steps:**
+1. Check if `GHL_API_Key_Contact` and `GHL_LOCATION_ID` secrets are set (already confirmed ✅)
+2. Add explicit logging in Edge Function to confirm GHL sync is attempted
+3. Test with a manual curl call to verify the Edge Function can reach GHL
+
+**Update Edge Function** to add better logging:
+```typescript
+// After save, log GHL sync attempt
+console.log("GHL credentials check:", {
+  hasApiKey: !!GHL_API_KEY,
+  hasLocationId: !!GHL_LOCATION_ID
+});
+```
+
+---
+
+### Part 3: Add Save Quote Tags
+
+When a user completes a quote (submits the final form), add these GHL tags:
+- **Ducted:** `save-quote-ducted`
+- **Ductless:** `save-quote-ductless`
+
+This requires updating the final submission logic in both estimators, likely in the `sync-ghl-contact` Edge Function that handles full submissions (not abandoned carts).
+
+**Files to check/modify:**
+- `supabase/functions/sync-ghl-contact/index.ts` - Add tags to final submission sync
+- `src/pages/estimators/ducted/steps/Step11ThankYou.tsx` - Confirm submission logic
+- `src/pages/estimators/ductless/steps/QuoteSummary.tsx` - Confirm submission logic
+
+---
+
+### Implementation Plan
+
+1. **Database Migration**
+   - Add `partial` to ductless status constraint
+   
+2. **Edge Function Updates**
+   - Add GHL sync debugging logs
+   - Verify sync code is executing
+   - Re-deploy `save-abandoned-cart` function
+   
+3. **Full Submission GHL Tags**
+   - Update `sync-ghl-contact` to include `save-quote-ducted` / `save-quote-ductless` tags
+   - OR update the submission handlers to explicitly add these tags
 
 ---
 
 ### Files to Modify
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `supabase/functions/save-abandoned-cart/index.ts` | MODIFY | Add support for ductless table + type detection |
-| `src/pages/estimators/ductless/context/QuoteContext.tsx` | MODIFY | Add `partialSubmissionId` state |
-| `src/pages/estimators/ductless/hooks/useAbandonedCartTracker.ts` | CREATE | New hook mirroring ducted pattern |
-| `src/pages/estimators/ductless/types/index.ts` | MODIFY | Add `partialSubmissionId` to `QuoteState` |
-| `src/pages/estimators/ductless/DuctlessEstimator.tsx` | MODIFY | Wire up abandoned cart tracker |
-
----
-
-### Implementation Details
-
-#### 1. Update Edge Function for Dual-Table Support
-
-The Edge Function will detect which estimator type is calling it:
-
-```text
-Request payload includes:
-├── estimator_type: "ducted" | "ductless"
-├── customer_email, customer_phone, customer_name
-├── (ducted-specific): home_type, heating_type, etc.
-└── (ductless-specific): selected_rooms, zone_count, etc.
-
-Edge Function logic:
-├── Validate contact info (email OR phone required)
-├── Determine target table based on estimator_type
-├── Save to ducted_estimate_submissions OR ductless_estimate_submissions
-├── Sync to GHL with appropriate tags:
-│   ├── ducted: ["abandoned-cart", "ducted-estimator", "website-lead"]
-│   └── ductless: ["abandoned-cart", "ductless-estimator", "website-lead"]
-└── Update sync status in the appropriate table
-```
-
-#### 2. Add Ductless Context State
-
-Add to `QuoteState`:
-```typescript
-interface QuoteState {
-  // ... existing fields
-  partialSubmissionId: string | null;
-}
-```
-
-Add to `QuoteProvider`:
-```typescript
-const setPartialSubmissionId = useCallback((id: string | null) => {
-  setState((prev) => ({ ...prev, partialSubmissionId: id }));
-}, []);
-```
-
-#### 3. Create Ductless Abandoned Cart Hook
-
-New hook at `src/pages/estimators/ductless/hooks/useAbandonedCartTracker.ts`:
-
-```text
-Trigger conditions:
-├── User is on Step 1+ (CustomerInfoStep)
-├── User has NOT completed (step < 8 ThankYou)
-├── User has entered email OR valid phone
-
-Events monitored:
-├── visibilitychange (tab switch, minimize)
-├── beforeunload (browser close, navigation)
-└── pagehide (mobile background)
-
-Payload sent:
-├── estimator_type: "ductless"
-├── customer_name, customer_email, customer_phone
-├── customer_address, customer_city, customer_zip
-├── selected_rooms (JSON)
-├── zone_count, unit_type_id, system_tier_id
-└── partial_submission_id (for updates)
-```
-
-#### 4. Wire Up in DuctlessEstimator
-
-Same pattern as ducted:
-```typescript
-const AbandonedCartTracker = () => {
-  const { state, setPartialSubmissionId } = useQuote();
-  useAbandonedCartTracker(state, setPartialSubmissionId);
-  return null;
-};
-```
-
----
-
-### GHL Tags by Estimator Type
-
-| Estimator | Tags Applied |
-|-----------|--------------|
-| Ducted | `abandoned-cart`, `ducted-estimator`, `website-lead` |
-| Ductless | `abandoned-cart`, `ductless-estimator`, `website-lead` |
-
-This enables separate GHL automations/workflows for each lead type.
-
----
-
-### When Ductless Abandoned Carts Are Captured
-
-Unlike ducted (which captures from Step 8 onward), ductless captures from **Step 1** (CustomerInfoStep) since that's where contact info is collected:
-
-```text
-Ductless flow:
-Step 0: Welcome       → No tracking
-Step 1: Your Info     → ✅ Tracking starts here
-Step 2: Select Rooms  → ✅ Tracked
-...
-Step 7: Your Quote    → ✅ Tracked
-Step 8: Thank You     → Full submission, no longer "abandoned"
-```
+| File | Changes |
+|------|---------|
+| Database migration | Add `partial` to ductless status constraint |
+| `supabase/functions/save-abandoned-cart/index.ts` | Add GHL debug logging |
+| `supabase/functions/sync-ghl-contact/index.ts` | Add `save-quote-*` tags for completed submissions |
 
 ---
 
 ### Testing After Implementation
 
-**Ducted Test:**
-1. Go to ducted estimator, complete through Step 8 (Contact Info)
-2. Fill in email and/or phone
-3. Close tab or navigate to homepage
-4. Check Admin → Abandoned Carts for new entry with `ghl_sync_status: synced`
-5. Verify contact appears in GHL with `abandoned-cart` + `ducted-estimator` tags
+1. **Ductless Abandoned Cart Test**
+   - Go to `/estimate/ductless`
+   - Fill Step 1 contact info
+   - Navigate away
+   - Verify record in `ductless_estimate_submissions` with `status: partial`
+   - Verify GHL contact with `abandoned-cart` + `ductless-estimator` tags
 
-**Ductless Test:**
-1. Go to ductless estimator, click through to Step 1 (Your Info)
-2. Fill in phone number (required) + optional email
-3. Close tab or navigate to homepage
-4. Check Admin → Abandoned Carts for new entry (filter to ductless)
-5. Verify contact appears in GHL with `abandoned-cart` + `ductless-estimator` tags
+2. **Ducted Abandoned Cart Test**
+   - Go to `/estimate/ducted`
+   - Complete through Step 8 with contact info
+   - Navigate away
+   - Verify GHL sync status changes to `synced`
 
----
-
-### Technical Notes
-
-- Both hooks use `fetch` with `keepalive: true` for reliable delivery during page unload
-- Edge Function runs without authentication (configured in `config.toml`)
-- GHL sync failures don't block database saves - errors are logged but non-fatal
-- Debounce prevents duplicate saves within 5 seconds
+3. **Save Quote Tags Test**
+   - Complete full quote submission for each estimator
+   - Verify GHL contact has `save-quote-ducted` or `save-quote-ductless` tag
 
