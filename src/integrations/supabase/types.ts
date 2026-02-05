@@ -806,14 +806,12 @@ export type Database = {
           customer_address: string | null
           customer_city: string | null
           customer_county: string | null
-          customer_email: string | null
-          customer_name: string | null
+          customer_email: string
+          customer_name: string
           customer_phone: string | null
           customer_state: string | null
           customer_zip: string | null
           final_total: number
-          ghl_contact_id: string | null
-          ghl_sync_status: string | null
           google_place_id: string | null
           id: string
           notes: string | null
@@ -833,14 +831,12 @@ export type Database = {
           customer_address?: string | null
           customer_city?: string | null
           customer_county?: string | null
-          customer_email?: string | null
-          customer_name?: string | null
+          customer_email: string
+          customer_name: string
           customer_phone?: string | null
           customer_state?: string | null
           customer_zip?: string | null
           final_total?: number
-          ghl_contact_id?: string | null
-          ghl_sync_status?: string | null
           google_place_id?: string | null
           id?: string
           notes?: string | null
@@ -860,14 +856,12 @@ export type Database = {
           customer_address?: string | null
           customer_city?: string | null
           customer_county?: string | null
-          customer_email?: string | null
-          customer_name?: string | null
+          customer_email?: string
+          customer_name?: string
           customer_phone?: string | null
           customer_state?: string | null
           customer_zip?: string | null
           final_total?: number
-          ghl_contact_id?: string | null
-          ghl_sync_status?: string | null
           google_place_id?: string | null
           id?: string
           notes?: string | null

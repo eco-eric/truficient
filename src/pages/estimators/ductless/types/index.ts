@@ -149,7 +149,6 @@ export interface QuoteState {
   customerInfo: CustomerInfo;
   totals: PricingTotals;
   applyUnitTypeToAll: boolean;
-  partialSubmissionId: string | null; // For abandoned cart tracking
 }
 
 // Room type metadata for display
