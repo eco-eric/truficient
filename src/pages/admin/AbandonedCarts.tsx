@@ -57,7 +57,7 @@ import {
 import { format, formatDistanceToNow, startOfDay, subDays, isAfter } from "date-fns";
 import { toast } from "sonner";
 
-interface AbandonedCart {
+interface DuctedAbandonedCart {
   id: string;
   customer_name: string;
   customer_email: string;
@@ -73,6 +73,37 @@ interface AbandonedCart {
   created_at: string;
 }
 
+interface DuctlessAbandonedCart {
+  id: string;
+  customer_name: string | null;
+  customer_email: string | null;
+  customer_phone: string | null;
+  customer_address: string | null;
+  zone_count: number;
+  status: string;
+  created_at: string;
+}
+
+interface AbandonedCart {
+  id: string;
+  customer_name: string | null;
+  customer_email: string | null;
+  customer_phone: string | null;
+  customer_address: string | null;
+  status: string;
+  created_at: string;
+  estimator_type: 'ducted' | 'ductless';
+  // Ducted-specific fields
+  best_time_to_call?: string | null;
+  home_type?: string;
+  home_layout?: string;
+  square_footage?: string;
+  heating_type?: string;
+  coverage?: string;
+  // Ductless-specific fields
+  zone_count?: number;
+}
+
 const AbandonedCarts = () => {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
@@ -82,25 +113,52 @@ const AbandonedCarts = () => {
   const [isCreatingTest, setIsCreatingTest] = useState(false);
   const [isClearingTest, setIsClearingTest] = useState(false);
 
-  // Fetch ducted submissions with status = 'partial'
+  // Fetch abandoned carts from BOTH ducted and ductless submissions
   const { data: abandonedCarts, isLoading } = useQuery({
     queryKey: ["abandoned-carts"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch ducted abandoned carts
+      const { data: ductedData, error: ductedError } = await supabase
         .from("ducted_estimate_submissions")
         .select("*")
         .eq("status", "partial")
         .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as AbandonedCart[];
+      
+      if (ductedError) throw ductedError;
+
+      // Fetch ductless abandoned carts
+      const { data: ductlessData, error: ductlessError } = await supabase
+        .from("ductless_estimate_submissions")
+        .select("*")
+        .eq("status", "partial")
+        .order("created_at", { ascending: false });
+      
+      if (ductlessError) throw ductlessError;
+
+      // Merge and add estimator_type indicator
+      const ducted: AbandonedCart[] = (ductedData || []).map((item: DuctedAbandonedCart) => ({
+        ...item,
+        estimator_type: 'ducted' as const,
+      }));
+
+      const ductless: AbandonedCart[] = (ductlessData || []).map((item: DuctlessAbandonedCart) => ({
+        ...item,
+        estimator_type: 'ductless' as const,
+      }));
+
+      // Combine and sort by created_at descending
+      return [...ducted, ...ductless].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
     },
   });
 
-  // Update status mutation
+  // Update status mutation - now handles both estimator types
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status, estimatorType }: { id: string; status: string; estimatorType: 'ducted' | 'ductless' }) => {
+      const table = estimatorType === 'ductless' ? 'ductless_estimate_submissions' : 'ducted_estimate_submissions';
       const { error } = await supabase
-        .from("ducted_estimate_submissions")
+        .from(table)
         .update({ status })
         .eq("id", id);
       if (error) throw error;
@@ -108,6 +166,7 @@ const AbandonedCarts = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["abandoned-carts"] });
       queryClient.invalidateQueries({ queryKey: ["ducted_estimate_submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["ductless_estimate_submissions"] });
       setSelectedCart(null);
     },
   });
@@ -177,15 +236,15 @@ const AbandonedCarts = () => {
   };
 
   const handleMarkContacted = (cart: AbandonedCart) => {
-    updateStatus.mutate({ id: cart.id, status: "contacted" });
+    updateStatus.mutate({ id: cart.id, status: "contacted", estimatorType: cart.estimator_type });
   };
 
   const handleConvertToLead = (cart: AbandonedCart) => {
-    updateStatus.mutate({ id: cart.id, status: "new" });
+    updateStatus.mutate({ id: cart.id, status: "new", estimatorType: cart.estimator_type });
   };
 
   const handleMarkJunk = (cart: AbandonedCart) => {
-    updateStatus.mutate({ id: cart.id, status: "junk" });
+    updateStatus.mutate({ id: cart.id, status: "junk", estimatorType: cart.estimator_type });
   };
 
   // Create test abandoned cart for testing purposes
@@ -474,9 +533,10 @@ const AbandonedCarts = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead className="hidden md:table-cell">Contact</TableHead>
-                  <TableHead className="hidden lg:table-cell">Home Details</TableHead>
+                  <TableHead className="hidden lg:table-cell">Details</TableHead>
                   <TableHead>Age</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -484,7 +544,7 @@ const AbandonedCarts = () => {
               <TableBody>
                 {filteredCarts.map((cart) => (
                   <TableRow
-                    key={cart.id}
+                    key={`${cart.estimator_type}-${cart.id}`}
                     className="cursor-pointer hover:bg-muted/50"
                     onClick={() => setSelectedCart(cart)}
                   >
@@ -493,6 +553,11 @@ const AbandonedCarts = () => {
                       <div className="text-xs text-muted-foreground">
                         {format(new Date(cart.created_at), "h:mm a")}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={cart.estimator_type === 'ductless' ? 'secondary' : 'outline'}>
+                        {cart.estimator_type === 'ductless' ? 'Ductless' : 'Ducted'}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="font-medium">{cart.customer_name || "Not provided"}</div>
@@ -507,12 +572,25 @@ const AbandonedCarts = () => {
                       )}
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
-                      <div className="text-sm">
-                        {cart.home_type} • {cart.square_footage} sq ft
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {cart.heating_type} heating
-                      </div>
+                      {cart.estimator_type === 'ductless' ? (
+                        <>
+                          <div className="text-sm">
+                            {cart.zone_count || 0} zone{(cart.zone_count || 0) !== 1 ? 's' : ''}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Mini-split system
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-sm">
+                            {cart.home_type} • {cart.square_footage} sq ft
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {cart.heating_type} heating
+                          </div>
+                        </>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="whitespace-nowrap">
@@ -551,6 +629,13 @@ const AbandonedCarts = () => {
                 </SheetHeader>
 
                 <div className="mt-6 space-y-6">
+                  {/* Estimator Type Badge */}
+                  <div className="flex items-center gap-2">
+                    <Badge variant={selectedCart.estimator_type === 'ductless' ? 'secondary' : 'outline'}>
+                      {selectedCart.estimator_type === 'ductless' ? 'Ductless Estimator' : 'Ducted Estimator'}
+                    </Badge>
+                  </div>
+
                   {/* Customer Info */}
                   <div className="space-y-4">
                     <h4 className="font-semibold flex items-center gap-2">
@@ -565,7 +650,7 @@ const AbandonedCarts = () => {
                       <div className="flex items-center gap-2">
                         <Mail className="h-4 w-4 text-muted-foreground" />
                         <a href={`mailto:${selectedCart.customer_email}`} className="text-primary hover:underline">
-                          {selectedCart.customer_email}
+                          {selectedCart.customer_email || "Not provided"}
                         </a>
                       </div>
                       {selectedCart.customer_phone && (
@@ -591,34 +676,47 @@ const AbandonedCarts = () => {
                     </div>
                   </div>
 
-                  {/* Home Details */}
+                  {/* Configuration Details - differs by estimator type */}
                   <div className="space-y-4">
                     <h4 className="font-semibold flex items-center gap-2">
                       <Home className="h-4 w-4" />
-                      Home Configuration
+                      {selectedCart.estimator_type === 'ductless' ? 'System Configuration' : 'Home Configuration'}
                     </h4>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Home Type</span>
-                        <p className="font-medium capitalize">{selectedCart.home_type}</p>
+                    {selectedCart.estimator_type === 'ductless' ? (
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Zones</span>
+                          <p className="font-medium">{selectedCart.zone_count || 0} zone{(selectedCart.zone_count || 0) !== 1 ? 's' : ''}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">System Type</span>
+                          <p className="font-medium">Mini-Split</p>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Layout</span>
-                        <p className="font-medium capitalize">{selectedCart.home_layout}</p>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Home Type</span>
+                          <p className="font-medium capitalize">{selectedCart.home_type || "Not provided"}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Layout</span>
+                          <p className="font-medium capitalize">{selectedCart.home_layout || "Not provided"}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Square Footage</span>
+                          <p className="font-medium">{selectedCart.square_footage || "Not provided"} sq ft</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Heating Type</span>
+                          <p className="font-medium capitalize">{selectedCart.heating_type || "Not provided"}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Coverage</span>
+                          <p className="font-medium capitalize">{selectedCart.coverage || "Not provided"}</p>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Square Footage</span>
-                        <p className="font-medium">{selectedCart.square_footage} sq ft</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Heating Type</span>
-                        <p className="font-medium capitalize">{selectedCart.heating_type}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Coverage</span>
-                        <p className="font-medium capitalize">{selectedCart.coverage}</p>
-                      </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Actions */}
