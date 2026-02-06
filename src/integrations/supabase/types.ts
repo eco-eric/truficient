@@ -345,6 +345,401 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_customer_contacts: {
+        Row: {
+          contact_type: string
+          created_at: string
+          customer_id: string
+          deleted_at: string | null
+          email: string | null
+          first_name: string
+          id: string
+          last_name: string | null
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact_type?: string
+          created_at?: string
+          customer_id: string
+          deleted_at?: string | null
+          email?: string | null
+          first_name: string
+          id?: string
+          last_name?: string | null
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact_type?: string
+          created_at?: string
+          customer_id?: string
+          deleted_at?: string | null
+          email?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string | null
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_customer_contacts_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_customers: {
+        Row: {
+          alternate_phone: string | null
+          assigned_to: string | null
+          billing_address: string | null
+          billing_city: string | null
+          billing_state: string | null
+          billing_zip: string | null
+          company_name: string | null
+          created_at: string
+          customer_status: string
+          customer_type: string
+          deleted_at: string | null
+          email: string | null
+          first_name: string | null
+          ghl_contact_id: string | null
+          id: string
+          last_name: string | null
+          lead_source: string | null
+          notes: string | null
+          phone: string | null
+          preferred_contact_method: string | null
+          tags: string[] | null
+          updated_at: string
+          workedge_customer_id: string | null
+        }
+        Insert: {
+          alternate_phone?: string | null
+          assigned_to?: string | null
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_state?: string | null
+          billing_zip?: string | null
+          company_name?: string | null
+          created_at?: string
+          customer_status?: string
+          customer_type?: string
+          deleted_at?: string | null
+          email?: string | null
+          first_name?: string | null
+          ghl_contact_id?: string | null
+          id?: string
+          last_name?: string | null
+          lead_source?: string | null
+          notes?: string | null
+          phone?: string | null
+          preferred_contact_method?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          workedge_customer_id?: string | null
+        }
+        Update: {
+          alternate_phone?: string | null
+          assigned_to?: string | null
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_state?: string | null
+          billing_zip?: string | null
+          company_name?: string | null
+          created_at?: string
+          customer_status?: string
+          customer_type?: string
+          deleted_at?: string | null
+          email?: string | null
+          first_name?: string | null
+          ghl_contact_id?: string | null
+          id?: string
+          last_name?: string | null
+          lead_source?: string | null
+          notes?: string | null
+          phone?: string | null
+          preferred_contact_method?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          workedge_customer_id?: string | null
+        }
+        Relationships: []
+      }
+      crm_interactions: {
+        Row: {
+          content: string | null
+          created_at: string
+          customer_id: string
+          direction: string | null
+          id: string
+          interaction_at: string
+          interaction_type: string
+          logged_by: string | null
+          outcome: string | null
+          subject: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          customer_id: string
+          direction?: string | null
+          id?: string
+          interaction_at?: string
+          interaction_type: string
+          logged_by?: string | null
+          outcome?: string | null
+          subject?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          customer_id?: string
+          direction?: string | null
+          id?: string
+          interaction_at?: string
+          interaction_type?: string
+          logged_by?: string | null
+          outcome?: string | null
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_interactions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_locations: {
+        Row: {
+          access_notes: string | null
+          address_line1: string
+          address_line2: string | null
+          building_type: string | null
+          city: string
+          county: string | null
+          created_at: string
+          customer_id: string
+          deleted_at: string | null
+          gate_code: string | null
+          google_place_id: string | null
+          id: string
+          is_primary: boolean | null
+          latitude: number | null
+          location_name: string | null
+          location_type: string | null
+          longitude: number | null
+          square_footage: number | null
+          state: string
+          stories: number | null
+          updated_at: string
+          year_built: number | null
+          zip_code: string
+        }
+        Insert: {
+          access_notes?: string | null
+          address_line1: string
+          address_line2?: string | null
+          building_type?: string | null
+          city: string
+          county?: string | null
+          created_at?: string
+          customer_id: string
+          deleted_at?: string | null
+          gate_code?: string | null
+          google_place_id?: string | null
+          id?: string
+          is_primary?: boolean | null
+          latitude?: number | null
+          location_name?: string | null
+          location_type?: string | null
+          longitude?: number | null
+          square_footage?: number | null
+          state: string
+          stories?: number | null
+          updated_at?: string
+          year_built?: number | null
+          zip_code: string
+        }
+        Update: {
+          access_notes?: string | null
+          address_line1?: string
+          address_line2?: string | null
+          building_type?: string | null
+          city?: string
+          county?: string | null
+          created_at?: string
+          customer_id?: string
+          deleted_at?: string | null
+          gate_code?: string | null
+          google_place_id?: string | null
+          id?: string
+          is_primary?: boolean | null
+          latitude?: number | null
+          location_name?: string | null
+          location_type?: string | null
+          longitude?: number | null
+          square_footage?: number | null
+          state?: string
+          stories?: number | null
+          updated_at?: string
+          year_built?: number | null
+          zip_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_locations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_pipeline_entries: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          customer_id: string
+          estimated_value: number | null
+          expected_close_date: string | null
+          id: string
+          lost_date: string | null
+          lost_reason: string | null
+          notes: string | null
+          probability: number | null
+          stage_id: string
+          updated_at: string
+          won_date: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          customer_id: string
+          estimated_value?: number | null
+          expected_close_date?: string | null
+          id?: string
+          lost_date?: string | null
+          lost_reason?: string | null
+          notes?: string | null
+          probability?: number | null
+          stage_id: string
+          updated_at?: string
+          won_date?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          customer_id?: string
+          estimated_value?: number | null
+          expected_close_date?: string | null
+          id?: string
+          lost_date?: string | null
+          lost_reason?: string | null
+          notes?: string | null
+          probability?: number | null
+          stage_id?: string
+          updated_at?: string
+          won_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_pipeline_entries_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_pipeline_entries_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "crm_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_pipeline_stages: {
+        Row: {
+          color: string
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean | null
+          is_lost_stage: boolean | null
+          is_won_stage: boolean | null
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          display_name: string
+          id?: string
+          is_active?: boolean | null
+          is_lost_stage?: boolean | null
+          is_won_stage?: boolean | null
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean | null
+          is_lost_stage?: boolean | null
+          is_won_stage?: boolean | null
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_submission_links: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          submission_id: string
+          submission_type: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          submission_id: string
+          submission_type: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          submission_id?: string
+          submission_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_submission_links_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documentation_search_log: {
         Row: {
           brand: string | null
