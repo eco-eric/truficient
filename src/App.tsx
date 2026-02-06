@@ -66,6 +66,10 @@ import AdminDFWWatchList from "./pages/admin/DFWWatchList";
 import AdminCustomerEquipment from "./pages/admin/CustomerEquipment";
 import AdminTrashBin from "./pages/admin/TrashBin";
 import AdminAbandonedCarts from "./pages/admin/AbandonedCarts";
+import AdminCustomers from "./pages/admin/Customers";
+import AdminCustomerDetail from "./pages/admin/CustomerDetail";
+import AdminLocations from "./pages/admin/Locations";
+import AdminPipeline from "./pages/admin/Pipeline";
 import { Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
@@ -136,8 +140,12 @@ const router = createBrowserRouter([
       // Admin Routes
       { path: "/admin/login", element: <AdminLogin /> },
       { path: "/admin", element: <ProtectedRoute><AdminDashboard /></ProtectedRoute> },
-      { path: "/admin/submissions", element: <ProtectedRoute><AdminUnifiedSubmissions /></ProtectedRoute> },
       { path: "/admin/abandoned-carts", element: <ProtectedRoute><AdminAbandonedCarts /></ProtectedRoute> },
+      { path: "/admin/customers", element: <ProtectedRoute><AdminCustomers /></ProtectedRoute> },
+      { path: "/admin/customers/:id", element: <ProtectedRoute><AdminCustomerDetail /></ProtectedRoute> },
+      { path: "/admin/locations", element: <ProtectedRoute><AdminLocations /></ProtectedRoute> },
+      { path: "/admin/submissions", element: <ProtectedRoute><AdminUnifiedSubmissions /></ProtectedRoute> },
+      { path: "/admin/pipeline", element: <ProtectedRoute><AdminPipeline /></ProtectedRoute> },
       { path: "/admin/dfw-watchlist", element: <ProtectedRoute><AdminDFWWatchList /></ProtectedRoute> },
       { path: "/admin/blog", element: <ProtectedRoute><AdminBlogPosts /></ProtectedRoute> },
       { path: "/admin/blog/:id", element: <ProtectedRoute><AdminBlogPostEditor /></ProtectedRoute> },

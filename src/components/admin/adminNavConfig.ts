@@ -24,7 +24,10 @@ import {
   Target,
   Trash2,
   ScanLine,
-  ShoppingCart
+  ShoppingCart,
+  UserCircle,
+  MapPin,
+  Kanban
 } from 'lucide-react';
 
 export interface NavItem {
@@ -45,8 +48,16 @@ export const navSections: NavSection[] = [
     title: 'Overview',
     items: [
       { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, adminOnly: false },
-      { label: 'Submissions', href: '/admin/submissions', icon: FileText, adminOnly: false },
       { label: 'Abandoned Carts', href: '/admin/abandoned-carts', icon: ShoppingCart, adminOnly: true },
+    ],
+  },
+  {
+    title: 'CRM',
+    items: [
+      { label: 'Customers', href: '/admin/customers', icon: UserCircle, adminOnly: false },
+      { label: 'Locations', href: '/admin/locations', icon: MapPin, adminOnly: false },
+      { label: 'Submissions', href: '/admin/submissions', icon: FileText, adminOnly: false },
+      { label: 'Pipeline', href: '/admin/pipeline', icon: Kanban, adminOnly: false },
       { label: 'DFW Watch List', href: '/admin/dfw-watchlist', icon: Target, adminOnly: true },
     ],
   },
