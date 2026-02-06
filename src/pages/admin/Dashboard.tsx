@@ -12,6 +12,8 @@ import { RevenueSummary } from '@/components/admin/dashboard/RevenueSummary';
 import { PipelineStatus } from '@/components/admin/dashboard/PipelineStatus';
 import { DuctedMetricsCard } from '@/components/admin/dashboard/DuctedMetricsCard';
 import { DuctlessMetricsCard } from '@/components/admin/dashboard/DuctlessMetricsCard';
+import { GHLSyncHealth } from '@/components/admin/dashboard/GHLSyncHealth';
+import { FailedSyncsAlert } from '@/components/admin/dashboard/FailedSyncsAlert';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { startOfWeek } from 'date-fns';
@@ -176,7 +178,13 @@ const Dashboard = () => {
           <PipelineStatus />
         </div>
         
-        {/* Estimator Performance Row (NEW) */}
+        {/* GHL Sync Health Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <GHLSyncHealth />
+          <FailedSyncsAlert />
+        </div>
+        
+        {/* Estimator Performance Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <DuctedMetricsCard />
           <DuctlessMetricsCard />
