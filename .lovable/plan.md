@@ -1,86 +1,104 @@
 
 
-## Fix Abandoned Cart Tracking & GHL Sync
+## Fix GHL Sync & Abandoned Cart Issues
 
-### Summary of Issues Found
+### Summary of Findings
 
-| Issue | Status | Root Cause |
-|-------|--------|------------|
-| Ductless abandoned cart saves | ❌ FAILING | Database constraint violation - `partial` status not allowed |
-| Ducted GHL sync | ❌ NOT SYNCING | GHL credentials may not be reaching Edge Function, or sync code missing |
-| Save quote tags | ❌ MISSING | Tags `save-quote-ducted` and `save-quote-ductless` not implemented |
+| Issue | Root Cause | Solution |
+|-------|------------|----------|
+| **`sync-ghl-contact` returns 404** | Edge Function is not deployed | Deploy the function |
+| **Recent submissions stuck on `pending`** | Full quotes call `sync-ghl-contact` which isn't deployed | Deploy the function |
+| **Abandoned carts from published site not saving** | Published site may have outdated code | Verify code is published |
 
 ---
 
-### Part 1: Fix Ductless Database Constraint
+### Part 1: Deploy the Missing `sync-ghl-contact` Edge Function
 
-The `ductless_estimate_submissions` table only allows these status values:
-- `new`, `contacted`, `scheduled`, `converted`, `closed`
+The `sync-ghl-contact` function exists in the codebase but is **not deployed**. This is why:
+- Full quote submissions save to the database but don't sync to GHL
+- The function returns 404 when called
 
-The ducted table allows:
-- `new`, **`partial`**, `contacted`, `scheduled`, `quoted`, `converted`, `lost`, `junk`
+**Required Action:** Deploy the Edge Function
 
-**Solution:** Add `partial` and `junk` statuses to the ductless constraint for consistency.
+I will also update it to use the modern `npm:` import pattern and `Deno.serve` to match the recently updated `save-abandoned-cart` function (which prevents bundle timeout errors).
 
-```sql
-ALTER TABLE ductless_estimate_submissions 
-DROP CONSTRAINT ductless_estimate_submissions_status_check;
+---
 
-ALTER TABLE ductless_estimate_submissions 
-ADD CONSTRAINT ductless_estimate_submissions_status_check 
-CHECK (status = ANY (ARRAY['new', 'partial', 'contacted', 'scheduled', 'quoted', 'converted', 'closed', 'junk']));
+### Part 2: Update `sync-ghl-contact` to Remove Auth Requirement for Public Submissions
+
+The current `sync-ghl-contact` function **requires authentication**:
+
+```typescript
+const authHeader = req.headers.get('Authorization');
+if (!authHeader) {
+  return new Response(
+    JSON.stringify({ success: false, error: 'Unauthorized - No authorization header' }),
+    { status: 401 }
+  );
+}
 ```
 
+This is the cause of the issue: when users submit quotes from the public estimator pages, they are **not authenticated**, so the function rejects them.
+
+**Solution:** Remove the authentication requirement since:
+1. This is a public-facing feature (estimators are for anonymous users)
+2. The abandoned cart function already works without auth
+3. The function only creates contacts in GHL, not sensitive database operations
+
 ---
 
-### Part 2: Debug & Fix GHL Sync
+### Part 3: Verify Published Site Has Latest Code
 
-The Edge Function logs show it's receiving data but we need to verify GHL credentials are available.
+After the Edge Functions are fixed and deployed, you'll need to **publish** the site to ensure the frontend code on `truficient.lovable.app` is up to date with the latest changes.
 
-**Diagnostic steps:**
-1. Check if `GHL_API_Key_Contact` and `GHL_LOCATION_ID` secrets are set (already confirmed ✅)
-2. Add explicit logging in Edge Function to confirm GHL sync is attempted
-3. Test with a manual curl call to verify the Edge Function can reach GHL
+---
 
-**Update Edge Function** to add better logging:
+### Implementation Steps
+
+1. **Update `sync-ghl-contact` Edge Function**
+   - Switch to `npm:` imports and `Deno.serve` (prevents bundle timeouts)
+   - Remove authentication requirement for public submissions
+   - Keep GHL sync logic intact
+
+2. **Deploy Both Edge Functions**
+   - Deploy `sync-ghl-contact`
+   - Redeploy `save-abandoned-cart` (just in case)
+
+3. **Test the Fixes**
+   - Test abandoned cart flow
+   - Test full quote submission
+   - Verify GHL contacts are created with correct tags
+
+4. **Publish the Site**
+   - After confirming Edge Functions work, publish to update the live site
+
+---
+
+### Technical Changes
+
+#### `sync-ghl-contact` Updates:
+
 ```typescript
-// After save, log GHL sync attempt
-console.log("GHL credentials check:", {
-  hasApiKey: !!GHL_API_KEY,
-  hasLocationId: !!GHL_LOCATION_ID
+// OLD (causes bundle timeout + requires auth)
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+serve(async (req) => {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response(/* 401 error */);
+  }
+  // ... auth verification ...
+});
+
+// NEW (stable imports + no auth for public access)
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+Deno.serve(async (req) => {
+  // Skip auth - this is a public endpoint for estimator submissions
+  // ... GHL sync logic ...
 });
 ```
-
----
-
-### Part 3: Add Save Quote Tags
-
-When a user completes a quote (submits the final form), add these GHL tags:
-- **Ducted:** `save-quote-ducted`
-- **Ductless:** `save-quote-ductless`
-
-This requires updating the final submission logic in both estimators, likely in the `sync-ghl-contact` Edge Function that handles full submissions (not abandoned carts).
-
-**Files to check/modify:**
-- `supabase/functions/sync-ghl-contact/index.ts` - Add tags to final submission sync
-- `src/pages/estimators/ducted/steps/Step11ThankYou.tsx` - Confirm submission logic
-- `src/pages/estimators/ductless/steps/QuoteSummary.tsx` - Confirm submission logic
-
----
-
-### Implementation Plan
-
-1. **Database Migration**
-   - Add `partial` to ductless status constraint
-   
-2. **Edge Function Updates**
-   - Add GHL sync debugging logs
-   - Verify sync code is executing
-   - Re-deploy `save-abandoned-cart` function
-   
-3. **Full Submission GHL Tags**
-   - Update `sync-ghl-contact` to include `save-quote-ducted` / `save-quote-ductless` tags
-   - OR update the submission handlers to explicitly add these tags
 
 ---
 
@@ -88,28 +106,26 @@ This requires updating the final submission logic in both estimators, likely in 
 
 | File | Changes |
 |------|---------|
-| Database migration | Add `partial` to ductless status constraint |
-| `supabase/functions/save-abandoned-cart/index.ts` | Add GHL debug logging |
-| `supabase/functions/sync-ghl-contact/index.ts` | Add `save-quote-*` tags for completed submissions |
+| `supabase/functions/sync-ghl-contact/index.ts` | Update imports, remove auth, use `Deno.serve` |
 
 ---
 
-### Testing After Implementation
+### Post-Implementation Testing
 
-1. **Ductless Abandoned Cart Test**
-   - Go to `/estimate/ductless`
-   - Fill Step 1 contact info
-   - Navigate away
-   - Verify record in `ductless_estimate_submissions` with `status: partial`
-   - Verify GHL contact with `abandoned-cart` + `ductless-estimator` tags
+1. **Test sync-ghl-contact directly:**
+   - Send a test POST request to verify it syncs to GHL
 
-2. **Ducted Abandoned Cart Test**
-   - Go to `/estimate/ducted`
-   - Complete through Step 8 with contact info
-   - Navigate away
-   - Verify GHL sync status changes to `synced`
+2. **Test ductless estimator:**
+   - Complete a full quote submission
+   - Verify `save-quote-ductless` tag appears in GHL
 
-3. **Save Quote Tags Test**
-   - Complete full quote submission for each estimator
-   - Verify GHL contact has `save-quote-ducted` or `save-quote-ductless` tag
+3. **Test ducted estimator:**
+   - Complete a full quote submission
+   - Verify `save-quote-ducted` tag appears in GHL
+
+4. **Test abandoned cart:**
+   - Start an estimator, fill contact info, close tab
+   - Verify partial submission with `abandoned-cart` tag in GHL
+
+5. **Publish site** and repeat tests on the production URL
 
