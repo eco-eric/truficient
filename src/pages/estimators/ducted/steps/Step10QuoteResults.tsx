@@ -179,9 +179,12 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
           throw error;
         }
 
-        // Sync to GHL
-        supabase.functions.invoke("sync-ghl-contact", {
-          body: {
+        // Sync to GHL using direct fetch (no auth required for public submissions)
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        fetch(`${supabaseUrl}/functions/v1/sync-ghl-contact`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
             firstName,
             lastName,
             email: state.customerInfo.email,
@@ -209,31 +212,37 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
               tier: tierName,
               quoteRawDetails,
             },
-          },
-        }).then(async (response) => {
-          if (response.data?.contactId) {
-            await supabase
-              .from("ducted_estimate_submissions")
-              .update({ 
-                ghl_contact_id: response.data.contactId,
-                ghl_sync_status: "synced" 
-              })
-              .eq("id", state.partialSubmissionId);
+          }),
+        }).then(async (res) => {
+          if (res.ok) {
+            const data = await res.json();
+            if (data.contactId) {
+              await supabase
+                .from("ducted_estimate_submissions")
+                .update({ 
+                  ghl_contact_id: data.contactId,
+                  ghl_sync_status: "synced" 
+                })
+                .eq("id", state.partialSubmissionId);
 
-            // Send internal notification
-            supabase.functions.invoke("send-estimator-notification", {
-              body: {
-                estimatorType: "ducted",
-                customerName: state.customerInfo.name,
-                customerEmail: state.customerInfo.email,
-                customerPhone: state.customerInfo.phone || undefined,
-                customerAddress: fullAddress || undefined,
-                quoteTotal: formatMoney(pricing.finalTotal),
-                quoteDetails: quoteRawDetails,
-              },
-            }).catch((err) => {
-              console.error("Notification error (non-blocking):", err);
-            });
+              // Send internal notification
+              const notificationUrl = `${supabaseUrl}/functions/v1/send-estimator-notification`;
+              fetch(notificationUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  estimatorType: "ducted",
+                  customerName: state.customerInfo.name,
+                  customerEmail: state.customerInfo.email,
+                  customerPhone: state.customerInfo.phone || undefined,
+                  customerAddress: fullAddress || undefined,
+                  quoteTotal: formatMoney(pricing.finalTotal),
+                  quoteDetails: quoteRawDetails,
+                }),
+              }).catch((err) => {
+                console.error("Notification error (non-blocking):", err);
+              });
+            }
           }
         }).catch((err) => {
           console.error("GHL sync error (non-blocking):", err);

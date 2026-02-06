@@ -136,7 +136,7 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
         return;
       }
 
-      // Sync to GoHighLevel (non-blocking)
+      // Sync to GoHighLevel (non-blocking) using direct fetch for public access
       const nameParts = state.customerInfo.name.trim().split(" ");
       const firstName = nameParts[0] || "";
       const lastName = nameParts.slice(1).join(" ") || "";
@@ -147,8 +147,11 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
       // Include 'save-quote-ductless' tag for completed quote submissions
       const ghlTags = [...(dynamicTags || ['ductless-estimator']), 'save-quote-ductless'];
       
-      supabase.functions.invoke("sync-ghl-contact", {
-        body: {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      fetch(`${supabaseUrl}/functions/v1/sync-ghl-contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           firstName,
           lastName,
           email: state.customerInfo.email,
@@ -175,23 +178,29 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
             tier: selectedTier?.display_name || "Standard",
             quoteRawDetails,
           },
-        },
-      }).then((response) => {
-        // Send internal notification after contact exists in GHL
-        if (response.data?.contactId) {
-          supabase.functions.invoke("send-estimator-notification", {
-            body: {
-              estimatorType: "ductless",
-              customerName: state.customerInfo.name,
-              customerEmail: state.customerInfo.email,
-              customerPhone: state.customerInfo.phone || undefined,
-              customerAddress: state.customerInfo.formattedAddress || state.customerInfo.address || undefined,
-              quoteTotal: formatMoney(pricing.finalTotal),
-              quoteDetails: quoteRawDetails,
-            },
-          }).catch((err) => {
-            console.error("Notification error:", err);
-          });
+        }),
+      }).then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          // Send internal notification after contact exists in GHL
+          if (data.contactId) {
+            const notificationUrl = `${supabaseUrl}/functions/v1/send-estimator-notification`;
+            fetch(notificationUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                estimatorType: "ductless",
+                customerName: state.customerInfo.name,
+                customerEmail: state.customerInfo.email,
+                customerPhone: state.customerInfo.phone || undefined,
+                customerAddress: state.customerInfo.formattedAddress || state.customerInfo.address || undefined,
+                quoteTotal: formatMoney(pricing.finalTotal),
+                quoteDetails: quoteRawDetails,
+              }),
+            }).catch((err) => {
+              console.error("Notification error:", err);
+            });
+          }
         }
       }).catch((err) => {
         console.error("GHL sync error:", err);
