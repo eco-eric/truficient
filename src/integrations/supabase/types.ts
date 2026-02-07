@@ -50,6 +50,96 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_config: {
+        Row: {
+          api_key_secret_name: string | null
+          config_key: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          max_tokens: number | null
+          model: string
+          provider: string
+          system_prompt: string | null
+          temperature: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_key_secret_name?: string | null
+          config_key: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_tokens?: number | null
+          model?: string
+          provider?: string
+          system_prompt?: string | null
+          temperature?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_key_secret_name?: string | null
+          config_key?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_tokens?: number | null
+          model?: string
+          provider?: string
+          system_prompt?: string | null
+          temperature?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ai_request_logs: {
+        Row: {
+          action: string | null
+          config_key: string | null
+          created_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          input_tokens: number | null
+          metadata: Json | null
+          model: string
+          output_tokens: number | null
+          provider: string
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action?: string | null
+          config_key?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          input_tokens?: number | null
+          metadata?: Json | null
+          model: string
+          output_tokens?: number | null
+          provider: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string | null
+          config_key?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          input_tokens?: number | null
+          metadata?: Json | null
+          model?: string
+          output_tokens?: number | null
+          provider?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       author_profiles: {
         Row: {
           avatar_url: string | null
@@ -77,6 +167,95 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      automation_logs: {
+        Row: {
+          actions_executed: Json | null
+          automation_id: string | null
+          created_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          status: string | null
+          trigger_event: Json
+        }
+        Insert: {
+          actions_executed?: Json | null
+          automation_id?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          status?: string | null
+          trigger_event: Json
+        }
+        Update: {
+          actions_executed?: Json | null
+          automation_id?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          status?: string | null
+          trigger_event?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_logs_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "automations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automations: {
+        Row: {
+          actions: Json | null
+          conditions: Json | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          last_run_at: string | null
+          name: string
+          run_count: number | null
+          trigger_config: Json | null
+          trigger_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          actions?: Json | null
+          conditions?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_run_at?: string | null
+          name: string
+          run_count?: number | null
+          trigger_config?: Json | null
+          trigger_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          actions?: Json | null
+          conditions?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_run_at?: string | null
+          name?: string
+          run_count?: number | null
+          trigger_config?: Json | null
+          trigger_type?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -3579,10 +3758,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       admin_cost_type: "fixed" | "percentage" | "per_job"
-      app_role: "admin" | "manager"
+      app_role: "admin" | "manager" | "super_admin"
       estimate_section:
         | "equipment_controls"
         | "miscellaneous_inside"
@@ -3742,7 +3922,7 @@ export const Constants = {
   public: {
     Enums: {
       admin_cost_type: ["fixed", "percentage", "per_job"],
-      app_role: ["admin", "manager"],
+      app_role: ["admin", "manager", "super_admin"],
       estimate_section: [
         "equipment_controls",
         "miscellaneous_inside",
