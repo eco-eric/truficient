@@ -769,6 +769,8 @@ export type Database = {
           customer_notes: string | null
           deleted_at: string | null
           final_amount: number | null
+          google_calendar_event_id: string | null
+          google_calendar_id: string | null
           id: string
           internal_notes: string | null
           job_number: string
@@ -796,6 +798,8 @@ export type Database = {
           customer_notes?: string | null
           deleted_at?: string | null
           final_amount?: number | null
+          google_calendar_event_id?: string | null
+          google_calendar_id?: string | null
           id?: string
           internal_notes?: string | null
           job_number: string
@@ -823,6 +827,8 @@ export type Database = {
           customer_notes?: string | null
           deleted_at?: string | null
           final_amount?: number | null
+          google_calendar_event_id?: string | null
+          google_calendar_id?: string | null
           id?: string
           internal_notes?: string | null
           job_number?: string
@@ -853,6 +859,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_jobs_google_calendar_id_fkey"
+            columns: ["google_calendar_id"]
+            isOneToOne: false
+            referencedRelation: "google_calendars"
             referencedColumns: ["id"]
           },
           {
@@ -2823,6 +2836,66 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      google_calendars: {
+        Row: {
+          calendar_id: string
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_primary: boolean | null
+          last_synced_at: string | null
+          linked_job_type_id: string | null
+          linked_team_id: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          calendar_id: string
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          last_synced_at?: string | null
+          linked_job_type_id?: string | null
+          linked_team_id?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          calendar_id?: string
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          last_synced_at?: string | null
+          linked_job_type_id?: string | null
+          linked_team_id?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_calendars_linked_job_type_id_fkey"
+            columns: ["linked_job_type_id"]
+            isOneToOne: false
+            referencedRelation: "crm_job_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_calendars_linked_team_id_fkey"
+            columns: ["linked_team_id"]
+            isOneToOne: false
+            referencedRelation: "crm_teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       integration_configs: {
         Row: {

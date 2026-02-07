@@ -12,6 +12,7 @@ import { ArrowLeft, Calendar, DollarSign, MapPin, User, Phone, Mail, ChevronRigh
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { WorkEdgePanel } from '@/components/admin/jobs/WorkEdgePanel';
+import SchedulingWidget from '@/components/admin/calendar/SchedulingWidget';
 
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>();
@@ -511,6 +512,37 @@ export default function JobDetail() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Scheduling Widget */}
+            <SchedulingWidget 
+              job={{
+                id: job.id,
+                job_number: job.job_number,
+                title: job.title,
+                scheduled_start: job.scheduled_start,
+                scheduled_end: job.scheduled_end,
+                google_calendar_event_id: job.google_calendar_event_id,
+                google_calendar_id: job.google_calendar_id,
+                customer: job.customer ? {
+                  first_name: job.customer.first_name,
+                  last_name: job.customer.last_name,
+                  phone: job.customer.phone
+                } : null,
+                location: job.location ? {
+                  address_line1: job.location.address_line1,
+                  city: job.location.city,
+                  state: job.location.state,
+                  zip_code: job.location.zip_code
+                } : null,
+                job_type: job.job_type ? {
+                  name: job.job_type.name,
+                  default_duration_hours: job.job_type.default_duration_hours
+                } : null,
+                priority: job.priority,
+                customer_notes: job.customer_notes
+              }}
+              onUpdate={() => queryClient.invalidateQueries({ queryKey: ['crm_job', id] })}
+            />
 
             {/* WorkEdge Panel */}
             <WorkEdgePanel jobId={job.id} workedgeProjectId={job.workedge_project_id} />
