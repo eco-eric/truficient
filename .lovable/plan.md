@@ -1,154 +1,97 @@
 
-# Marketing Sources & Campaign Tags for CRM
 
-## Current State Analysis
+# Fix: Implement the Locations Admin Page
 
-### Lead Sources (Hardcoded)
-The `lead_source` field currently has 7 static options:
-- Manual Entry, Ducted Estimator, Ductless Estimator, Equipment Scanner, Contact Form, Phone Call, Referral
+## Problem Identified
+The `/admin/locations` page is a **static placeholder** with no functionality:
+- The "New Location" button has no `onClick` handler
+- No database query fetches locations from `crm_locations`
+- The empty state is always displayed regardless of actual data
 
-### Tags Column (Unused)
-The `crm_customers` table already has a `tags` column (text array) that is not currently exposed in the UI.
+Meanwhile, the `CustomerLocations` component (used in Customer Detail) works correctly - it's just not connected to this page.
 
-### GHL Tags System
-There's an existing `ghl_tags` table used for GoHighLevel CRM sync - this is a separate system for marketing automation.
-
----
-
-## Recommendation
-
-**Yes, separate sections for Lead Source and Campaign Tags makes sense:**
-
-| Concept | Purpose | Examples |
-|---------|---------|----------|
-| **Lead Source** | Where the customer first heard about you | Mitsubishi, Bosch, Facebook, Google, Referral |
-| **Campaign Tags** | Multiple labels for segmentation & targeting | "Spring 2025", "Tax Credit Promo", "Heat Pump Upgrade" |
-
-### Why Separate?
-- **Lead Source** = single origin (one per customer)
-- **Campaign Tags** = multiple labels (many per customer)
-- Enables filtering like "Show all Mitsubishi leads tagged with Spring 2025 campaign"
+## Solution
+Rebuild the Locations page to be a fully functional admin view that:
+1. Fetches ALL locations across all customers from `crm_locations`
+2. Displays them in a searchable, filterable table
+3. Shows the linked customer name for each location
+4. Allows creating new locations (with customer selection)
+5. Supports editing and deleting locations
 
 ---
 
-## Implementation Plan
+## Technical Implementation
 
-### 1. Create `lead_sources` Database Table
-Admin-configurable list of marketing sources:
-```text
-id, name, display_name, category (marketing/partner/organic), color, is_active, sort_order
+### Data Query
+```typescript
+// Fetch all locations with customer info
+const { data: locations } = useQuery({
+  queryKey: ['all_crm_locations'],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from('crm_locations')
+      .select(`
+        *,
+        customer:crm_customers(id, first_name, last_name, company_name)
+      `)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  }
+});
 ```
-Default seeds: Mitsubishi, Bosch, Facebook, Google, Referral, Phone, etc.
 
-### 2. Create `crm_campaign_tags` Database Table
-Reusable campaign labels:
+### UI Features
+| Feature | Description |
+|---------|-------------|
+| **Location Table** | Columns: Address, City, Customer Name, Type, Sq Ft, Actions |
+| **Search** | Filter by address, city, or customer name |
+| **New Location Dialog** | Same form as CustomerLocations, plus customer dropdown |
+| **Edit/Delete** | Dropdown menu with quick actions |
+| **Link to Customer** | Click customer name to navigate to their detail page |
+
+### File Changes
 ```text
-id, name, color, description, is_active, created_at
-```
-Examples: "Q1 2025 Push", "Federal Tax Credit", "Mitsubishi Rebate"
-
-### 3. Update CustomerFormDialog
-- **Lead Source**: Change from hardcoded Select to dynamic dropdown from `lead_sources` table
-- **Campaign Tags**: Add multi-select component using the existing `tags` column on `crm_customers`
-
-### 4. Create Admin Management Pages
-- **Lead Sources Admin** (`/admin/settings/lead-sources`): Add/edit/toggle sources
-- **Campaign Tags Admin** (`/admin/settings/campaign-tags`): Manage campaign tags
-
-### 5. Update CustomerTable & Filters
-- Display tags as colored badges
-- Add filter by campaign tag
-
----
-
-## UI Mockup - Customer Form
-
-```text
-┌─────────────────────────────────────────────────┐
-│ Customer Information                            │
-├─────────────────────────────────────────────────┤
-│                                                 │
-│  Lead Source        │  Status                   │
-│  [  Mitsubishi  ▼]  │  [  Lead  ▼]              │
-│                                                 │
-│  Campaign Tags (optional)                       │
-│  ┌─────────────────────────────────────────┐   │
-│  │ ✕ Spring 2025   ✕ Heat Pump Upgrade     │   │
-│  │ + Add tag...                            │   │
-│  └─────────────────────────────────────────┘   │
-│                                                 │
-└─────────────────────────────────────────────────┘
+src/pages/admin/Locations.tsx
+  - Replace static placeholder with full implementation
+  - Add useQuery for fetching locations with customer join
+  - Add customer selector to the "New Location" dialog
+  - Implement search/filter functionality
+  - Add table view with all location data
+  - Wire up edit/delete mutations
 ```
 
 ---
 
-## File Changes
+## New Location Dialog Flow
 
-### New Files
-```text
-src/pages/admin/LeadSourcesConfig.tsx      - Admin page for managing lead sources
-src/pages/admin/CampaignTagsConfig.tsx     - Admin page for managing campaign tags  
-src/components/admin/customers/CampaignTagSelector.tsx - Multi-select tag component
-```
+When clicking "New Location" from this page (not from a customer profile):
 
-### Modified Files
-```text
-src/components/admin/customers/CustomerFormDialog.tsx
-  - Replace hardcoded lead_source Select with dynamic query
-  - Add CampaignTagSelector component using tags[] column
+1. Dialog opens with customer selector dropdown at the top
+2. User selects which customer this location belongs to
+3. Fills in address details
+4. Saves - location linked to selected customer
 
-src/components/admin/customers/CustomerTable.tsx  
-  - Display campaign tags as badges
-  - Add tag filter option
+---
 
-src/pages/admin/CustomerDetail.tsx
-  - Show campaign tags in customer header
+## Table Columns
 
-src/components/admin/adminNavConfig.ts
-  - Add Settings submenu entries
-```
-
-### Database Migration
-```sql
--- Lead sources table
-CREATE TABLE lead_sources (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL UNIQUE,
-  display_name TEXT NOT NULL,
-  category TEXT DEFAULT 'other',
-  color TEXT DEFAULT '#6b7280',
-  is_active BOOLEAN DEFAULT true,
-  sort_order INTEGER DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- Campaign tags table  
-CREATE TABLE crm_campaign_tags (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL UNIQUE,
-  color TEXT DEFAULT '#3b82f6',
-  description TEXT,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- Seed default lead sources
-INSERT INTO lead_sources (name, display_name, category, sort_order) VALUES
-  ('mitsubishi', 'Mitsubishi', 'partner', 1),
-  ('bosch', 'Bosch', 'partner', 2),
-  ('facebook', 'Facebook', 'marketing', 3),
-  ('google', 'Google', 'marketing', 4),
-  ('referral', 'Referral', 'organic', 5),
-  ('phone', 'Phone Call', 'organic', 6),
-  ('manual', 'Manual Entry', 'other', 99);
-```
+| Column | Source |
+|--------|--------|
+| Address | `address_line1`, `address_line2` |
+| City, State | `city`, `state`, `zip_code` |
+| Customer | Join to `crm_customers.first_name + last_name` |
+| Type | `location_type` (Residential/Commercial) |
+| Sq Ft | `square_footage` |
+| Actions | Edit, Delete dropdown |
 
 ---
 
 ## Outcome
-
 After implementation:
-- Admins can add new marketing sources (Mitsubishi, Bosch, etc.) without code changes
-- Customers can have multiple campaign tags for segmentation
-- Table filtering by source and tags for targeted outreach
-- Clean separation between acquisition channel (source) and marketing segments (tags)
+- The Locations page shows all service locations across all customers
+- Admins can add new locations and assign them to existing customers
+- Search and filter make it easy to find specific addresses
+- Each location links back to its associated customer profile
+
