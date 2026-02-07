@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-export type AppRole = 'admin' | 'manager';
+export type AppRole = 'super_admin' | 'admin' | 'manager';
 
 interface UserRoleState {
   role: AppRole | null;
   loading: boolean;
+  isSuperAdmin: boolean;
   isAdmin: boolean;
   isManager: boolean;
   hasAccess: boolean;
@@ -50,11 +51,16 @@ export const useUserRole = (): UserRoleState => {
     fetchRole();
   }, [user]);
 
+  const isSuperAdmin = role === 'super_admin';
+  const isAdmin = role === 'admin' || role === 'super_admin';
+  const isManager = role === 'manager';
+
   return {
     role,
     loading,
-    isAdmin: role === 'admin',
-    isManager: role === 'manager',
-    hasAccess: role === 'admin' || role === 'manager',
+    isSuperAdmin,
+    isAdmin,
+    isManager,
+    hasAccess: isSuperAdmin || isAdmin || isManager,
   };
 };

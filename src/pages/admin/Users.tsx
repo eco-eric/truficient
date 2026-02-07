@@ -348,6 +348,8 @@ const UsersPage = () => {
 
   const getRoleBadgeVariant = (role: AppRole) => {
     switch (role) {
+      case 'super_admin':
+        return 'destructive';
       case 'admin':
         return 'default';
       case 'manager':
@@ -468,6 +470,7 @@ const UsersPage = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="super_admin">Super Admin (System Config)</SelectItem>
                         <SelectItem value="admin">Admin (Full Access)</SelectItem>
                         <SelectItem value="manager">Manager (Limited Access)</SelectItem>
                       </SelectContent>
@@ -611,6 +614,7 @@ const UsersPage = () => {
                           </Badge>
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="super_admin">Super Admin</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
                           <SelectItem value="manager">Manager</SelectItem>
                         </SelectContent>

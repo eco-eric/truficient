@@ -25,6 +25,7 @@ import { InteractionLog } from '@/components/admin/customers/InteractionLog';
 import { CustomerLocations } from '@/components/admin/customers/CustomerLocations';
 import { ActivityTimeline } from '@/components/admin/customers/ActivityTimeline';
 import { LinkedSubmissions } from '@/components/admin/customers/LinkedSubmissions';
+import { AIAssistantWidget } from '@/components/admin/ai/AIAssistantWidget';
 import type { Database } from '@/integrations/supabase/types';
 
 type Customer = Database['public']['Tables']['crm_customers']['Row'];
@@ -142,10 +143,16 @@ const CustomerDetail = () => {
               </p>
             </div>
           </div>
-          <Button onClick={() => setEditOpen(true)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Customer
-          </Button>
+          <div className="flex items-center gap-2">
+            <AIAssistantWidget 
+              customerId={customer.id} 
+              customerName={getDisplayName(customer)}
+            />
+            <Button onClick={() => setEditOpen(true)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Customer
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">

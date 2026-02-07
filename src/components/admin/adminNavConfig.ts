@@ -132,6 +132,8 @@ export const navSections: NavSection[] = [
     title: 'System',
     items: [
       { label: 'Users', href: '/admin/users', icon: Users, adminOnly: true },
+      { label: 'AI Settings', href: '/admin/ai-settings', icon: Settings, adminOnly: true },
+      { label: 'Automations', href: '/admin/automations', icon: Wrench, adminOnly: true },
       { label: 'Lead Sources', href: '/admin/lead-sources', icon: Megaphone, adminOnly: true },
       { label: 'Campaign Tags', href: '/admin/campaign-tags', icon: Tags, adminOnly: true },
       { label: 'Trash Bin', href: '/admin/trash-bin', icon: Trash2, adminOnly: true },
