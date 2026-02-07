@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -25,7 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Mail, Phone, Calendar, Trash2 } from "lucide-react";
+import { Mail, Phone, Calendar, Trash2, UserPlus } from "lucide-react";
 import { format } from "date-fns";
 import { UnifiedSubmission, SubmissionSource } from "@/pages/admin/UnifiedSubmissions";
 import { ContactSubmissionDetail } from "./ContactSubmissionDetail";
@@ -33,6 +34,7 @@ import { LandingPageSubmissionDetail } from "./LandingPageSubmissionDetail";
 import { DuctlessSubmissionDetail } from "./DuctlessSubmissionDetail";
 import { ScannerSubmissionDetail } from "./ScannerSubmissionDetail";
 import { DuctedSubmissionDetail } from "./DuctedSubmissionDetail";
+import { ConvertToCustomerDialog } from "./ConvertToCustomerDialog";
 
 interface SubmissionDetailSheetProps {
   submission: UnifiedSubmission | null;
@@ -65,6 +67,8 @@ export const SubmissionDetailSheet = ({
   onStatusChange,
   onDelete,
 }: SubmissionDetailSheetProps) => {
+  const [convertDialogOpen, setConvertDialogOpen] = useState(false);
+
   if (!submission) return null;
 
   const handleEmailClick = () => {
@@ -77,140 +81,169 @@ export const SubmissionDetailSheet = ({
     }
   };
 
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-lg overflow-y-auto">
-        <SheetHeader>
-          <div className="flex items-center gap-2">
-            <Badge className={sourceColors[submission.source]} variant="secondary">
-              {sourceLabels[submission.source]}
-            </Badge>
-          </div>
-          <SheetTitle className="text-left text-xl">{submission.customerName}</SheetTitle>
-        </SheetHeader>
+  const handleConvertSuccess = () => {
+    // Update submission status to converted
+    onStatusChange(submission, 'converted');
+  };
 
-        <div className="mt-6 space-y-6">
-          {/* Contact Info */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 text-sm">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <a
-                href={`mailto:${submission.customerEmail}`}
-                className="text-primary hover:underline"
-              >
-                {submission.customerEmail}
-              </a>
+  return (
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent className="sm:max-w-lg overflow-y-auto">
+          <SheetHeader>
+            <div className="flex items-center gap-2">
+              <Badge className={sourceColors[submission.source]} variant="secondary">
+                {sourceLabels[submission.source]}
+              </Badge>
             </div>
-            {submission.customerPhone && (
+            <SheetTitle className="text-left text-xl">{submission.customerName}</SheetTitle>
+          </SheetHeader>
+
+          <div className="mt-6 space-y-6">
+            {/* Contact Info */}
+            <div className="space-y-3">
               <div className="flex items-center gap-3 text-sm">
-                <Phone className="h-4 w-4 text-muted-foreground" />
+                <Mail className="h-4 w-4 text-muted-foreground" />
                 <a
-                  href={`tel:${submission.customerPhone}`}
+                  href={`mailto:${submission.customerEmail}`}
                   className="text-primary hover:underline"
                 >
-                  {submission.customerPhone}
+                  {submission.customerEmail}
                 </a>
               </div>
-            )}
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              <span>{format(new Date(submission.createdAt), "MMMM d, yyyy 'at' h:mm a")}</span>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleEmailClick}>
-              <Mail className="h-4 w-4 mr-2" />
-              Email
-            </Button>
-            {submission.customerPhone && (
-              <Button variant="outline" size="sm" onClick={handlePhoneClick}>
-                <Phone className="h-4 w-4 mr-2" />
-                Call
-              </Button>
-            )}
-          </div>
-
-          <Separator />
-
-          {/* Status */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Status</label>
-            <Select
-              value={submission.status}
-              onValueChange={(value) => onStatusChange(submission, value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="new">New</SelectItem>
-                <SelectItem value="contacted">Contacted</SelectItem>
-                <SelectItem value="reviewed">Reviewed</SelectItem>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
-                <SelectItem value="converted">Converted</SelectItem>
-                <SelectItem value="closed">Closed</SelectItem>
-                <SelectItem value="junk">Junk</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Separator />
-
-          {/* Type-specific Details */}
-          {submission.source === "ducted" && (
-            <DuctedSubmissionDetail metadata={submission.metadata} />
-          )}
-          {submission.source === "contact" && (
-            <ContactSubmissionDetail metadata={submission.metadata} />
-          )}
-          {submission.source === "landing_page" && (
-            <LandingPageSubmissionDetail metadata={submission.metadata} />
-          )}
-          {submission.source === "ductless" && (
-            <DuctlessSubmissionDetail metadata={submission.metadata} />
-          )}
-          {submission.source === "scanner" && (
-            <ScannerSubmissionDetail metadata={submission.metadata} />
-          )}
-
-          {/* Delete Button */}
-          {onDelete && (
-            <>
-              <Separator />
-              <div className="pt-2">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Submission
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete this submission?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will move "{submission.customerName}" to the trash bin. 
-                        You can restore it within 30 days from the Trash Bin.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={() => onDelete(submission)}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        Move to Trash
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+              {submission.customerPhone && (
+                <div className="flex items-center gap-3 text-sm">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <a
+                    href={`tel:${submission.customerPhone}`}
+                    className="text-primary hover:underline"
+                  >
+                    {submission.customerPhone}
+                  </a>
+                </div>
+              )}
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                <span>{format(new Date(submission.createdAt), "MMMM d, yyyy 'at' h:mm a")}</span>
               </div>
-            </>
-          )}
-        </div>
-      </SheetContent>
-    </Sheet>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={handleEmailClick}>
+                <Mail className="h-4 w-4 mr-2" />
+                Email
+              </Button>
+              {submission.customerPhone && (
+                <Button variant="outline" size="sm" onClick={handlePhoneClick}>
+                  <Phone className="h-4 w-4 mr-2" />
+                  Call
+                </Button>
+              )}
+              <Button 
+                size="sm" 
+                onClick={() => setConvertDialogOpen(true)}
+                disabled={submission.status === 'converted'}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                {submission.status === 'converted' ? 'Converted' : 'Convert to Customer'}
+              </Button>
+            </div>
+
+            <Separator />
+
+            {/* Status */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Status</label>
+              <Select
+                value={submission.status}
+                onValueChange={(value) => onStatusChange(submission, value)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">New</SelectItem>
+                  <SelectItem value="contacted">Contacted</SelectItem>
+                  <SelectItem value="reviewed">Reviewed</SelectItem>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="converted">Converted</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
+                  <SelectItem value="junk">Junk</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Separator />
+
+            {/* Type-specific Details */}
+            {submission.source === "ducted" && (
+              <DuctedSubmissionDetail metadata={submission.metadata} />
+            )}
+            {submission.source === "contact" && (
+              <ContactSubmissionDetail metadata={submission.metadata} />
+            )}
+            {submission.source === "landing_page" && (
+              <LandingPageSubmissionDetail metadata={submission.metadata} />
+            )}
+            {submission.source === "ductless" && (
+              <DuctlessSubmissionDetail metadata={submission.metadata} />
+            )}
+            {submission.source === "scanner" && (
+              <ScannerSubmissionDetail metadata={submission.metadata} />
+            )}
+
+            {/* Delete Button */}
+            {onDelete && (
+              <>
+                <Separator />
+                <div className="pt-2">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete Submission
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this submission?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will move "{submission.customerName}" to the trash bin. 
+                          You can restore it within 30 days from the Trash Bin.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => onDelete(submission)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Move to Trash
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <ConvertToCustomerDialog
+        open={convertDialogOpen}
+        onOpenChange={setConvertDialogOpen}
+        submission={submission ? {
+          id: submission.id,
+          source: submission.source,
+          customerName: submission.customerName,
+          customerEmail: submission.customerEmail,
+          customerPhone: submission.customerPhone,
+          metadata: submission.metadata,
+        } : null}
+        onSuccess={handleConvertSuccess}
+      />
+    </>
   );
 };
