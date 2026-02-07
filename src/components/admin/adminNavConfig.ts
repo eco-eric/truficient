@@ -70,10 +70,12 @@ export const navSections: NavSection[] = [
   {
     title: 'Operations',
     items: [
+      { label: 'Calendar', href: '/admin/calendar', icon: LayoutDashboard, adminOnly: false },
       { label: 'Jobs Board', href: '/admin/jobs', icon: Briefcase, adminOnly: false },
       { label: 'Teams & Crew', href: '/admin/teams', icon: UsersRound, adminOnly: false },
       { label: 'WorkEdge Projects', href: '/admin/workedge', icon: Camera, adminOnly: false },
       { label: 'Job Types', href: '/admin/job-types', icon: Wrench, adminOnly: true },
+      { label: 'Calendar Settings', href: '/admin/calendars', icon: Settings, adminOnly: true },
     ],
   },
   {
