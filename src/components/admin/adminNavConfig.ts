@@ -29,7 +29,10 @@ import {
   MapPin,
   Kanban,
   Megaphone,
-  Tags
+  Tags,
+  Briefcase,
+  UsersRound,
+  Wrench
 } from 'lucide-react';
 
 export interface NavItem {
@@ -61,6 +64,14 @@ export const navSections: NavSection[] = [
       { label: 'Submissions', href: '/admin/submissions', icon: FileText, adminOnly: false },
       { label: 'Pipeline', href: '/admin/pipeline', icon: Kanban, adminOnly: false },
       { label: 'DFW Watch List', href: '/admin/dfw-watchlist', icon: Target, adminOnly: true },
+    ],
+  },
+  {
+    title: 'Operations',
+    items: [
+      { label: 'Jobs Board', href: '/admin/jobs', icon: Briefcase, adminOnly: false },
+      { label: 'Teams & Crew', href: '/admin/teams', icon: UsersRound, adminOnly: false },
+      { label: 'Job Types', href: '/admin/job-types', icon: Wrench, adminOnly: true },
     ],
   },
   {

@@ -547,6 +547,312 @@ export type Database = {
           },
         ]
       }
+      crm_job_assignments: {
+        Row: {
+          assignment_type: string | null
+          created_at: string
+          id: string
+          job_id: string
+          member_id: string | null
+          notes: string | null
+          team_id: string | null
+        }
+        Insert: {
+          assignment_type?: string | null
+          created_at?: string
+          id?: string
+          job_id: string
+          member_id?: string | null
+          notes?: string | null
+          team_id?: string | null
+        }
+        Update: {
+          assignment_type?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string
+          member_id?: string | null
+          notes?: string | null
+          team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_job_assignments_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "crm_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_job_assignments_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "crm_team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_job_assignments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "crm_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_job_stage_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          from_stage_id: string | null
+          id: string
+          job_id: string
+          notes: string | null
+          to_stage_id: string
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          from_stage_id?: string | null
+          id?: string
+          job_id: string
+          notes?: string | null
+          to_stage_id: string
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          from_stage_id?: string | null
+          id?: string
+          job_id?: string
+          notes?: string | null
+          to_stage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_job_stage_history_from_stage_id_fkey"
+            columns: ["from_stage_id"]
+            isOneToOne: false
+            referencedRelation: "crm_job_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_job_stage_history_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "crm_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_job_stage_history_to_stage_id_fkey"
+            columns: ["to_stage_id"]
+            isOneToOne: false
+            referencedRelation: "crm_job_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_job_stages: {
+        Row: {
+          auto_notify_customer: boolean | null
+          color: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          job_type_id: string
+          name: string
+          sort_order: number
+          stage_type: string
+          updated_at: string
+        }
+        Insert: {
+          auto_notify_customer?: boolean | null
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          job_type_id: string
+          name: string
+          sort_order?: number
+          stage_type?: string
+          updated_at?: string
+        }
+        Update: {
+          auto_notify_customer?: boolean | null
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          job_type_id?: string
+          name?: string
+          sort_order?: number
+          stage_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_job_stages_job_type_id_fkey"
+            columns: ["job_type_id"]
+            isOneToOne: false
+            referencedRelation: "crm_job_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_job_types: {
+        Row: {
+          category: string
+          color: string | null
+          created_at: string
+          default_duration_hours: number | null
+          default_priority: string | null
+          icon_name: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          requires_permit: boolean | null
+          slug: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          color?: string | null
+          created_at?: string
+          default_duration_hours?: number | null
+          default_priority?: string | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          requires_permit?: boolean | null
+          slug: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          color?: string | null
+          created_at?: string
+          default_duration_hours?: number | null
+          default_priority?: string | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          requires_permit?: boolean | null
+          slug?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_jobs: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          created_at: string
+          created_by: string | null
+          current_stage_id: string | null
+          customer_id: string
+          customer_notes: string | null
+          deleted_at: string | null
+          final_amount: number | null
+          id: string
+          internal_notes: string | null
+          job_number: string
+          job_type_id: string
+          location_id: string | null
+          payment_status: string | null
+          priority: string | null
+          quoted_amount: number | null
+          scheduled_end: string | null
+          scheduled_start: string | null
+          source_estimate_id: string | null
+          source_pipeline_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_stage_id?: string | null
+          customer_id: string
+          customer_notes?: string | null
+          deleted_at?: string | null
+          final_amount?: number | null
+          id?: string
+          internal_notes?: string | null
+          job_number: string
+          job_type_id: string
+          location_id?: string | null
+          payment_status?: string | null
+          priority?: string | null
+          quoted_amount?: number | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          source_estimate_id?: string | null
+          source_pipeline_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_stage_id?: string | null
+          customer_id?: string
+          customer_notes?: string | null
+          deleted_at?: string | null
+          final_amount?: number | null
+          id?: string
+          internal_notes?: string | null
+          job_number?: string
+          job_type_id?: string
+          location_id?: string | null
+          payment_status?: string | null
+          priority?: string | null
+          quoted_amount?: number | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          source_estimate_id?: string | null
+          source_pipeline_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_jobs_current_stage_id_fkey"
+            columns: ["current_stage_id"]
+            isOneToOne: false
+            referencedRelation: "crm_job_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_jobs_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_jobs_job_type_id_fkey"
+            columns: ["job_type_id"]
+            isOneToOne: false
+            referencedRelation: "crm_job_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_jobs_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "crm_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_locations: {
         Row: {
           access_notes: string | null
@@ -766,6 +1072,123 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      crm_team_assignments: {
+        Row: {
+          created_at: string
+          id: string
+          is_lead: boolean | null
+          member_id: string
+          team_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_lead?: boolean | null
+          member_id: string
+          team_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_lead?: boolean | null
+          member_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_team_assignments_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "crm_team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_team_assignments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "crm_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_team_members: {
+        Row: {
+          certifications: string[] | null
+          created_at: string
+          email: string | null
+          first_name: string
+          hourly_rate: number | null
+          id: string
+          is_active: boolean | null
+          last_name: string | null
+          notes: string | null
+          phone: string | null
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          certifications?: string[] | null
+          created_at?: string
+          email?: string | null
+          first_name: string
+          hourly_rate?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_name?: string | null
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          certifications?: string[] | null
+          created_at?: string
+          email?: string | null
+          first_name?: string
+          hourly_rate?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_name?: string | null
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_teams: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          team_type: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          team_type?: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          team_type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       documentation_search_log: {
         Row: {
@@ -2873,6 +3296,7 @@ export type Database = {
     }
     Functions: {
       generate_estimate_number: { Args: never; Returns: string }
+      generate_job_number: { Args: never; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
