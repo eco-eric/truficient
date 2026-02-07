@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { WorkEdgePanel } from '@/components/admin/jobs/WorkEdgePanel';
 import SchedulingWidget from '@/components/admin/calendar/SchedulingWidget';
+import { AIAssistantWidget } from '@/components/admin/ai/AIAssistantWidget';
 
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>();
@@ -204,6 +205,10 @@ export default function JobDetail() {
               <h1 className="text-2xl font-bold mt-1">{job.title}</h1>
             </div>
           </div>
+          <AIAssistantWidget 
+            jobId={job.id} 
+            jobTitle={job.title}
+          />
         </div>
 
         {/* Stage Progress Bar */}
