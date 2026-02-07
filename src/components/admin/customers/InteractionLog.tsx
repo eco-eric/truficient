@@ -11,7 +11,11 @@ import {
   MessageSquare, 
   FileText, 
   Plus,
-  Activity
+  Activity,
+  UserPlus,
+  Kanban,
+  ArrowRightLeft,
+  RefreshCw,
 } from 'lucide-react';
 import {
   Dialog,
@@ -44,7 +48,21 @@ const interactionIcons: Record<string, React.ReactNode> = {
   text: <MessageSquare className="h-4 w-4" />,
   note: <FileText className="h-4 w-4" />,
   meeting: <Activity className="h-4 w-4" />,
+  // System event icons
+  system_conversion: <UserPlus className="h-4 w-4" />,
+  system_pipeline_add: <Kanban className="h-4 w-4" />,
+  system_pipeline_move: <ArrowRightLeft className="h-4 w-4" />,
+  system_status_change: <RefreshCw className="h-4 w-4" />,
 };
+
+const systemEventColors: Record<string, string> = {
+  system_conversion: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+  system_pipeline_add: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+  system_pipeline_move: 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
+  system_status_change: 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300',
+};
+
+const isSystemEvent = (type: string) => type.startsWith('system_');
 
 export function InteractionLog({ customerId, interactions }: InteractionLogProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -106,39 +124,56 @@ export function InteractionLog({ customerId, interactions }: InteractionLogProps
             </div>
           ) : (
             <div className="space-y-4">
-              {interactions.map((interaction) => (
-                <div key={interaction.id} className="flex gap-4 p-3 rounded-lg border bg-card">
-                  <div className="flex-shrink-0 mt-1">
-                    <div className="p-2 bg-muted rounded-full">
-                      {interactionIcons[interaction.interaction_type] || <Activity className="h-4 w-4" />}
+                {interactions.map((interaction) => {
+                  const isSystem = isSystemEvent(interaction.interaction_type);
+                  const iconBgColor = isSystem 
+                    ? systemEventColors[interaction.interaction_type] || 'bg-muted'
+                    : 'bg-muted';
+                  
+                  return (
+                    <div 
+                      key={interaction.id} 
+                      className={`flex gap-4 p-3 rounded-lg border ${isSystem ? 'bg-muted/30' : 'bg-card'}`}
+                    >
+                      <div className="flex-shrink-0 mt-1">
+                        <div className={`p-2 rounded-full ${iconBgColor}`}>
+                          {interactionIcons[interaction.interaction_type] || <Activity className="h-4 w-4" />}
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="font-medium capitalize">
+                            {interaction.interaction_type.replace('system_', '').replace('_', ' ')}
+                          </span>
+                          {!isSystem && interaction.direction && (
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {interaction.direction}
+                            </Badge>
+                          )}
+                          {isSystem && (
+                            <Badge variant="secondary" className="text-xs">
+                              System
+                            </Badge>
+                          )}
+                        </div>
+                        {interaction.subject && (
+                          <p className="text-sm font-medium">{interaction.subject}</p>
+                        )}
+                        {interaction.content && (
+                          <p className="text-sm text-muted-foreground mt-1">{interaction.content}</p>
+                        )}
+                        {interaction.outcome && (
+                          <p className="text-sm mt-1">
+                            <span className="text-muted-foreground">Outcome:</span> {interaction.outcome}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {new Date(interaction.interaction_at).toLocaleString()}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium capitalize">{interaction.interaction_type}</span>
-                      {interaction.direction && (
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {interaction.direction}
-                        </Badge>
-                      )}
-                    </div>
-                    {interaction.subject && (
-                      <p className="text-sm font-medium">{interaction.subject}</p>
-                    )}
-                    {interaction.content && (
-                      <p className="text-sm text-muted-foreground mt-1">{interaction.content}</p>
-                    )}
-                    {interaction.outcome && (
-                      <p className="text-sm mt-1">
-                        <span className="text-muted-foreground">Outcome:</span> {interaction.outcome}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {new Date(interaction.interaction_at).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
             </div>
           )}
         </CardContent>

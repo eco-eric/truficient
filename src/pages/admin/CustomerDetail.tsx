@@ -16,7 +16,6 @@ import {
   FileText, 
   Package, 
   Activity,
-  Building2,
   Edit,
   MessageSquare
 } from 'lucide-react';
@@ -24,6 +23,8 @@ import { useState } from 'react';
 import { CustomerFormDialog } from '@/components/admin/customers/CustomerFormDialog';
 import { InteractionLog } from '@/components/admin/customers/InteractionLog';
 import { CustomerLocations } from '@/components/admin/customers/CustomerLocations';
+import { ActivityTimeline } from '@/components/admin/customers/ActivityTimeline';
+import { LinkedSubmissions } from '@/components/admin/customers/LinkedSubmissions';
 import type { Database } from '@/integrations/supabase/types';
 
 type Customer = Database['public']['Tables']['crm_customers']['Row'];
@@ -257,7 +258,7 @@ const CustomerDetail = () => {
                   </Card>
                 </div>
 
-                {/* Recent Activity */}
+                {/* Recent Activity - Enhanced with ActivityTimeline preview */}
                 <Card className="mt-4">
                   <CardHeader>
                     <CardTitle className="text-lg">Recent Activity</CardTitle>
@@ -265,18 +266,28 @@ const CustomerDetail = () => {
                   <CardContent>
                     {interactions && interactions.length > 0 ? (
                       <div className="space-y-3">
-                        {interactions.slice(0, 5).map((interaction) => (
-                          <div key={interaction.id} className="flex items-start gap-3 text-sm">
-                            <Activity className="h-4 w-4 text-muted-foreground mt-0.5" />
-                            <div>
-                              <span className="font-medium capitalize">{interaction.interaction_type}</span>
-                              {interaction.subject && <span> - {interaction.subject}</span>}
-                              <p className="text-muted-foreground text-xs">
-                                {new Date(interaction.interaction_at).toLocaleString()}
-                              </p>
+                        {interactions.slice(0, 5).map((interaction) => {
+                          const isSystem = interaction.interaction_type.startsWith('system_');
+                          return (
+                            <div key={interaction.id} className="flex items-start gap-3 text-sm">
+                              <Activity className={`h-4 w-4 mt-0.5 ${isSystem ? 'text-primary' : 'text-muted-foreground'}`} />
+                              <div>
+                                <span className="font-medium capitalize">
+                                  {interaction.interaction_type.replace('system_', '').replace('_', ' ')}
+                                </span>
+                                {interaction.subject && <span> - {interaction.subject}</span>}
+                                {isSystem && (
+                                  <Badge variant="secondary" className="ml-2 text-xs">
+                                    System
+                                  </Badge>
+                                )}
+                                <p className="text-muted-foreground text-xs">
+                                  {new Date(interaction.interaction_at).toLocaleString()}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <p className="text-muted-foreground text-sm">No recent activity</p>
@@ -289,8 +300,9 @@ const CustomerDetail = () => {
                 <CustomerLocations customerId={id!} locations={locations || []} />
               </TabsContent>
 
-              <TabsContent value="activity" className="mt-4">
+              <TabsContent value="activity" className="mt-4 space-y-4">
                 <InteractionLog customerId={id!} interactions={interactions || []} />
+                <ActivityTimeline interactions={interactions || []} />
               </TabsContent>
 
               <TabsContent value="jobs" className="mt-4">
@@ -306,15 +318,7 @@ const CustomerDetail = () => {
               </TabsContent>
 
               <TabsContent value="estimates" className="mt-4">
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col items-center py-8">
-                      <FileText className="h-8 w-8 text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground">No estimates found</p>
-                      <p className="text-xs text-muted-foreground mt-1">Linked estimates will appear here</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <LinkedSubmissions customerId={id!} />
               </TabsContent>
 
               <TabsContent value="equipment" className="mt-4">

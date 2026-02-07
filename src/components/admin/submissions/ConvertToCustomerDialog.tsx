@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { logSystemInteraction, SYSTEM_EVENTS } from '@/lib/crm/logInteraction';
 import {
   Dialog,
   DialogContent,
@@ -277,6 +278,30 @@ export const ConvertToCustomerDialog = ({
         if (pipelineError) {
           console.error('Failed to add to pipeline:', pipelineError);
         }
+      }
+
+      // 5. Log system conversion interaction
+      await logSystemInteraction({
+        customerId: customer.id,
+        type: SYSTEM_EVENTS.CONVERSION,
+        subject: `Converted from ${submission.source.replace('_', ' ')} submission`,
+        content: data.estimated_value 
+          ? `Estimated value: $${parseFloat(data.estimated_value).toLocaleString()}`
+          : undefined,
+        outcome: data.add_to_pipeline ? 'Added to sales pipeline' : undefined,
+      });
+
+      // 6. Log pipeline addition if requested
+      if (data.add_to_pipeline && data.pipeline_stage_id) {
+        const stage = stages.find(s => s.id === data.pipeline_stage_id);
+        await logSystemInteraction({
+          customerId: customer.id,
+          type: SYSTEM_EVENTS.PIPELINE_ADD,
+          subject: `Added to pipeline: ${stage?.display_name || 'Unknown stage'}`,
+          content: data.estimated_value 
+            ? `Estimated value: $${parseFloat(data.estimated_value).toLocaleString()}`
+            : undefined,
+        });
       }
 
       return customer.id;

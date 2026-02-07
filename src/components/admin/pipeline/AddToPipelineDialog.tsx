@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { logSystemInteraction, SYSTEM_EVENTS } from '@/lib/crm/logInteraction';
 import {
   Dialog,
   DialogContent,
@@ -169,6 +170,17 @@ export const AddToPipelineDialog = ({
           .from('crm_pipeline_entries')
           .insert(payload);
         if (error) throw error;
+
+        // Log the pipeline addition for new entries only
+        const stage = stages.find(s => s.id === data.stage_id);
+        await logSystemInteraction({
+          customerId: data.customer_id,
+          type: SYSTEM_EVENTS.PIPELINE_ADD,
+          subject: `Added to pipeline: ${stage?.display_name || 'Unknown stage'}`,
+          content: data.estimated_value 
+            ? `Estimated value: $${parseFloat(data.estimated_value).toLocaleString()}`
+            : undefined,
+        });
       }
     },
     onSuccess: () => {
