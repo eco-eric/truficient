@@ -345,6 +345,33 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_campaign_tags: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
       crm_customer_contacts: {
         Row: {
           contact_type: string
@@ -2534,6 +2561,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lead_sources: {
+        Row: {
+          category: string | null
+          color: string | null
+          created_at: string | null
+          display_name: string
+          id: string
+          is_active: boolean | null
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          category?: string | null
+          color?: string | null
+          created_at?: string | null
+          display_name: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          category?: string | null
+          color?: string | null
+          created_at?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
       }
       materials_catalog: {
         Row: {

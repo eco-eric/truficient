@@ -70,6 +70,8 @@ import AdminCustomers from "./pages/admin/Customers";
 import AdminCustomerDetail from "./pages/admin/CustomerDetail";
 import AdminLocations from "./pages/admin/Locations";
 import AdminPipeline from "./pages/admin/Pipeline";
+import AdminLeadSourcesConfig from "./pages/admin/LeadSourcesConfig";
+import AdminCampaignTagsConfig from "./pages/admin/CampaignTagsConfig";
 import { Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
@@ -181,6 +183,8 @@ const router = createBrowserRouter([
       { path: "/admin/settings", element: <ProtectedRoute><AdminSettings /></ProtectedRoute> },
       { path: "/admin/button-clicks", element: <ProtectedRoute><AdminButtonClicks /></ProtectedRoute> },
       { path: "/admin/scanner-analytics", element: <ProtectedRoute><AdminScannerAnalytics /></ProtectedRoute> },
+      { path: "/admin/lead-sources", element: <ProtectedRoute><AdminLeadSourcesConfig /></ProtectedRoute> },
+      { path: "/admin/campaign-tags", element: <ProtectedRoute><AdminCampaignTagsConfig /></ProtectedRoute> },
       
       // Catch-all route
       { path: "*", element: <NotFound /> },

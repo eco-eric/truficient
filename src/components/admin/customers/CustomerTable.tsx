@@ -41,6 +41,17 @@ import type { Database } from '@/integrations/supabase/types';
 
 type Customer = Database['public']['Tables']['crm_customers']['Row'];
 
+interface LeadSource {
+  name: string;
+  display_name: string;
+  color: string;
+}
+
+interface CampaignTag {
+  name: string;
+  color: string;
+}
+
 interface CustomerTableProps {
   onEdit: (customer: Customer) => void;
   onDelete: (customer: Customer) => void;
@@ -54,16 +65,6 @@ const statusColors: Record<string, string> = {
   archived: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
 };
 
-const sourceLabels: Record<string, string> = {
-  ducted_estimator: 'Ducted Estimator',
-  ductless_estimator: 'Ductless Estimator',
-  scanner: 'Equipment Scanner',
-  contact_form: 'Contact Form',
-  phone: 'Phone Call',
-  referral: 'Referral',
-  manual: 'Manual Entry',
-};
-
 export function CustomerTable({ onEdit, onDelete }: CustomerTableProps) {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
@@ -71,6 +72,30 @@ export function CustomerTable({ onEdit, onDelete }: CustomerTableProps) {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [sortField, setSortField] = useState<'created_at' | 'last_name'>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  // Fetch lead sources for display names
+  const { data: leadSources } = useQuery({
+    queryKey: ['lead_sources'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lead_sources')
+        .select('name, display_name, color');
+      if (error) throw error;
+      return data as LeadSource[];
+    },
+  });
+
+  // Fetch campaign tags for colors
+  const { data: campaignTags } = useQuery({
+    queryKey: ['crm_campaign_tags'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_campaign_tags')
+        .select('name, color');
+      if (error) throw error;
+      return data as CampaignTag[];
+    },
+  });
 
   const { data: customers, isLoading } = useQuery({
     queryKey: ['crm_customers', statusFilter, typeFilter, sortField, sortDirection],
@@ -93,6 +118,18 @@ export function CustomerTable({ onEdit, onDelete }: CustomerTableProps) {
       return data as Customer[];
     },
   });
+
+  const getSourceDisplay = (sourceName: string | null) => {
+    if (!sourceName) return null;
+    const source = leadSources?.find((s) => s.name === sourceName);
+    return source || { display_name: sourceName, color: '#6b7280' };
+  };
+
+  const getTagColor = (tagName: string) => {
+    const tag = campaignTags?.find((t) => t.name === tagName);
+    return tag?.color || '#3b82f6';
+  };
+
 
   const filteredCustomers = customers?.filter((customer) => {
     if (!search) return true;
@@ -188,6 +225,7 @@ export function CustomerTable({ onEdit, onDelete }: CustomerTableProps) {
               <TableHead>Status</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Source</TableHead>
+              <TableHead>Tags</TableHead>
               <TableHead>
                 <Button
                   variant="ghost"
@@ -205,7 +243,7 @@ export function CustomerTable({ onEdit, onDelete }: CustomerTableProps) {
           <TableBody>
             {filteredCustomers?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   No customers found
                 </TableCell>
               </TableRow>
@@ -240,10 +278,54 @@ export function CustomerTable({ onEdit, onDelete }: CustomerTableProps) {
                       {customer.customer_status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="capitalize">{customer.customer_type}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {sourceLabels[customer.lead_source || ''] || customer.lead_source || '-'}
-                  </TableCell>
+                    <TableCell className="capitalize">{customer.customer_type}</TableCell>
+                    <TableCell>
+                      {customer.lead_source && (() => {
+                        const source = getSourceDisplay(customer.lead_source);
+                        if (!source) return '—';
+                        return (
+                          <div className="flex items-center gap-1.5">
+                            <div
+                              className="w-2 h-2 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: source.color }}
+                            />
+                            <span className="text-sm text-muted-foreground truncate">
+                              {source.display_name}
+                            </span>
+                          </div>
+                        );
+                      })()}
+                    </TableCell>
+                    <TableCell>
+                      {customer.tags && customer.tags.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 max-w-[150px]">
+                          {customer.tags.slice(0, 2).map((tag) => {
+                            const tagColor = getTagColor(tag);
+                            return (
+                              <Badge
+                                key={tag}
+                                style={{
+                                  backgroundColor: tagColor + '20',
+                                  color: tagColor,
+                                  borderColor: tagColor,
+                                }}
+                                variant="outline"
+                                className="text-xs truncate max-w-[70px]"
+                              >
+                                {tag}
+                              </Badge>
+                            );
+                          })}
+                          {customer.tags.length > 2 && (
+                            <Badge variant="secondary" className="text-xs">
+                              +{customer.tags.length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(customer.created_at).toLocaleDateString()}
                   </TableCell>

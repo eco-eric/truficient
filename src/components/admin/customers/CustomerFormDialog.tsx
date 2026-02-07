@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -29,9 +29,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { CampaignTagSelector } from './CampaignTagSelector';
 import type { Database } from '@/integrations/supabase/types';
 
 type Customer = Database['public']['Tables']['crm_customers']['Row'];
+
+interface LeadSource {
+  id: string;
+  name: string;
+  display_name: string;
+  color: string;
+  is_active: boolean;
+}
 
 const customerSchema = z.object({
   customer_type: z.enum(['residential', 'commercial']),
@@ -62,6 +71,21 @@ interface CustomerFormDialogProps {
 export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFormDialogProps) {
   const queryClient = useQueryClient();
   const isEditing = !!customer;
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  // Fetch lead sources from database
+  const { data: leadSources } = useQuery({
+    queryKey: ['lead_sources_active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lead_sources')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+      if (error) throw error;
+      return data as LeadSource[];
+    },
+  });
 
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
@@ -103,6 +127,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
         lead_source: customer.lead_source || 'manual',
         notes: customer.notes || '',
       });
+      setSelectedTags(customer.tags || []);
     } else {
       form.reset({
         customer_type: 'residential',
@@ -121,6 +146,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
         lead_source: 'manual',
         notes: '',
       });
+      setSelectedTags([]);
     }
   }, [customer, form]);
 
@@ -129,6 +155,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
       const payload = {
         ...values,
         email: values.email || null,
+        tags: selectedTags,
       };
 
       if (isEditing && customer) {
@@ -146,6 +173,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm_customers'] });
+      queryClient.invalidateQueries({ queryKey: ['crm_customer'] });
       toast.success(isEditing ? 'Customer updated' : 'Customer created');
       onOpenChange(false);
     },
@@ -388,7 +416,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
               />
             </div>
 
-            {/* Lead Source */}
+            {/* Lead Source - Dynamic from database */}
             <FormField
               control={form.control}
               name="lead_source"
@@ -398,23 +426,33 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Select source..." />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="manual">Manual Entry</SelectItem>
-                      <SelectItem value="ducted_estimator">Ducted Estimator</SelectItem>
-                      <SelectItem value="ductless_estimator">Ductless Estimator</SelectItem>
-                      <SelectItem value="scanner">Equipment Scanner</SelectItem>
-                      <SelectItem value="contact_form">Contact Form</SelectItem>
-                      <SelectItem value="phone">Phone Call</SelectItem>
-                      <SelectItem value="referral">Referral</SelectItem>
+                      {leadSources?.map((source) => (
+                        <SelectItem key={source.id} value={source.name}>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: source.color }}
+                            />
+                            {source.display_name}
+                          </div>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {/* Campaign Tags */}
+            <div className="space-y-2">
+              <FormLabel>Campaign Tags</FormLabel>
+              <CampaignTagSelector value={selectedTags} onChange={setSelectedTags} />
+            </div>
 
             {/* Notes */}
             <FormField
