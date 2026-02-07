@@ -549,30 +549,42 @@ export type Database = {
       }
       crm_job_assignments: {
         Row: {
+          actual_hours: number | null
           assignment_type: string | null
           created_at: string
           id: string
           job_id: string
           member_id: string | null
           notes: string | null
+          role: string | null
+          scheduled_end: string | null
+          scheduled_start: string | null
           team_id: string | null
         }
         Insert: {
+          actual_hours?: number | null
           assignment_type?: string | null
           created_at?: string
           id?: string
           job_id: string
           member_id?: string | null
           notes?: string | null
+          role?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
           team_id?: string | null
         }
         Update: {
+          actual_hours?: number | null
           assignment_type?: string | null
           created_at?: string
           id?: string
           job_id?: string
           member_id?: string | null
           notes?: string | null
+          role?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
           team_id?: string | null
         }
         Relationships: [
@@ -1079,6 +1091,7 @@ export type Database = {
           id: string
           is_lead: boolean | null
           member_id: string
+          role_in_team: string | null
           team_id: string
         }
         Insert: {
@@ -1086,6 +1099,7 @@ export type Database = {
           id?: string
           is_lead?: boolean | null
           member_id: string
+          role_in_team?: string | null
           team_id: string
         }
         Update: {
@@ -1093,6 +1107,7 @@ export type Database = {
           id?: string
           is_lead?: boolean | null
           member_id?: string
+          role_in_team?: string | null
           team_id?: string
         }
         Relationships: [
@@ -1116,44 +1131,80 @@ export type Database = {
         Row: {
           certifications: string[] | null
           created_at: string
+          default_availability: Json | null
           email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
           first_name: string
+          google_calendar_id: string | null
+          hire_date: string | null
           hourly_rate: number | null
           id: string
           is_active: boolean | null
           last_name: string | null
+          license_expiry: string | null
+          license_number: string | null
+          member_type: string | null
           notes: string | null
+          overtime_rate: number | null
           phone: string | null
           role: string | null
+          specialties: string[] | null
           updated_at: string
+          user_id: string | null
+          workedge_user_id: string | null
         }
         Insert: {
           certifications?: string[] | null
           created_at?: string
+          default_availability?: Json | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           first_name: string
+          google_calendar_id?: string | null
+          hire_date?: string | null
           hourly_rate?: number | null
           id?: string
           is_active?: boolean | null
           last_name?: string | null
+          license_expiry?: string | null
+          license_number?: string | null
+          member_type?: string | null
           notes?: string | null
+          overtime_rate?: number | null
           phone?: string | null
           role?: string | null
+          specialties?: string[] | null
           updated_at?: string
+          user_id?: string | null
+          workedge_user_id?: string | null
         }
         Update: {
           certifications?: string[] | null
           created_at?: string
+          default_availability?: Json | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           first_name?: string
+          google_calendar_id?: string | null
+          hire_date?: string | null
           hourly_rate?: number | null
           id?: string
           is_active?: boolean | null
           last_name?: string | null
+          license_expiry?: string | null
+          license_number?: string | null
+          member_type?: string | null
           notes?: string | null
+          overtime_rate?: number | null
           phone?: string | null
           role?: string | null
+          specialties?: string[] | null
           updated_at?: string
+          user_id?: string | null
+          workedge_user_id?: string | null
         }
         Relationships: []
       }
@@ -1162,8 +1213,10 @@ export type Database = {
           color: string | null
           created_at: string
           description: string | null
+          google_calendar_id: string | null
           id: string
           is_active: boolean | null
+          max_concurrent_jobs: number | null
           name: string
           team_type: string
           updated_at: string
@@ -1172,8 +1225,10 @@ export type Database = {
           color?: string | null
           created_at?: string
           description?: string | null
+          google_calendar_id?: string | null
           id?: string
           is_active?: boolean | null
+          max_concurrent_jobs?: number | null
           name: string
           team_type?: string
           updated_at?: string
@@ -1182,8 +1237,10 @@ export type Database = {
           color?: string | null
           created_at?: string
           description?: string | null
+          google_calendar_id?: string | null
           id?: string
           is_active?: boolean | null
+          max_concurrent_jobs?: number | null
           name?: string
           team_type?: string
           updated_at?: string
