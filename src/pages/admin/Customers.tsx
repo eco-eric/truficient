@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
 import { CustomerTable } from '@/components/admin/customers/CustomerTable';
 import { CustomerFormDialog } from '@/components/admin/customers/CustomerFormDialog';
+import { CustomerImportDialog } from '@/components/admin/customers/CustomerImportDialog';
 import { DeleteCustomerDialog } from '@/components/admin/customers/DeleteCustomerDialog';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -11,6 +12,7 @@ type Customer = Database['public']['Tables']['crm_customers']['Row'];
 
 const Customers = () => {
   const [formOpen, setFormOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
@@ -39,10 +41,16 @@ const Customers = () => {
               Manage your customer database and lead information
             </p>
           </div>
-          <Button onClick={handleNewCustomer}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Customer
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+            </Button>
+            <Button onClick={handleNewCustomer}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Customer
+            </Button>
+          </div>
         </div>
 
         <CustomerTable onEdit={handleEdit} onDelete={handleDelete} />
@@ -51,6 +59,11 @@ const Customers = () => {
           open={formOpen}
           onOpenChange={setFormOpen}
           customer={selectedCustomer}
+        />
+
+        <CustomerImportDialog
+          open={importOpen}
+          onOpenChange={setImportOpen}
         />
 
         <DeleteCustomerDialog
