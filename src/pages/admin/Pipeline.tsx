@@ -11,6 +11,7 @@ import {
   closestCenter,
 } from '@dnd-kit/core';
 import { supabase } from '@/integrations/supabase/client';
+import { logSystemInteraction, SYSTEM_EVENTS } from '@/lib/crm/logInteraction';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -101,15 +102,18 @@ const Pipeline = () => {
 
   // Move entry mutation
   const moveMutation = useMutation({
-    mutationFn: async ({ entryId, newStageId }: { entryId: string; newStageId: string }) => {
-      const stage = stages.find(s => s.id === newStageId);
+    mutationFn: async ({ entryId, newStageId, oldStageId }: { entryId: string; newStageId: string; oldStageId: string }) => {
+      const newStage = stages.find(s => s.id === newStageId);
+      const oldStage = stages.find(s => s.id === oldStageId);
+      const entry = entries.find(e => e.id === entryId);
+      
       const updateData: Record<string, unknown> = { stage_id: newStageId };
       
       // Set won/lost dates if moving to those stages
-      if (stage?.is_won_stage) {
+      if (newStage?.is_won_stage) {
         updateData.won_date = new Date().toISOString();
         updateData.lost_date = null;
-      } else if (stage?.is_lost_stage) {
+      } else if (newStage?.is_lost_stage) {
         updateData.lost_date = new Date().toISOString();
         updateData.won_date = null;
       } else {
@@ -123,6 +127,19 @@ const Pipeline = () => {
         .eq('id', entryId);
       
       if (error) throw error;
+
+      // Log the stage transition
+      if (entry) {
+        await logSystemInteraction({
+          customerId: entry.customer_id,
+          type: SYSTEM_EVENTS.PIPELINE_MOVE,
+          subject: `Pipeline stage: ${oldStage?.display_name || 'Unknown'} → ${newStage?.display_name || 'Unknown'}`,
+          content: entry.estimated_value 
+            ? `Deal value: $${entry.estimated_value.toLocaleString()}`
+            : undefined,
+          outcome: newStage?.is_won_stage ? 'Won' : newStage?.is_lost_stage ? 'Lost' : undefined,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pipeline-entries'] });
@@ -171,7 +188,7 @@ const Pipeline = () => {
     const isStage = stages.some(s => s.id === newStageId);
     
     if (isStage && newStageId !== entry.stage_id) {
-      moveMutation.mutate({ entryId, newStageId });
+      moveMutation.mutate({ entryId, newStageId, oldStageId: entry.stage_id });
     }
   };
 
