@@ -27,7 +27,9 @@ import {
   ShoppingCart,
   UserCircle,
   MapPin,
-  Kanban
+  Kanban,
+  Megaphone,
+  Tags
 } from 'lucide-react';
 
 export interface NavItem {
@@ -115,6 +117,8 @@ export const navSections: NavSection[] = [
     title: 'System',
     items: [
       { label: 'Users', href: '/admin/users', icon: Users, adminOnly: true },
+      { label: 'Lead Sources', href: '/admin/lead-sources', icon: Megaphone, adminOnly: true },
+      { label: 'Campaign Tags', href: '/admin/campaign-tags', icon: Tags, adminOnly: true },
       { label: 'Trash Bin', href: '/admin/trash-bin', icon: Trash2, adminOnly: true },
       { label: 'Settings', href: '/admin/settings', icon: Settings, adminOnly: false },
     ],
