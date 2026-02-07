@@ -1,115 +1,257 @@
 
 
-# Phase 5: Google Calendar Integration with Multi-Calendar Support
+# Phase 6: Automation Engine & AI Assistant with Super Admin Controls
 
 ## Overview
 
-This phase integrates Google Calendar into the CRM for job scheduling, crew availability tracking, and conflict detection. You'll create calendars in Google Workspace, share them with the service account, and the CRM will let you select which calendar to use when scheduling jobs.
+This updated phase adds:
+1. **Super Admin Role** - New privilege level for system-critical configurations
+2. **AI Configuration Dashboard** - Admin-controlled AI model selection and settings
+3. **Automation Engine** - Trigger-action workflow system
+4. **AI Assistant Widget** - Contextual AI sidebar for customer/job pages
 
 ---
 
-## How It Works
+## Part 1: Super Admin Role System
 
-### Your Google Workspace Setup
-1. Create calendars in your truficient.com Google Workspace (e.g., "Install Jobs", "Service Calls", "Inspections")
-2. Share each calendar with the service account email: `truficient-admin-sync@truficient-estimator-465520.iam.gserviceaccount.com` (give Editor permissions)
-3. The CRM will automatically discover these shared calendars
+### Why Super Admin?
 
-### In the CRM
-- Link calendars to teams (e.g., "Install Crew A" uses the "Install Jobs" calendar)
-- When scheduling a job, pick which calendar the event goes on
-- Events appear on team member calendars when they're added as attendees
-- View all jobs in a unified calendar view with conflict detection
+Separates system-level configuration (AI models, API keys, automation rules) from day-to-day admin operations. Only super admins can:
+- Configure AI models and providers
+- Manage automation rules
+- Access integration settings
+- Modify system-wide configurations
+
+### Database Changes
+
+**Update app_role enum:**
+```sql
+ALTER TYPE public.app_role ADD VALUE 'super_admin';
+```
+
+**Assign Eric Love as first super admin:**
+```sql
+UPDATE public.user_roles 
+SET role = 'super_admin' 
+WHERE user_id = '4a05ab76-47d3-4523-8042-8bdcf787488f';
+```
+
+**Create security definer function for super admin check:**
+```sql
+CREATE OR REPLACE FUNCTION public.is_super_admin(_user_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = _user_id AND role = 'super_admin'
+  )
+$$;
+```
+
+### Frontend Hook Update
+
+**Update `useUserRole.ts`:**
+```typescript
+export type AppRole = 'super_admin' | 'admin' | 'manager';
+
+interface UserRoleState {
+  role: AppRole | null;
+  loading: boolean;
+  isSuperAdmin: boolean;  // NEW
+  isAdmin: boolean;
+  isManager: boolean;
+  hasAccess: boolean;
+}
+```
 
 ---
 
-## What Will Be Built
+## Part 2: AI Configuration Dashboard
 
-### 1. Database Changes
+### New Database Table: `ai_config`
 
-**New table: `google_calendars`**
-Stores the calendars shared with your service account:
+Stores AI provider settings in `integration_configs` pattern:
 
 | Column | Type | Description |
 |--------|------|-------------|
 | id | uuid | Primary key |
-| calendar_id | text | Google Calendar ID |
-| name | text | Display name |
-| color | text | Calendar color |
-| is_primary | boolean | Default calendar for new jobs |
-| is_active | boolean | Show in selection |
+| config_key | text | Unique key (e.g., 'ai_assistant', 'automation_ai') |
+| provider | text | 'lovable' / 'openai' / 'anthropic' / 'xai' / 'google' |
+| model | text | Model identifier |
+| api_key_secret_name | text | Name of secret storing API key (null for Lovable AI) |
+| temperature | numeric | Model temperature (0-2) |
+| max_tokens | integer | Max response tokens |
+| system_prompt | text | Default system prompt |
+| is_active | boolean | Enable/disable |
+| created_at | timestamptz | |
+| updated_at | timestamptz | |
 
-**Updates to `crm_jobs`:**
-- `google_calendar_event_id` - Links job to Google Calendar event
-- `google_calendar_id` - Which calendar the event is on
+### Supported Providers & Models
 
-### 2. Edge Function: `google-calendar-sync`
+| Provider | Models | API Key Required |
+|----------|--------|------------------|
+| Lovable AI | gemini-2.5-flash, gemini-2.5-pro, gpt-5, gpt-5-mini | No (built-in) |
+| OpenAI | gpt-4o, gpt-4-turbo, gpt-3.5-turbo | Yes |
+| Anthropic | claude-3-5-sonnet, claude-3-opus, claude-3-haiku | Yes |
+| xAI | grok-2, grok-2-mini | Yes |
+| Google | gemini-1.5-pro, gemini-1.5-flash | Yes |
 
-Handles all Google Calendar API operations:
+### AI Settings Page (`/admin/ai-settings`)
 
-| Action | Description |
-|--------|-------------|
-| `list-calendars` | Fetches all calendars shared with service account |
-| `sync-calendars` | Updates local calendar list from Google |
-| `create-event` | Creates calendar event when job is scheduled |
-| `update-event` | Updates event when job details change |
-| `delete-event` | Removes event when job is cancelled |
-| `get-events` | Fetches events for calendar view |
-| `check-availability` | Detects scheduling conflicts |
+Super admin only page with:
 
-### 3. Calendar Management Page (`/admin/calendars`)
+**Provider Selection Card:**
+- Radio buttons for provider selection
+- Dynamic model dropdown based on provider
+- API key input for non-Lovable providers
+- Test connection button
 
-Simple page to:
-- View all synced Google Calendars
-- Set a default calendar for new jobs
-- Link calendars to specific job types
-- Refresh calendar list from Google
+**Configuration Cards:**
+- Temperature slider (0.0 - 2.0)
+- Max tokens input
+- System prompt textarea with character count
+- Enable/disable toggle
 
-### 4. Calendar View Page (`/admin/calendar`)
+**Usage & Monitoring Card:**
+- Recent AI requests log
+- Token usage stats
+- Error rate display
 
-Full scheduling interface:
-- Week/month/day/agenda views
-- Jobs color-coded by job type
-- Filter by team, calendar, or job type
-- Click event to view job details
-- Drag-and-drop rescheduling
-- Red conflict indicators for double-bookings
+### Settings Tab Pattern (like WorkEdge)
 
-### 5. Scheduling Widget (Job Detail Page)
-
-Integrated into the existing Job Detail sidebar:
-- Date/time picker for scheduling
-- Calendar selector dropdown
-- Crew availability display
-- One-click "Sync to Calendar" button
-- Auto-conflict warnings before saving
+Following your WorkEdge Projects pattern with tabs:
+- **Overview** - Current config and stats
+- **Configuration** - Model settings
+- **Logs** - AI request history
+- **Advanced** - Custom prompts, fallback settings
 
 ---
 
-## Event Data Mapping
+## Part 3: Automation Engine
 
-When a job is synced to Google Calendar:
+### Database Schema
 
-```text
-Title: TRU-2026-0042 - Smith Residence - AC Install
-Location: 1234 Oak Lane, Dallas, TX 75201
-Description:
-  Job Type: Residential Install
-  Customer: John Smith
-  Phone: (469) 555-1234
-  Priority: High
-  
-  Notes:
-  Gate code: 1234
-  Dog in backyard - ring doorbell first
+**Table: `automations`**
 
-Start: 2026-02-10 08:00 AM
-End: 2026-02-10 04:00 PM
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| name | text | Display name |
+| description | text | Optional description |
+| trigger_type | text | Event type |
+| trigger_config | jsonb | Trigger-specific settings |
+| conditions | jsonb | Array of condition objects |
+| actions | jsonb | Array of action objects |
+| is_active | boolean | Enable/disable |
+| run_count | integer | Execution count |
+| last_run_at | timestamptz | Last execution |
+| created_by | uuid | FK to auth.users |
+| created_at | timestamptz | |
+| updated_at | timestamptz | |
 
-Attendees: 
-  - mike@truficient.com (crew lead)
-  - john@truficient.com (installer)
+**Table: `automation_logs`**
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| automation_id | uuid | FK to automations |
+| trigger_event | jsonb | Event data |
+| actions_executed | jsonb | Results per action |
+| status | text | success/partial/failed |
+| error_message | text | Error details |
+| duration_ms | integer | Execution time |
+| created_at | timestamptz | |
+
+### Trigger Types
+
+| Trigger | Event | Available Data |
+|---------|-------|----------------|
+| `new_submission` | Form submitted | submission type, customer data |
+| `pipeline_move` | Stage changed | customer, from/to stage |
+| `pipeline_won` | Deal won | customer, deal value |
+| `job_created` | New job | job, customer, location |
+| `job_stage_change` | Job stage moved | job, from/to stage |
+| `job_scheduled` | Job scheduled | job, date/time, crew |
+| `job_completed` | Job finished | job, final amount |
+
+### Action Types
+
+| Action | Description |
+|--------|-------------|
+| `create_ghl_task` | Create task in GoHighLevel |
+| `add_ghl_tag` | Add tag to GHL contact |
+| `update_customer_status` | Change customer status |
+| `create_job` | Create new CRM job |
+| `move_pipeline` | Move to pipeline stage |
+| `send_notification` | Internal notification |
+| `log_interaction` | Log activity |
+| `webhook` | Call external URL |
+| `ai_generate` | Generate content with AI |
+
+### Edge Function: `process-automation`
+
+```typescript
+// Actions handled
+const actions = [
+  'list-automations',
+  'create-automation', 
+  'update-automation',
+  'delete-automation',
+  'execute-automation',  // Manual trigger
+  'process-event'        // Event-driven trigger
+];
 ```
+
+---
+
+## Part 4: AI Assistant Widget
+
+### Edge Function: `ai-assistant`
+
+Reads AI config from database, then calls appropriate provider:
+
+```typescript
+// Get AI configuration
+const { data: aiConfig } = await supabase
+  .from('ai_config')
+  .select('*')
+  .eq('config_key', 'ai_assistant')
+  .single();
+
+// Route to provider
+switch (aiConfig.provider) {
+  case 'lovable':
+    return callLovableAI(aiConfig, messages);
+  case 'openai':
+    return callOpenAI(apiKey, aiConfig, messages);
+  case 'anthropic':
+    return callAnthropic(apiKey, aiConfig, messages);
+  case 'xai':
+    return callXAI(apiKey, aiConfig, messages);
+  // ...
+}
+```
+
+### Assistant Actions
+
+| Action | Description |
+|--------|-------------|
+| `summarize_customer` | Summarize customer history |
+| `draft_followup` | Generate follow-up message |
+| `suggest_actions` | Recommend next steps |
+| `answer_question` | Answer about customer/equipment |
+
+### Widget Component
+
+Floating sidebar on CustomerDetail and JobDetail pages:
+- Chat-style interface with markdown rendering
+- Pre-built quick prompts
+- Streaming responses
+- Context-aware (knows current customer/job)
 
 ---
 
@@ -119,104 +261,123 @@ Attendees:
 
 | File | Purpose |
 |------|---------|
-| `supabase/functions/google-calendar-sync/index.ts` | Edge function for all Google Calendar API calls |
-| `src/pages/admin/Calendar.tsx` | Main calendar view page |
-| `src/pages/admin/CalendarSettings.tsx` | Calendar management page |
-| `src/components/admin/calendar/CalendarView.tsx` | Week/month/day views |
-| `src/components/admin/calendar/EventCard.tsx` | Job event display component |
-| `src/components/admin/calendar/SchedulingWidget.tsx` | Scheduling UI for Job Detail |
-| `src/components/admin/calendar/CalendarSelector.tsx` | Dropdown for picking calendar |
-| `src/components/admin/calendar/AvailabilityGrid.tsx` | Shows crew availability |
+| `src/pages/admin/AISettings.tsx` | AI configuration page (super admin only) |
+| `src/pages/admin/Automations.tsx` | Automation management page |
+| `src/components/admin/ai/AIAssistantWidget.tsx` | Floating AI sidebar |
+| `src/components/admin/ai/AIChat.tsx` | Chat interface component |
+| `src/components/admin/ai/QuickPrompts.tsx` | Pre-built prompt buttons |
+| `src/components/admin/automations/AutomationBuilder.tsx` | Create/edit dialog |
+| `src/components/admin/automations/TriggerSelector.tsx` | Trigger picker |
+| `src/components/admin/automations/ActionConfigurator.tsx` | Action setup |
+| `supabase/functions/ai-assistant/index.ts` | AI assistant edge function |
+| `supabase/functions/process-automation/index.ts` | Automation processor |
 
 ### Modified Files
 
 | File | Changes |
 |------|---------|
-| `src/pages/admin/JobDetail.tsx` | Add SchedulingWidget to sidebar |
-| `src/components/admin/adminNavConfig.ts` | Add Calendar and Calendar Settings to Operations section |
-| `src/App.tsx` | Add routes for calendar pages |
-| `supabase/config.toml` | Add google-calendar-sync function config |
+| `src/hooks/useUserRole.ts` | Add `isSuperAdmin` flag |
+| `src/pages/admin/Users.tsx` | Add super_admin role option |
+| `src/pages/admin/CustomerDetail.tsx` | Add AI Assistant widget |
+| `src/pages/admin/JobDetail.tsx` | Add AI Assistant widget |
+| `src/pages/admin/Pipeline.tsx` | Call automation on stage move |
+| `src/components/admin/adminNavConfig.ts` | Add AI Settings, Automations |
+| `src/App.tsx` | Add new routes |
+| `supabase/config.toml` | Add new edge functions |
 
-### Database Migration
+---
 
-```text
-1. Create google_calendars table
-2. Add google_calendar_event_id to crm_jobs
-3. Add google_calendar_id to crm_jobs
-4. Add RLS policies for google_calendars table
+## Navigation Structure
+
+**System Section (updated):**
+```
+System
+├── Users
+├── AI Settings         ← NEW (super_admin only)
+├── Automations         ← NEW (super_admin only)
+├── Lead Sources
+├── Campaign Tags
+├── Trash Bin
+└── Settings
 ```
 
 ---
 
-## Technical Details
+## RLS Policies
 
-### Service Account Authentication
+**ai_config table:**
+- SELECT: super_admin only
+- INSERT/UPDATE/DELETE: super_admin only
 
-The edge function will use a JWT for service account authentication:
+**automations table:**
+- SELECT: admin + manager (view rules)
+- INSERT/UPDATE/DELETE: super_admin only
 
-```text
-1. Parse service account JSON from secret
-2. Create JWT with Google Calendar scope
-3. Exchange JWT for access token
-4. Use access token for all API calls
-5. Tokens are cached and refreshed automatically
-```
-
-### Calendar Discovery Flow
-
-```text
-1. User clicks "Sync Calendars" in admin
-2. Edge function calls Google Calendar API calendarList.list()
-3. Returns all calendars where service account has access
-4. Upserts records into google_calendars table
-5. UI refreshes to show available calendars
-```
-
-### Event Sync Flow
-
-```text
-1. Admin sets job scheduled_start/scheduled_end
-2. Selects target calendar
-3. Assigns crew members
-4. Clicks "Sync to Calendar"
-5. Edge function creates Google Calendar event
-6. Job record updated with google_calendar_event_id
-7. Future job changes trigger automatic updates
-```
-
----
-
-## Dependencies
-
-### NPM Packages (already installed)
-- `date-fns` - Date manipulation
-- `react-day-picker` - Calendar date selection
-
-### Additional Package (if needed for calendar view)
-- May use existing components or add a lightweight calendar grid
-
----
-
-## Required Action From You
-
-Before implementation begins:
-
-1. **Create calendars** in your Google Workspace admin (optional - can do later)
-2. **Share calendars** with: `truficient-admin-sync@truficient-estimator-465520.iam.gserviceaccount.com`
-3. **Grant Editor permissions** so the service account can create/modify events
-
-The integration will work as soon as you share at least one calendar. You can add more calendars at any time.
+**automation_logs table:**
+- SELECT: admin + manager
+- INSERT: service role only (from edge function)
 
 ---
 
 ## Implementation Order
 
-1. Store service account credentials as Cloud secret
-2. Create database migration (new table + columns)
-3. Create `google-calendar-sync` edge function
-4. Build Calendar Settings page (manage synced calendars)
-5. Build Calendar View page (week/month views)
-6. Add Scheduling Widget to Job Detail page
-7. Update navigation and routes
-8. Test end-to-end
+1. **Database Migration**
+   - Add `super_admin` to app_role enum
+   - Update Eric's role to super_admin
+   - Create `ai_config` table
+   - Create `automations` and `automation_logs` tables
+   - Add RLS policies
+
+2. **Frontend Role Updates**
+   - Update `useUserRole` hook with `isSuperAdmin`
+   - Update Users page to show/assign super_admin
+   - Create `SuperAdminRoute` wrapper component
+
+3. **AI Settings Page**
+   - Build page following WorkEdge pattern with tabs
+   - Provider/model selector
+   - Configuration controls
+   - Test connection functionality
+
+4. **AI Assistant Edge Function**
+   - Multi-provider support
+   - Config-driven model selection
+   - Streaming responses
+
+5. **AI Assistant Widget**
+   - Chat component with markdown
+   - Quick prompts
+   - Integration with CustomerDetail/JobDetail
+
+6. **Automation Engine**
+   - Database tables and edge function
+   - Automation builder UI
+   - Trigger integration points
+
+7. **Testing & Polish**
+   - End-to-end testing
+   - Error handling
+   - Usage logging
+
+---
+
+## Security Considerations
+
+1. **API Keys** - Stored as Supabase secrets, referenced by name in ai_config
+2. **Role Hierarchy** - super_admin > admin > manager
+3. **RLS Enforcement** - All sensitive tables protected
+4. **Audit Trail** - All AI requests and automation runs logged
+
+---
+
+## API Key Setup (Future)
+
+When you want to use a non-Lovable AI provider:
+1. Go to AI Settings
+2. Select provider (e.g., "Anthropic")
+3. System prompts you to add secret via Lovable
+4. Once secret added, select model and save
+5. AI Assistant uses new provider
+
+For now, Lovable AI (Gemini) works out of the box with no setup required.
 
