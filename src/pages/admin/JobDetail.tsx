@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Calendar, DollarSign, MapPin, User, Phone, Mail, ChevronRight, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { WorkEdgePanel } from '@/components/admin/jobs/WorkEdgePanel';
 
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>();
@@ -510,6 +511,9 @@ export default function JobDetail() {
                 )}
               </CardContent>
             </Card>
+
+            {/* WorkEdge Panel */}
+            <WorkEdgePanel jobId={job.id} workedgeProjectId={job.workedge_project_id} />
           </div>
         </div>
       </div>

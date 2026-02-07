@@ -783,6 +783,8 @@ export type Database = {
           source_pipeline_id: string | null
           title: string
           updated_at: string
+          workedge_last_sync: string | null
+          workedge_project_id: string | null
         }
         Insert: {
           actual_end?: string | null
@@ -808,6 +810,8 @@ export type Database = {
           source_pipeline_id?: string | null
           title: string
           updated_at?: string
+          workedge_last_sync?: string | null
+          workedge_project_id?: string | null
         }
         Update: {
           actual_end?: string | null
@@ -833,6 +837,8 @@ export type Database = {
           source_pipeline_id?: string | null
           title?: string
           updated_at?: string
+          workedge_last_sync?: string | null
+          workedge_project_id?: string | null
         }
         Relationships: [
           {
@@ -888,6 +894,7 @@ export type Database = {
           state: string
           stories: number | null
           updated_at: string
+          workedge_property_id: string | null
           year_built: number | null
           zip_code: string
         }
@@ -913,6 +920,7 @@ export type Database = {
           state: string
           stories?: number | null
           updated_at?: string
+          workedge_property_id?: string | null
           year_built?: number | null
           zip_code: string
         }
@@ -938,6 +946,7 @@ export type Database = {
           state?: string
           stories?: number | null
           updated_at?: string
+          workedge_property_id?: string | null
           year_built?: number | null
           zip_code?: string
         }
@@ -2815,6 +2824,36 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_configs: {
+        Row: {
+          config: Json
+          created_at: string
+          id: string
+          integration_name: string
+          is_active: boolean | null
+          last_sync_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          id?: string
+          integration_name: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          id?: string
+          integration_name?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       job_applications: {
         Row: {
           availability: string | null
@@ -3344,6 +3383,98 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      workedge_project_media: {
+        Row: {
+          captured_at: string | null
+          captured_by: string | null
+          description: string | null
+          id: string
+          job_id: string
+          media_type: string
+          media_url: string | null
+          synced_at: string
+          thumbnail_url: string | null
+          title: string | null
+          transcription: string | null
+          workedge_project_id: string
+        }
+        Insert: {
+          captured_at?: string | null
+          captured_by?: string | null
+          description?: string | null
+          id?: string
+          job_id: string
+          media_type: string
+          media_url?: string | null
+          synced_at?: string
+          thumbnail_url?: string | null
+          title?: string | null
+          transcription?: string | null
+          workedge_project_id: string
+        }
+        Update: {
+          captured_at?: string | null
+          captured_by?: string | null
+          description?: string | null
+          id?: string
+          job_id?: string
+          media_type?: string
+          media_url?: string | null
+          synced_at?: string
+          thumbnail_url?: string | null
+          title?: string | null
+          transcription?: string | null
+          workedge_project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workedge_project_media_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "crm_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workedge_sync_log: {
+        Row: {
+          entity_type: string
+          error_message: string | null
+          id: string
+          local_id: string
+          request_payload: Json | null
+          response_payload: Json | null
+          sync_direction: string
+          sync_status: string
+          synced_at: string
+          workedge_id: string | null
+        }
+        Insert: {
+          entity_type: string
+          error_message?: string | null
+          id?: string
+          local_id: string
+          request_payload?: Json | null
+          response_payload?: Json | null
+          sync_direction: string
+          sync_status?: string
+          synced_at?: string
+          workedge_id?: string | null
+        }
+        Update: {
+          entity_type?: string
+          error_message?: string | null
+          id?: string
+          local_id?: string
+          request_payload?: Json | null
+          response_payload?: Json | null
+          sync_direction?: string
+          sync_status?: string
+          synced_at?: string
+          workedge_id?: string | null
         }
         Relationships: []
       }

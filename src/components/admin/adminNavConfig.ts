@@ -32,7 +32,8 @@ import {
   Tags,
   Briefcase,
   UsersRound,
-  Wrench
+  Wrench,
+  Camera
 } from 'lucide-react';
 
 export interface NavItem {
@@ -71,6 +72,7 @@ export const navSections: NavSection[] = [
     items: [
       { label: 'Jobs Board', href: '/admin/jobs', icon: Briefcase, adminOnly: false },
       { label: 'Teams & Crew', href: '/admin/teams', icon: UsersRound, adminOnly: false },
+      { label: 'WorkEdge Projects', href: '/admin/workedge', icon: Camera, adminOnly: false },
       { label: 'Job Types', href: '/admin/job-types', icon: Wrench, adminOnly: true },
     ],
   },
