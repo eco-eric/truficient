@@ -72,6 +72,10 @@ import AdminLocations from "./pages/admin/Locations";
 import AdminPipeline from "./pages/admin/Pipeline";
 import AdminLeadSourcesConfig from "./pages/admin/LeadSourcesConfig";
 import AdminCampaignTagsConfig from "./pages/admin/CampaignTagsConfig";
+import AdminJobs from "./pages/admin/Jobs";
+import AdminJobDetail from "./pages/admin/JobDetail";
+import AdminJobTypesConfig from "./pages/admin/JobTypesConfig";
+import AdminTeams from "./pages/admin/Teams";
 import { Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
@@ -149,6 +153,10 @@ const router = createBrowserRouter([
       { path: "/admin/submissions", element: <ProtectedRoute><AdminUnifiedSubmissions /></ProtectedRoute> },
       { path: "/admin/pipeline", element: <ProtectedRoute><AdminPipeline /></ProtectedRoute> },
       { path: "/admin/dfw-watchlist", element: <ProtectedRoute><AdminDFWWatchList /></ProtectedRoute> },
+      { path: "/admin/jobs", element: <ProtectedRoute><AdminJobs /></ProtectedRoute> },
+      { path: "/admin/jobs/:id", element: <ProtectedRoute><AdminJobDetail /></ProtectedRoute> },
+      { path: "/admin/job-types", element: <ProtectedRoute><AdminJobTypesConfig /></ProtectedRoute> },
+      { path: "/admin/teams", element: <ProtectedRoute><AdminTeams /></ProtectedRoute> },
       { path: "/admin/blog", element: <ProtectedRoute><AdminBlogPosts /></ProtectedRoute> },
       { path: "/admin/blog/:id", element: <ProtectedRoute><AdminBlogPostEditor /></ProtectedRoute> },
       { path: "/admin/seo", element: <ProtectedRoute><AdminSEOManagement /></ProtectedRoute> },
