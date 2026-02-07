@@ -76,6 +76,7 @@ import AdminJobs from "./pages/admin/Jobs";
 import AdminJobDetail from "./pages/admin/JobDetail";
 import AdminJobTypesConfig from "./pages/admin/JobTypesConfig";
 import AdminTeams from "./pages/admin/Teams";
+import AdminWorkEdgeProjects from "./pages/admin/WorkEdgeProjects";
 import { Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
@@ -157,6 +158,7 @@ const router = createBrowserRouter([
       { path: "/admin/jobs/:id", element: <ProtectedRoute><AdminJobDetail /></ProtectedRoute> },
       { path: "/admin/job-types", element: <ProtectedRoute><AdminJobTypesConfig /></ProtectedRoute> },
       { path: "/admin/teams", element: <ProtectedRoute><AdminTeams /></ProtectedRoute> },
+      { path: "/admin/workedge", element: <ProtectedRoute><AdminWorkEdgeProjects /></ProtectedRoute> },
       { path: "/admin/blog", element: <ProtectedRoute><AdminBlogPosts /></ProtectedRoute> },
       { path: "/admin/blog/:id", element: <ProtectedRoute><AdminBlogPostEditor /></ProtectedRoute> },
       { path: "/admin/seo", element: <ProtectedRoute><AdminSEOManagement /></ProtectedRoute> },
