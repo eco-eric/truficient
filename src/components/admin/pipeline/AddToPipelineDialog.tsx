@@ -1,0 +1,353 @@
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+
+const formSchema = z.object({
+  customer_id: z.string().min(1, 'Please select a customer'),
+  stage_id: z.string().min(1, 'Please select a stage'),
+  estimated_value: z.string().optional(),
+  probability: z.string().optional(),
+  expected_close_date: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+type FormData = z.infer<typeof formSchema>;
+
+interface PipelineEntry {
+  id: string;
+  customer_id: string;
+  stage_id: string;
+  estimated_value: number | null;
+  probability: number | null;
+  expected_close_date: string | null;
+  notes: string | null;
+}
+
+interface AddToPipelineDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  editingEntry?: PipelineEntry | null;
+}
+
+export const AddToPipelineDialog = ({ 
+  open, 
+  onOpenChange, 
+  editingEntry 
+}: AddToPipelineDialogProps) => {
+  const queryClient = useQueryClient();
+  const isEditing = !!editingEntry;
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      customer_id: '',
+      stage_id: '',
+      estimated_value: '',
+      probability: '',
+      expected_close_date: '',
+      notes: '',
+    },
+  });
+
+  // Fetch customers not already in pipeline (for new entries)
+  const { data: customers = [] } = useQuery({
+    queryKey: ['pipeline-available-customers', editingEntry?.customer_id],
+    queryFn: async () => {
+      // Get customers already in pipeline
+      const { data: existingEntries } = await supabase
+        .from('crm_pipeline_entries')
+        .select('customer_id');
+      
+      const existingIds = existingEntries?.map(e => e.customer_id) || [];
+      
+      // If editing, include the current customer
+      if (editingEntry) {
+        const idx = existingIds.indexOf(editingEntry.customer_id);
+        if (idx > -1) existingIds.splice(idx, 1);
+      }
+
+      let query = supabase
+        .from('crm_customers')
+        .select('id, first_name, last_name, company_name, customer_type')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
+
+      if (existingIds.length > 0) {
+        query = query.not('id', 'in', `(${existingIds.join(',')})`);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch pipeline stages
+  const { data: stages = [] } = useQuery({
+    queryKey: ['pipeline-stages'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_pipeline_stages')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Reset form when dialog opens/closes or editing entry changes
+  useEffect(() => {
+    if (open && editingEntry) {
+      form.reset({
+        customer_id: editingEntry.customer_id,
+        stage_id: editingEntry.stage_id,
+        estimated_value: editingEntry.estimated_value?.toString() || '',
+        probability: editingEntry.probability?.toString() || '',
+        expected_close_date: editingEntry.expected_close_date || '',
+        notes: editingEntry.notes || '',
+      });
+    } else if (open) {
+      form.reset({
+        customer_id: '',
+        stage_id: stages[0]?.id || '',
+        estimated_value: '',
+        probability: '',
+        expected_close_date: '',
+        notes: '',
+      });
+    }
+  }, [open, editingEntry, stages, form]);
+
+  const createMutation = useMutation({
+    mutationFn: async (data: FormData) => {
+      const payload = {
+        customer_id: data.customer_id,
+        stage_id: data.stage_id,
+        estimated_value: data.estimated_value ? parseFloat(data.estimated_value) : null,
+        probability: data.probability ? parseInt(data.probability) : null,
+        expected_close_date: data.expected_close_date || null,
+        notes: data.notes || null,
+      };
+
+      if (isEditing && editingEntry) {
+        const { error } = await supabase
+          .from('crm_pipeline_entries')
+          .update(payload)
+          .eq('id', editingEntry.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('crm_pipeline_entries')
+          .insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pipeline-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['pipeline-available-customers'] });
+      toast.success(isEditing ? 'Pipeline entry updated' : 'Added to pipeline');
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      console.error('Pipeline mutation error:', error);
+      toast.error('Failed to save pipeline entry');
+    },
+  });
+
+  const onSubmit = (data: FormData) => {
+    createMutation.mutate(data);
+  };
+
+  const getCustomerName = (customer: typeof customers[0]) => {
+    return customer.company_name || 
+      `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 
+      'Unknown';
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            {isEditing ? 'Edit Pipeline Entry' : 'Add to Pipeline'}
+          </DialogTitle>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="customer_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Customer</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value}
+                    disabled={isEditing}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a customer" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {customers.map((customer) => (
+                        <SelectItem key={customer.id} value={customer.id}>
+                          {getCustomerName(customer)} ({customer.customer_type})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="stage_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Stage</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a stage" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {stages.map((stage) => (
+                        <SelectItem key={stage.id} value={stage.id}>
+                          {stage.display_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="estimated_value"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Estimated Value ($)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="10000" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="probability"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Probability (%)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        placeholder="50" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="expected_close_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Expected Close Date</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Additional notes..." 
+                      rows={3}
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createMutation.isPending}>
+                {createMutation.isPending 
+                  ? 'Saving...' 
+                  : isEditing ? 'Update' : 'Add to Pipeline'
+                }
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+};

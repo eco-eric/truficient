@@ -1,68 +1,345 @@
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { 
+  DndContext, 
+  DragEndEvent, 
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+} from '@dnd-kit/core';
+import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Kanban, Users } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { PipelineColumn } from '@/components/admin/pipeline/PipelineColumn';
+import { PipelineCard } from '@/components/admin/pipeline/PipelineCard';
+import { AddToPipelineDialog } from '@/components/admin/pipeline/AddToPipelineDialog';
+import { Plus, Kanban, DollarSign, TrendingUp, Users } from 'lucide-react';
+import { toast } from 'sonner';
+
+interface PipelineEntry {
+  id: string;
+  customer_id: string;
+  stage_id: string;
+  estimated_value: number | null;
+  probability: number | null;
+  expected_close_date: string | null;
+  notes: string | null;
+  customer: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    company_name: string | null;
+    email: string | null;
+    phone: string | null;
+    customer_type: string;
+  };
+}
 
 const Pipeline = () => {
-  const stages = [
-    { name: 'New Lead', color: 'bg-blue-500', count: 0 },
-    { name: 'Contacted', color: 'bg-purple-500', count: 0 },
-    { name: 'Estimate Scheduled', color: 'bg-amber-500', count: 0 },
-    { name: 'Proposal Sent', color: 'bg-orange-500', count: 0 },
-    { name: 'Negotiating', color: 'bg-cyan-500', count: 0 },
-    { name: 'Won', color: 'bg-green-500', count: 0 },
-    { name: 'Lost', color: 'bg-red-500', count: 0 },
-  ];
+  const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<PipelineEntry | null>(null);
+  const [activeEntry, setActiveEntry] = useState<PipelineEntry | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
+  // Fetch pipeline stages
+  const { data: stages = [], isLoading: stagesLoading } = useQuery({
+    queryKey: ['pipeline-stages'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_pipeline_stages')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch pipeline entries with customer data
+  const { data: entries = [], isLoading: entriesLoading } = useQuery({
+    queryKey: ['pipeline-entries'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_pipeline_entries')
+        .select(`
+          id,
+          customer_id,
+          stage_id,
+          estimated_value,
+          probability,
+          expected_close_date,
+          notes,
+          customer:crm_customers!inner(
+            id,
+            first_name,
+            last_name,
+            company_name,
+            email,
+            phone,
+            customer_type
+          )
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as unknown as PipelineEntry[];
+    },
+  });
+
+  // Move entry mutation
+  const moveMutation = useMutation({
+    mutationFn: async ({ entryId, newStageId }: { entryId: string; newStageId: string }) => {
+      const stage = stages.find(s => s.id === newStageId);
+      const updateData: Record<string, unknown> = { stage_id: newStageId };
+      
+      // Set won/lost dates if moving to those stages
+      if (stage?.is_won_stage) {
+        updateData.won_date = new Date().toISOString();
+        updateData.lost_date = null;
+      } else if (stage?.is_lost_stage) {
+        updateData.lost_date = new Date().toISOString();
+        updateData.won_date = null;
+      } else {
+        updateData.won_date = null;
+        updateData.lost_date = null;
+      }
+
+      const { error } = await supabase
+        .from('crm_pipeline_entries')
+        .update(updateData)
+        .eq('id', entryId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pipeline-entries'] });
+    },
+    onError: () => {
+      toast.error('Failed to move entry');
+    },
+  });
+
+  // Delete entry mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (entryId: string) => {
+      const { error } = await supabase
+        .from('crm_pipeline_entries')
+        .delete()
+        .eq('id', entryId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pipeline-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['pipeline-available-customers'] });
+      toast.success('Entry removed from pipeline');
+    },
+    onError: () => {
+      toast.error('Failed to remove entry');
+    },
+  });
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const entry = entries.find(e => e.id === event.active.id);
+    setActiveEntry(entry || null);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveEntry(null);
+    
+    const { active, over } = event;
+    if (!over) return;
+
+    const entryId = active.id as string;
+    const entry = entries.find(e => e.id === entryId);
+    if (!entry) return;
+
+    // Check if dropped on a stage column
+    const newStageId = over.id as string;
+    const isStage = stages.some(s => s.id === newStageId);
+    
+    if (isStage && newStageId !== entry.stage_id) {
+      moveMutation.mutate({ entryId, newStageId });
+    }
+  };
+
+  const handleEditEntry = (entry: PipelineEntry) => {
+    setEditingEntry(entry);
+    setDialogOpen(true);
+  };
+
+  const handleDeleteEntry = (entryId: string) => {
+    if (confirm('Remove this lead from the pipeline?')) {
+      deleteMutation.mutate(entryId);
+    }
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      setEditingEntry(null);
+    }
+  };
+
+  // Calculate pipeline metrics
+  const totalValue = entries.reduce((sum, e) => sum + (e.estimated_value || 0), 0);
+  const weightedValue = entries.reduce((sum, e) => {
+    const value = e.estimated_value || 0;
+    const prob = (e.probability || 50) / 100;
+    return sum + (value * prob);
+  }, 0);
+  const wonStage = stages.find(s => s.is_won_stage);
+  const wonEntries = wonStage 
+    ? entries.filter(e => e.stage_id === wonStage.id) 
+    : [];
+  const wonValue = wonEntries.reduce((sum, e) => sum + (e.estimated_value || 0), 0);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const isLoading = stagesLoading || entriesLoading;
 
   return (
     <AdminLayout title="Sales Pipeline">
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Sales Pipeline</h1>
-          <p className="text-muted-foreground">
-            Track leads through your sales process
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Sales Pipeline</h1>
+            <p className="text-muted-foreground">
+              Track leads through your sales process
+            </p>
+          </div>
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add to Pipeline
+          </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
-          {stages.map((stage) => (
-            <Card key={stage.name} className="min-h-[400px]">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${stage.color}`} />
-                  {stage.name}
-                </CardTitle>
-                <p className="text-xs text-muted-foreground">{stage.count} leads</p>
-              </CardHeader>
-              <CardContent className="pt-2">
-                <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed rounded-lg">
-                  <Users className="h-6 w-6 text-muted-foreground mb-2" />
-                  <p className="text-xs text-muted-foreground">
-                    Drop leads here
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        {/* Metrics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Active Leads
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{entries.length}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Pipeline Value
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(totalValue)}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Weighted Value
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(weightedValue)}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Kanban className="h-4 w-4" />
+                Won This Period
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(wonValue)}</div>
+            </CardContent>
+          </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Kanban className="h-5 w-5" />
-              Pipeline Overview
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center justify-center py-8 text-center">
+        {/* Kanban Board */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+            {[...Array(7)].map((_, i) => (
+              <Skeleton key={i} className="h-[500px]" />
+            ))}
+          </div>
+        ) : stages.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
               <Kanban className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium">No leads in pipeline</h3>
+              <h3 className="text-lg font-medium">No Pipeline Stages</h3>
               <p className="text-muted-foreground mt-1 max-w-sm">
-                Convert submissions to customers to add them to your sales pipeline.
+                Pipeline stages need to be configured in the database.
               </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 overflow-x-auto pb-4">
+              {stages.map((stage) => (
+                <PipelineColumn
+                  key={stage.id}
+                  stage={stage}
+                  entries={entries.filter(e => e.stage_id === stage.id)}
+                  onEditEntry={handleEditEntry}
+                  onDeleteEntry={handleDeleteEntry}
+                />
+              ))}
             </div>
-          </CardContent>
-        </Card>
+
+            <DragOverlay>
+              {activeEntry && (
+                <div className="w-64 opacity-90">
+                  <PipelineCard
+                    entry={activeEntry}
+                    onEdit={() => {}}
+                    onDelete={() => {}}
+                  />
+                </div>
+              )}
+            </DragOverlay>
+          </DndContext>
+        )}
       </div>
+
+      <AddToPipelineDialog
+        open={dialogOpen}
+        onOpenChange={handleDialogClose}
+        editingEntry={editingEntry}
+      />
     </AdminLayout>
   );
 };
