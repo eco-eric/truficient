@@ -1,133 +1,154 @@
 
-# Step 6: Interaction Logging & Activity Timeline
+# Marketing Sources & Campaign Tags for CRM
 
-## Overview
-This step enhances the CRM with automatic system event logging and a unified activity timeline. The goal is to provide full visibility into customer journeys by combining manual interactions (calls, emails, notes) with automated system events (conversions, pipeline movements, status changes).
+## Current State Analysis
 
-## What Will Be Built
+### Lead Sources (Hardcoded)
+The `lead_source` field currently has 7 static options:
+- Manual Entry, Ducted Estimator, Ductless Estimator, Equipment Scanner, Contact Form, Phone Call, Referral
 
-### 1. Expand Interaction Types
-Add new system-generated interaction types to track automated events:
-- `system_conversion` - Customer created from submission
-- `system_pipeline_add` - Added to sales pipeline  
-- `system_pipeline_move` - Moved between pipeline stages
-- `system_status_change` - Customer status changed
+### Tags Column (Unused)
+The `crm_customers` table already has a `tags` column (text array) that is not currently exposed in the UI.
 
-### 2. Automatic Event Logging Helper
-Create a utility function that logs system events to `crm_interactions`:
-- Reusable across conversion, pipeline, and status change operations
-- Captures event context (source, stage names, values)
-- Sets `direction` to null for system events (distinguishing from manual logs)
-
-### 3. Integration Points
-Update existing components to log events automatically:
-
-**ConvertToCustomerDialog.tsx**
-- Log `system_conversion` when a submission becomes a customer
-- Include source type and estimated value in the log
-
-**Pipeline.tsx (moveMutation)**
-- Log `system_pipeline_move` when dragging cards between stages
-- Include "from" and "to" stage names
-
-**AddToPipelineDialog.tsx**
-- Log `system_pipeline_add` when initially adding a customer to the pipeline
-
-### 4. Enhanced Activity Timeline Component
-Create a new `ActivityTimeline.tsx` component that:
-- Displays chronological feed of ALL events (manual + system)
-- Uses distinct icons for each interaction type
-- Shows linked submissions with source badges
-- Groups events by date for readability
-
-### 5. Linked Submissions Display
-Update CustomerDetail to show linked estimator/scanner submissions:
-- Query `crm_submission_links` for the customer
-- Display linked submissions in the Estimates tab
-- Provide quick navigation to original submission details
+### GHL Tags System
+There's an existing `ghl_tags` table used for GoHighLevel CRM sync - this is a separate system for marketing automation.
 
 ---
 
-## Technical Details
+## Recommendation
+
+**Yes, separate sections for Lead Source and Campaign Tags makes sense:**
+
+| Concept | Purpose | Examples |
+|---------|---------|----------|
+| **Lead Source** | Where the customer first heard about you | Mitsubishi, Bosch, Facebook, Google, Referral |
+| **Campaign Tags** | Multiple labels for segmentation & targeting | "Spring 2025", "Tax Credit Promo", "Heat Pump Upgrade" |
+
+### Why Separate?
+- **Lead Source** = single origin (one per customer)
+- **Campaign Tags** = multiple labels (many per customer)
+- Enables filtering like "Show all Mitsubishi leads tagged with Spring 2025 campaign"
+
+---
+
+## Implementation Plan
+
+### 1. Create `lead_sources` Database Table
+Admin-configurable list of marketing sources:
+```text
+id, name, display_name, category (marketing/partner/organic), color, is_active, sort_order
+```
+Default seeds: Mitsubishi, Bosch, Facebook, Google, Referral, Phone, etc.
+
+### 2. Create `crm_campaign_tags` Database Table
+Reusable campaign labels:
+```text
+id, name, color, description, is_active, created_at
+```
+Examples: "Q1 2025 Push", "Federal Tax Credit", "Mitsubishi Rebate"
+
+### 3. Update CustomerFormDialog
+- **Lead Source**: Change from hardcoded Select to dynamic dropdown from `lead_sources` table
+- **Campaign Tags**: Add multi-select component using the existing `tags` column on `crm_customers`
+
+### 4. Create Admin Management Pages
+- **Lead Sources Admin** (`/admin/settings/lead-sources`): Add/edit/toggle sources
+- **Campaign Tags Admin** (`/admin/settings/campaign-tags`): Manage campaign tags
+
+### 5. Update CustomerTable & Filters
+- Display tags as colored badges
+- Add filter by campaign tag
+
+---
+
+## UI Mockup - Customer Form
+
+```text
+┌─────────────────────────────────────────────────┐
+│ Customer Information                            │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  Lead Source        │  Status                   │
+│  [  Mitsubishi  ▼]  │  [  Lead  ▼]              │
+│                                                 │
+│  Campaign Tags (optional)                       │
+│  ┌─────────────────────────────────────────┐   │
+│  │ ✕ Spring 2025   ✕ Heat Pump Upgrade     │   │
+│  │ + Add tag...                            │   │
+│  └─────────────────────────────────────────┘   │
+│                                                 │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+## File Changes
 
 ### New Files
 ```text
-src/lib/crm/logInteraction.ts     - Utility for logging system events
-src/components/admin/customers/ActivityTimeline.tsx - Enhanced timeline component
-src/components/admin/customers/LinkedSubmissions.tsx - Show linked form submissions
+src/pages/admin/LeadSourcesConfig.tsx      - Admin page for managing lead sources
+src/pages/admin/CampaignTagsConfig.tsx     - Admin page for managing campaign tags  
+src/components/admin/customers/CampaignTagSelector.tsx - Multi-select tag component
 ```
 
 ### Modified Files
 ```text
-src/components/admin/submissions/ConvertToCustomerDialog.tsx
-  - Add interaction log after successful customer creation
-  
-src/pages/admin/Pipeline.tsx  
-  - Log stage transitions during drag-and-drop
-  
-src/components/admin/pipeline/AddToPipelineDialog.tsx
-  - Log when customer is first added to pipeline
-  
-src/components/admin/customers/InteractionLog.tsx
-  - Add system event types to the icon mapping
-  - Display system events with distinct styling
-  
+src/components/admin/customers/CustomerFormDialog.tsx
+  - Replace hardcoded lead_source Select with dynamic query
+  - Add CampaignTagSelector component using tags[] column
+
+src/components/admin/customers/CustomerTable.tsx  
+  - Display campaign tags as badges
+  - Add tag filter option
+
 src/pages/admin/CustomerDetail.tsx
-  - Replace simple activity display with ActivityTimeline
-  - Show LinkedSubmissions in the Estimates tab
+  - Show campaign tags in customer header
+
+src/components/admin/adminNavConfig.ts
+  - Add Settings submenu entries
 ```
 
-### Interaction Type Icon Mapping
-| Type | Icon | Color |
-|------|------|-------|
-| call | Phone | default |
-| email | Mail | default |
-| text | MessageSquare | default |
-| note | FileText | default |
-| meeting | Activity | default |
-| system_conversion | UserPlus | green |
-| system_pipeline_add | Kanban | blue |
-| system_pipeline_move | ArrowRightLeft | purple |
-| system_status_change | RefreshCw | orange |
+### Database Migration
+```sql
+-- Lead sources table
+CREATE TABLE lead_sources (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL UNIQUE,
+  display_name TEXT NOT NULL,
+  category TEXT DEFAULT 'other',
+  color TEXT DEFAULT '#6b7280',
+  is_active BOOLEAN DEFAULT true,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
 
-### Log Interaction Utility Signature
-```typescript
-interface LogInteractionParams {
-  customerId: string;
-  type: string;
-  subject: string;
-  content?: string;
-  outcome?: string;
-}
+-- Campaign tags table  
+CREATE TABLE crm_campaign_tags (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL UNIQUE,
+  color TEXT DEFAULT '#3b82f6',
+  description TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
 
-async function logSystemInteraction(params: LogInteractionParams): Promise<void>
+-- Seed default lead sources
+INSERT INTO lead_sources (name, display_name, category, sort_order) VALUES
+  ('mitsubishi', 'Mitsubishi', 'partner', 1),
+  ('bosch', 'Bosch', 'partner', 2),
+  ('facebook', 'Facebook', 'marketing', 3),
+  ('google', 'Google', 'marketing', 4),
+  ('referral', 'Referral', 'organic', 5),
+  ('phone', 'Phone Call', 'organic', 6),
+  ('manual', 'Manual Entry', 'other', 99);
 ```
-
----
-
-## Implementation Sequence
-
-1. **Create `logInteraction.ts` utility** - Reusable function for inserting system events
-
-2. **Update ConvertToCustomerDialog** - Log conversion event after customer creation
-
-3. **Update Pipeline.tsx** - Log stage movements in moveMutation
-
-4. **Update AddToPipelineDialog** - Log initial pipeline addition
-
-5. **Expand InteractionLog icon mapping** - Support new system event types with distinct styling
-
-6. **Create ActivityTimeline component** - Enhanced display with date grouping and system event badges
-
-7. **Create LinkedSubmissions component** - Query and display submissions linked to customer
-
-8. **Update CustomerDetail.tsx** - Integrate new timeline and linked submissions
 
 ---
 
 ## Outcome
+
 After implementation:
-- Every conversion, pipeline movement, and status change will be automatically logged
-- Customer profiles will show a complete timeline of all touchpoints
-- Admins can see which estimator submissions are linked to each customer
-- The Activity tab provides full audit trail for customer interactions
+- Admins can add new marketing sources (Mitsubishi, Bosch, etc.) without code changes
+- Customers can have multiple campaign tags for segmentation
+- Table filtering by source and tags for targeted outreach
+- Clean separation between acquisition channel (source) and marketing segments (tags)
