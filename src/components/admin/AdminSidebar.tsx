@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import truficientLogo from '@/assets/truficient-logo.png';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useRolePermissions, hasPermission } from '@/hooks/useRolePermissions';
 import { navSections } from './adminNavConfig';
 import {
   Collapsible,
@@ -18,7 +19,8 @@ const STORAGE_KEY = 'admin-sidebar-sections';
 export const AdminSidebar = () => {
   const location = useLocation();
   const { signOut } = useAuth();
-  const { isAdmin } = useUserRole();
+  const { isSuperAdmin } = useUserRole();
+  const { permissions, loading: permissionsLoading } = useRolePermissions();
   const [collapsed, setCollapsed] = useState(false);
   
   // Initialize expanded sections from localStorage or default all open
@@ -50,12 +52,13 @@ export const AdminSidebar = () => {
     }));
   };
 
-  // Filter sections and items based on role
+  // Filter sections and items based on permissions
   const visibleSections = navSections
-    .filter(section => !section.adminOnly || isAdmin)
     .map(section => ({
       ...section,
-      items: section.items.filter(item => !item.adminOnly || isAdmin),
+      items: section.items.filter(item => 
+        hasPermission(permissions, item.permissionKey, isSuperAdmin)
+      ),
     }))
     .filter(section => section.items.length > 0);
 
