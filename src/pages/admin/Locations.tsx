@@ -223,6 +223,7 @@ const Locations = () => {
     setCity(location.city);
     setState(location.state);
     setZipCode(location.zip_code);
+    setCounty(location.county || '');
     setSquareFootage(location.square_footage?.toString() || '');
     setYearBuilt(location.year_built?.toString() || '');
     setStories(location.stories?.toString() || '');
@@ -623,6 +624,15 @@ const Locations = () => {
                   required
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>County</Label>
+              <Input
+                value={county}
+                onChange={(e) => setCounty(e.target.value)}
+                placeholder="e.g., Dallas County"
+              />
             </div>
 
             <TooltipProvider>
