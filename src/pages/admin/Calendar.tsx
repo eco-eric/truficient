@@ -1,16 +1,16 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, RefreshCw, Settings } from "lucide-react";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, subWeeks, subMonths, isSameDay, parseISO, isWithinInterval } from "date-fns";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, subWeeks, subMonths, parseISO } from "date-fns";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import CalendarView from "@/components/admin/calendar/CalendarView";
+import CalendarFilterSidebar from "@/components/admin/calendar/CalendarFilterSidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type ViewMode = "week" | "month" | "day";
 
@@ -27,8 +27,12 @@ interface CalendarEvent {
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("week");
-  const [selectedCalendarId, setSelectedCalendarId] = useState<string>("all");
   const [refreshing, setRefreshing] = useState(false);
+  const isMobile = useIsMobile();
+
+  // Multi-calendar filter state
+  const [showCrmJobs, setShowCrmJobs] = useState(true);
+  const [visibleCalendarIds, setVisibleCalendarIds] = useState<Set<string>>(new Set());
 
   // Fetch synced calendars
   const { data: calendars } = useQuery({
@@ -44,7 +48,14 @@ export default function Calendar() {
     },
   });
 
-  // Fetch job appointments from database (these are the timed schedule entries)
+  // Initialize visible calendars when data loads
+  useEffect(() => {
+    if (calendars?.length && visibleCalendarIds.size === 0) {
+      setVisibleCalendarIds(new Set(calendars.map(c => c.id)));
+    }
+  }, [calendars, visibleCalendarIds.size]);
+
+  // Fetch job appointments from database
   const { data: appointments } = useQuery({
     queryKey: ["calendar-appointments", currentDate, viewMode],
     queryFn: async () => {
@@ -65,16 +76,16 @@ export default function Calendar() {
     },
   });
 
-  // Fetch Google Calendar events
+  // Fetch Google Calendar events only from visible calendars
   const { data: googleEvents, refetch: refetchEvents } = useQuery({
-    queryKey: ["google-calendar-events", currentDate, viewMode, selectedCalendarId, calendars],
+    queryKey: ["google-calendar-events", currentDate, viewMode, Array.from(visibleCalendarIds), calendars],
     queryFn: async () => {
-      if (!calendars?.length) return [];
+      if (!calendars?.length || visibleCalendarIds.size === 0) return [];
       
       const { start, end } = getDateRange();
-      const calendarIds = selectedCalendarId === "all" 
-        ? calendars.map(c => c.calendar_id)
-        : [calendars.find(c => c.id === selectedCalendarId)?.calendar_id].filter(Boolean);
+      const calendarIds = calendars
+        .filter(c => visibleCalendarIds.has(c.id))
+        .map(c => c.calendar_id);
 
       if (!calendarIds.length) return [];
 
@@ -97,7 +108,7 @@ export default function Calendar() {
 
       return response.data?.items || [];
     },
-    enabled: !!calendars?.length,
+    enabled: !!calendars?.length && visibleCalendarIds.size > 0,
   });
 
   function getDateRange() {
@@ -125,12 +136,11 @@ export default function Calendar() {
     const fn = direction === "prev" 
       ? viewMode === "month" ? subMonths : subWeeks
       : viewMode === "month" ? addMonths : addWeeks;
-    const amount = viewMode === "day" ? 1 : 1;
     
     if (viewMode === "day") {
       setCurrentDate(d => addDays(d, direction === "prev" ? -1 : 1));
     } else {
-      setCurrentDate(d => fn(d, amount));
+      setCurrentDate(d => fn(d, 1));
     }
   };
 
@@ -159,7 +169,7 @@ export default function Calendar() {
     }
   };
 
-  // Combine job appointments and Google events for calendar view
+  // Combine and filter events based on visibility settings
   const combinedEvents = useMemo(() => {
     const events: Array<{
       id: string;
@@ -171,27 +181,29 @@ export default function Calendar() {
       data: any;
     }> = [];
 
-    // Add job appointments (primary CRM schedule source)
-    appointments?.forEach((apt: any) => {
-      if (apt.start_datetime) {
-        const start = new Date(apt.start_datetime);
-        const end = apt.end_datetime ? new Date(apt.end_datetime) : addDays(start, 0.25);
-        const jobNumber = apt.job?.job_number || "Job";
-        const title = apt.title || apt.job?.title || "Appointment";
+    // Add job appointments only if CRM Jobs toggle is on
+    if (showCrmJobs) {
+      appointments?.forEach((apt: any) => {
+        if (apt.start_datetime) {
+          const start = new Date(apt.start_datetime);
+          const end = apt.end_datetime ? new Date(apt.end_datetime) : addDays(start, 0.25);
+          const jobNumber = apt.job?.job_number || "Job";
+          const title = apt.title || apt.job?.title || "Appointment";
 
-        events.push({
-          id: apt.id,
-          title: `${jobNumber} - ${title}`,
-          start,
-          end,
-          type: "job",
-          color: apt.team?.color || apt.calendar?.color || "#3b82f6",
-          data: apt,
-        });
-      }
-    });
+          events.push({
+            id: apt.id,
+            title: `${jobNumber} - ${title}`,
+            start,
+            end,
+            type: "job",
+            color: apt.team?.color || apt.calendar?.color || "#3b82f6",
+            data: apt,
+          });
+        }
+      });
+    }
 
-    // Add Google events (that aren't already synced to a job appointment)
+    // Add Google events only from visible calendars
     googleEvents?.forEach((event: CalendarEvent) => {
       const eventStart = event.start.dateTime || event.start.date;
       const eventEnd = event.end.dateTime || event.end.date;
@@ -201,21 +213,24 @@ export default function Calendar() {
         );
         if (!isSyncedAppointment) {
           const calendar = calendars?.find((c) => c.calendar_id === event.calendarId);
-          events.push({
-            id: event.id,
-            title: event.summary || "Untitled",
-            start: parseISO(eventStart),
-            end: eventEnd ? parseISO(eventEnd) : addDays(parseISO(eventStart), 0.25),
-            type: "google",
-            color: calendar?.color || "#9ca3af",
-            data: event,
-          });
+          // Only include if calendar is in visible set
+          if (calendar && visibleCalendarIds.has(calendar.id)) {
+            events.push({
+              id: event.id,
+              title: event.summary || "Untitled",
+              start: parseISO(eventStart),
+              end: eventEnd ? parseISO(eventEnd) : addDays(parseISO(eventStart), 0.25),
+              type: "google",
+              color: calendar?.color || "#9ca3af",
+              data: event,
+            });
+          }
         }
       }
     });
 
     return events.sort((a, b) => a.start.getTime() - b.start.getTime());
-  }, [appointments, googleEvents, calendars]);
+  }, [appointments, googleEvents, calendars, showCrmJobs, visibleCalendarIds]);
 
   return (
     <AdminLayout title="Calendar">
@@ -258,25 +273,16 @@ export default function Calendar() {
               </div>
 
               <div className="flex items-center gap-2">
-                <Select value={selectedCalendarId} onValueChange={setSelectedCalendarId}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="All Calendars" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Calendars</SelectItem>
-                    {calendars?.map(cal => (
-                      <SelectItem key={cal.id} value={cal.id}>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: cal.color }}
-                          />
-                          {cal.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {/* Mobile filter button */}
+                {isMobile && (
+                  <CalendarFilterSidebar
+                    calendars={calendars || []}
+                    showCrmJobs={showCrmJobs}
+                    onShowCrmJobsChange={setShowCrmJobs}
+                    visibleCalendarIds={visibleCalendarIds}
+                    onVisibleCalendarsChange={setVisibleCalendarIds}
+                  />
+                )}
 
                 <div className="flex border rounded-md">
                   {(["day", "week", "month"] as ViewMode[]).map(mode => (
@@ -296,25 +302,29 @@ export default function Calendar() {
           </CardContent>
         </Card>
 
-        {/* Legend */}
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-primary" />
-            <span className="text-muted-foreground">CRM Jobs</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-gray-400" />
-            <span className="text-muted-foreground">Google Events</span>
+        {/* Main content with sidebar */}
+        <div className="flex gap-4">
+          {/* Desktop sidebar */}
+          {!isMobile && (
+            <CalendarFilterSidebar
+              calendars={calendars || []}
+              showCrmJobs={showCrmJobs}
+              onShowCrmJobsChange={setShowCrmJobs}
+              visibleCalendarIds={visibleCalendarIds}
+              onVisibleCalendarsChange={setVisibleCalendarIds}
+            />
+          )}
+
+          {/* Calendar Grid */}
+          <div className="flex-1 min-w-0">
+            <CalendarView 
+              events={combinedEvents}
+              currentDate={currentDate}
+              viewMode={viewMode}
+              onDateChange={setCurrentDate}
+            />
           </div>
         </div>
-
-        {/* Calendar Grid */}
-        <CalendarView 
-          events={combinedEvents}
-          currentDate={currentDate}
-          viewMode={viewMode}
-          onDateChange={setCurrentDate}
-        />
       </div>
     </AdminLayout>
   );
