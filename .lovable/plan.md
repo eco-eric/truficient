@@ -1,95 +1,103 @@
 
-# Fix: Add super_admin to Pipeline RLS Policies
+# Fix: WorkEdge Toggle Not Persisting
 
 ## Problem Identified
 
-The `crm_pipeline_entries` table has RLS policies that only allow `admin` and `manager` roles to INSERT, UPDATE, and DELETE entries. Since you have the `super_admin` role, these operations are being blocked by Row Level Security.
+The toggle switch for enabling WorkEdge integration doesn't work because the RLS (Row Level Security) policy on the `integration_configs` table only allows users with the `admin` role. Since you have the `super_admin` role, you're blocked from both reading and writing to this table.
 
 ## Root Cause
 
-When the `super_admin` role was added, the existing RLS policies were not updated to include it. The hierarchy should be: `super_admin` > `admin` > `manager`, meaning super admins should have all admin/manager privileges.
+The RLS policy was created with:
+```sql
+CREATE POLICY "Admins can manage integration configs"
+ON public.integration_configs FOR ALL
+USING (has_role(auth.uid(), 'admin'))
+```
+
+This explicitly checks for `admin` role only. The `super_admin` role is excluded, so the query returns 0 rows and the toggle appears to do nothing.
+
+---
 
 ## Solution
 
-Update all affected RLS policies across CRM tables to include `super_admin` in the role checks.
+Update the RLS policy to include `super_admin` in the role check. This is the same pattern we used for the CRM tables earlier.
 
 ---
 
 ## Database Migration
 
-Update policies for `crm_pipeline_entries`:
-
 ```sql
--- Drop existing policies
-DROP POLICY IF EXISTS "Admins and managers can insert pipeline entries" ON crm_pipeline_entries;
-DROP POLICY IF EXISTS "Admins and managers can update pipeline entries" ON crm_pipeline_entries;
-DROP POLICY IF EXISTS "Admins can delete pipeline entries" ON crm_pipeline_entries;
+-- Drop existing policy
+DROP POLICY IF EXISTS "Admins can manage integration configs" ON public.integration_configs;
 
 -- Recreate with super_admin included
-CREATE POLICY "Admins and managers can insert pipeline entries" 
-  ON crm_pipeline_entries FOR INSERT 
-  TO authenticated 
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM user_roles 
-      WHERE user_roles.user_id = auth.uid() 
-      AND user_roles.role IN ('super_admin', 'admin', 'manager')
-    )
-  );
-
-CREATE POLICY "Admins and managers can update pipeline entries" 
-  ON crm_pipeline_entries FOR UPDATE 
-  TO authenticated 
-  USING (
-    EXISTS (
-      SELECT 1 FROM user_roles 
-      WHERE user_roles.user_id = auth.uid() 
-      AND user_roles.role IN ('super_admin', 'admin', 'manager')
-    )
-  );
-
-CREATE POLICY "Admins can delete pipeline entries" 
-  ON crm_pipeline_entries FOR DELETE 
-  TO authenticated 
-  USING (
-    EXISTS (
-      SELECT 1 FROM user_roles 
-      WHERE user_roles.user_id = auth.uid() 
-      AND user_roles.role IN ('super_admin', 'admin')
-    )
-  );
+CREATE POLICY "Admins can manage integration configs"
+ON public.integration_configs FOR ALL
+USING (
+  EXISTS (
+    SELECT 1 FROM user_roles 
+    WHERE user_roles.user_id = auth.uid() 
+    AND user_roles.role IN ('super_admin', 'admin')
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM user_roles 
+    WHERE user_roles.user_id = auth.uid() 
+    AND user_roles.role IN ('super_admin', 'admin')
+  )
+);
 ```
 
 ---
 
-## Additional Tables to Review
+## Additional Tables to Fix
 
-Other CRM tables likely have the same issue. This fix should also update:
+The same issue likely exists for other WorkEdge tables. These should be updated too:
 
-| Table | Policies Affected |
-|-------|-------------------|
-| `crm_customers` | INSERT, UPDATE, DELETE |
-| `crm_interactions` | INSERT, UPDATE, DELETE |
-| `crm_locations` | INSERT, UPDATE, DELETE |
-| `crm_jobs` | INSERT, UPDATE, DELETE |
+| Table | Current Policy | Fix |
+|-------|----------------|-----|
+| `workedge_sync_log` | `has_role(auth.uid(), 'admin')` | Include `super_admin` |
+| `workedge_project_media` | `has_role(auth.uid(), 'admin')` | Include `super_admin` |
+
+---
+
+## Recommended Frontend Improvement
+
+Additionally, the current mutation doesn't provide feedback when it fails. After fixing RLS, we should also add optimistic updates and proper error handling to the toggle so the UI correctly reflects the actual state.
+
+**Current code (line 481-484):**
+```tsx
+<Switch
+  checked={config?.is_active}
+  onCheckedChange={(checked) => updateConfigMutation.mutate({ is_active: checked })}
+/>
+```
+
+**Problem:** If `config` is undefined (due to RLS blocking), `checked={undefined}` makes the Switch uncontrolled, causing the "reverts when clicking away" behavior.
+
+**Fix:** Add proper loading state and optimistic update handling.
 
 ---
 
 ## Technical Details
 
-**Files Changed:** None (database migration only)
+**Files to Change:**
+- Database migration (RLS policy updates)
+- `src/pages/admin/WorkEdgeProjects.tsx` (optional: improved toggle handling)
 
-**Migration Approach:**
-1. Drop existing INSERT/UPDATE/DELETE policies that reference only `admin` and `manager`
-2. Recreate policies with `super_admin` included in the role array
-3. Use consistent pattern: `role IN ('super_admin', 'admin', 'manager')`
+**Why the Toggle Reverts:**
+1. RLS blocks the SELECT query → `config` is `undefined`
+2. Switch shows as unchecked (because `undefined` is falsy)
+3. User toggles it → mutation fires but UPDATE is blocked by RLS
+4. Query is invalidated → still returns `undefined` → switch appears off again
 
 ---
 
 ## Testing After Fix
 
-1. Navigate to `/admin/pipeline`
-2. Click "Add to Pipeline"
-3. Select a customer (Dora Payne is available)
-4. Select a stage and submit
-5. Verify the card appears in the Kanban board
+1. Navigate to `/admin/workedge`
+2. Go to **Settings** tab
+3. Toggle "Enable WorkEdge Integration" to ON
+4. Navigate away and back
+5. Verify toggle remains ON
