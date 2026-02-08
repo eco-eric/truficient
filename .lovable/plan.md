@@ -1,86 +1,79 @@
 
-# Fix Calendar Sync: Add Manual Calendar Import
+# Multi-Calendar Filter with Toggle Checkboxes
 
-## Problem
+## Overview
 
-The current sync uses `calendarList` API, which only returns calendars explicitly added to the service account's list. When you share a calendar with a service account, it grants access to the calendar data but **doesn't automatically add it to the service account's calendar list**.
-
-Your screenshot shows you've correctly shared the calendar with "See all event details" permission - the issue is purely a discovery problem.
-
-## Solution
-
-Add a manual "Add Calendar" feature that lets you paste the Calendar ID directly. The edge function will then verify access and add it to your database.
+Replace the single-select dropdown with a Google Calendar-style multi-select sidebar that allows you to toggle individual calendars on/off while viewing multiple calendars at once.
 
 ---
 
-## Changes Required
+## Current State
 
-### 1. Update Edge Function
-
-Add a new `add-calendar` action that:
-- Takes a calendar ID as input
-- Attempts to fetch the calendar metadata directly using `calendars/{calendarId}` endpoint
-- If successful, upserts the calendar to the database
-- Returns success/error status
-
-### 2. Update CalendarSettings.tsx
-
-Add an "Add Calendar Manually" dialog with:
-- Input field for Calendar ID
-- Instructions on where to find the Calendar ID
-- Submit button that calls the new edge function action
-- Success/error feedback
+- The calendar page has a `Select` dropdown with "All Calendars" or single calendar options
+- Selecting a specific calendar hides all other calendar events
+- There's no way to view a subset of calendars (e.g., just Install + Service calendars)
 
 ---
 
-## Where to Find Your Calendar ID
+## Solution: Calendar Sidebar with Checkboxes
 
-In your Google Calendar settings:
-1. Click on "Integrate calendar" in the left sidebar
-2. Copy the "Calendar ID" - it looks like:
-   - `c_abc123...@group.calendar.google.com` (for created calendars)
-   - `your-email@domain.com` (for primary calendars)
+Add a collapsible sidebar panel on the left side of the calendar that shows:
+- **CRM Jobs** toggle (always visible, controls job appointment visibility)
+- **Google Calendars** section with checkboxes for each synced calendar
+- Color indicator next to each calendar name
+- "Show All" / "Hide All" quick actions
 
 ---
 
-## Technical Details
+## UI Design
 
-### Edge Function Addition
-
-```typescript
-case "add-calendar": {
-  const { calendarId } = params;
-  
-  // Fetch calendar metadata directly by ID
-  const response = await fetch(
-    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}`,
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  );
-  
-  if (!response.ok) {
-    throw new Error("Cannot access this calendar. Ensure it's shared with the service account.");
-  }
-  
-  const calData = await response.json();
-  
-  // Upsert to database
-  await supabase.from("google_calendars").upsert({
-    calendar_id: calendarId,
-    name: calData.summary || calendarId,
-    description: calData.description,
-    color: calData.backgroundColor || "#4285f4",
-    last_synced_at: new Date().toISOString(),
-  }, { onConflict: "calendar_id" });
-  
-  return { success: true, calendar: calData };
-}
+```text
+┌─────────────────────┬──────────────────────────────────────┐
+│ CALENDARS           │                                      │
+│ ─────────────────── │     (Calendar Grid - unchanged)      │
+│ ☑ CRM Jobs          │                                      │
+│                     │                                      │
+│ GOOGLE CALENDARS    │                                      │
+│ ☑ ● Install Team    │                                      │
+│ ☑ ● Service Team    │                                      │
+│ ☐ ● Personal        │                                      │
+│                     │                                      │
+│ Show All | Hide All │                                      │
+└─────────────────────┴──────────────────────────────────────┘
 ```
 
-### UI Changes
+---
 
-- Add Plus icon button next to "Sync Calendars"
-- Dialog with Input and helpful instructions
-- Mutation to call `add-calendar` action
+## Technical Changes
+
+### State Management
+
+Replace the single `selectedCalendarId` state with two pieces of state:
+- `showCrmJobs: boolean` - toggles CRM job appointments visibility
+- `visibleCalendarIds: Set<string>` - set of Google Calendar IDs currently enabled
+
+Initialize with all calendars visible by default.
+
+### Calendar Sidebar Component
+
+Create a new component `CalendarFilterSidebar.tsx` with:
+- Checkbox for CRM Jobs with primary color indicator
+- List of Google calendars with colored checkboxes
+- Quick toggle buttons (Show All / Hide All)
+- Responsive design that collapses on mobile
+
+### Filter Logic Updates
+
+Update the `combinedEvents` memo to:
+- Only include CRM job appointments if `showCrmJobs` is true
+- Only include Google events from calendars in `visibleCalendarIds`
+- Also update the edge function query to only fetch from visible calendars (optimization)
+
+### Layout Changes
+
+- Wrap the calendar controls and grid in a flex container
+- Add the sidebar as a fixed-width panel on the left (200-250px)
+- On mobile, show as a dropdown/popover instead of sidebar
 
 ---
 
@@ -88,15 +81,74 @@ case "add-calendar": {
 
 | File | Changes |
 |------|---------|
-| `supabase/functions/google-calendar-sync/index.ts` | Add `add-calendar` action |
-| `src/pages/admin/CalendarSettings.tsx` | Add manual calendar dialog |
+| `src/pages/admin/Calendar.tsx` | Add sidebar, update state management, update filter logic |
+| `src/components/admin/calendar/CalendarFilterSidebar.tsx` | **NEW** - sidebar component with checkbox controls |
 
 ---
 
-## User Flow After Implementation
+## Implementation Details
 
-1. Click "Add Calendar" button
-2. Paste Calendar ID from Google Calendar settings
-3. Click Submit
-4. System verifies access and adds calendar to list
-5. Calendar appears in settings ready to configure
+### New Sidebar Component
+
+```tsx
+interface CalendarFilterSidebarProps {
+  calendars: GoogleCalendar[];
+  showCrmJobs: boolean;
+  onShowCrmJobsChange: (show: boolean) => void;
+  visibleCalendarIds: Set<string>;
+  onVisibleCalendarsChange: (ids: Set<string>) => void;
+}
+```
+
+### Updated State in Calendar.tsx
+
+```tsx
+// Before
+const [selectedCalendarId, setSelectedCalendarId] = useState<string>("all");
+
+// After
+const [showCrmJobs, setShowCrmJobs] = useState(true);
+const [visibleCalendarIds, setVisibleCalendarIds] = useState<Set<string>>(new Set());
+
+// Initialize with all calendars visible when data loads
+useEffect(() => {
+  if (calendars?.length) {
+    setVisibleCalendarIds(new Set(calendars.map(c => c.id)));
+  }
+}, [calendars]);
+```
+
+### Updated Event Filtering
+
+```tsx
+const combinedEvents = useMemo(() => {
+  const events = [];
+  
+  // Add CRM jobs only if toggle is on
+  if (showCrmJobs) {
+    appointments?.forEach(apt => { /* ... */ });
+  }
+  
+  // Add Google events only from visible calendars
+  googleEvents?.forEach(event => {
+    const calendar = calendars?.find(c => c.calendar_id === event.calendarId);
+    if (calendar && visibleCalendarIds.has(calendar.id)) {
+      // ... add event
+    }
+  });
+  
+  return events;
+}, [appointments, googleEvents, calendars, showCrmJobs, visibleCalendarIds]);
+```
+
+---
+
+## User Experience
+
+After implementation:
+1. A sidebar shows all available calendars with checkboxes
+2. Click any checkbox to toggle that calendar's events
+3. Each calendar shows its assigned color
+4. CRM Jobs toggle controls internal appointment visibility
+5. "Show All" and "Hide All" buttons for quick selection
+6. State persists within the session
