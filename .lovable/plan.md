@@ -1,157 +1,168 @@
 
+# Add New Roles: Technician, Lead Tech, Installer, Helper
 
-# Fix: Role Permissions Page Redirect Race Condition
+## Security Architecture Review
 
-## Root Cause
+The current system has proper security in place:
+- `user_roles` table with RLS policies using `has_role()` SECURITY DEFINER function
+- `role_permissions` table with RLS allowing super_admins to manage, authenticated users to read
+- `is_super_admin()` function for critical access control
+- Edge function `admin-password-reset` validates admin role server-side before operations
 
-The `RolePermissions.tsx` component redirects non-super-admins to `/admin`. However, there's a race condition in the `useUserRole` hook that causes `isSuperAdmin` to be `false` during a brief window when navigating, even for actual super_admin users.
+## Implementation Plan
 
-### The Race Condition
+### 1. Database Migration: Add Enum Values
+
+Add the four new roles to the PostgreSQL `app_role` enum:
+
+```sql
+ALTER TYPE app_role ADD VALUE 'technician';
+ALTER TYPE app_role ADD VALUE 'lead_tech';
+ALTER TYPE app_role ADD VALUE 'installer';
+ALTER TYPE app_role ADD VALUE 'helper';
+```
+
+### 2. Database Migration: Seed Default Permissions
+
+Insert default permission entries (all disabled) for each new role across all 42 permission keys:
+
+```sql
+INSERT INTO role_permissions (role, permission_key, enabled)
+SELECT r.role::app_role, p.key, false
+FROM (VALUES ('technician'), ('lead_tech'), ('installer'), ('helper')) AS r(role)
+CROSS JOIN (
+  VALUES 
+    ('nav.dashboard'), ('nav.abandoned-carts'), ('nav.customers'), ('nav.locations'),
+    ('nav.submissions'), ('nav.pipeline'), ('nav.dfw-watchlist'), ('nav.calendar'),
+    ('nav.jobs'), ('nav.teams'), ('nav.workedge'), ('nav.job-types'), ('nav.calendars'),
+    ('nav.blog'), ('nav.gallery'), ('nav.equipment-library'), ('nav.estimates'),
+    ('nav.estimate-templates'), ('nav.system-pricing'), ('nav.customer-equipment'),
+    ('nav.ductless-config'), ('nav.materials'), ('nav.labor-rates'), ('nav.admin-costs'),
+    ('nav.financing'), ('nav.seo'), ('nav.calculators'), ('nav.landing-pages'),
+    ('nav.ghl-tags'), ('nav.ghl-conversations'), ('nav.scanner-analytics'),
+    ('nav.button-clicks'), ('nav.analytics'), ('nav.social-media'), ('nav.users'),
+    ('nav.permissions'), ('nav.ai-settings'), ('nav.automations'), ('nav.lead-sources'),
+    ('nav.campaign-tags'), ('nav.trash-bin'), ('nav.settings')
+) AS p(key)
+ON CONFLICT (role, permission_key) DO NOTHING;
+```
+
+### 3. Update Edge Function: admin-password-reset
+
+Modify the role validation in `supabase/functions/admin-password-reset/index.ts`:
+
+| Current | Updated |
+|---------|---------|
+| `['admin', 'manager']` | `['super_admin', 'admin', 'manager', 'technician', 'lead_tech', 'installer', 'helper']` |
+
+Also update the admin check to include `super_admin`:
+
+```typescript
+// Check if calling user is admin or super_admin
+const { data: roleData } = await userClient
+  .from('user_roles')
+  .select('role')
+  .eq('user_id', user.id)
+  .in('role', ['admin', 'super_admin'])
+  .single();
+```
+
+### 4. Update TypeScript Type: AppRole
+
+In `src/hooks/useUserRole.ts`:
+
+```typescript
+export type AppRole = 'super_admin' | 'admin' | 'manager' | 'technician' | 'lead_tech' | 'installer' | 'helper';
+```
+
+Add helper booleans for role detection:
+
+```typescript
+const isTechnician = role === 'technician';
+const isLeadTech = role === 'lead_tech';
+const isInstaller = role === 'installer';
+const isHelper = role === 'helper';
+const isFieldRole = isTechnician || isLeadTech || isInstaller || isHelper;
+```
+
+### 5. Update RolePermissions.tsx
+
+Add tabs for the four new roles in the permission management interface:
 
 ```text
-Timeline:
-1. Component mounts
-2. useAuth() returns { user: null, loading: true }
-3. useUserRole() effect runs with user=null
-4. useUserRole() sets loading=false (no user, nothing to fetch)  <-- BUG: loading now false
-5. RolePermissions checks: loading=false, roleLoading=false, isSuperAdmin=false
-6. Component renders <Navigate to="/admin"> and redirects  <-- TOO EARLY!
-7. (Meanwhile) useAuth() completes, user becomes available
-8. (Too late) useUserRole() would now fetch the role
+Tabs: [Admin] [Manager] [Technician] [Lead Tech] [Installer] [Helper]
 ```
+
+Update the `AppRole` type definition and permissions state:
+
+```typescript
+type AppRole = 'admin' | 'manager' | 'technician' | 'lead_tech' | 'installer' | 'helper';
+
+const [permissions, setPermissions] = useState<Record<AppRole, Record<string, boolean>>>({
+  admin: {},
+  manager: {},
+  technician: {},
+  lead_tech: {},
+  installer: {},
+  helper: {},
+});
+```
+
+### 6. Update Users.tsx
+
+Add new roles to all dropdown selects:
+
+```tsx
+<SelectItem value="technician">Technician</SelectItem>
+<SelectItem value="lead_tech">Lead Tech</SelectItem>
+<SelectItem value="installer">Installer</SelectItem>
+<SelectItem value="helper">Helper</SelectItem>
+```
+
+Update role badge variants and Role Legend card to include descriptions for new roles.
 
 ---
 
-## Solution
+## Role Badge Color Scheme
 
-Fix the `useUserRole` hook to properly manage loading state when the user object becomes available after initial mount:
+| Role | Badge Variant | Description |
+|------|---------------|-------------|
+| super_admin | destructive (red) | System Configuration |
+| admin | default (primary) | Full Access |
+| manager | secondary | Management Access |
+| technician | outline | Field Technician |
+| lead_tech | outline | Lead Technician |
+| installer | outline | Installation Crew |
+| helper | outline | Helper/Apprentice |
 
-### Changes to `src/hooks/useUserRole.ts`
+---
 
-```typescript
-useEffect(() => {
-  const fetchRole = async () => {
-    // If auth is still loading (user undefined vs null), keep loading
-    if (user === undefined) {
-      return; // Don't set loading to false yet
-    }
-    
-    if (!user) {
-      setRole(null);
-      setLoading(false);
-      return;
-    }
+## Security Considerations
 
-    // IMPORTANT: Reset loading to true when starting fetch
-    setLoading(true);
-    
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error) {
-        console.log('No role found for user');
-        setRole(null);
-      } else {
-        setRole(data.role as AppRole);
-      }
-    } catch (error) {
-      console.error('Error fetching user role:', error);
-      setRole(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchRole();
-}, [user]);
-```
-
-However, there's a problem: `user` is typed as `User | null`, not `User | null | undefined`. The real issue is that `useAuth` returns `loading: true` initially, but `useUserRole` doesn't check that.
-
-### Better Fix: Check `authLoading` in `useUserRole`
-
-```typescript
-// src/hooks/useUserRole.ts
-export const useUserRole = (): UserRoleState => {
-  const { user, loading: authLoading } = useAuth();  // <-- Get auth loading state
-  const [role, setRole] = useState<AppRole | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchRole = async () => {
-      // Wait for auth to complete first
-      if (authLoading) {
-        return; // Keep loading=true, don't proceed
-      }
-      
-      if (!user) {
-        setRole(null);
-        setLoading(false);
-        return;
-      }
-
-      // Starting fresh fetch
-      setLoading(true);
-      
-      try {
-        const { data, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .single();
-
-        if (error) {
-          console.log('No role found for user');
-          setRole(null);
-        } else {
-          setRole(data.role as AppRole);
-        }
-      } catch (error) {
-        console.error('Error fetching user role:', error);
-        setRole(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRole();
-  }, [user, authLoading]);  // <-- Add authLoading dependency
-
-  // ... rest unchanged
-};
-```
+1. **Existing RLS Policies**: No changes needed - `has_role()` function already handles any valid `app_role` enum value
+2. **Edge Function Validation**: Updated to allow super_admin access and accept all new roles
+3. **Permission Matrix**: New roles start with ALL permissions DISABLED by default
+4. **Super Admin Protection**: Only super_admin can access Role Permissions page (unchanged)
+5. **Role Assignment**: Only admin/super_admin can assign roles (RLS enforced)
 
 ---
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/hooks/useUserRole.ts` | Check `authLoading` before proceeding; reset `loading=true` when starting fetch |
+| File | Changes |
+|------|---------|
+| Database Migration | Add 4 enum values + seed 168 permission rows (4 roles × 42 keys) |
+| `supabase/functions/admin-password-reset/index.ts` | Accept new roles, check for super_admin |
+| `src/hooks/useUserRole.ts` | Update AppRole type, add helper booleans |
+| `src/pages/admin/RolePermissions.tsx` | Add 4 new role tabs, update state management |
+| `src/pages/admin/Users.tsx` | Add new roles to dropdowns, update role legend |
 
 ---
 
-## Why This Fixes It
+## Implementation Order
 
-| Before | After |
-|--------|-------|
-| `authLoading=true` -> useUserRole sets `loading=false` (no user) | `authLoading=true` -> useUserRole keeps `loading=true` |
-| RolePermissions sees `roleLoading=false`, `isSuperAdmin=false` | RolePermissions sees `roleLoading=true`, waits |
-| Redirects before role is known | Waits for auth + role fetch to complete |
-| User is bounced to dashboard | User sees loading spinner, then page loads |
-
----
-
-## Testing
-
-1. Log out completely
-2. Log in as super_admin
-3. Navigate directly to `/admin/permissions`
-4. Should see loading spinner, then page content (not redirect)
-5. Click "Role Permissions" in sidebar
-6. Should navigate successfully (no redirect to dashboard)
-
+1. Run database migration (enum values + permission seeds)
+2. Update edge function for role validation
+3. Update TypeScript types in useUserRole hook
+4. Update RolePermissions page with new tabs
+5. Update Users page with new role options
