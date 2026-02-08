@@ -11,7 +11,8 @@ import {
   Zap, 
   Calculator, 
   CreditCard, 
-  Database 
+  Database,
+  Users 
 } from 'lucide-react';
 
 interface DocumentInfo {
@@ -71,6 +72,14 @@ const documents: DocumentInfo[] = [
     description: 'Equipment systems and price book management',
     icon: <Database className="h-5 w-5" />,
     lines: 499,
+  },
+  {
+    id: 'crm-system',
+    title: 'CRM & Operations System',
+    filename: 'CRM-SYSTEM.md',
+    description: 'Customer, location, pipeline, jobs, and team management',
+    icon: <Users className="h-5 w-5" />,
+    lines: 650,
   },
 ];
 
@@ -1330,6 +1339,375 @@ const { data, error } = await supabase
 |------|---------|
 | \`src/pages/admin/SystemPricing.tsx\` | Admin UI for managing systems and price books |
 | \`src/integrations/supabase/types.ts\` | Auto-generated TypeScript types |`,
+
+  'crm-system': `# CRM & Operations System Documentation
+
+> Last Updated: February 2026
+
+## Overview
+
+The internal CRM system manages the complete customer lifecycle from lead capture through job completion. It is separate from the GoHighLevel (GHL) integration, which handles external CRM sync. This system provides:
+
+- **Customer Management** - Contact records, lifecycle tracking, segmentation
+- **Location Management** - Multi-property support with property data enrichment
+- **Interaction Logging** - Activity timeline with manual and automated entries
+- **Pipeline Management** - Kanban-style lead tracking with conversion metrics
+- **Job Management** - Service scheduling, crew assignments, stage workflows
+- **Team Management** - Technicians, crews, certifications, availability
+
+---
+
+## Architecture Diagram
+
+\`\`\`
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           CRM SYSTEM ARCHITECTURE                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                        LEAD SOURCES                                  │    │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐     │    │
+│  │  │ Ducted   │  │ Ductless │  │Equipment │  │ Landing Page     │     │    │
+│  │  │Estimator │  │Estimator │  │ Scanner  │  │ Forms            │     │    │
+│  │  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────────┬─────────┘     │    │
+│  └───────┼─────────────┼─────────────┼─────────────────┼───────────────┘    │
+│          │             │             │                 │                     │
+│          ▼             ▼             ▼                 ▼                     │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                    SUBMISSION CONVERSION                             │    │
+│  │  ConvertToCustomerDialog → Creates crm_customers + crm_locations     │    │
+│  │                          → Links via crm_submission_links            │    │
+│  │                          → Optional pipeline entry                   │    │
+│  └──────────────────────────────────┬──────────────────────────────────┘    │
+│                                     │                                        │
+│                                     ▼                                        │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                        CRM CORE TABLES                               │    │
+│  │                                                                       │    │
+│  │  ┌─────────────────┐      ┌─────────────────┐                        │    │
+│  │  │  crm_customers  │◄────►│  crm_locations  │                        │    │
+│  │  │  - first_name   │      │  - address      │                        │    │
+│  │  │  - last_name    │      │  - city/state   │                        │    │
+│  │  │  - email/phone  │      │  - sqft/year    │                        │    │
+│  │  │  - status       │      │  - lat/lng      │                        │    │
+│  │  │  - lead_source  │      │  - is_primary   │                        │    │
+│  │  │  - tags[]       │      └─────────────────┘                        │    │
+│  │  └────────┬────────┘                                                 │    │
+│  │           │                                                          │    │
+│  │           ├──────────────────────────────────────────┐               │    │
+│  │           │                                          │               │    │
+│  │           ▼                                          ▼               │    │
+│  │  ┌─────────────────┐                        ┌─────────────────┐      │    │
+│  │  │crm_interactions │                        │crm_pipeline_    │      │    │
+│  │  │ - type (call,   │                        │    entries      │      │    │
+│  │  │   email, note)  │                        │ - stage_id      │      │    │
+│  │  │ - direction     │                        │ - estimated_    │      │    │
+│  │  │ - content       │                        │     value       │      │    │
+│  │  │ - outcome       │                        │ - probability   │      │    │
+│  │  └─────────────────┘                        └─────────────────┘      │    │
+│  │                                                                       │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                     │                                        │
+│                                     ▼                                        │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                        OPERATIONS MODULE                             │    │
+│  │                                                                       │    │
+│  │  ┌─────────────────┐      ┌─────────────────┐                        │    │
+│  │  │    crm_jobs     │◄────►│crm_job_         │                        │    │
+│  │  │  - job_number   │      │  appointments   │                        │    │
+│  │  │  - job_type_id  │      │  - start/end    │                        │    │
+│  │  │  - customer_id  │      │  - google_cal   │                        │    │
+│  │  │  - location_id  │      │  - team_id      │                        │    │
+│  │  │  - stage_id     │      └─────────────────┘                        │    │
+│  │  └────────┬────────┘                                                 │    │
+│  │           │                                                          │    │
+│  │           ▼                                                          │    │
+│  │  ┌─────────────────┐      ┌─────────────────┐                        │    │
+│  │  │crm_job_stage_   │      │  crm_teams /    │                        │    │
+│  │  │    history      │      │ crm_team_members│                        │    │
+│  │  │ - from_stage    │      │  - role         │                        │    │
+│  │  │ - to_stage      │      │  - certifications│                       │    │
+│  │  │ - changed_by    │      │  - availability │                        │    │
+│  │  └─────────────────┘      └─────────────────┘                        │    │
+│  │                                                                       │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+\`\`\`
+
+---
+
+## Database Schema
+
+### Core CRM Tables
+
+| Table | Purpose | Key Fields |
+|-------|---------|------------|
+| \`crm_customers\` | Customer master records | first_name, last_name, email, phone, customer_status, customer_type, lead_source, tags[], ghl_contact_id |
+| \`crm_locations\` | Service addresses | customer_id, address_line1, city, state, zip_code, square_footage, year_built, stories, latitude, longitude |
+| \`crm_customer_contacts\` | Additional contacts | customer_id, first_name, last_name, email, phone, contact_type |
+| \`crm_interactions\` | Activity log | customer_id, interaction_type, direction, content, outcome, logged_by |
+| \`crm_submission_links\` | Links submissions to customers | customer_id, submission_id, submission_type |
+
+### Pipeline Tables
+
+| Table | Purpose | Key Fields |
+|-------|---------|------------|
+| \`crm_pipeline_stages\` | Stage definitions | name, display_name, color, sort_order, is_won_stage, is_lost_stage |
+| \`crm_pipeline_entries\` | Lead tracking | customer_id, stage_id, estimated_value, probability, expected_close_date |
+
+### Operations Tables
+
+| Table | Purpose | Key Fields |
+|-------|---------|------------|
+| \`crm_job_types\` | Job type definitions | name, slug, category, default_duration_hours, requires_permit |
+| \`crm_job_stages\` | Per-type workflow stages | job_type_id, name, stage_type, sort_order, auto_notify_customer |
+| \`crm_jobs\` | Job records | job_number, customer_id, location_id, job_type_id, current_stage_id, scheduled_date |
+| \`crm_job_appointments\` | Timed appointments | job_id, start_datetime, end_datetime, assigned_team_id, google_calendar_event_id |
+| \`crm_job_stage_history\` | Stage transition audit | job_id, from_stage_id, to_stage_id, changed_by, notes |
+| \`crm_job_assignments\` | Crew/tech assignments | job_id, team_id, member_id, role, scheduled_start, scheduled_end |
+
+### Team Tables
+
+| Table | Purpose | Key Fields |
+|-------|---------|------------|
+| \`crm_teams\` | Crew definitions | name, color, is_active |
+| \`crm_team_members\` | Technician records | first_name, last_name, role, certifications[], hourly_rate, license_number |
+| \`crm_team_assignments\` | Member-to-team mapping | team_id, member_id, is_lead, role_in_team |
+
+### Configuration Tables
+
+| Table | Purpose | Key Fields |
+|-------|---------|------------|
+| \`lead_sources\` | Lead origin tracking | name, slug, description, is_active |
+| \`crm_campaign_tags\` | Marketing segmentation | name, color, description, is_active |
+
+---
+
+## Customer Management
+
+### Admin Route
+**Route:** \`/admin/customers\`
+**File:** \`src/pages/admin/Customers.tsx\`
+
+### Customer Status Lifecycle
+
+\`\`\`
+┌────────┐     ┌──────────┐     ┌────────┐     ┌──────────┐     ┌────────┐
+│  lead  │────▶│ prospect │────▶│ active │────▶│ inactive │────▶│ former │
+└────────┘     └──────────┘     └────────┘     └──────────┘     └────────┘
+\`\`\`
+
+| Status | Description |
+|--------|-------------|
+| \`lead\` | Initial contact, not yet qualified |
+| \`prospect\` | Qualified, quote sent or scheduled |
+| \`active\` | Has ongoing job or recent service |
+| \`inactive\` | No activity in 12+ months |
+| \`former\` | Relationship ended |
+
+### Features
+- **Customer Table:** Sortable, filterable by status/source/tags
+- **CSV Import:** Batch import with header mapping
+- **Customer Detail:** Tabbed view (Overview, Locations, Activity, Jobs, Submissions)
+
+---
+
+## Location Management
+
+### Property Data Lookup
+**Edge Function:** \`supabase/functions/lookup-property-data/index.ts\`
+
+Automatically fetches property details from county GIS/CAD systems:
+
+| County | Available Data |
+|--------|---------------|
+| Dallas | SqFt, Year Built, Stories |
+| Denton | SqFt, Year Built |
+| Collin | Year Built |
+| Tarrant | Attom API fallback |
+
+### Features
+- **Address Autocomplete:** Google Places integration
+- **Map Preview:** Visual verification of address
+- **Multi-Property:** Customers can have multiple service locations
+
+---
+
+## Interaction Logging
+
+### Interaction Types
+
+| Type | Icon | Description |
+|------|------|-------------|
+| \`call\` | Phone | Inbound/outbound phone call |
+| \`email\` | Mail | Email correspondence |
+| \`text\` | Message | SMS message |
+| \`meeting\` | Calendar | In-person or video meeting |
+| \`note\` | FileText | Internal note |
+| \`task\` | CheckSquare | Follow-up task |
+
+### Automated Logging
+Events with \`direction: null\` are system-generated:
+- \`system_conversion\` - Lead converted to customer
+- \`system_pipeline_add\` - Added to pipeline
+- \`system_pipeline_move\` - Stage changed
+- \`system_status_change\` - Status updated
+
+---
+
+## Pipeline Management
+
+### Route
+**Route:** \`/admin/pipeline\`
+**File:** \`src/pages/admin/Pipeline.tsx\`
+
+### Default Stages
+
+| Stage | Type | Color |
+|-------|------|-------|
+| New Lead | open | Blue |
+| Contacted | open | Yellow |
+| Estimate Scheduled | open | Orange |
+| Proposal Sent | open | Purple |
+| Negotiating | open | Pink |
+| Won | won | Green |
+| Lost | lost | Gray |
+
+### Features
+- **Kanban Board:** Drag-and-drop between stages
+- **Conversion Flow:** Transform submissions to customers
+- **Value Tracking:** Estimated value and probability per entry
+
+---
+
+## Job Management
+
+### Routes
+- **List:** \`/admin/jobs\`
+- **Detail:** \`/admin/jobs/:id\`
+
+### Job Number Format
+Auto-generated: \`TRU-YYYY-XXXX\` (e.g., TRU-2026-0042)
+
+### Two-Tier Scheduling
+
+1. **Job Level:** DATE fields for overall job window
+2. **Appointment Level:** TIMESTAMPTZ for precise timing with Google Calendar sync
+
+### Job Types & Stages
+Each job type has configurable workflow stages with:
+- Stage type (start, progress, end)
+- Auto-notify customer flag
+- Sort order
+
+---
+
+## Team Management
+
+### Route
+**Route:** \`/admin/teams\`
+
+### Team Member Data
+
+\`\`\`typescript
+interface TeamMember {
+  first_name: string;
+  last_name: string;
+  role: string;              // "Lead Installer", "Technician"
+  member_type: string;       // "employee", "contractor"
+  hourly_rate: number;
+  certifications: string[];  // ["EPA 608", "NATE"]
+  specialties: string[];     // ["Ductless", "Commercial"]
+  license_number: string;
+  license_expiry: string;
+}
+\`\`\`
+
+### Job Assignments
+Jobs can be assigned to teams (crews) or individual members with:
+- Assignment type (primary, support)
+- Scheduled start/end times
+- Actual hours tracked
+
+---
+
+## Lead Sources & Campaign Tags
+
+### Lead Sources
+Single acquisition origin (from \`lead_sources\` table):
+- Mitsubishi Partner Program
+- Google Ads
+- Facebook Ads
+- Referral
+- Website Organic
+
+### Campaign Tags
+Multiple marketing labels stored as array on customer:
+- Spring 2025 Campaign
+- Heat Pump Promo
+- Newsletter Subscriber
+
+---
+
+## Submission Links
+
+Links form submissions to customer records without losing original data:
+
+\`\`\`typescript
+// Table: crm_submission_links
+{
+  customer_id: string;
+  submission_id: string;
+  submission_type: 'ducted' | 'ductless' | 'scanner' | 'landing_page' | 'contact';
+}
+\`\`\`
+
+---
+
+## RLS Policies
+
+All CRM tables use role-based policies:
+
+| Role | View | Create | Edit | Delete |
+|------|------|--------|------|--------|
+| \`super_admin\` | ✅ | ✅ | ✅ | ✅ |
+| \`admin\` | ✅ | ✅ | ✅ | ✅ |
+| \`manager\` | ✅ | ✅ | ✅ | ❌ |
+
+---
+
+## Related Files
+
+### Customer Management
+| File | Purpose |
+|------|---------|
+| \`src/pages/admin/Customers.tsx\` | Customer list page |
+| \`src/pages/admin/CustomerDetail.tsx\` | Customer detail page |
+| \`src/components/admin/customers/CustomerTable.tsx\` | Sortable customer table |
+| \`src/components/admin/customers/CustomerFormDialog.tsx\` | Add/edit dialog |
+| \`src/components/admin/customers/CustomerImportDialog.tsx\` | CSV import |
+
+### Location Management
+| File | Purpose |
+|------|---------|
+| \`src/pages/admin/Locations.tsx\` | Location management page |
+| \`src/components/MapPreview.tsx\` | Static map display |
+| \`src/lib/propertyLookup.ts\` | Property data API client |
+| \`supabase/functions/lookup-property-data/index.ts\` | County GIS lookups |
+
+### Pipeline & Jobs
+| File | Purpose |
+|------|---------|
+| \`src/pages/admin/Pipeline.tsx\` | Kanban board |
+| \`src/pages/admin/Jobs.tsx\` | Job list page |
+| \`src/pages/admin/JobDetail.tsx\` | Job detail page |
+| \`src/components/admin/submissions/ConvertToCustomerDialog.tsx\` | Conversion flow |
+
+### Teams
+| File | Purpose |
+|------|---------|
+| \`src/pages/admin/Teams.tsx\` | Team/member management |`,
 };
 
 export const SystemDocumentation = () => {
