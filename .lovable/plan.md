@@ -1,87 +1,102 @@
 
-# Remodel Project Workflow Stages + Drag-and-Drop Reordering
+# Fix Calendar Sync: Add Manual Calendar Import
 
-## Overview
+## Problem
 
-This plan covers two enhancements:
-1. Adding default workflow stages for the "Remodel Project" job type
-2. Implementing drag-and-drop reordering for job stages in the Job Types & Stages configuration page
+The current sync uses `calendarList` API, which only returns calendars explicitly added to the service account's list. When you share a calendar with a service account, it grants access to the calendar data but **doesn't automatically add it to the service account's calendar list**.
 
----
+Your screenshot shows you've correctly shared the calendar with "See all event details" permission - the issue is purely a discovery problem.
 
-## Part 1: Remodel Project Workflow Stages
+## Solution
 
-The newly created "Remodel Project" job type (ID: `70b9c694-51d7-4702-a49b-6747e098a9ce`) needs workflow stages defined. Based on typical HVAC remodel projects and the existing "Custom Home" stages pattern, here are the recommended stages:
-
-| Order | Stage Name | Type | Color | Notify |
-|-------|-----------|------|-------|--------|
-| 1 | Consultation | initial | Blue | No |
-| 2 | Design & Proposal | in_progress | Amber | No |
-| 3 | Permit & Planning | in_progress | Purple | No |
-| 4 | Demo & Prep | in_progress | Orange | No |
-| 5 | Rough-In | in_progress | Cyan | No |
-| 6 | Inspection | review | Pink | Yes |
-| 7 | Trim-Out & Finish | in_progress | Teal | No |
-| 8 | Final Walkthrough | review | Indigo | Yes |
-| 9 | Complete | completed | Green | Yes |
-| 10 | Cancelled | cancelled | Red | No |
+Add a manual "Add Calendar" feature that lets you paste the Calendar ID directly. The edge function will then verify access and add it to your database.
 
 ---
 
-## Part 2: Drag-and-Drop Stage Reordering
+## Changes Required
 
-### Current State
-- The stages list shows a grip handle icon (GripVertical) but it's purely decorative
-- No drag-and-drop functionality is implemented
-- Sort order can only be changed by manually editing each stage
+### 1. Update Edge Function
 
-### Implementation Approach
+Add a new `add-calendar` action that:
+- Takes a calendar ID as input
+- Attempts to fetch the calendar metadata directly using `calendars/{calendarId}` endpoint
+- If successful, upserts the calendar to the database
+- Returns success/error status
 
-Following the established pattern from `LaborRates.tsx`, `Materials.tsx`, and `Gallery.tsx`, I will:
+### 2. Update CalendarSettings.tsx
 
-1. **Import dnd-kit dependencies** - DndContext, SortableContext, useSortable, sensors, and utilities
+Add an "Add Calendar Manually" dialog with:
+- Input field for Calendar ID
+- Instructions on where to find the Calendar ID
+- Submit button that calls the new edge function action
+- Success/error feedback
 
-2. **Create a SortableStageRow component** - Extract the stage row into a draggable component with:
-   - `useSortable` hook connected to stage ID
-   - Transform/transition styles for smooth dragging
-   - Visual feedback when dragging (opacity, highlight)
+---
 
-3. **Add drag sensors** - Configure PointerSensor and KeyboardSensor with activation constraints (to prevent accidental drags)
+## Where to Find Your Calendar ID
 
-4. **Implement drag end handler** - On drop:
-   - Reorder stages array using `arrayMove`
-   - Batch update `sort_order` values in database
-   - Invalidate queries to refresh UI
-
-5. **Add visual cues** - Make the grip handle interactive and add cursor feedback
+In your Google Calendar settings:
+1. Click on "Integrate calendar" in the left sidebar
+2. Copy the "Calendar ID" - it looks like:
+   - `c_abc123...@group.calendar.google.com` (for created calendars)
+   - `your-email@domain.com` (for primary calendars)
 
 ---
 
 ## Technical Details
 
-### Files Modified
+### Edge Function Addition
 
-**src/pages/admin/JobTypesConfig.tsx**
-- Add dnd-kit imports
-- Add sensors configuration  
-- Create `SortableStageRow` component
-- Add `updateStagesOrderMutation` for batch sort_order updates
-- Wrap stages list with `DndContext` and `SortableContext`
-- Implement `handleDragEnd` function
+```typescript
+case "add-calendar": {
+  const { calendarId } = params;
+  
+  // Fetch calendar metadata directly by ID
+  const response = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
+  
+  if (!response.ok) {
+    throw new Error("Cannot access this calendar. Ensure it's shared with the service account.");
+  }
+  
+  const calData = await response.json();
+  
+  // Upsert to database
+  await supabase.from("google_calendars").upsert({
+    calendar_id: calendarId,
+    name: calData.summary || calendarId,
+    description: calData.description,
+    color: calData.backgroundColor || "#4285f4",
+    last_synced_at: new Date().toISOString(),
+  }, { onConflict: "calendar_id" });
+  
+  return { success: true, calendar: calData };
+}
+```
 
-### Database Operations
+### UI Changes
 
-**Insert Remodel Project Stages** - Add 10 workflow stages to `crm_job_stages` table
-
-**Update Sort Orders** - When reordering, batch update the `sort_order` column for affected stages
+- Add Plus icon button next to "Sync Calendars"
+- Dialog with Input and helpful instructions
+- Mutation to call `add-calendar` action
 
 ---
 
-## User Experience
+## Files to Modify
 
-After implementation:
-- Select "Remodel Project" from the job types list to see its 10 workflow stages
-- Grab any stage by its grip handle and drag to reorder
-- Visual feedback during drag (reduced opacity, highlighted border)
-- Sort order persists immediately to database
-- Works with keyboard navigation (Tab + Arrow keys) for accessibility
+| File | Changes |
+|------|---------|
+| `supabase/functions/google-calendar-sync/index.ts` | Add `add-calendar` action |
+| `src/pages/admin/CalendarSettings.tsx` | Add manual calendar dialog |
+
+---
+
+## User Flow After Implementation
+
+1. Click "Add Calendar" button
+2. Paste Calendar ID from Google Calendar settings
+3. Click Submit
+4. System verifies access and adds calendar to list
+5. Calendar appears in settings ready to configure
