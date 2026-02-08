@@ -60,68 +60,89 @@ async function dallasCadLookup(
   zipCode: string
 ): Promise<LookupResult> {
   const source = "dallas_cad";
-  try {
-    // Dallas CAD verified working endpoint - ParcelQuery MapServer layer 4
-    const searchUrl = `https://maps.dcad.org/prdwa/rest/services/Property/ParcelQuery/MapServer/4/query`;
-    
-    const sanitizedAddress = sanitizeAddress(address);
-    
-    const params = new URLSearchParams({
-      where: `SITEADDRESS LIKE '${sanitizedAddress}%'`,
-      outFields: "RESFLRAREA,RESYRBLT,FLOORCOUNT,SITEADDRESS,BLDGAREA,LANDAREA",
-      returnGeometry: "false",
-      f: "json",
-    });
+  
+  // Retry logic for transient failures
+  const maxRetries = 2;
+  let lastError: string | null = null;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      // Dallas CAD verified working endpoint - ParcelQuery MapServer layer 4
+      const searchUrl = `https://maps.dcad.org/prdwa/rest/services/Property/ParcelQuery/MapServer/4/query`;
+      
+      const sanitizedAddress = sanitizeAddress(address);
+      
+      const params = new URLSearchParams({
+        where: `SITEADDRESS LIKE '${sanitizedAddress}%'`,
+        outFields: "RESFLRAREA,RESYRBLT,FLOORCOUNT,SITEADDRESS,BLDGAREA,LANDAREA",
+        returnGeometry: "false",
+        f: "json",
+      });
 
-    console.log(`Dallas CAD query: ${sanitizedAddress}`);
+      console.log(`Dallas CAD query (attempt ${attempt + 1}): ${sanitizedAddress}`);
 
-    const response = await fetch(`${searchUrl}?${params}`, {
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(10000), // 10 second timeout
-    });
+      const response = await fetch(`${searchUrl}?${params}`, {
+        headers: { 
+          "Accept": "application/json",
+          "User-Agent": "Mozilla/5.0 (compatible; PropertyLookup/1.0)",
+        },
+        signal: AbortSignal.timeout(15000), // 15 second timeout
+      });
 
-    if (!response.ok) {
-      const errorMsg = `Dallas CAD returned HTTP ${response.status}`;
-      console.log(errorMsg);
-      return { data: null, error: errorMsg, attemptedSource: source, httpStatus: response.status };
+      if (!response.ok) {
+        lastError = `Dallas CAD returned HTTP ${response.status}`;
+        console.log(`${lastError} (attempt ${attempt + 1})`);
+        if (attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, 1000 * (attempt + 1))); // Backoff
+          continue;
+        }
+        return { data: null, error: lastError, attemptedSource: source, httpStatus: response.status };
+      }
+
+      const data = await response.json();
+      
+      if (data.error) {
+        const errorMsg = `Dallas CAD API error: ${data.error.message || JSON.stringify(data.error)}`;
+        console.log(errorMsg);
+        return { data: null, error: errorMsg, attemptedSource: source };
+      }
+      
+      if (!data.features || data.features.length === 0) {
+        console.log("No Dallas CAD results found");
+        return { data: null, error: "No property records found in Dallas CAD", attemptedSource: source };
+      }
+
+      const attrs = data.features[0].attributes;
+      console.log(`Dallas CAD found record: ${JSON.stringify(attrs)}`);
+      
+      return {
+        data: {
+          squareFootage: attrs.RESFLRAREA || attrs.BLDGAREA || null,
+          yearBuilt: attrs.RESYRBLT || null,
+          stories: attrs.FLOORCOUNT || null,
+          lotSizeSqft: attrs.LANDAREA || null,
+          bedrooms: null,
+          bathrooms: null,
+          propertyClass: null,
+          source,
+          rawData: attrs,
+        },
+        error: null,
+        attemptedSource: source,
+      };
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : "Unknown error";
+      console.error(`Dallas CAD lookup error (attempt ${attempt + 1}):`, lastError);
+      
+      // Retry on connection errors
+      if (attempt < maxRetries && (lastError.includes("reset") || lastError.includes("timeout"))) {
+        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+        continue;
+      }
     }
-
-    const data = await response.json();
-    
-    if (data.error) {
-      const errorMsg = `Dallas CAD API error: ${data.error.message || JSON.stringify(data.error)}`;
-      console.log(errorMsg);
-      return { data: null, error: errorMsg, attemptedSource: source };
-    }
-    
-    if (!data.features || data.features.length === 0) {
-      console.log("No Dallas CAD results found");
-      return { data: null, error: "No property records found in Dallas CAD", attemptedSource: source };
-    }
-
-    const attrs = data.features[0].attributes;
-    console.log(`Dallas CAD found record: ${JSON.stringify(attrs)}`);
-    
-    return {
-      data: {
-        squareFootage: attrs.RESFLRAREA || attrs.BLDGAREA || null,
-        yearBuilt: attrs.RESYRBLT || null,
-        stories: attrs.FLOORCOUNT || null,
-        lotSizeSqft: attrs.LANDAREA || null,
-        bedrooms: null,
-        bathrooms: null,
-        propertyClass: null,
-        source,
-        rawData: attrs,
-      },
-      error: null,
-      attemptedSource: source,
-    };
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : "Unknown error";
-    console.error("Dallas CAD lookup error:", errorMsg);
-    return { data: null, error: `Dallas CAD lookup failed: ${errorMsg}`, attemptedSource: source };
   }
+  
+  return { data: null, error: `Dallas CAD lookup failed after ${maxRetries + 1} attempts: ${lastError}`, attemptedSource: source };
 }
 
 async function tarrantCadLookup(
