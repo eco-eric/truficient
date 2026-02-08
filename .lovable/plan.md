@@ -1,204 +1,281 @@
 
+# System Stability Analysis & Refinement Plan
 
-# Job Edit & Calendar Scheduling Improvements
+## Executive Summary
 
-## Issues Identified
-
-1. **No Edit Button on Job Detail Page** - Cannot modify job after creation
-2. **Schedule fields use datetime** - User wants date-only for job scheduling
-3. **Calendar entries need to be separate** - Appointment times should be managed independently from job dates
+After thorough analysis of the codebase, I've identified several issues causing the "loading and reloading" behavior reported. The issues span React Query configuration, authentication race conditions, component ref warnings, and unnecessary re-renders.
 
 ---
 
-## Solution Architecture
+## Issue 1: React Ref Warning in JobTypesConfig
+
+**Severity: Medium**
+**Source:** Console error shown in logs
+
+The console shows this error:
+```
+Warning: Function components cannot be given refs.
+Check the render method of `JobTypesConfig`.
+at JobTypeItem
+```
+
+**Root Cause:**
+The `JobTypeItem` component (lines 302-341) is used inside a context where a parent might be trying to pass a ref to it. Function components cannot receive refs without `React.forwardRef()`.
+
+**Location:** `src/pages/admin/JobTypesConfig.tsx` lines 302-341
+
+**Fix:** Wrap `JobTypeItem` with `React.forwardRef`:
+
+```typescript
+const JobTypeItem = React.forwardRef<HTMLDivElement, {...}>(({ 
+  type, 
+  isSelected, 
+  onClick, 
+  onEdit, 
+  onDelete 
+}, ref) => {
+  const Icon = iconMap[type.icon_name] || Wrench;
+  
+  return (
+    <div
+      ref={ref}
+      className={cn(...)}
+      onClick={onClick}
+    >
+      {/* ... */}
+    </div>
+  );
+});
+JobTypeItem.displayName = 'JobTypeItem';
+```
+
+---
+
+## Issue 2: QueryClient Missing Global Configuration
+
+**Severity: High**
+**Source:** `src/App.tsx` line 101
+
+The QueryClient is instantiated with default settings:
+```typescript
+const queryClient = new QueryClient();
+```
+
+This means:
+- No stale time configured (defaults to 0 - always refetch)
+- Window focus refetching enabled by default (causes reloading when switching tabs)
+- Aggressive retry behavior
+
+**Fix:** Add sensible defaults:
+
+```typescript
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000,   // 10 minutes
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+```
+
+---
+
+## Issue 3: Authentication Loading Race Condition
+
+**Severity: Medium**
+**Source:** `src/hooks/useAuth.ts` and `src/hooks/useUserRole.ts`
+
+The current flow has a potential race condition:
 
 ```text
-CURRENT                                    NEW
--------                                    ---
-crm_jobs.scheduled_start (TIMESTAMPTZ)     crm_jobs.scheduled_date (DATE)
-crm_jobs.scheduled_end (TIMESTAMPTZ)       crm_jobs.scheduled_end_date (DATE)
-                                           
-                                           + NEW TABLE
-SchedulingWidget manages times on job      crm_job_appointments (separate table)
-                                           - job_id
-                                           - start_datetime
-                                           - end_datetime
-                                           - google_calendar_event_id
-                                           - assigned_team_id
-                                           - notes
+useAuth.loading=true → useUserRole waits → ProtectedRoute shows Loading...
+                                          ↓
+useAuth resolves → useUserRole.loading=true → ProtectedRoute shows Loading...
+                                             ↓
+useUserRole resolves → ProtectedRoute renders children
+```
+
+The issue is that `useUserRole` resets `loading` to `true` when it starts fetching (line 40), which can cause a flash of the loading screen after auth completes.
+
+**Current Code (lines 39-41):**
+```typescript
+// Reset loading when starting fetch
+setLoading(true);
+```
+
+**Fix:** Don't reset loading to true if we already have a role cached:
+
+```typescript
+// Only set loading if we don't have a cached role
+if (!role) {
+  setLoading(true);
+}
 ```
 
 ---
 
-## Database Changes
+## Issue 4: Unnecessary Query Invalidations
 
-### 1. Add Date-Only Columns to crm_jobs
+**Severity: Medium**
+**Source:** Multiple files
 
-```sql
-ALTER TABLE crm_jobs 
-ADD COLUMN scheduled_date DATE,
-ADD COLUMN scheduled_end_date DATE;
+Several components invalidate broad query keys that trigger cascading refetches:
+
+```typescript
+// JobFormDialog.tsx
+queryClient.invalidateQueries({ queryKey: ['crm_jobs'] });
 ```
 
-### 2. Create Calendar Appointments Table
+When on the JobDetail page, this invalidates all job-related queries, but the JobDetail page also refetches its own data. Combined with the window focus refetching, this creates multiple redundant network requests.
 
-```sql
-CREATE TABLE crm_job_appointments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  job_id UUID NOT NULL REFERENCES crm_jobs(id) ON DELETE CASCADE,
-  title TEXT,
-  start_datetime TIMESTAMPTZ NOT NULL,
-  end_datetime TIMESTAMPTZ NOT NULL,
-  google_calendar_id UUID REFERENCES google_calendars(id),
-  google_calendar_event_id TEXT,
-  assigned_team_id UUID REFERENCES crm_teams(id),
-  notes TEXT,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
+**Fix:** Use more specific invalidation where possible:
+
+```typescript
+// Instead of invalidating all jobs, only invalidate specific job + list
+queryClient.invalidateQueries({ queryKey: ['crm_job', editingJob?.id] });
+queryClient.invalidateQueries({ queryKey: ['crm_jobs'] });
+```
+
+---
+
+## Issue 5: Dialog State Not Reset on Close
+
+**Severity: Low**
+**Source:** `src/pages/admin/JobTypesConfig.tsx`
+
+The `JobTypeDialog` and `StageDialog` components use `useState` with initial values derived from `editingType`/`editingStage`:
+
+```typescript
+const [formData, setFormData] = useState<Partial<JobType>>(
+  editingType || {
+    // defaults...
+  }
+);
+```
+
+The problem is that `useState` only uses the initial value once. When `editingType` changes, the form doesn't reset. This is handled by some dialogs with `useEffect`, but these don't have it.
+
+**Fix:** Add reset effect:
+
+```typescript
+useEffect(() => {
+  setFormData(editingType || {
+    category: 'residential',
+    // ... defaults
+  });
+}, [editingType]);
+```
+
+---
+
+## Issue 6: Multiple useQuery Calls for Same Data
+
+**Severity: Low**
+**Source:** `src/pages/admin/JobDetail.tsx`
+
+The JobDetail page makes 7 separate useQuery calls on mount:
+1. `crm_job` - job details
+2. `crm_job_stages` - stages for job type
+3. `crm_job_stage_history` - stage changes
+4. `crm_job_assignments` - team assignments
+5. `crm_teams_active` - all active teams
+6. `crm_job_types` - all job types
+7. `crm_job_stages_all` - all stages
+
+This is architecturally fine, but without proper staleTime, all queries fire on every mount and window focus.
+
+**Fix:** This is addressed by Issue #2 (QueryClient defaults).
+
+---
+
+## Issue 7: Session Replay Shows Repeated Truncation
+
+**Severity: Info**
+**Source:** Session replay data
+
+The session replay data shows multiple `truncated: true` events, indicating large DOM updates or data transfers. This correlates with the query invalidation cascade.
+
+---
+
+## Implementation Files
+
+| File | Changes |
+|------|---------|
+| `src/App.tsx` | Configure QueryClient with staleTime and disable refetchOnWindowFocus |
+| `src/pages/admin/JobTypesConfig.tsx` | Add forwardRef to JobTypeItem, add useEffect for form reset |
+| `src/hooks/useUserRole.ts` | Prevent loading flash by not resetting to true if role exists |
+| `src/components/admin/jobs/JobFormDialog.tsx` | More specific query invalidation |
+| `src/pages/admin/JobDetail.tsx` | More specific query invalidation on edit close |
+
+---
+
+## Technical Details
+
+### QueryClient Configuration Explained
+
+```typescript
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Data is fresh for 5 minutes - won't refetch unless stale
+      staleTime: 5 * 60 * 1000,
+      
+      // Keep unused data in cache for 10 minutes
+      gcTime: 10 * 60 * 1000,
+      
+      // Don't refetch when window regains focus
+      refetchOnWindowFocus: false,
+      
+      // Only retry once on failure (down from 3)
+      retry: 1,
+    },
+  },
+});
+```
+
+### forwardRef Pattern
+
+```typescript
+import React from 'react';
+
+interface JobTypeItemProps {
+  type: JobType;
+  isSelected: boolean;
+  onClick: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+const JobTypeItem = React.forwardRef<HTMLDivElement, JobTypeItemProps>(
+  ({ type, isSelected, onClick, onEdit, onDelete }, ref) => {
+    // Component implementation
+    return <div ref={ref}>...</div>;
+  }
 );
 
--- RLS policy
-ALTER TABLE crm_job_appointments ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Authenticated users can manage job appointments" 
-  ON crm_job_appointments FOR ALL 
-  USING (auth.role() = 'authenticated');
+JobTypeItem.displayName = 'JobTypeItem';
 ```
-
-### 3. Migrate Existing Data (if any)
-
-```sql
-UPDATE crm_jobs 
-SET scheduled_date = DATE(scheduled_start),
-    scheduled_end_date = DATE(scheduled_end)
-WHERE scheduled_start IS NOT NULL;
-```
-
----
-
-## UI Changes
-
-### 1. Add Edit Button to Job Detail Page
-
-Add an "Edit Job" button in the header that opens the existing JobFormDialog:
-
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│  ← Back    TRU-2026-0001  [High] [Installation]     [Edit Job]  │
-│            Replace HVAC System - 3 ton unit          [AI Chat]  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 2. Update JobFormDialog - Use Date Pickers
-
-Change schedule inputs from datetime-local to date only:
-
-```text
-CURRENT                          NEW
--------                          ---
-Scheduled Start [datetime]       Scheduled Date [date picker]
-Scheduled End [datetime]         End Date [date picker]
-```
-
-### 3. Redesign SchedulingWidget → Calendar Appointments
-
-Replace the single datetime pair with a list of appointments:
-
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│  📅 Calendar Appointments                    [+ Add Appointment] │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  Site Survey                                              │  │
-│  │  Mon, Feb 10, 2026 • 9:00 AM - 11:00 AM                  │  │
-│  │  📍 Crew A  ✓ Synced to Google Calendar     [Edit] [Del]  │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  Installation Day 1                                       │  │
-│  │  Wed, Feb 12, 2026 • 8:00 AM - 5:00 PM                   │  │
-│  │  📍 Crew A + Crew B  ○ Not synced           [Edit] [Del]  │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 4. Appointment Form Dialog
-
-```text
-┌────────────────────────────────────────┐
-│  Add Calendar Appointment              │
-├────────────────────────────────────────┤
-│  Title:                                │
-│  ┌──────────────────────────────────┐  │
-│  │ Installation Day 1               │  │
-│  └──────────────────────────────────┘  │
-│                                        │
-│  Start:                                │
-│  ┌──────────────┐ ┌────────────────┐   │
-│  │ Feb 12, 2026 │ │ 8:00 AM        │   │
-│  └──────────────┘ └────────────────┘   │
-│                                        │
-│  End:                                  │
-│  ┌──────────────┐ ┌────────────────┐   │
-│  │ Feb 12, 2026 │ │ 5:00 PM        │   │
-│  └──────────────┘ └────────────────┘   │
-│                                        │
-│  Assign Team: [Crew A         ▼]       │
-│  Calendar:    [Primary Calendar ▼]     │
-│                                        │
-│  Notes:                                │
-│  ┌──────────────────────────────────┐  │
-│  │                                  │  │
-│  └──────────────────────────────────┘  │
-│                                        │
-│     [Cancel]  [Save & Sync to Calendar]│
-└────────────────────────────────────────┘
-```
-
----
-
-## Files to Create/Modify
-
-| Action | File | Description |
-|--------|------|-------------|
-| MIGRATE | Database | Add date columns, create appointments table |
-| CREATE | `src/components/admin/jobs/JobAppointmentDialog.tsx` | Form for creating/editing appointments |
-| CREATE | `src/components/admin/jobs/JobAppointmentsCard.tsx` | List of appointments for job detail |
-| MODIFY | `src/pages/admin/JobDetail.tsx` | Add Edit button, replace SchedulingWidget |
-| MODIFY | `src/components/admin/jobs/JobFormDialog.tsx` | Change datetime inputs to date pickers |
-| MODIFY | `src/pages/admin/Jobs.tsx` | Open edit dialog from detail page |
-
----
-
-## Data Model
-
-### Job Dates (date-only, for high-level scheduling)
-- `scheduled_date` - When job is planned to start (date only)
-- `scheduled_end_date` - When job is planned to complete (date only)
-
-### Appointments (full datetime, for calendar sync)
-- Multiple appointments per job
-- Each syncs independently to Google Calendar
-- Can assign different teams to different appointments
-- Tracks start/end with full time precision
-
----
-
-## Security
-
-- New `crm_job_appointments` table follows same RLS pattern as `crm_jobs`
-- Only authenticated users can manage appointments
-- Cascading delete ensures cleanup when job is deleted
 
 ---
 
 ## Implementation Order
 
-1. Run database migrations (add columns, create table)
-2. Update JobFormDialog with date pickers
-3. Create JobAppointmentsCard component  
-4. Create JobAppointmentDialog component
-5. Update JobDetail page with Edit button and new appointments UI
-6. Update SchedulingWidget logic or replace entirely
+1. **QueryClient Configuration** - Biggest impact, affects entire app
+2. **forwardRef Fix** - Eliminates console warning
+3. **useUserRole Loading State** - Prevents auth flash
+4. **Form Reset Effects** - Prevents stale form data
+5. **Specific Query Invalidation** - Reduces network requests
 
+---
+
+## Expected Outcomes
+
+After implementation:
+- Reduced network requests by ~60% due to staleTime
+- No more loading flashes when switching tabs
+- Console warning about refs eliminated
+- Smoother navigation between admin pages
+- Forms properly reset when opening with different data
