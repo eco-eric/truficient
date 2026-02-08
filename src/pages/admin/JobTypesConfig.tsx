@@ -11,8 +11,24 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, GripVertical, Pencil, Trash2, Package, Wrench, ClipboardCheck, Settings, Home, Building } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package, Wrench, ClipboardCheck, Settings, Home, Building, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { SortableStageRow } from '@/components/admin/job-types/SortableStageRow';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Package, Wrench, ClipboardCheck, Settings, Home, Building
@@ -152,6 +168,47 @@ export default function JobTypesConfig() {
     onError: (error) => toast.error('Failed to delete: ' + error.message)
   });
 
+  const updateStagesOrderMutation = useMutation({
+    mutationFn: async (updatedStages: { id: string; sort_order: number }[]) => {
+      const updates = updatedStages.map(stage =>
+        supabase
+          .from('crm_job_stages')
+          .update({ sort_order: stage.sort_order })
+          .eq('id', stage.id)
+      );
+      const results = await Promise.all(updates);
+      const error = results.find(r => r.error)?.error;
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_job_stages'] });
+      toast.success('Stage order updated');
+    },
+    onError: (error) => toast.error('Failed to reorder: ' + error.message)
+  });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = stages.findIndex(s => s.id === active.id);
+      const newIndex = stages.findIndex(s => s.id === over.id);
+      const reordered = arrayMove(stages, oldIndex, newIndex).map((s, i) => ({
+        id: s.id,
+        sort_order: i + 1
+      }));
+      updateStagesOrderMutation.mutate(reordered);
+    }
+  };
+
   const residentialTypes = jobTypes.filter(t => t.category === 'residential');
   const commercialTypes = jobTypes.filter(t => t.category === 'commercial');
   const selectedType = jobTypes.find(t => t.id === selectedTypeId);
@@ -254,42 +311,28 @@ export default function JobTypesConfig() {
                   No stages configured. Add stages to define the workflow.
                 </p>
               ) : (
-                <div className="space-y-2">
-                  {stages.map((stage, index) => (
-                    <div
-                      key={stage.id}
-                      className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                    >
-                      <GripVertical className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground w-6">{index + 1}.</span>
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: stage.color }}
-                      />
-                      <span className="flex-1 font-medium">{stage.name}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {stage.stage_type}
-                      </Badge>
-                      {stage.auto_notify_customer && (
-                        <Badge variant="secondary" className="text-xs">Notify</Badge>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => { setEditingStage(stage); setIsStageDialogOpen(true); }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteStageMutation.mutate(stage.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={stages.map(s => s.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-2">
+                      {stages.map((stage, index) => (
+                        <SortableStageRow
+                          key={stage.id}
+                          stage={stage}
+                          index={index}
+                          onEdit={() => { setEditingStage(stage); setIsStageDialogOpen(true); }}
+                          onDelete={() => deleteStageMutation.mutate(stage.id)}
+                        />
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </SortableContext>
+                </DndContext>
               )}
             </CardContent>
           </Card>
