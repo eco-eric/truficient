@@ -12,7 +12,8 @@ import {
   Calculator, 
   CreditCard, 
   Database,
-  Users 
+  Users,
+  MapPin
 } from 'lucide-react';
 
 interface DocumentInfo {
@@ -80,6 +81,14 @@ const documents: DocumentInfo[] = [
     description: 'Customer, location, pipeline, jobs, and team management',
     icon: <Users className="h-5 w-5" />,
     lines: 650,
+  },
+  {
+    id: 'crm-locations',
+    title: 'CRM Locations Management',
+    filename: 'CRM-LOCATIONS.md',
+    description: 'Google Maps integration, property data lookup, and equipment tracking',
+    icon: <MapPin className="h-5 w-5" />,
+    lines: 445,
   },
 ];
 
@@ -1708,6 +1717,110 @@ All CRM tables use role-based policies:
 | File | Purpose |
 |------|---------|
 | \`src/pages/admin/Teams.tsx\` | Team/member management |`,
+
+  'crm-locations': `# CRM Locations Management - Implementation Guide
+
+> **Feature:** Customer location management with Google Maps and property data lookup  
+> **Integrates With:** Existing CRM System (crm_customers, crm_locations)
+
+---
+
+## Overview
+
+This implementation enhances the CRM locations system with:
+
+✅ Google Places address autocomplete  
+✅ Interactive Google Maps display  
+✅ "Lookup Property Data" button (manual trigger)  
+✅ County auto-population  
+✅ Equipment tracking per location  
+✅ Service history management  
+
+---
+
+## Quick Start
+
+### 1. Google Maps API Setup
+
+1. Enable: Maps JavaScript API, Places API, Maps Embed API, Geocoding API
+2. Create API Key & restrict to your domains
+3. Add to \`.env\`: \`VITE_GOOGLE_PLACES_API_KEY=your_key\`
+4. Add to Supabase secrets: \`GOOGLE_PLACES_API_KEY\`
+
+### 2. Database Tables
+
+**crm_locations** - Enhanced with:
+- \`google_place_id\`, \`formatted_address\`, \`latitude\`, \`longitude\`
+- \`lot_size_sqft\`, \`bedrooms\`, \`bathrooms\`
+- \`gate_code\`, \`access_notes\`, \`parking_instructions\`
+- \`property_data_source\`, \`property_data_verified_at\`
+
+**crm_location_equipment** - HVAC equipment tracking  
+**crm_location_service_history** - Service records
+
+---
+
+## Component Architecture
+
+### Main Page: Locations.tsx
+- Location list with filters (search, customer, type)
+- Stats cards (total, residential, commercial, primary)
+- Add/edit/delete locations
+
+### AddLocationDialog.tsx
+- Customer selection dropdown
+- "Use Billing Address" quick-fill
+- Google Places autocomplete
+- "Lookup Property Data" button
+- Google Maps preview
+- Property details fields
+
+### LocationDetailsDialog.tsx
+- Full location details view
+- Map display
+- Access information
+- Edit button
+
+### GooglePlacesAutocomplete.tsx
+- Address search as you type
+- Auto-fills all address fields
+- Extracts county from Google
+
+### LocationMapEmbed.tsx
+- Interactive Google Map embed
+- Coordinates display
+- Link to Google Maps
+
+---
+
+## Property Data Lookup Flow
+
+\`\`\`
+User enters/selects address
+        ↓
+User clicks "Lookup Property Data"
+        ↓
+Edge function queries APIs:
+  1. US Census/ACS (year built estimates)
+  2. Google Geocoding (county extraction)
+  3. County Assessor APIs (DFW)
+        ↓
+Form fields auto-fill (user can override)
+\`\`\`
+
+---
+
+## File Reference
+
+| File | Purpose |
+|------|---------|
+| \`src/pages/admin/Locations.tsx\` | Main locations page |
+| \`src/components/admin/locations/AddLocationDialog.tsx\` | Add/edit form |
+| \`src/components/admin/locations/LocationDetailsDialog.tsx\` | View details |
+| \`src/components/admin/locations/GooglePlacesAutocomplete.tsx\` | Address search |
+| \`src/components/admin/locations/LocationMapEmbed.tsx\` | Map display |
+| \`src/types/crmLocations.ts\` | TypeScript types |
+| \`supabase/functions/lookup-property-data/\` | Property lookup edge function |`,
 };
 
 export const SystemDocumentation = () => {
