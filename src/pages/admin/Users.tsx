@@ -354,9 +354,27 @@ const UsersPage = () => {
         return 'default';
       case 'manager':
         return 'secondary';
+      case 'technician':
+      case 'lead_tech':
+      case 'installer':
+      case 'helper':
+        return 'outline';
       default:
         return 'outline';
     }
+  };
+
+  const getRoleDisplayName = (role: AppRole) => {
+    const names: Record<AppRole, string> = {
+      super_admin: 'Super Admin',
+      admin: 'Admin',
+      manager: 'Manager',
+      technician: 'Technician',
+      lead_tech: 'Lead Tech',
+      installer: 'Installer',
+      helper: 'Helper',
+    };
+    return names[role] || role;
   };
 
   if (!isAdmin) {
@@ -473,6 +491,10 @@ const UsersPage = () => {
                         <SelectItem value="super_admin">Super Admin (System Config)</SelectItem>
                         <SelectItem value="admin">Admin (Full Access)</SelectItem>
                         <SelectItem value="manager">Manager (Limited Access)</SelectItem>
+                        <SelectItem value="technician">Technician (Field Tech)</SelectItem>
+                        <SelectItem value="lead_tech">Lead Tech (Senior Field)</SelectItem>
+                        <SelectItem value="installer">Installer (Installation Crew)</SelectItem>
+                        <SelectItem value="helper">Helper (Apprentice)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -528,6 +550,10 @@ const UsersPage = () => {
                       <SelectContent>
                         <SelectItem value="admin">Admin (Full Access)</SelectItem>
                         <SelectItem value="manager">Manager (Limited Access)</SelectItem>
+                        <SelectItem value="technician">Technician (Field Tech)</SelectItem>
+                        <SelectItem value="lead_tech">Lead Tech (Senior Field)</SelectItem>
+                        <SelectItem value="installer">Installer (Installation Crew)</SelectItem>
+                        <SelectItem value="helper">Helper (Apprentice)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -552,7 +578,13 @@ const UsersPage = () => {
             <CardTitle className="text-base">Role Permissions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="flex items-start gap-3">
+                <Badge variant="destructive">Super Admin</Badge>
+                <p className="text-sm text-muted-foreground">
+                  System configuration and full access to all features
+                </p>
+              </div>
               <div className="flex items-start gap-3">
                 <Badge>Admin</Badge>
                 <p className="text-sm text-muted-foreground">
@@ -563,6 +595,30 @@ const UsersPage = () => {
                 <Badge variant="secondary">Manager</Badge>
                 <p className="text-sm text-muted-foreground">
                   Limited access: view dashboard, manage submissions and blog posts
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <Badge variant="outline">Technician</Badge>
+                <p className="text-sm text-muted-foreground">
+                  Field technician access for service and repair tasks
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <Badge variant="outline">Lead Tech</Badge>
+                <p className="text-sm text-muted-foreground">
+                  Senior field technician with team oversight
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <Badge variant="outline">Installer</Badge>
+                <p className="text-sm text-muted-foreground">
+                  Installation crew member for equipment setup
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <Badge variant="outline">Helper</Badge>
+                <p className="text-sm text-muted-foreground">
+                  Apprentice or assistant role with limited access
                 </p>
               </div>
             </div>
@@ -608,15 +664,19 @@ const UsersPage = () => {
                         value={user.role} 
                         onValueChange={(v) => updateRole(user.id, v as AppRole)}
                       >
-                        <SelectTrigger className="w-[130px]">
+                        <SelectTrigger className="w-[140px]">
                           <Badge variant={getRoleBadgeVariant(user.role)}>
-                            {user.role}
+                            {getRoleDisplayName(user.role)}
                           </Badge>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="super_admin">Super Admin</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
                           <SelectItem value="manager">Manager</SelectItem>
+                          <SelectItem value="technician">Technician</SelectItem>
+                          <SelectItem value="lead_tech">Lead Tech</SelectItem>
+                          <SelectItem value="installer">Installer</SelectItem>
+                          <SelectItem value="helper">Helper</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>

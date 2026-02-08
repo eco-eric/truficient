@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-export type AppRole = 'super_admin' | 'admin' | 'manager';
+export type AppRole = 'super_admin' | 'admin' | 'manager' | 'technician' | 'lead_tech' | 'installer' | 'helper';
 
 interface UserRoleState {
   role: AppRole | null;
@@ -10,6 +10,11 @@ interface UserRoleState {
   isSuperAdmin: boolean;
   isAdmin: boolean;
   isManager: boolean;
+  isTechnician: boolean;
+  isLeadTech: boolean;
+  isInstaller: boolean;
+  isHelper: boolean;
+  isFieldRole: boolean;
   hasAccess: boolean;
 }
 
@@ -62,6 +67,11 @@ export const useUserRole = (): UserRoleState => {
   const isSuperAdmin = role === 'super_admin';
   const isAdmin = role === 'admin' || role === 'super_admin';
   const isManager = role === 'manager';
+  const isTechnician = role === 'technician';
+  const isLeadTech = role === 'lead_tech';
+  const isInstaller = role === 'installer';
+  const isHelper = role === 'helper';
+  const isFieldRole = isTechnician || isLeadTech || isInstaller || isHelper;
 
   return {
     role,
@@ -69,6 +79,11 @@ export const useUserRole = (): UserRoleState => {
     isSuperAdmin,
     isAdmin,
     isManager,
-    hasAccess: isSuperAdmin || isAdmin || isManager,
+    isTechnician,
+    isLeadTech,
+    isInstaller,
+    isHelper,
+    isFieldRole,
+    hasAccess: isSuperAdmin || isAdmin || isManager || isFieldRole,
   };
 };

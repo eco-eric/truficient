@@ -40,16 +40,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if calling user is admin
+    // Check if calling user is admin or super_admin
     const { data: roleData, error: roleError } = await userClient
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-      .eq('role', 'admin')
+      .in('role', ['admin', 'super_admin'])
       .single();
 
     if (roleError || !roleData) {
-      console.log('User is not an admin:', user.id);
+      console.log('User is not an admin or super_admin:', user.id);
       return new Response(
         JSON.stringify({ error: 'Forbidden - Admin access required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -153,9 +153,10 @@ Deno.serve(async (req) => {
       }
 
       // Validate role
-      if (!['admin', 'manager'].includes(role)) {
+      const validRoles = ['super_admin', 'admin', 'manager', 'technician', 'lead_tech', 'installer', 'helper'];
+      if (!validRoles.includes(role)) {
         return new Response(
-          JSON.stringify({ error: 'Invalid role. Must be admin or manager' }),
+          JSON.stringify({ error: `Invalid role. Must be one of: ${validRoles.join(', ')}` }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }

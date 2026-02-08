@@ -3789,7 +3789,14 @@ export type Database = {
     }
     Enums: {
       admin_cost_type: "fixed" | "percentage" | "per_job"
-      app_role: "admin" | "manager" | "super_admin"
+      app_role:
+        | "admin"
+        | "manager"
+        | "super_admin"
+        | "technician"
+        | "lead_tech"
+        | "installer"
+        | "helper"
       estimate_section:
         | "equipment_controls"
         | "miscellaneous_inside"
@@ -3949,7 +3956,15 @@ export const Constants = {
   public: {
     Enums: {
       admin_cost_type: ["fixed", "percentage", "per_job"],
-      app_role: ["admin", "manager", "super_admin"],
+      app_role: [
+        "admin",
+        "manager",
+        "super_admin",
+        "technician",
+        "lead_tech",
+        "installer",
+        "helper",
+      ],
       estimate_section: [
         "equipment_controls",
         "miscellaneous_inside",
