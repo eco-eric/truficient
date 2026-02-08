@@ -726,6 +726,70 @@ export type Database = {
           },
         ]
       }
+      crm_job_appointments: {
+        Row: {
+          assigned_team_id: string | null
+          created_at: string | null
+          end_datetime: string
+          google_calendar_event_id: string | null
+          google_calendar_id: string | null
+          id: string
+          job_id: string
+          notes: string | null
+          start_datetime: string
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_team_id?: string | null
+          created_at?: string | null
+          end_datetime: string
+          google_calendar_event_id?: string | null
+          google_calendar_id?: string | null
+          id?: string
+          job_id: string
+          notes?: string | null
+          start_datetime: string
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_team_id?: string | null
+          created_at?: string | null
+          end_datetime?: string
+          google_calendar_event_id?: string | null
+          google_calendar_id?: string | null
+          id?: string
+          job_id?: string
+          notes?: string | null
+          start_datetime?: string
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_job_appointments_assigned_team_id_fkey"
+            columns: ["assigned_team_id"]
+            isOneToOne: false
+            referencedRelation: "crm_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_job_appointments_google_calendar_id_fkey"
+            columns: ["google_calendar_id"]
+            isOneToOne: false
+            referencedRelation: "google_calendars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_job_appointments_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "crm_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_job_assignments: {
         Row: {
           actual_hours: number | null
@@ -958,7 +1022,9 @@ export type Database = {
           payment_status: string | null
           priority: string | null
           quoted_amount: number | null
+          scheduled_date: string | null
           scheduled_end: string | null
+          scheduled_end_date: string | null
           scheduled_start: string | null
           source_estimate_id: string | null
           source_pipeline_id: string | null
@@ -987,7 +1053,9 @@ export type Database = {
           payment_status?: string | null
           priority?: string | null
           quoted_amount?: number | null
+          scheduled_date?: string | null
           scheduled_end?: string | null
+          scheduled_end_date?: string | null
           scheduled_start?: string | null
           source_estimate_id?: string | null
           source_pipeline_id?: string | null
@@ -1016,7 +1084,9 @@ export type Database = {
           payment_status?: string | null
           priority?: string | null
           quoted_amount?: number | null
+          scheduled_date?: string | null
           scheduled_end?: string | null
+          scheduled_end_date?: string | null
           scheduled_start?: string | null
           source_estimate_id?: string | null
           source_pipeline_id?: string | null

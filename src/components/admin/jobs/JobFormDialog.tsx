@@ -55,8 +55,8 @@ export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose
     location_id: editingJob?.location?.id || '',
     title: editingJob?.title || '',
     priority: editingJob?.priority || 'normal',
-    scheduled_start: editingJob?.scheduled_start?.slice(0, 16) || '',
-    scheduled_end: editingJob?.scheduled_end?.slice(0, 16) || '',
+    scheduled_start: editingJob?.scheduled_date?.slice(0, 10) || editingJob?.scheduled_start?.slice(0, 10) || '',
+    scheduled_end: editingJob?.scheduled_end_date?.slice(0, 10) || editingJob?.scheduled_end?.slice(0, 10) || '',
     quoted_amount: editingJob?.quoted_amount || '',
     internal_notes: editingJob?.internal_notes || '',
     customer_notes: editingJob?.customer_notes || ''
@@ -101,11 +101,16 @@ export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose
   const saveMutation = useMutation({
     mutationFn: async () => {
       const jobData = {
-        ...formData,
-        quoted_amount: formData.quoted_amount ? parseFloat(formData.quoted_amount) : null,
-        scheduled_start: formData.scheduled_start || null,
-        scheduled_end: formData.scheduled_end || null,
-        location_id: formData.location_id || null
+        job_type_id: formData.job_type_id,
+        customer_id: formData.customer_id,
+        location_id: formData.location_id || null,
+        title: formData.title,
+        priority: formData.priority,
+        scheduled_date: formData.scheduled_start || null,
+        scheduled_end_date: formData.scheduled_end || null,
+        quoted_amount: formData.quoted_amount ? parseFloat(formData.quoted_amount as string) : null,
+        internal_notes: formData.internal_notes,
+        customer_notes: formData.customer_notes
       };
 
       if (editingJob?.id) {
@@ -262,20 +267,20 @@ export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose
           />
         </div>
 
-        {/* Schedule */}
+        {/* Schedule (Date Only) */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Scheduled Start</Label>
+            <Label>Scheduled Date</Label>
             <Input
-              type="datetime-local"
+              type="date"
               value={formData.scheduled_start}
               onChange={(e) => setFormData({ ...formData, scheduled_start: e.target.value })}
             />
           </div>
           <div className="space-y-2">
-            <Label>Scheduled End</Label>
+            <Label>End Date</Label>
             <Input
-              type="datetime-local"
+              type="date"
               value={formData.scheduled_end}
               onChange={(e) => setFormData({ ...formData, scheduled_end: e.target.value })}
             />
