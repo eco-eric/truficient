@@ -1,248 +1,239 @@
 
-# Fix Property Data Lookup, Add Map Preview & Error Feedback
+
+# Admin System Documentation Management
 
 ## Overview
 
-This plan addresses three issues:
-1. Property lookup (SqFt, Year Built, Stories) failing silently because the backend uses wrong API endpoints
-2. No Google Map showing in the Locations form to verify the address
-3. No error feedback when property lookup fails
+Create a super_admin-only feature within Settings to manage markdown documentation files that can be exported for use with external AI assistants like Claude. This provides a centralized location for viewing and downloading comprehensive system documentation.
 
 ---
 
-## Part A: Fix Backend Property Lookup
+## Feature Requirements
 
-### Problem
-The edge function uses dead/incorrect GIS API endpoints. The Dallas CAD endpoint returns 404, and other county endpoints are similarly broken.
-
-### Solution
-Update `supabase/functions/lookup-property-data/index.ts` with verified working endpoints:
-
-| County | Working Endpoint | Available Fields |
-|--------|-----------------|------------------|
-| Dallas | `maps.dcad.org/prdwa/rest/services/Property/ParcelQuery/MapServer/4/query` | SqFt, Year Built, Stories |
-| Denton | `gis.dentoncounty.gov/arcgis/rest/services/CAD/MapServer/0/query` | SqFt, Year Built |
-| Collin | `maps.collincountytx.gov/server/rest/services/InteractiveMap/Appraisal_District/MapServer/1/query` | Year Built only |
-| Tarrant | No public API found | Use Attom fallback |
-
-### Technical Changes
-
-**File: `supabase/functions/lookup-property-data/index.ts`**
-
-1. **Update Dallas CAD lookup function**
-   - New URL: `https://maps.dcad.org/prdwa/rest/services/Property/ParcelQuery/MapServer/4/query`
-   - Query field: `SITEADDRESS` (contains street number + name)
-   - Output fields: `RESFLRAREA` (sqft), `RESYRBLT` (year), `FLOORCOUNT` (stories)
-
-2. **Update Denton County lookup function**
-   - New URL: `https://gis.dentoncounty.gov/arcgis/rest/services/CAD/MapServer/0/query`
-   - Query field: `situs` (full address)
-   - Output fields: `living_area` (sqft), `yr_blt` (year)
-   - Note: Stories not available in this dataset
-
-3. **Update Collin County lookup function**
-   - New URL: `https://maps.collincountytx.gov/server/rest/services/InteractiveMap/Appraisal_District/MapServer/1/query`
-   - Query field: `situs_disp`
-   - Output fields: `yr_blt` (year built only)
-   - Note: SqFt and Stories not available
-
-4. **Disable Tarrant County CAD lookup**
-   - No public REST API available
-   - Return null immediately, rely on Attom fallback
-
-5. **Add detailed error tracking**
-   - Track which endpoint was attempted
-   - Track HTTP status codes
-   - Return error details in response for debugging
-
-6. **Update CORS headers**
-   - Include full header allowlist to prevent preflight failures
+1. **Documentation Viewer** - Display existing documentation files from the `/docs` folder
+2. **Export Capability** - Download individual or combined documentation as markdown
+3. **Super Admin Only** - Restrict access to `super_admin` role exclusively
+4. **Settings Integration** - Add as a new section within the Settings page
 
 ---
 
-## Part B: Add Error Feedback to Frontend
+## Implementation Approach
 
-### Problem
-When property lookup fails, the user sees nothing - no indication that something went wrong.
+### Option A: Static Documentation Viewer (Recommended)
 
-### Solution
-Update `src/pages/admin/Locations.tsx` to show error feedback when lookup fails.
+Since the documentation already exists in `/docs/*.md`, we can create a component that:
+- Lists available documentation files with preview
+- Allows downloading individual files or a combined export
+- No database storage needed (files exist in codebase)
 
-### Technical Changes
+### Option B: Dynamic Documentation Manager
 
-**File: `src/lib/propertyLookup.ts`**
+If you want the ability to edit/create documentation from the admin panel:
+- Store documentation in a database table
+- Add CRUD operations for markdown files
+- Requires more complexity
 
-1. Add error status to return type:
+**Recommendation:** Option A - The existing `/docs` folder already contains excellent documentation. We'll create a viewer/exporter that leverages these files.
+
+---
+
+## Technical Implementation
+
+### 1. Create Documentation Viewer Component
+
+**File:** `src/components/admin/settings/SystemDocumentation.tsx`
+
 ```typescript
-export interface PropertyLookupResult {
-  data: PropertyData | null;
-  error: string | null;
-  attemptedSource: string | null;
-}
+// Component that displays available documentation
+// - Lists all doc sections (Admin Dashboard, Ducted Estimator, etc.)
+// - Preview modal for each doc
+// - Download individual docs
+// - "Export All" button for combined download
 ```
 
-2. Update `lookupPropertyData` to return structured result with error info
+### 2. Update Settings Page
 
-**File: `src/pages/admin/Locations.tsx`**
+**File:** `src/pages/admin/Settings.tsx`
 
-1. Add state for lookup error:
-```typescript
-const [lookupError, setLookupError] = useState<string | null>(null);
+Add a new Card section after the existing cards that:
+- Only renders when `isSuperAdmin === true`
+- Contains the documentation viewer component
+- Shows file list with download buttons
+
+### 3. Documentation Data Structure
+
+Hardcoded list of available documentation (since these files exist in the codebase):
+
+| Document | Path | Description |
+|----------|------|-------------|
+| Admin Dashboard | `docs/ADMIN-DASHBOARD.md` | Dashboard architecture, RBAC, navigation |
+| Ducted Estimator | `docs/DUCTED-ESTIMATOR.md` | Ducted HVAC estimator flow and pricing |
+| Ductless Estimator | `docs/DUCTLESS-ESTIMATOR.md` | Mini-split estimator configuration |
+| GHL Integration | `docs/GHL-INTEGRATION.md` | GoHighLevel CRM sync documentation |
+| Financing | `docs/FINANCING-INTEGRATION.md` | Synchrony financing integration |
+| System Pricing | `docs/SYSTEM-PRICING-DATABASE.md` | Equipment and pricing database |
+
+### 4. Export Functionality
+
+Two export options:
+1. **Individual Download** - Download single doc file
+2. **Combined Export** - Merge all docs into one file with table of contents
+
+Combined export format:
+```markdown
+# Truficient Admin System Documentation
+Generated: [timestamp]
+
+## Table of Contents
+1. Admin Dashboard
+2. Ducted Estimator
+3. Ductless Estimator
+4. GHL Integration
+5. Financing Integration
+6. System Pricing Database
+
+---
+
+[Full content of each document separated by horizontal rules]
 ```
 
-2. Update `handleAddressSelect` to handle errors:
-```typescript
-if (result.error) {
-  setLookupError(result.error);
-  toast.error(`Property lookup failed: ${result.error}`);
-} else if (result.data) {
-  // ... existing success logic
-} else {
-  setLookupError('No property data found for this address');
-  toast.info('No property data found - please enter manually');
-}
+---
+
+## UI Design
+
+### Settings Page Addition
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  📄 System Documentation                    [SUPER ADMIN ONLY]  │
+│                                                                  │
+│  Export technical documentation for external AI assistants.     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  Available Documentation:                                        │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │ 📘 Admin Dashboard                           [Download]   │  │
+│  │    Dashboard architecture, RBAC, navigation structure      │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │ 📗 Ducted Estimator                          [Download]   │  │
+│  │    Multi-step HVAC estimator with pricing engine          │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │ 📙 Ductless Estimator                        [Download]   │  │
+│  │    Mini-split zone configuration and BTU calculations     │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │ 📕 GHL Integration                           [Download]   │  │
+│  │    GoHighLevel CRM sync and lead management               │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │ 📓 Financing Integration                     [Download]   │  │
+│  │    Synchrony financing plans and payment calculations     │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │ 📔 System Pricing Database                   [Download]   │  │
+│  │    Equipment systems and price book management            │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  ─────────────────────────────────────────────────────────────  │
+│                                                                  │
+│  [📦 Download All Documentation (Combined)]                     │
+│                                                                  │
+│  Generates a single file with all docs for Claude/ChatGPT       │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-3. Add visual error indicator in the form:
+---
+
+## Access Control
+
+The section will only render for super_admin users:
+
 ```typescript
-{lookupError && (
-  <Alert variant="destructive" className="mt-2">
-    <AlertCircle className="h-4 w-4" />
-    <AlertDescription>{lookupError}</AlertDescription>
-  </Alert>
+// In Settings.tsx
+const { isSuperAdmin } = useUserRole();
+
+// Only super_admin can see this section
+{isSuperAdmin && (
+  <Card>
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <FileText className="h-5 w-5" />
+        System Documentation
+      </CardTitle>
+      <CardDescription>
+        Export technical documentation for external AI assistants
+      </CardDescription>
+    </CardHeader>
+    <CardContent>
+      <SystemDocumentation />
+    </CardContent>
+  </Card>
 )}
 ```
 
 ---
 
-## Part C: Add Google Map Preview
+## Files to Create/Modify
 
-### Problem
-Users cannot visually verify that the selected address is correct.
+| File | Action | Description |
+|------|--------|-------------|
+| `src/components/admin/settings/SystemDocumentation.tsx` | Create | Documentation viewer component |
+| `src/pages/admin/Settings.tsx` | Modify | Add documentation section for super_admin |
 
-### Solution
-Store coordinates from Google Places and display a map preview in the form.
+---
 
-### Technical Changes
+## Implementation Notes
 
-**File: `src/pages/admin/Locations.tsx`**
+### Documentation Content
 
-1. Add state for coordinates:
+The existing `/docs` folder contains 6 comprehensive markdown files totaling ~2,000 lines of documentation covering:
+
+- **Admin Dashboard** (345 lines) - Layout, navigation, RBAC, dashboard components
+- **Ducted Estimator** (599 lines) - Step flow, tonnage calculation, pricing engine, GHL sync
+- **Ductless Estimator** (672 lines) - Zone configuration, BTU calculations, tier pricing
+- **GHL Integration** (408 lines) - Edge functions, sync workflow, custom fields
+- **Financing** (427 lines) - Synchrony plans, payment factor calculations
+- **System Pricing** (499 lines) - Equipment database, Excel import, RLS policies
+
+### Download Implementation
+
+Since we can't directly access the filesystem in the browser, we'll:
+1. Embed the documentation content directly in the component (hardcoded)
+2. Generate download using Blob and URL.createObjectURL()
+3. Trigger download via a temporary anchor element
+
 ```typescript
-const [latitude, setLatitude] = useState<number | null>(null);
-const [longitude, setLongitude] = useState<number | null>(null);
-const [googlePlaceId, setGooglePlaceId] = useState('');
-```
-
-2. Update `handleAddressSelect` to capture coordinates:
-```typescript
-setLatitude(components.lat);
-setLongitude(components.lng);
-setGooglePlaceId(components.placeId);
-```
-
-3. Update `openEdit` to load coordinates:
-```typescript
-setLatitude(location.latitude || null);
-setLongitude(location.longitude || null);
-setGooglePlaceId(location.google_place_id || '');
-```
-
-4. Update `resetForm` to clear coordinates:
-```typescript
-setLatitude(null);
-setLongitude(null);
-setGooglePlaceId('');
-```
-
-5. Add coordinates to save payload:
-```typescript
-latitude: latitude,
-longitude: longitude,
-google_place_id: googlePlaceId || null,
-```
-
-6. Add MapPreview component after the County field:
-```typescript
-{latitude && longitude && (
-  <MapPreview
-    lat={latitude}
-    lng={longitude}
-    address={`${addressLine1}, ${city}, ${state} ${zipCode}`}
-    county={county}
-    className="mt-4"
-  />
-)}
-
-{!latitude && addressLine1 && (
-  <div className="text-sm text-muted-foreground mt-2">
-    Select an address from the dropdown to see map preview
-  </div>
-)}
+const downloadDocument = (content: string, filename: string) => {
+  const blob = new Blob([content], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};
 ```
 
 ---
 
-## Part D: Improve County Auto-Population
+## Summary
 
-### Current State
-County is already being set from `administrative_area_level_2` in `handleAddressSelect`. This should work but may not for all addresses.
+| Aspect | Detail |
+|--------|--------|
+| **Access** | Super Admin only |
+| **Location** | Settings page (new section) |
+| **Documents** | 6 existing docs from /docs folder |
+| **Actions** | Individual download, combined export |
+| **New Files** | 1 new component |
+| **Modified Files** | Settings.tsx |
+| **Database Changes** | None |
 
-### Enhancement
-Add a fallback message when Google doesn't return county:
-```typescript
-if (!components.county && components.state === 'TX') {
-  // Could not determine county - prompt user
-  toast.info('County could not be determined - please verify');
-}
-```
-
----
-
-## Summary of File Changes
-
-| File | Changes |
-|------|---------|
-| `supabase/functions/lookup-property-data/index.ts` | Fix all CAD endpoints, add error tracking |
-| `src/lib/propertyLookup.ts` | Return structured result with error info |
-| `src/pages/admin/Locations.tsx` | Add map preview, error feedback, save coordinates |
-
----
-
-## Expected Results After Implementation
-
-| Feature | Before | After |
-|---------|--------|-------|
-| Dallas lookup | 404 error | Returns SqFt, Year, Stories |
-| Denton lookup | 404 error | Returns SqFt, Year |
-| Collin lookup | 404 error | Returns Year |
-| Tarrant lookup | 404 error | "Not available" + Attom fallback |
-| Error feedback | Silent fail | Toast + alert message |
-| Map preview | Not shown | Interactive map in form |
-| County | Auto-fills (when available) | Auto-fills + fallback hint |
-| Coordinates | Not saved | Saved to database |
-
----
-
-## Testing Checklist
-
-1. Test Dallas County address (e.g., 3180 Carmel St, Dallas, TX 75204)
-   - Verify SqFt, Year Built, Stories auto-fill
-   - Verify map shows correct location
-   - Verify county shows "Dallas County"
-
-2. Test Denton County address
-   - Verify SqFt, Year Built auto-fill
-   - Verify Stories remains empty (not available)
-
-3. Test Collin County address
-   - Verify Year Built auto-fills
-   - Verify SqFt, Stories show "No data" or remain empty
-
-4. Test unsupported county
-   - Verify error message shows
-   - Verify manual entry still works
-
-5. Test edit existing location
-   - Verify map shows if coordinates exist
-   - Verify all fields populate correctly
