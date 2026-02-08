@@ -44,23 +44,22 @@ export default function Calendar() {
     },
   });
 
-  // Fetch jobs from database
-  const { data: jobs } = useQuery({
-    queryKey: ["calendar-jobs", currentDate, viewMode],
+  // Fetch job appointments from database (these are the timed schedule entries)
+  const { data: appointments } = useQuery({
+    queryKey: ["calendar-appointments", currentDate, viewMode],
     queryFn: async () => {
       const { start, end } = getDateRange();
       const { data, error } = await supabase
-        .from("crm_jobs")
+        .from("crm_job_appointments")
         .select(`
           *,
-          customer:crm_customers(first_name, last_name, company_name),
-          job_type:crm_job_types(name, color),
-          location:crm_locations(address_line1, city)
+          job:crm_jobs(id, job_number, title),
+          team:crm_teams(id, name, color),
+          calendar:google_calendars(id, name, color, calendar_id)
         `)
-        .gte("scheduled_start", start.toISOString())
-        .lte("scheduled_start", end.toISOString())
-        .is("deleted_at", null)
-        .order("scheduled_start");
+        .gte("start_datetime", start.toISOString())
+        .lte("start_datetime", end.toISOString())
+        .order("start_datetime");
       if (error) throw error;
       return data;
     },
@@ -160,7 +159,7 @@ export default function Calendar() {
     }
   };
 
-  // Combine jobs and Google events for calendar view
+  // Combine job appointments and Google events for calendar view
   const combinedEvents = useMemo(() => {
     const events: Array<{
       id: string;
@@ -172,30 +171,36 @@ export default function Calendar() {
       data: any;
     }> = [];
 
-    // Add jobs
-    jobs?.forEach(job => {
-      if (job.scheduled_start) {
+    // Add job appointments (primary CRM schedule source)
+    appointments?.forEach((apt: any) => {
+      if (apt.start_datetime) {
+        const start = new Date(apt.start_datetime);
+        const end = apt.end_datetime ? new Date(apt.end_datetime) : addDays(start, 0.25);
+        const jobNumber = apt.job?.job_number || "Job";
+        const title = apt.title || apt.job?.title || "Appointment";
+
         events.push({
-          id: job.id,
-          title: `${job.job_number} - ${job.customer?.first_name || job.customer?.company_name || "Unknown"}`,
-          start: new Date(job.scheduled_start),
-          end: job.scheduled_end ? new Date(job.scheduled_end) : addDays(new Date(job.scheduled_start), 0.25),
+          id: apt.id,
+          title: `${jobNumber} - ${title}`,
+          start,
+          end,
           type: "job",
-          color: job.job_type?.color || "#3b82f6",
-          data: job,
+          color: apt.team?.color || apt.calendar?.color || "#3b82f6",
+          data: apt,
         });
       }
     });
 
-    // Add Google events (that aren't already jobs)
+    // Add Google events (that aren't already synced to a job appointment)
     googleEvents?.forEach((event: CalendarEvent) => {
       const eventStart = event.start.dateTime || event.start.date;
       const eventEnd = event.end.dateTime || event.end.date;
       if (eventStart) {
-        // Skip if this is a job we already have
-        const isJobEvent = jobs?.some(j => j.google_calendar_event_id === event.id);
-        if (!isJobEvent) {
-          const calendar = calendars?.find(c => c.calendar_id === event.calendarId);
+        const isSyncedAppointment = appointments?.some(
+          (a: any) => a.google_calendar_event_id === event.id
+        );
+        if (!isSyncedAppointment) {
+          const calendar = calendars?.find((c) => c.calendar_id === event.calendarId);
           events.push({
             id: event.id,
             title: event.summary || "Untitled",
@@ -210,7 +215,7 @@ export default function Calendar() {
     });
 
     return events.sort((a, b) => a.start.getTime() - b.start.getTime());
-  }, [jobs, googleEvents, calendars]);
+  }, [appointments, googleEvents, calendars]);
 
   return (
     <AdminLayout title="Calendar">
