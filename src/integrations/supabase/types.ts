@@ -729,6 +729,7 @@ export type Database = {
       crm_job_appointments: {
         Row: {
           assigned_team_id: string | null
+          attendee_member_ids: string[] | null
           created_at: string | null
           end_datetime: string
           google_calendar_event_id: string | null
@@ -742,6 +743,7 @@ export type Database = {
         }
         Insert: {
           assigned_team_id?: string | null
+          attendee_member_ids?: string[] | null
           created_at?: string | null
           end_datetime: string
           google_calendar_event_id?: string | null
@@ -755,6 +757,7 @@ export type Database = {
         }
         Update: {
           assigned_team_id?: string | null
+          attendee_member_ids?: string[] | null
           created_at?: string | null
           end_datetime?: string
           google_calendar_event_id?: string | null

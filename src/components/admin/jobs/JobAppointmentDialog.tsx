@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { MultiSelect } from '@/components/ui/multi-select';
+import { Calendar, RefreshCw, CheckCircle2, Users } from 'lucide-react';
 import { format, addHours } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -29,6 +30,7 @@ interface JobAppointmentDialogProps {
     google_calendar_event_id: string | null;
     assigned_team_id: string | null;
     notes: string | null;
+    attendee_member_ids?: string[] | null;
   } | null;
 }
 
@@ -54,7 +56,22 @@ export default function JobAppointmentDialog({
     endTime: '17:00',
     calendarId: '',
     teamId: '',
-    notes: ''
+    notes: '',
+    attendeeIds: [] as string[]
+  });
+
+  // Fetch team members for attendee selection
+  const { data: teamMembers = [] } = useQuery({
+    queryKey: ['crm_team_members_active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_team_members')
+        .select('id, first_name, last_name, email')
+        .eq('is_active', true)
+        .order('first_name');
+      if (error) throw error;
+      return data;
+    }
   });
 
   // Reset form when appointment changes
@@ -70,7 +87,8 @@ export default function JobAppointmentDialog({
         endTime: format(endDt, 'HH:mm'),
         calendarId: appointment.google_calendar_id || '',
         teamId: appointment.assigned_team_id || '',
-        notes: appointment.notes || ''
+        notes: appointment.notes || '',
+        attendeeIds: appointment.attendee_member_ids || []
       });
     } else {
       setFormData({
@@ -81,7 +99,8 @@ export default function JobAppointmentDialog({
         endTime: '17:00',
         calendarId: '',
         teamId: '',
-        notes: ''
+        notes: '',
+        attendeeIds: []
       });
     }
   }, [appointment, open]);
@@ -139,7 +158,8 @@ export default function JobAppointmentDialog({
         end_datetime: endDateTime.toISOString(),
         google_calendar_id: formData.calendarId || null,
         assigned_team_id: formData.teamId || null,
-        notes: formData.notes || null
+        notes: formData.notes || null,
+        attendee_member_ids: formData.attendeeIds
       };
 
       let savedAppointment;
@@ -177,6 +197,12 @@ export default function JobAppointmentDialog({
             formData.notes ? `\nNotes:\n${formData.notes}` : null,
           ].filter(Boolean).join('\n');
 
+          // Get attendee emails for Google Calendar invites
+          const attendees = formData.attendeeIds
+            .map(id => teamMembers.find(m => m.id === id))
+            .filter(m => m?.email)
+            .map(m => ({ email: m!.email! }));
+
           const eventPayload = {
             summary: `${jobNumber} - ${customerName} - ${formData.title || jobTitle}`,
             description,
@@ -189,6 +215,7 @@ export default function JobAppointmentDialog({
               dateTime: endDateTime.toISOString(),
               timeZone: 'America/Chicago',
             },
+            attendees: attendees.length > 0 ? attendees : undefined,
           };
 
           let response;
@@ -349,6 +376,28 @@ export default function JobAppointmentDialog({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Attendees Selection */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Attendees (will receive calendar invites)
+            </Label>
+            <MultiSelect
+              options={teamMembers.map(m => ({
+                value: m.id,
+                label: `${m.first_name} ${m.last_name || ''}`.trim() + (m.email ? ` (${m.email})` : ''),
+              }))}
+              selected={formData.attendeeIds}
+              onChange={(ids) => setFormData({ ...formData, attendeeIds: ids })}
+              placeholder="Select team members..."
+            />
+            {formData.attendeeIds.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {formData.attendeeIds.length} attendee(s) will be invited when synced
+              </p>
+            )}
           </div>
 
           {/* Calendar Selection */}

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, RefreshCw, Settings } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, RefreshCw, Settings, Share } from "lucide-react";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, subWeeks, subMonths, parseISO } from "date-fns";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -242,6 +242,17 @@ export default function Calendar() {
             <h1 className="text-2xl font-bold">Calendar</h1>
           </div>
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(`${window.location.origin}/admin/calendar`);
+                toast.success("Calendar link copied!");
+              }}
+            >
+              <Share className="h-4 w-4 mr-1" />
+              Copy Link
+            </Button>
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
               <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? "animate-spin" : ""}`} />
               Refresh
