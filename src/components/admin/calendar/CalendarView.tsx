@@ -135,7 +135,10 @@ function EventBlock({ event, style }: { event: CalendarEvent; style: React.CSSPr
   );
 
   if (event.type === "job") {
-    return <Link to={`/admin/jobs/${event.data.id}`}>{content}</Link>;
+    const jobId = event.data?.job?.id || event.data?.job_id || event.data?.jobId;
+    if (jobId) {
+      return <Link to={`/admin/jobs/${jobId}`}>{content}</Link>;
+    }
   }
 
   return content;
