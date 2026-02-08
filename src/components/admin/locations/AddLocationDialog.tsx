@@ -247,14 +247,14 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
           city: formData.city,
           state: formData.state,
           zipCode: formData.zip_code,
-          googlePlaceId: formData.google_place_id,
+          county: formData.county,
         },
       });
 
       if (error) throw error;
 
-      if (data.success && data.data) {
-        const propertyData: PropertyLookupData = data.data;
+      if (data?.data) {
+        const propertyData = data.data;
         
         // Update form with retrieved data
         setFormData(prev => ({
@@ -265,19 +265,18 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
           lot_size_sqft: propertyData.lotSizeSqft?.toString() || prev.lot_size_sqft,
           bedrooms: propertyData.bedrooms?.toString() || prev.bedrooms,
           bathrooms: propertyData.bathrooms?.toString() || prev.bathrooms,
-          county: propertyData.county || prev.county,
         }));
 
         setPropertyDataSource(propertyData.source);
 
         toast({
           title: 'Property Data Retrieved',
-          description: `Data found from ${propertyData.source} (${propertyData.confidence} confidence)`,
+          description: `Data found from ${data.attemptedSource || propertyData.source || 'CAD'}`,
         });
       } else {
         toast({
           title: 'No Data Found',
-          description: data.message || 'Please enter property details manually.',
+          description: data?.error || 'Please enter property details manually.',
         });
       }
     } catch (error: any) {
