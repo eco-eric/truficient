@@ -1,157 +1,129 @@
 
-# Switch Property Lookup to RentCast API
+# Auto-Populate Building Type from RentCast
 
 ## Summary
-Replace the complex county-specific CAD integrations with a single RentCast API integration. This eliminates the unreliable county website connections and provides consistent, nationwide property data.
+When property data is fetched from RentCast, automatically map the `propertyType` field to your existing `building_type` dropdown and set `location_type` to residential/commercial accordingly.
 
-## Benefits of RentCast vs. County CAD Sites
-- **Single API** - No need to maintain separate integrations for each county
-- **Reliable** - Commercial service with 99.9% uptime vs. flaky government servers
-- **More Data** - Returns bedrooms, bathrooms, property type (fields CAD sites often miss)
-- **Nationwide** - Works for any US address, not just DFW counties
+## Current Situation
 
-## RentCast API Details
-- **Endpoint**: `GET https://api.rentcast.io/v1/properties`
-- **Auth Header**: `X-Api-Key: YOUR_API_KEY`
-- **Query Parameters**: `address`, `city`, `state`, `zipCode`
+| Field | In Database | In Form | Auto-Populated from RentCast |
+|-------|-------------|---------|------------------------------|
+| location_type | ✓ | ✓ | ✗ Not currently |
+| building_type | ✓ | ✗ | Not currently |
+| propertyClass | ✓ | ✗ | ✓ (stored but not displayed) |
 
-## Response Fields (mapped to your existing schema)
+## RentCast Property Types to Map
 
-| RentCast Field | Your Field |
-|----------------|------------|
-| `squareFootage` | `squareFootage` |
-| `yearBuilt` | `yearBuilt` |
-| `stories` (if available) | `stories` |
-| `lotSize` | `lotSizeSqft` |
-| `bedrooms` | `bedrooms` |
-| `bathrooms` | `bathrooms` |
-| `propertyType` | `propertyClass` |
+Based on RentCast API documentation, these are the property types returned:
 
-## Implementation Steps
+| RentCast Value | Your building_type | Your location_type |
+|----------------|--------------------|--------------------|
+| Single Family | single_family | residential |
+| Condo | condo | residential |
+| Townhouse | townhome | residential |
+| Apartment | apartment | residential |
+| Duplex / Triplex / Quadruplex | duplex | residential |
+| Multi-Family | duplex | residential |
+| Mobile/Manufactured | single_family | residential |
+| Land | single_family | residential |
+| Commercial | commercial_other | commercial |
 
-### Step 1: Add RentCast API Key as Secret
-Store your API key securely as a backend secret named `RENTCAST_API_KEY`.
+## Implementation
 
-### Step 2: Simplify Edge Function
-Rewrite `lookup-property-data/index.ts` to:
-1. Remove all county CAD functions (Dallas, Collin, Denton, Tarrant)
-2. Remove Attom fallback
-3. Add single `rentcastLookup` function
-4. Much simpler, ~100 lines vs ~470 lines
+### Step 1: Create Mapping Function
+Add a utility function in the edge function response or frontend that converts RentCast's `propertyType` string to your schema values.
 
-### Step 3: Update Source Display
-Update `src/lib/propertyLookup.ts` to add RentCast to the source display map.
+### Step 2: Update Property Lookup Handler
+In `AddLocationDialog.tsx`, modify the `handleLookupPropertyData` function to also set:
+- `building_type` based on the mapped value
+- `location_type` based on residential vs commercial detection
 
-## Technical Changes
+### Technical Changes
 
-### File: `supabase/functions/lookup-property-data/index.ts`
+**File: `src/components/admin/locations/AddLocationDialog.tsx`**
 
-**Before (complex)**:
-```text
-├── dallasCadLookup()     (57 lines)
-├── tarrantCadLookup()    (14 lines)
-├── collinCadLookup()     (68 lines)
-├── dentonCadLookup()     (68 lines)
-├── attomLookup()         (62 lines)
-└── County switching logic
-    Total: ~470 lines
-```
-
-**After (simple)**:
+Add mapping helper (before component):
 ```typescript
-async function rentcastLookup(
-  address: string,
-  city: string,
-  state: string,
-  zipCode: string
-): Promise<LookupResult> {
-  const apiKey = Deno.env.get("RENTCAST_API_KEY");
-  if (!apiKey) {
-    return { data: null, error: "RentCast API key not configured", attemptedSource: "rentcast" };
+function mapRentCastPropertyType(propertyType: string | null): {
+  buildingType: string;
+  locationType: 'residential' | 'commercial';
+} {
+  if (!propertyType) {
+    return { buildingType: 'single_family', locationType: 'residential' };
   }
-
-  const params = new URLSearchParams({
-    address,
-    city,
-    state,
-    zipCode,
-  });
-
-  const response = await fetch(`https://api.rentcast.io/v1/properties?${params}`, {
-    headers: {
-      "X-Api-Key": apiKey,
-      "Accept": "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    return { data: null, error: `RentCast returned HTTP ${response.status}`, attemptedSource: "rentcast" };
+  
+  const normalized = propertyType.toLowerCase();
+  
+  // Commercial detection
+  if (normalized.includes('commercial') || 
+      normalized.includes('retail') || 
+      normalized.includes('office') ||
+      normalized.includes('warehouse') ||
+      normalized.includes('industrial')) {
+    return { buildingType: 'commercial_other', locationType: 'commercial' };
   }
-
-  const results = await response.json();
-  const property = results[0]; // First match
-
-  if (!property) {
-    return { data: null, error: "No property found", attemptedSource: "rentcast" };
-  }
-
-  return {
-    data: {
-      squareFootage: property.squareFootage || null,
-      yearBuilt: property.yearBuilt || null,
-      stories: property.stories || null,
-      lotSizeSqft: property.lotSize || null,
-      bedrooms: property.bedrooms || null,
-      bathrooms: property.bathrooms || null,
-      propertyClass: property.propertyType || null,
-      source: "rentcast",
-    },
-    error: null,
-    attemptedSource: "rentcast",
+  
+  // Residential mappings
+  const residentialMap: Record<string, string> = {
+    'single family': 'single_family',
+    'singlefamily': 'single_family',
+    'condo': 'condo',
+    'condominium': 'condo',
+    'townhouse': 'townhome',
+    'townhome': 'townhome',
+    'apartment': 'apartment',
+    'duplex': 'duplex',
+    'triplex': 'duplex',
+    'quadruplex': 'duplex',
+    'multi-family': 'duplex',
+    'multifamily': 'duplex',
+    'mobile': 'single_family',
+    'manufactured': 'single_family',
   };
+  
+  for (const [key, value] of Object.entries(residentialMap)) {
+    if (normalized.includes(key)) {
+      return { buildingType: value, locationType: 'residential' };
+    }
+  }
+  
+  return { buildingType: 'single_family', locationType: 'residential' };
 }
 ```
 
-**Main handler simplified**:
+Update the property lookup handler (around line 260):
 ```typescript
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  const { address, city, state, zipCode } = await req.json();
+if (data?.data) {
+  const propertyData = data.data;
   
-  // No county logic needed - just call RentCast
-  const result = await rentcastLookup(address, city, state, zipCode);
+  // Map RentCast propertyType to our building_type
+  const { buildingType, locationType } = mapRentCastPropertyType(propertyData.propertyClass);
   
-  return new Response(JSON.stringify(result), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-});
-```
-
-### File: `src/lib/propertyLookup.ts`
-
-Add RentCast to the source display map:
-```typescript
-const sourceMap: Record<string, string> = {
-  rentcast: "RentCast",  // ADD
-  dallas_cad: "Dallas CAD",
-  // ... keep others for backwards compatibility
-};
+  setFormData(prev => ({
+    ...prev,
+    square_footage: propertyData.squareFootage?.toString() || prev.square_footage,
+    year_built: propertyData.yearBuilt?.toString() || prev.year_built,
+    stories: propertyData.stories?.toString() || prev.stories,
+    lot_size_sqft: propertyData.lotSizeSqft?.toString() || prev.lot_size_sqft,
+    bedrooms: propertyData.bedrooms?.toString() || prev.bedrooms,
+    bathrooms: propertyData.bathrooms?.toString() || prev.bathrooms,
+    building_type: buildingType,      // NEW
+    location_type: locationType,       // NEW
+  }));
+  // ...
+}
 ```
 
 ## Files Modified
 
-| File | Action |
-|------|--------|
-| `supabase/functions/lookup-property-data/index.ts` | Complete rewrite (~100 lines, down from ~470) |
-| `src/lib/propertyLookup.ts` | Add "rentcast" to source map |
+| File | Changes |
+|------|---------|
+| `src/components/admin/locations/AddLocationDialog.tsx` | Add mapping function + update lookup handler |
 
-## Secret Required
+## Result
+After clicking "Lookup Property Data", the form will automatically:
+1. Fill in square footage, year built, bedrooms, etc. (existing)
+2. Set **Building Type** dropdown to match (e.g., "Single Family Home")
+3. Set **Type** dropdown to "Residential" or "Commercial"
 
-| Secret Name | Description |
-|-------------|-------------|
-| `RENTCAST_API_KEY` | Your RentCast API key |
-
-After approval, I'll first ask you to add your RentCast API key, then implement the simplified edge function.
+This means less manual data entry for your team.
