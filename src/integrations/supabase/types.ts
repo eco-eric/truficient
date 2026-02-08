@@ -1138,6 +1138,8 @@ export type Database = {
           access_notes: string | null
           address_line1: string
           address_line2: string | null
+          bathrooms: number | null
+          bedrooms: number | null
           building_type: string | null
           city: string
           county: string | null
@@ -1152,6 +1154,11 @@ export type Database = {
           location_name: string | null
           location_type: string | null
           longitude: number | null
+          lot_size_sqft: number | null
+          property_class: string | null
+          property_data_auto_populated: boolean | null
+          property_data_source: string | null
+          property_data_verified_at: string | null
           square_footage: number | null
           state: string
           stories: number | null
@@ -1164,6 +1171,8 @@ export type Database = {
           access_notes?: string | null
           address_line1: string
           address_line2?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
           building_type?: string | null
           city: string
           county?: string | null
@@ -1178,6 +1187,11 @@ export type Database = {
           location_name?: string | null
           location_type?: string | null
           longitude?: number | null
+          lot_size_sqft?: number | null
+          property_class?: string | null
+          property_data_auto_populated?: boolean | null
+          property_data_source?: string | null
+          property_data_verified_at?: string | null
           square_footage?: number | null
           state: string
           stories?: number | null
@@ -1190,6 +1204,8 @@ export type Database = {
           access_notes?: string | null
           address_line1?: string
           address_line2?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
           building_type?: string | null
           city?: string
           county?: string | null
@@ -1204,6 +1220,11 @@ export type Database = {
           location_name?: string | null
           location_type?: string | null
           longitude?: number | null
+          lot_size_sqft?: number | null
+          property_class?: string | null
+          property_data_auto_populated?: boolean | null
+          property_data_source?: string | null
+          property_data_verified_at?: string | null
           square_footage?: number | null
           state?: string
           stories?: number | null
