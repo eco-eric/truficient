@@ -1,147 +1,235 @@
 
-# Fix: RLS Infinite Recursion on user_roles Table
+# Role Permissions Management System
 
-## What Happened
+## Overview
 
-The comprehensive RLS migration I just ran introduced a critical bug. The policies on the `user_roles` table were updated to use:
+This plan implements a comprehensive, database-driven permissions system that allows you (as super_admin) to:
+
+1. **Update user roles** via the existing Users page
+2. **Configure granular permissions** for each role via checkboxes
+3. **Dynamically show/hide nav items** based on permissions stored in the database
+4. **Persist changes** so that when you check/uncheck boxes, the permissions update immediately
+
+---
+
+## Current System Analysis
+
+Currently, permissions are **hardcoded** in `adminNavConfig.ts`:
+- Each nav item has `adminOnly: true/false`
+- The sidebar filters items based on `isAdmin` from `useUserRole`
+- No database-driven granular permissions exist
+
+---
+
+## New Architecture
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                    ROLE PERMISSIONS TABLE                       │
+├─────────────────────────────────────────────────────────────────┤
+│  role          │  permission_key       │  enabled  │  updated   │
+├────────────────┼───────────────────────┼───────────┼────────────┤
+│  manager       │  nav.dashboard        │  true     │  2026-02-08│
+│  manager       │  nav.customers        │  true     │  2026-02-08│
+│  manager       │  nav.submissions      │  true     │  2026-02-08│
+│  manager       │  nav.system-pricing   │  false    │  2026-02-08│
+│  admin         │  nav.dashboard        │  true     │  2026-02-08│
+│  admin         │  nav.system-pricing   │  true     │  2026-02-08│
+│  ...           │  ...                  │  ...      │  ...       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Key Concept**: `super_admin` bypasses all permission checks and always has full access.
+
+---
+
+## Database Changes
+
+### 1. New Table: `role_permissions`
 
 ```sql
-EXISTS (SELECT 1 FROM user_roles WHERE ...)
+CREATE TABLE public.role_permissions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  role app_role NOT NULL,
+  permission_key TEXT NOT NULL,
+  enabled BOOLEAN NOT NULL DEFAULT true,
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  updated_by UUID REFERENCES auth.users(id),
+  UNIQUE(role, permission_key)
+);
+
+-- Enable RLS
+ALTER TABLE role_permissions ENABLE ROW LEVEL SECURITY;
+
+-- Only super_admin can manage permissions
+CREATE POLICY "Super admins can manage permissions"
+  ON role_permissions
+  FOR ALL
+  USING (is_super_admin(auth.uid()));
+
+-- All authenticated users can read (for nav filtering)
+CREATE POLICY "Authenticated users can read permissions"
+  ON role_permissions
+  FOR SELECT
+  USING (auth.uid() IS NOT NULL);
 ```
 
-But this creates an infinite recursion because to check if you can access `user_roles`, the policy queries `user_roles`, which triggers the same check again, forever.
+### 2. Seed Default Permissions
 
-Your `super_admin` role is **still in the database** - I verified it exists. You just can't read it because of this recursion error.
+Pre-populate the table with all nav items for `admin` and `manager` roles, defaulting to current `adminOnly` settings.
 
 ---
 
-## Root Cause
+## New UI: Permission Management Page
 
-The correct pattern for `user_roles` RLS is to use a **SECURITY DEFINER function** that bypasses RLS:
+A new page at `/admin/permissions` (super_admin only) with:
 
-```sql
--- This function runs with owner privileges, bypassing RLS
-CREATE FUNCTION has_role(_user_id uuid, _role app_role)
-RETURNS boolean
-SECURITY DEFINER  -- Key: bypasses RLS
-SET search_path = public
-AS $$ ... $$;
+### Layout
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  Role Permissions Management                                    │
+├─────────────────────────────────────────────────────────────────┤
+│  Tabs: [Admin] [Manager]                                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─── Overview ──────────────────────────────────────────────┐  │
+│  │ ☑ Dashboard                                               │  │
+│  │ ☑ Abandoned Carts                                         │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                 │
+│  ┌─── CRM ───────────────────────────────────────────────────┐  │
+│  │ ☑ Customers                                               │  │
+│  │ ☑ Locations                                               │  │
+│  │ ☑ Submissions                                             │  │
+│  │ ☑ Pipeline                                                │  │
+│  │ ☐ DFW Watch List                                          │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                 │
+│  ┌─── Operations ────────────────────────────────────────────┐  │
+│  │ ☑ Calendar                                                │  │
+│  │ ☑ Jobs Board                                              │  │
+│  │ ...                                                       │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-The migration incorrectly replaced calls to `has_role()` with inline `EXISTS` subqueries on the `user_roles` table itself.
+### Behavior
+- Clicking a checkbox immediately updates the `role_permissions` table
+- Changes take effect on the next page load for affected users
+- Toast confirmation on save
+- "Select All" / "Deselect All" buttons per section
 
 ---
 
-## Solution
+## Code Changes
 
-Fix the `user_roles` table policies to NOT query `user_roles` within their own RLS. Instead:
+### 1. New Hook: `useRolePermissions`
 
-1. **Users can read their own role** - Simple check: `user_id = auth.uid()`
-2. **Admins can view all roles** - Use the `has_role()` function (which is SECURITY DEFINER)
-3. **Admins can manage roles** - Use the `has_role()` function
+```typescript
+// src/hooks/useRolePermissions.ts
+export const useRolePermissions = () => {
+  // Fetches permissions for current user's role
+  // Returns a Set of enabled permission_keys
+  // super_admin returns ALL permissions enabled
+};
+```
+
+### 2. Update `adminNavConfig.ts`
+
+Add `permissionKey` to each nav item:
+
+```typescript
+export interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  permissionKey: string; // e.g., "nav.customers", "nav.system-pricing"
+}
+```
+
+### 3. Update AdminSidebar
+
+Replace hardcoded `adminOnly` filtering with permission-based filtering:
+
+```typescript
+const { permissions, loading } = useRolePermissions();
+
+const visibleSections = navSections
+  .map(section => ({
+    ...section,
+    items: section.items.filter(item => 
+      isSuperAdmin || permissions.has(item.permissionKey)
+    ),
+  }))
+  .filter(section => section.items.length > 0);
+```
+
+### 4. New Page: `RolePermissions.tsx`
+
+Located at `/admin/permissions` with the checkbox UI shown above.
+
+### 5. Update Users Page
+
+Add a link to "Manage Permissions" for super_admins.
 
 ---
 
-## Database Migration
+## Files to Create/Modify
 
-```sql
--- Drop the broken policies
-DROP POLICY IF EXISTS "Admins can view all roles" ON user_roles;
-DROP POLICY IF EXISTS "Admins can insert roles" ON user_roles;
-DROP POLICY IF EXISTS "Admins can update roles" ON user_roles;
-DROP POLICY IF EXISTS "Admins can delete roles" ON user_roles;
-DROP POLICY IF EXISTS "Users can view their own role" ON user_roles;
-
--- Recreate with correct pattern using SECURITY DEFINER functions
-
--- 1. Users can always read their own role (no recursion)
-CREATE POLICY "Users can view own role"
-  ON user_roles FOR SELECT
-  USING (user_id = auth.uid());
-
--- 2. Admins can view all roles using SECURITY DEFINER function
-CREATE POLICY "Admins can view all roles"
-  ON user_roles FOR SELECT
-  USING (
-    has_role(auth.uid(), 'admin') OR 
-    has_role(auth.uid(), 'super_admin')
-  );
-
--- 3. Admins can insert roles using SECURITY DEFINER function
-CREATE POLICY "Admins can insert roles"
-  ON user_roles FOR INSERT
-  WITH CHECK (
-    has_role(auth.uid(), 'admin') OR 
-    has_role(auth.uid(), 'super_admin')
-  );
-
--- 4. Admins can update roles using SECURITY DEFINER function
-CREATE POLICY "Admins can update roles"
-  ON user_roles FOR UPDATE
-  USING (
-    has_role(auth.uid(), 'admin') OR 
-    has_role(auth.uid(), 'super_admin')
-  )
-  WITH CHECK (
-    has_role(auth.uid(), 'admin') OR 
-    has_role(auth.uid(), 'super_admin')
-  );
-
--- 5. Admins can delete roles using SECURITY DEFINER function
-CREATE POLICY "Admins can delete roles"
-  ON user_roles FOR DELETE
-  USING (
-    has_role(auth.uid(), 'admin') OR 
-    has_role(auth.uid(), 'super_admin')
-  );
-
--- Keep bootstrap policy for first admin claim
--- (Already exists and is correct)
-```
+| Action | File | Description |
+|--------|------|-------------|
+| CREATE | `supabase/migrations/xxx_add_role_permissions.sql` | New table + seed data |
+| CREATE | `src/hooks/useRolePermissions.ts` | Permission fetching hook |
+| CREATE | `src/pages/admin/RolePermissions.tsx` | Permission management UI |
+| MODIFY | `src/components/admin/adminNavConfig.ts` | Add `permissionKey` to items |
+| MODIFY | `src/components/admin/AdminSidebar.tsx` | Use permission-based filtering |
+| MODIFY | `src/components/admin/MobileAdminNav.tsx` | Use permission-based filtering |
+| MODIFY | `src/App.tsx` | Add route for `/admin/permissions` |
 
 ---
 
-## Why This Fixes It
+## Permission Key Naming Convention
 
-| Before (Broken) | After (Fixed) |
-|-----------------|---------------|
-| Policy queries `user_roles` directly | Policy uses `has_role()` function |
-| `has_role()` is SECURITY DEFINER | Same - bypasses RLS |
-| Creates infinite loop | Function runs with elevated privileges, no recursion |
+Format: `nav.<section>.<item>` or `nav.<item>`
 
-The `has_role()` function already exists and is defined as `SECURITY DEFINER`, meaning it executes with the function owner's privileges and **bypasses RLS entirely**. This breaks the recursion cycle.
-
----
-
-## Verification Data
-
-Your `super_admin` role still exists:
-```
-user_id: 4a05ab76-47d3-4523-8042-8bdcf787488f
-role: super_admin
-created_at: 2026-01-15
-```
-
-The database is fine - it's just the RLS policies blocking access.
+Examples:
+- `nav.dashboard`
+- `nav.customers`
+- `nav.submissions`
+- `nav.system-pricing`
+- `nav.gallery`
+- `nav.ai-settings`
 
 ---
 
-## Technical Details
+## Security Model
 
-**Current Error (flooding logs):**
-```
-ERROR: infinite recursion detected in policy for relation "user_roles"
-```
+| Role | Behavior |
+|------|----------|
+| `super_admin` | **Bypasses all checks** - always sees everything |
+| `admin` | Sees items where `role_permissions(admin, key) = true` |
+| `manager` | Sees items where `role_permissions(manager, key) = true` |
 
-**Files Changed:** Database migration only - no code changes needed
-
-**Impact:** Once fixed, all admin functionality will immediately work again because other tables' RLS policies can successfully query `user_roles` to check your role.
+RLS ensures only `super_admin` can INSERT/UPDATE/DELETE permissions.
 
 ---
 
-## Testing After Fix
+## Testing Checklist
 
-1. Refresh `/admin/settings` - Should show your `super_admin` role
-2. Navigate to `/admin/submissions` - Should show all counts
-3. Navigate to `/admin/customers` - Should show customer list
-4. WorkEdge toggle should persist
+1. Login as super_admin → See all nav items
+2. Go to `/admin/permissions` → See permission matrix
+3. Uncheck "Gallery" for `admin` role → Save
+4. Login as `admin` → Confirm Gallery is hidden
+5. Re-check "Gallery" → Login as admin → Confirm Gallery appears
+6. Verify manager role permissions work similarly
+7. Confirm super_admin always sees everything regardless of database state
+
+---
+
+## Future Enhancements (Not in Scope)
+
+- Data-level permissions (e.g., "can only see own customers")
+- Feature flags beyond navigation
+- Audit log of permission changes
