@@ -19,6 +19,53 @@ import { Loader2, MapPin, Search, Navigation } from 'lucide-react';
 import { LocationMapEmbed } from './LocationMapEmbed';
 import type { CrmCustomer, CrmLocation, BUILDING_TYPE_OPTIONS, PropertyLookupData } from '@/types/crmLocations';
 
+// Map RentCast propertyType to our building_type and location_type
+function mapRentCastPropertyType(propertyType: string | null): {
+  buildingType: string;
+  locationType: 'residential' | 'commercial';
+} {
+  if (!propertyType) {
+    return { buildingType: 'single_family', locationType: 'residential' };
+  }
+  
+  const normalized = propertyType.toLowerCase();
+  
+  // Commercial detection
+  if (normalized.includes('commercial') || 
+      normalized.includes('retail') || 
+      normalized.includes('office') ||
+      normalized.includes('warehouse') ||
+      normalized.includes('industrial')) {
+    return { buildingType: 'commercial_other', locationType: 'commercial' };
+  }
+  
+  // Residential mappings
+  const residentialMap: Record<string, string> = {
+    'single family': 'single_family',
+    'singlefamily': 'single_family',
+    'condo': 'condo',
+    'condominium': 'condo',
+    'townhouse': 'townhome',
+    'townhome': 'townhome',
+    'apartment': 'apartment',
+    'duplex': 'duplex',
+    'triplex': 'duplex',
+    'quadruplex': 'duplex',
+    'multi-family': 'duplex',
+    'multifamily': 'duplex',
+    'mobile': 'single_family',
+    'manufactured': 'single_family',
+  };
+  
+  for (const [key, value] of Object.entries(residentialMap)) {
+    if (normalized.includes(key)) {
+      return { buildingType: value, locationType: 'residential' };
+    }
+  }
+  
+  return { buildingType: 'single_family', locationType: 'residential' };
+}
+
 interface AddLocationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -256,6 +303,9 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
       if (data?.data) {
         const propertyData = data.data;
         
+        // Map RentCast propertyType to our building_type and location_type
+        const { buildingType, locationType } = mapRentCastPropertyType(propertyData.propertyClass);
+        
         // Update form with retrieved data
         setFormData(prev => ({
           ...prev,
@@ -265,6 +315,8 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
           lot_size_sqft: propertyData.lotSizeSqft?.toString() || prev.lot_size_sqft,
           bedrooms: propertyData.bedrooms?.toString() || prev.bedrooms,
           bathrooms: propertyData.bathrooms?.toString() || prev.bathrooms,
+          building_type: buildingType,
+          location_type: locationType,
         }));
 
         setPropertyDataSource(propertyData.source);
