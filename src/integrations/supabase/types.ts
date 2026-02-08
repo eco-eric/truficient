@@ -3121,6 +3121,7 @@ export type Database = {
           is_primary: boolean | null
           last_synced_at: string | null
           linked_job_type_id: string | null
+          linked_member_id: string | null
           linked_team_id: string | null
           name: string
           updated_at: string
@@ -3135,6 +3136,7 @@ export type Database = {
           is_primary?: boolean | null
           last_synced_at?: string | null
           linked_job_type_id?: string | null
+          linked_member_id?: string | null
           linked_team_id?: string | null
           name: string
           updated_at?: string
@@ -3149,6 +3151,7 @@ export type Database = {
           is_primary?: boolean | null
           last_synced_at?: string | null
           linked_job_type_id?: string | null
+          linked_member_id?: string | null
           linked_team_id?: string | null
           name?: string
           updated_at?: string
@@ -3159,6 +3162,13 @@ export type Database = {
             columns: ["linked_job_type_id"]
             isOneToOne: false
             referencedRelation: "crm_job_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_calendars_linked_member_id_fkey"
+            columns: ["linked_member_id"]
+            isOneToOne: false
+            referencedRelation: "crm_team_members"
             referencedColumns: ["id"]
           },
           {
