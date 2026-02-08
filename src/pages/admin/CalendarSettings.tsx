@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RefreshCw, Calendar, CheckCircle2, Star, Users, Briefcase, Plus } from "lucide-react";
+import { RefreshCw, Calendar, CheckCircle2, Star, Users, Briefcase, Plus, User } from "lucide-react";
 import { toast } from "sonner";
 
 interface GoogleCalendar {
@@ -23,6 +23,7 @@ interface GoogleCalendar {
   is_active: boolean;
   linked_job_type_id: string | null;
   linked_team_id: string | null;
+  linked_member_id: string | null;
   last_synced_at: string | null;
 }
 
@@ -66,6 +67,19 @@ export default function CalendarSettings() {
         .select("id, name")
         .eq("is_active", true)
         .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: teamMembers } = useQuery({
+    queryKey: ["team-members"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("crm_team_members")
+        .select("id, first_name, last_name, email")
+        .eq("is_active", true)
+        .order("first_name");
       if (error) throw error;
       return data;
     },
@@ -301,7 +315,7 @@ export default function CalendarSettings() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                       <label className="text-sm font-medium mb-1.5 block">
                         Set as Primary
@@ -377,6 +391,34 @@ export default function CalendarSettings() {
                           {teams?.map((t) => (
                             <SelectItem key={t.id} value={t.id}>
                               {t.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 flex items-center gap-1">
+                        <User className="h-4 w-4" />
+                        Link to Member
+                      </label>
+                      <Select
+                        value={calendar.linked_member_id || "none"}
+                        onValueChange={(value) =>
+                          updateCalendarMutation.mutate({
+                            id: calendar.id,
+                            linked_member_id: value === "none" ? null : value,
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select member" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          {teamMembers?.map((m) => (
+                            <SelectItem key={m.id} value={m.id}>
+                              {m.first_name} {m.last_name || ''}
                             </SelectItem>
                           ))}
                         </SelectContent>
