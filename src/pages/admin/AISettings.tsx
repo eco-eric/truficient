@@ -92,7 +92,7 @@ const PROVIDERS = [
   { 
     value: 'xai', 
     label: 'xAI',
-    description: 'Grok-2, Grok-2 Mini',
+    description: 'Grok-4, Grok-3, Vision & Code Models',
     requiresKey: true
   },
   { 
@@ -125,8 +125,20 @@ const MODELS_BY_PROVIDER: Record<string, { value: string; label: string }[]> = {
     { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' },
   ],
   xai: [
-    { value: 'grok-2', label: 'Grok-2' },
-    { value: 'grok-2-mini', label: 'Grok-2 Mini' },
+    // Recommended (Top 3)
+    { value: 'grok-4-1-fast-reasoning', label: 'Grok 4.1 Fast Reasoning (Recommended)' },
+    { value: 'grok-3-mini', label: 'Grok 3 Mini (Cost-Effective)' },
+    { value: 'grok-code-fast-1', label: 'Grok Code Fast (Structured Data)' },
+    // Additional Grok 4 Options
+    { value: 'grok-4-1-fast-non-reasoning', label: 'Grok 4.1 Fast' },
+    { value: 'grok-4-fast-reasoning', label: 'Grok 4 Reasoning' },
+    // Grok 3
+    { value: 'grok-3', label: 'Grok 3' },
+    // Vision & Media
+    { value: 'grok-2-vision-1212', label: 'Grok 2 Vision' },
+    { value: 'grok-imagine-image-pro', label: 'Grok Image Pro' },
+    // Legacy
+    { value: 'grok-2', label: 'Grok 2 (Legacy)' },
   ],
   google: [
     { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
