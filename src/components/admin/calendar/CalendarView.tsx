@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { format, startOfWeek, addDays, isSameDay, isToday, parseISO, differenceInMinutes, startOfDay } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -24,8 +24,28 @@ interface CalendarViewProps {
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const HOUR_HEIGHT = 60; // pixels per hour
+const START_HOUR = 6; // Default scroll position (6 AM)
 
 export default function CalendarView({ events, currentDate, viewMode, onDateChange }: CalendarViewProps) {
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to 6 AM on mount and when view mode changes
+  useEffect(() => {
+    if (viewMode === "month") return; // Month view doesn't need scrolling
+    
+    // Small delay to ensure the ScrollArea is rendered
+    const timer = setTimeout(() => {
+      if (scrollAreaRef.current) {
+        const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+        if (viewport) {
+          viewport.scrollTop = START_HOUR * HOUR_HEIGHT;
+        }
+      }
+    }, 50);
+    
+    return () => clearTimeout(timer);
+  }, [viewMode, currentDate]);
+
   const weekDays = useMemo(() => {
     const start = startOfWeek(currentDate, { weekStartsOn: 0 });
     return Array.from({ length: 7 }, (_, i) => addDays(start, i));
@@ -80,7 +100,7 @@ export default function CalendarView({ events, currentDate, viewMode, onDateChan
       </div>
 
       {/* Time grid */}
-      <ScrollArea className="h-[600px]">
+      <ScrollArea className="h-[600px]" ref={scrollAreaRef}>
         <div className="grid relative" style={{ gridTemplateColumns: `60px repeat(${daysToShow.length}, 1fr)` }}>
           {/* Time labels */}
           <div className="border-r">
