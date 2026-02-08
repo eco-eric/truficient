@@ -14,17 +14,25 @@ interface UserRoleState {
 }
 
 export const useUserRole = (): UserRoleState => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchRole = async () => {
+      // Wait for auth to complete first
+      if (authLoading) {
+        return; // Keep loading=true, don't proceed
+      }
+
       if (!user) {
         setRole(null);
         setLoading(false);
         return;
       }
+
+      // Reset loading when starting fetch
+      setLoading(true);
 
       try {
         const { data, error } = await supabase
@@ -49,7 +57,7 @@ export const useUserRole = (): UserRoleState => {
     };
 
     fetchRole();
-  }, [user]);
+  }, [user, authLoading]);
 
   const isSuperAdmin = role === 'super_admin';
   const isAdmin = role === 'admin' || role === 'super_admin';
