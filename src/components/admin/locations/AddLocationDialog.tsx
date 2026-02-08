@@ -15,8 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, MapPin, Search } from 'lucide-react';
-import { GooglePlacesAutocomplete } from './GooglePlacesAutocomplete';
+import { Loader2, MapPin, Search, Navigation } from 'lucide-react';
 import { LocationMapEmbed } from './LocationMapEmbed';
 import type { CrmCustomer, CrmLocation, BUILDING_TYPE_OPTIONS, PropertyLookupData } from '@/types/crmLocations';
 
@@ -72,6 +71,7 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
   });
 
   const [isLookingUp, setIsLookingUp] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const [propertyDataSource, setPropertyDataSource] = useState<string | null>(null);
 
   // Populate form when editing
@@ -140,20 +140,91 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
     }
   }, [open, editingLocation]);
 
-  // Handle Google Places selection
-  const handlePlaceSelected = (placeDetails: any) => {
-    setFormData(prev => ({
-      ...prev,
-      google_place_id: placeDetails.place_id,
-      formatted_address: placeDetails.formatted_address,
-      latitude: placeDetails.latitude,
-      longitude: placeDetails.longitude,
-      address_line1: placeDetails.address_line1 || prev.address_line1,
-      city: placeDetails.city || prev.city,
-      county: placeDetails.county || prev.county,
-      state: placeDetails.state || prev.state,
-      zip_code: placeDetails.zip_code || prev.zip_code,
-    }));
+  // Geocode manual address to get coordinates and county
+  const handleGetCoordinates = async () => {
+    if (!formData.address_line1 || !formData.city || !formData.zip_code) {
+      toast({
+        title: 'Missing Address',
+        description: 'Please enter address, city, and ZIP code first.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsGeocoding(true);
+
+    try {
+      const fullAddress = `${formData.address_line1}, ${formData.city}, ${formData.state} ${formData.zip_code}`;
+      
+      // Check if Google Maps is loaded
+      if (!window.google?.maps) {
+        // Load Google Maps script dynamically
+        await new Promise<void>((resolve, reject) => {
+          if (window.google?.maps) {
+            resolve();
+            return;
+          }
+          const script = document.createElement('script');
+          script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY}&libraries=geocoding`;
+          script.async = true;
+          script.defer = true;
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Failed to load Google Maps'));
+          document.head.appendChild(script);
+        });
+      }
+
+      const geocoder = new google.maps.Geocoder();
+      
+      geocoder.geocode({ address: fullAddress }, (results, status) => {
+        setIsGeocoding(false);
+        
+        if (status === 'OK' && results && results[0]) {
+          const place = results[0];
+          const location = place.geometry?.location;
+          
+          // Extract county from address components
+          let county = '';
+          if (place.address_components) {
+            const countyComponent = place.address_components.find(
+              (c) => c.types.includes('administrative_area_level_2')
+            );
+            if (countyComponent) {
+              county = countyComponent.long_name.replace(' County', '');
+            }
+          }
+          
+          setFormData(prev => ({
+            ...prev,
+            latitude: location?.lat() || null,
+            longitude: location?.lng() || null,
+            county: county || prev.county,
+            formatted_address: place.formatted_address || '',
+            google_place_id: place.place_id || '',
+          }));
+          
+          toast({
+            title: 'Location Found',
+            description: county ? `Coordinates and county (${county}) populated.` : 'Coordinates populated.',
+          });
+        } else {
+          console.error('Geocoding failed:', status);
+          toast({
+            title: 'Geocoding Failed',
+            description: 'Could not find coordinates for this address. Please verify the address is correct.',
+            variant: 'destructive',
+          });
+        }
+      });
+    } catch (error) {
+      setIsGeocoding(false);
+      console.error('Error geocoding address:', error);
+      toast({
+        title: 'Geocoding Error',
+        description: 'Failed to load Google Maps. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Lookup property data button handler
@@ -460,13 +531,9 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
             </select>
           </div>
 
-          {/* Address with Google Places Autocomplete */}
+          {/* Address */}
           <div className="space-y-4 border p-4 rounded-lg">
             <h3 className="font-semibold">Address</h3>
-            
-            {!editingLocation && (
-              <GooglePlacesAutocomplete onPlaceSelected={handlePlaceSelected} />
-            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2 space-y-2">
@@ -533,6 +600,27 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
                 />
               </div>
             </div>
+
+            {/* Get Coordinates Button */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleGetCoordinates}
+              disabled={isGeocoding || !formData.address_line1 || !formData.city || !formData.zip_code}
+            >
+              {isGeocoding ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Getting coordinates...
+                </>
+              ) : (
+                <>
+                  <Navigation className="mr-2 h-4 w-4" />
+                  Get Coordinates & County
+                </>
+              )}
+            </Button>
 
             {/* Google Map */}
             {formData.latitude && formData.longitude && (
