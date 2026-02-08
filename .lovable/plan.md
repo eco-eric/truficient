@@ -1,75 +1,87 @@
 
-# Add County Appraisal District Links
+# Remodel Project Workflow Stages + Drag-and-Drop Reordering
 
-## Summary
-Add a collapsible section with quick links to county appraisal district websites. This provides a manual fallback when the RentCast API doesn't return property data.
+## Overview
 
-## Location in UI
-The links will appear in the **Property Details** section, right below the "Lookup Property Data" button and property data source indicator. They'll be styled as small, subtle links so they don't clutter the form.
+This plan covers two enhancements:
+1. Adding default workflow stages for the "Remodel Project" job type
+2. Implementing drag-and-drop reordering for job stages in the Job Types & Stages configuration page
 
-## Counties Included
+---
 
-| County | Appraisal District URL |
-|--------|------------------------|
-| Dallas | dallascad.org |
-| Collin | collincad.org |
-| Denton | dentoncad.com |
-| Tarrant | tad.org |
-| Rockwall | rockwallcad.com |
-| Hunt | hunt-cad.org |
-| Kaufman | kaufman-cad.org |
-| Grayson | graysonappraisal.org |
+## Part 1: Remodel Project Workflow Stages
 
-## Design
-- Small text with "Can't find data? Try these appraisal districts:" header
-- Horizontal list of county links that wrap on mobile
-- Links open in new tab
-- Subtle styling (muted text, small font) so it doesn't distract from main form
+The newly created "Remodel Project" job type (ID: `70b9c694-51d7-4702-a49b-6747e098a9ce`) needs workflow stages defined. Based on typical HVAC remodel projects and the existing "Custom Home" stages pattern, here are the recommended stages:
 
-## Technical Changes
+| Order | Stage Name | Type | Color | Notify |
+|-------|-----------|------|-------|--------|
+| 1 | Consultation | initial | Blue | No |
+| 2 | Design & Proposal | in_progress | Amber | No |
+| 3 | Permit & Planning | in_progress | Purple | No |
+| 4 | Demo & Prep | in_progress | Orange | No |
+| 5 | Rough-In | in_progress | Cyan | No |
+| 6 | Inspection | review | Pink | Yes |
+| 7 | Trim-Out & Finish | in_progress | Teal | No |
+| 8 | Final Walkthrough | review | Indigo | Yes |
+| 9 | Complete | completed | Green | Yes |
+| 10 | Cancelled | cancelled | Red | No |
 
-**File: `src/components/admin/locations/AddLocationDialog.tsx`**
+---
 
-Add a constant for county appraisal links at the top of the file:
-```typescript
-const COUNTY_APPRAISAL_LINKS = [
-  { county: 'Dallas', url: 'https://www.dallascad.org' },
-  { county: 'Collin', url: 'https://www.collincad.org' },
-  { county: 'Denton', url: 'https://www.dentoncad.com' },
-  { county: 'Tarrant', url: 'https://www.tad.org' },
-  { county: 'Rockwall', url: 'https://www.rockwallcad.com' },
-  { county: 'Hunt', url: 'https://www.hunt-cad.org' },
-  { county: 'Kaufman', url: 'https://www.kaufman-cad.org' },
-  { county: 'Grayson', url: 'https://www.graysonappraisal.org' },
-];
-```
+## Part 2: Drag-and-Drop Stage Reordering
 
-Add the links section in the JSX after the property data source display (around line 740):
-```tsx
-{/* County Appraisal District Links */}
-<div className="text-xs text-muted-foreground mt-2 pt-2 border-t">
-  <p className="mb-1">Can't find data? Try these appraisal districts:</p>
-  <div className="flex flex-wrap gap-x-3 gap-y-1">
-    {COUNTY_APPRAISAL_LINKS.map(({ county, url }) => (
-      <a
-        key={county}
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-primary hover:underline"
-      >
-        {county}
-      </a>
-    ))}
-  </div>
-</div>
-```
+### Current State
+- The stages list shows a grip handle icon (GripVertical) but it's purely decorative
+- No drag-and-drop functionality is implemented
+- Sort order can only be changed by manually editing each stage
 
-## Files Modified
+### Implementation Approach
 
-| File | Changes |
-|------|---------|
-| `src/components/admin/locations/AddLocationDialog.tsx` | Add county links constant + render links section |
+Following the established pattern from `LaborRates.tsx`, `Materials.tsx`, and `Gallery.tsx`, I will:
 
-## Result
-After implementation, users will see a row of county appraisal district links at the bottom of the Property Details section. Clicking any link opens that county's appraisal website in a new tab where they can manually look up property information.
+1. **Import dnd-kit dependencies** - DndContext, SortableContext, useSortable, sensors, and utilities
+
+2. **Create a SortableStageRow component** - Extract the stage row into a draggable component with:
+   - `useSortable` hook connected to stage ID
+   - Transform/transition styles for smooth dragging
+   - Visual feedback when dragging (opacity, highlight)
+
+3. **Add drag sensors** - Configure PointerSensor and KeyboardSensor with activation constraints (to prevent accidental drags)
+
+4. **Implement drag end handler** - On drop:
+   - Reorder stages array using `arrayMove`
+   - Batch update `sort_order` values in database
+   - Invalidate queries to refresh UI
+
+5. **Add visual cues** - Make the grip handle interactive and add cursor feedback
+
+---
+
+## Technical Details
+
+### Files Modified
+
+**src/pages/admin/JobTypesConfig.tsx**
+- Add dnd-kit imports
+- Add sensors configuration  
+- Create `SortableStageRow` component
+- Add `updateStagesOrderMutation` for batch sort_order updates
+- Wrap stages list with `DndContext` and `SortableContext`
+- Implement `handleDragEnd` function
+
+### Database Operations
+
+**Insert Remodel Project Stages** - Add 10 workflow stages to `crm_job_stages` table
+
+**Update Sort Orders** - When reordering, batch update the `sort_order` column for affected stages
+
+---
+
+## User Experience
+
+After implementation:
+- Select "Remodel Project" from the job types list to see its 10 workflow stages
+- Grab any stage by its grip handle and drag to reorder
+- Visual feedback during drag (reduced opacity, highlighted border)
+- Sort order persists immediately to database
+- Works with keyboard navigation (Tab + Arrow keys) for accessibility
