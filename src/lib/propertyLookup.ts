@@ -70,6 +70,7 @@ export async function lookupPropertyData(
 // Format source name for display
 export function formatPropertySource(source: string): string {
   const sourceMap: Record<string, string> = {
+    rentcast: "RentCast",
     dallas_cad: "Dallas CAD",
     tarrant_cad: "Tarrant CAD",
     collin_cad: "Collin CAD",
