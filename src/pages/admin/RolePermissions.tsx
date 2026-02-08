@@ -163,11 +163,7 @@ const RolePermissions = () => {
     }
   };
 
-  // Only super_admin can access this page - check after all hooks
-  if (!roleLoading && !isSuperAdmin) {
-    return <Navigate to="/admin" replace />;
-  }
-
+  // Show loading while checking permissions
   if (loading || roleLoading) {
     return (
       <AdminLayout title="Role Permissions">
@@ -176,6 +172,11 @@ const RolePermissions = () => {
         </div>
       </AdminLayout>
     );
+  }
+
+  // Only super_admin can access this page - check after loading is complete
+  if (!isSuperAdmin) {
+    return <Navigate to="/admin" replace />;
   }
 
   const renderRoleTab = (role: AppRole) => (
