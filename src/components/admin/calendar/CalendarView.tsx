@@ -100,7 +100,7 @@ export default function CalendarView({ events, currentDate, viewMode, onDateChan
       </div>
 
       {/* Time grid */}
-      <ScrollArea className="h-[600px]" ref={scrollAreaRef}>
+      <ScrollArea className="h-[800px]" ref={scrollAreaRef}>
         <div className="grid relative" style={{ gridTemplateColumns: `60px repeat(${daysToShow.length}, 1fr)` }}>
           {/* Time labels */}
           <div className="border-r">
