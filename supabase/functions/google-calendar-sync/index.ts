@@ -402,6 +402,61 @@ Deno.serve(async (req) => {
         );
       }
 
+      case "add-calendar": {
+        const { calendarId } = params;
+        if (!calendarId) {
+          return new Response(
+            JSON.stringify({ error: "Calendar ID is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Fetch calendar metadata directly by ID
+        const response = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}`,
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Failed to access calendar:", errorText);
+          return new Response(
+            JSON.stringify({ 
+              error: "Cannot access this calendar. Ensure it's shared with the service account.",
+              details: errorText 
+            }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const calData = await response.json();
+
+        // Upsert to database
+        const { error: upsertError } = await supabase.from("google_calendars").upsert(
+          {
+            calendar_id: calendarId,
+            name: calData.summary || calendarId,
+            description: calData.description,
+            color: calData.backgroundColor || "#4285f4",
+            last_synced_at: new Date().toISOString(),
+          },
+          { onConflict: "calendar_id" }
+        );
+
+        if (upsertError) {
+          console.error("Failed to save calendar:", upsertError);
+          return new Response(
+            JSON.stringify({ error: "Failed to save calendar to database" }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, calendar: calData }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       default:
         return new Response(JSON.stringify({ error: "Unknown action" }), {
           status: 400,

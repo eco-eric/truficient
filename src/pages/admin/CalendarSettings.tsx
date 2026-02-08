@@ -7,7 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Calendar, CheckCircle2, Star, Users, Briefcase } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RefreshCw, Calendar, CheckCircle2, Star, Users, Briefcase, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 interface GoogleCalendar {
@@ -25,6 +28,9 @@ interface GoogleCalendar {
 
 export default function CalendarSettings() {
   const [syncing, setSyncing] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [newCalendarId, setNewCalendarId] = useState("");
+  const [adding, setAdding] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: calendars, isLoading } = useQuery({
@@ -113,12 +119,49 @@ export default function CalendarSettings() {
     },
   });
 
+  const addCalendarMutation = useMutation({
+    mutationFn: async (calendarId: string) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const response = await supabase.functions.invoke("google-calendar-sync", {
+        body: { action: "add-calendar", calendarId },
+      });
+
+      if (response.error) throw response.error;
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["google-calendars"] });
+      toast.success("Calendar added successfully");
+      setAddDialogOpen(false);
+      setNewCalendarId("");
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to add calendar: ${error.message}`);
+    },
+  });
+
   const handleSync = async () => {
     setSyncing(true);
     try {
       await syncMutation.mutateAsync();
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleAddCalendar = async () => {
+    if (!newCalendarId.trim()) {
+      toast.error("Please enter a Calendar ID");
+      return;
+    }
+    setAdding(true);
+    try {
+      await addCalendarMutation.mutateAsync(newCalendarId.trim());
+    } finally {
+      setAdding(false);
     }
   };
 
@@ -132,10 +175,69 @@ export default function CalendarSettings() {
               Manage Google Calendars synced with your CRM
             </p>
           </div>
-          <Button onClick={handleSync} disabled={syncing}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
-            {syncing ? "Syncing..." : "Sync Calendars"}
-          </Button>
+          <div className="flex gap-2">
+            <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Calendar
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Calendar Manually</DialogTitle>
+                  <DialogDescription>
+                    Enter the Calendar ID from Google Calendar settings.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="calendarId">Calendar ID</Label>
+                    <Input
+                      id="calendarId"
+                      placeholder="e.g., c_abc123@group.calendar.google.com"
+                      value={newCalendarId}
+                      onChange={(e) => setNewCalendarId(e.target.value)}
+                    />
+                  </div>
+                  <div className="bg-muted rounded-lg p-3 text-sm space-y-2">
+                    <p className="font-medium">Where to find your Calendar ID:</p>
+                    <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                      <li>Open Google Calendar settings</li>
+                      <li>Click on your calendar name</li>
+                      <li>Scroll to "Integrate calendar"</li>
+                      <li>Copy the "Calendar ID"</li>
+                    </ol>
+                    <p className="text-muted-foreground mt-2">
+                      Make sure the calendar is shared with:
+                    </p>
+                    <code className="text-xs block bg-background p-2 rounded break-all">
+                      truficient-admin-sync@truficient-estimator-465520.iam.gserviceaccount.com
+                    </code>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddCalendar} disabled={adding}>
+                    {adding ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Adding...
+                      </>
+                    ) : (
+                      "Add Calendar"
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            <Button onClick={handleSync} disabled={syncing}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Syncing..." : "Sync Calendars"}
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (
