@@ -38,6 +38,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { 
   Plus, 
   Search, 
@@ -48,8 +54,12 @@ import {
   Edit, 
   Trash2,
   ExternalLink,
-  Copy
+  Copy,
+  Loader2,
+  Sparkles
 } from 'lucide-react';
+import { AddressAutocomplete, AddressComponents } from '@/components/AddressAutocomplete';
+import { lookupPropertyData, formatPropertySource } from '@/lib/propertyLookup';
 import type { Database } from '@/integrations/supabase/types';
 
 type Location = Database['public']['Tables']['crm_locations']['Row'];
@@ -76,12 +86,18 @@ const Locations = () => {
   const [city, setCity] = useState('');
   const [state, setState] = useState('TX');
   const [zipCode, setZipCode] = useState('');
+  const [county, setCounty] = useState('');
   const [squareFootage, setSquareFootage] = useState('');
   const [yearBuilt, setYearBuilt] = useState('');
   const [stories, setStories] = useState('');
   const [gateCode, setGateCode] = useState('');
   const [accessNotes, setAccessNotes] = useState('');
   const [isPrimary, setIsPrimary] = useState(false);
+  
+  // Property lookup state
+  const [isLookingUp, setIsLookingUp] = useState(false);
+  const [autoPopulatedFields, setAutoPopulatedFields] = useState<Set<string>>(new Set());
+  const [propertyDataSource, setPropertyDataSource] = useState<string | null>(null);
 
   // Fetch all locations with customer data
   const { data: locations, isLoading } = useQuery({
@@ -132,6 +148,7 @@ const Locations = () => {
     setCity('');
     setState('TX');
     setZipCode('');
+    setCounty('');
     setSquareFootage('');
     setYearBuilt('');
     setStories('');
@@ -139,6 +156,60 @@ const Locations = () => {
     setAccessNotes('');
     setIsPrimary(false);
     setEditingLocation(null);
+    setAutoPopulatedFields(new Set());
+    setPropertyDataSource(null);
+  };
+
+  // Handle address selection from autocomplete
+  const handleAddressSelect = async (components: AddressComponents) => {
+    setAddressLine1(components.streetAddress);
+    setCity(components.city);
+    setState(components.state);
+    setZipCode(components.zipCode);
+    setCounty(components.county);
+
+    // Trigger property lookup
+    if (!editingLocation) {
+      setIsLookingUp(true);
+      try {
+        const result = await lookupPropertyData({
+          address: components.streetAddress,
+          city: components.city,
+          state: components.state,
+          zipCode: components.zipCode,
+          county: components.county,
+        });
+
+        if (result) {
+          const newAutoFields = new Set<string>();
+
+          if (result.squareFootage) {
+            setSquareFootage(result.squareFootage.toString());
+            newAutoFields.add('squareFootage');
+          }
+          if (result.yearBuilt) {
+            setYearBuilt(result.yearBuilt.toString());
+            newAutoFields.add('yearBuilt');
+          }
+          if (result.stories) {
+            setStories(result.stories.toString());
+            newAutoFields.add('stories');
+          }
+
+          setAutoPopulatedFields(newAutoFields);
+          setPropertyDataSource(result.source);
+
+          if (newAutoFields.size > 0) {
+            toast.success(`Property data found via ${formatPropertySource(result.source)}`);
+          }
+        }
+      } catch (err) {
+        console.error('Property lookup failed:', err);
+        // Silent fail - user can enter manually
+      } finally {
+        setIsLookingUp(false);
+      }
+    }
   };
 
   const openEdit = (location: LocationWithCustomer) => {
@@ -178,12 +249,16 @@ const Locations = () => {
         city,
         state,
         zip_code: zipCode,
+        county: county || null,
         square_footage: squareFootage ? parseInt(squareFootage) : null,
         year_built: yearBuilt ? parseInt(yearBuilt) : null,
         stories: stories ? parseInt(stories) : null,
         gate_code: gateCode || null,
         access_notes: accessNotes || null,
         is_primary: isPrimary,
+        property_data_source: propertyDataSource || 'manual',
+        property_data_verified_at: propertyDataSource ? new Date().toISOString() : null,
+        property_data_auto_populated: autoPopulatedFields.size > 0,
       };
 
       if (editingLocation) {
@@ -495,12 +570,21 @@ const Locations = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Address Line 1 *</Label>
-              <Input
+              <Label className="flex items-center gap-2">
+                Address Line 1 *
+                {isLookingUp && (
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Looking up property data...
+                  </span>
+                )}
+              </Label>
+              <AddressAutocomplete
                 value={addressLine1}
-                onChange={(e) => setAddressLine1(e.target.value)}
-                placeholder="Street address"
-                required
+                onChange={setAddressLine1}
+                onAddressSelect={handleAddressSelect}
+                placeholder="Start typing address..."
+                className="w-full"
               />
             </div>
 
@@ -541,32 +625,103 @@ const Locations = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Sq Ft</Label>
-                <Input
-                  type="number"
-                  value={squareFootage}
-                  onChange={(e) => setSquareFootage(e.target.value)}
-                />
+            <TooltipProvider>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    Sq Ft
+                    {autoPopulatedFields.has('squareFootage') && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant="secondary" className="text-xs gap-1 bg-accent text-accent-foreground">
+                            <Sparkles className="h-3 w-3" />
+                            Auto
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Data from {formatPropertySource(propertyDataSource || 'unknown')}
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </Label>
+                  <Input
+                    type="number"
+                    value={squareFootage}
+                    onChange={(e) => {
+                      setSquareFootage(e.target.value);
+                      setAutoPopulatedFields(prev => {
+                        const next = new Set(prev);
+                        next.delete('squareFootage');
+                        return next;
+                      });
+                    }}
+                    className={autoPopulatedFields.has('squareFootage') ? 'bg-accent/50' : ''}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    Year Built
+                    {autoPopulatedFields.has('yearBuilt') && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant="secondary" className="text-xs gap-1 bg-accent text-accent-foreground">
+                            <Sparkles className="h-3 w-3" />
+                            Auto
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Data from {formatPropertySource(propertyDataSource || 'unknown')}
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </Label>
+                  <Input
+                    type="number"
+                    value={yearBuilt}
+                    onChange={(e) => {
+                      setYearBuilt(e.target.value);
+                      setAutoPopulatedFields(prev => {
+                        const next = new Set(prev);
+                        next.delete('yearBuilt');
+                        return next;
+                      });
+                    }}
+                    className={autoPopulatedFields.has('yearBuilt') ? 'bg-accent/50' : ''}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    Stories
+                    {autoPopulatedFields.has('stories') && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant="secondary" className="text-xs gap-1 bg-accent text-accent-foreground">
+                            <Sparkles className="h-3 w-3" />
+                            Auto
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Data from {formatPropertySource(propertyDataSource || 'unknown')}
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </Label>
+                  <Input
+                    type="number"
+                    value={stories}
+                    onChange={(e) => {
+                      setStories(e.target.value);
+                      setAutoPopulatedFields(prev => {
+                        const next = new Set(prev);
+                        next.delete('stories');
+                        return next;
+                      });
+                    }}
+                    className={autoPopulatedFields.has('stories') ? 'bg-accent/50' : ''}
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Year Built</Label>
-                <Input
-                  type="number"
-                  value={yearBuilt}
-                  onChange={(e) => setYearBuilt(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Stories</Label>
-                <Input
-                  type="number"
-                  value={stories}
-                  onChange={(e) => setStories(e.target.value)}
-                />
-              </div>
-            </div>
+            </TooltipProvider>
 
             <div className="space-y-2">
               <Label>Gate Code</Label>
