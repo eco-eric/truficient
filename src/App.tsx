@@ -98,7 +98,16 @@ import EquipmentReport from "./pages/scanner/EquipmentReport";
 import EquipmentLibrary from "./pages/equipment/EquipmentLibrary";
 import EquipmentDetail from "./pages/equipment/EquipmentDetail";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes - data is fresh, won't refetch unless stale
+      gcTime: 10 * 60 * 1000,   // 10 minutes - keep unused data in cache
+      refetchOnWindowFocus: false, // Don't refetch when window regains focus
+      retry: 1, // Only retry once on failure
+    },
+  },
+});
 
 // Root layout component that includes global elements
 const RootLayout = () => (

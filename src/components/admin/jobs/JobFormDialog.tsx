@@ -130,6 +130,10 @@ export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose
       }
     },
     onSuccess: () => {
+      // Invalidate specific job if editing, plus the list
+      if (editingJob?.id) {
+        queryClient.invalidateQueries({ queryKey: ['crm_job', editingJob.id] });
+      }
       queryClient.invalidateQueries({ queryKey: ['crm_jobs'] });
       toast.success(editingJob ? 'Job updated' : 'Job created');
       onClose();

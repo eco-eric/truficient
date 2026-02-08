@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -299,46 +299,46 @@ export default function JobTypesConfig() {
   );
 }
 
-function JobTypeItem({ 
-  type, 
-  isSelected, 
-  onClick, 
-  onEdit, 
-  onDelete 
-}: { 
-  type: JobType; 
-  isSelected: boolean; 
+interface JobTypeItemProps {
+  type: JobType;
+  isSelected: boolean;
   onClick: () => void;
   onEdit: () => void;
   onDelete: () => void;
-}) {
-  const Icon = iconMap[type.icon_name] || Wrench;
-  
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
-        isSelected ? "bg-primary/10 border-primary" : "hover:bg-accent"
-      )}
-      onClick={onClick}
-    >
-      <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center"
-        style={{ backgroundColor: type.color + '20' }}
-      >
-        <Icon className="h-4 w-4" style={{ color: type.color }} />
-      </div>
-      <span className="flex-1 font-medium">{type.name}</span>
-      {!type.is_active && <Badge variant="outline">Inactive</Badge>}
-      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
-        <Pencil className="h-4 w-4" />
-      </Button>
-      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
-        <Trash2 className="h-4 w-4 text-destructive" />
-      </Button>
-    </div>
-  );
 }
+
+const JobTypeItem = React.forwardRef<HTMLDivElement, JobTypeItemProps>(
+  ({ type, isSelected, onClick, onEdit, onDelete }, ref) => {
+    const Icon = iconMap[type.icon_name] || Wrench;
+    
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+          isSelected ? "bg-primary/10 border-primary" : "hover:bg-accent"
+        )}
+        onClick={onClick}
+      >
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center"
+          style={{ backgroundColor: type.color + '20' }}
+        >
+          <Icon className="h-4 w-4" style={{ color: type.color }} />
+        </div>
+        <span className="flex-1 font-medium">{type.name}</span>
+        {!type.is_active && <Badge variant="outline">Inactive</Badge>}
+        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+          <Pencil className="h-4 w-4" />
+        </Button>
+        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      </div>
+    );
+  }
+);
+JobTypeItem.displayName = 'JobTypeItem';
 
 function JobTypeDialog({ 
   editingType, 
@@ -349,19 +349,24 @@ function JobTypeDialog({
   onSave: (data: Partial<JobType>) => void;
   isLoading: boolean;
 }) {
-  const [formData, setFormData] = useState<Partial<JobType>>(
-    editingType || {
-      category: 'residential',
-      name: '',
-      slug: '',
-      default_duration_hours: 2,
-      default_priority: 'normal',
-      requires_permit: false,
-      icon_name: 'Wrench',
-      color: '#3B82F6',
-      is_active: true
-    }
-  );
+  const defaultFormData = {
+    category: 'residential',
+    name: '',
+    slug: '',
+    default_duration_hours: 2,
+    default_priority: 'normal',
+    requires_permit: false,
+    icon_name: 'Wrench',
+    color: '#3B82F6',
+    is_active: true
+  };
+  
+  const [formData, setFormData] = useState<Partial<JobType>>(editingType || defaultFormData);
+
+  // Reset form when editingType changes
+  useEffect(() => {
+    setFormData(editingType || defaultFormData);
+  }, [editingType]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -495,16 +500,21 @@ function StageDialog({
   onSave: (data: Partial<JobStage>) => void;
   isLoading: boolean;
 }) {
-  const [formData, setFormData] = useState<Partial<JobStage>>(
-    editingStage || {
-      name: '',
-      stage_type: 'in_progress',
-      color: '#3B82F6',
-      sort_order: nextSortOrder,
-      auto_notify_customer: false,
-      is_active: true
-    }
-  );
+  const getDefaultFormData = () => ({
+    name: '',
+    stage_type: 'in_progress',
+    color: '#3B82F6',
+    sort_order: nextSortOrder,
+    auto_notify_customer: false,
+    is_active: true
+  });
+  
+  const [formData, setFormData] = useState<Partial<JobStage>>(editingStage || getDefaultFormData());
+
+  // Reset form when editingStage changes
+  useEffect(() => {
+    setFormData(editingStage || getDefaultFormData());
+  }, [editingStage, nextSortOrder]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

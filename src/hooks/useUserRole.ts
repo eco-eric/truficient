@@ -36,8 +36,10 @@ export const useUserRole = (): UserRoleState => {
         return;
       }
 
-      // Reset loading when starting fetch
-      setLoading(true);
+      // Only set loading if we don't have a cached role (prevents flash)
+      if (!role) {
+        setLoading(true);
+      }
 
       try {
         const { data, error } = await supabase
