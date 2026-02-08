@@ -147,7 +147,23 @@ export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose
   };
 
   return (
-    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <DialogContent 
+      className="max-w-2xl max-h-[90vh] overflow-y-auto"
+      onInteractOutside={(e) => {
+        // Prevent closing when clicking on portal elements (Select, etc.)
+        const target = e.target as HTMLElement;
+        if (target?.closest('[data-radix-popper-content-wrapper]')) {
+          e.preventDefault();
+        }
+      }}
+      onPointerDownOutside={(e) => {
+        // Prevent closing when clicking on portal elements
+        const target = e.target as HTMLElement;
+        if (target?.closest('[data-radix-popper-content-wrapper]')) {
+          e.preventDefault();
+        }
+      }}
+    >
       <DialogHeader>
         <DialogTitle>{editingJob ? 'Edit Job' : 'Create New Job'}</DialogTitle>
       </DialogHeader>
