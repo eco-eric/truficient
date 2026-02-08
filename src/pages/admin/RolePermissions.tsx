@@ -19,12 +19,25 @@ interface Permission {
   enabled: boolean;
 }
 
-type AppRole = 'admin' | 'manager';
+type AppRole = 'admin' | 'manager' | 'technician' | 'lead_tech' | 'installer' | 'helper';
+
+const ROLE_DISPLAY_NAMES: Record<AppRole, string> = {
+  admin: 'Admin',
+  manager: 'Manager',
+  technician: 'Technician',
+  lead_tech: 'Lead Tech',
+  installer: 'Installer',
+  helper: 'Helper',
+};
 
 const RolePermissions = () => {
   const [permissions, setPermissions] = useState<Record<AppRole, Record<string, boolean>>>({
     admin: {},
     manager: {},
+    technician: {},
+    lead_tech: {},
+    installer: {},
+    helper: {},
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -42,10 +55,15 @@ const RolePermissions = () => {
       const permMap: Record<AppRole, Record<string, boolean>> = {
         admin: {},
         manager: {},
+        technician: {},
+        lead_tech: {},
+        installer: {},
+        helper: {},
       };
 
       data?.forEach((p: Permission) => {
-        if (p.role === 'admin' || p.role === 'manager') {
+        const validRoles: AppRole[] = ['admin', 'manager', 'technician', 'lead_tech', 'installer', 'helper'];
+        if (validRoles.includes(p.role as AppRole)) {
           permMap[p.role as AppRole][p.permission_key] = p.enabled;
         }
       });
@@ -267,18 +285,19 @@ const RolePermissions = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="admin" className="w-full">
-              <TabsList className="mb-4">
-                <TabsTrigger value="admin">Admin Role</TabsTrigger>
-                <TabsTrigger value="manager">Manager Role</TabsTrigger>
+              <TabsList className="mb-4 flex-wrap h-auto gap-1">
+                {(Object.keys(ROLE_DISPLAY_NAMES) as AppRole[]).map((role) => (
+                  <TabsTrigger key={role} value={role}>
+                    {ROLE_DISPLAY_NAMES[role]}
+                  </TabsTrigger>
+                ))}
               </TabsList>
 
-              <TabsContent value="admin">
-                {renderRoleTab('admin')}
-              </TabsContent>
-
-              <TabsContent value="manager">
-                {renderRoleTab('manager')}
-              </TabsContent>
+              {(Object.keys(ROLE_DISPLAY_NAMES) as AppRole[]).map((role) => (
+                <TabsContent key={role} value={role}>
+                  {renderRoleTab(role)}
+                </TabsContent>
+              ))}
             </Tabs>
           </CardContent>
         </Card>
