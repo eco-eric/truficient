@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Table,
   TableBody,
@@ -56,10 +57,12 @@ import {
   ExternalLink,
   Copy,
   Loader2,
-  Sparkles
+  Sparkles,
+  AlertCircle
 } from 'lucide-react';
 import { AddressAutocomplete, AddressComponents } from '@/components/AddressAutocomplete';
-import { lookupPropertyData, formatPropertySource } from '@/lib/propertyLookup';
+import { lookupPropertyData, formatPropertySource, PropertyLookupResult } from '@/lib/propertyLookup';
+import { MapPreview } from '@/components/MapPreview';
 import type { Database } from '@/integrations/supabase/types';
 
 type Location = Database['public']['Tables']['crm_locations']['Row'];
@@ -94,10 +97,16 @@ const Locations = () => {
   const [accessNotes, setAccessNotes] = useState('');
   const [isPrimary, setIsPrimary] = useState(false);
   
+  // Coordinates state for map
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [googlePlaceId, setGooglePlaceId] = useState('');
+  
   // Property lookup state
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [autoPopulatedFields, setAutoPopulatedFields] = useState<Set<string>>(new Set());
   const [propertyDataSource, setPropertyDataSource] = useState<string | null>(null);
+  const [lookupError, setLookupError] = useState<string | null>(null);
 
   // Fetch all locations with customer data
   const { data: locations, isLoading } = useQuery({
@@ -158,6 +167,10 @@ const Locations = () => {
     setEditingLocation(null);
     setAutoPopulatedFields(new Set());
     setPropertyDataSource(null);
+    setLookupError(null);
+    setLatitude(null);
+    setLongitude(null);
+    setGooglePlaceId('');
   };
 
   // Handle address selection from autocomplete
@@ -167,12 +180,21 @@ const Locations = () => {
     setState(components.state);
     setZipCode(components.zipCode);
     setCounty(components.county);
+    setLatitude(components.lat);
+    setLongitude(components.lng);
+    setGooglePlaceId(components.placeId);
+    setLookupError(null);
+
+    // Show county warning if not detected
+    if (!components.county && components.state === 'TX') {
+      toast.info('County could not be determined - please verify');
+    }
 
     // Trigger property lookup
     if (!editingLocation) {
       setIsLookingUp(true);
       try {
-        const result = await lookupPropertyData({
+        const result: PropertyLookupResult = await lookupPropertyData({
           address: components.streetAddress,
           city: components.city,
           state: components.state,
@@ -180,32 +202,45 @@ const Locations = () => {
           county: components.county,
         });
 
-        if (result) {
+        if (result.error && !result.data) {
+          // Lookup failed with error
+          setLookupError(result.error);
+          toast.error(`Property lookup: ${result.error}`);
+        } else if (result.data) {
           const newAutoFields = new Set<string>();
 
-          if (result.squareFootage) {
-            setSquareFootage(result.squareFootage.toString());
+          if (result.data.squareFootage) {
+            setSquareFootage(result.data.squareFootage.toString());
             newAutoFields.add('squareFootage');
           }
-          if (result.yearBuilt) {
-            setYearBuilt(result.yearBuilt.toString());
+          if (result.data.yearBuilt) {
+            setYearBuilt(result.data.yearBuilt.toString());
             newAutoFields.add('yearBuilt');
           }
-          if (result.stories) {
-            setStories(result.stories.toString());
+          if (result.data.stories) {
+            setStories(result.data.stories.toString());
             newAutoFields.add('stories');
           }
 
           setAutoPopulatedFields(newAutoFields);
-          setPropertyDataSource(result.source);
+          setPropertyDataSource(result.data.source);
+          setLookupError(null);
 
           if (newAutoFields.size > 0) {
-            toast.success(`Property data found via ${formatPropertySource(result.source)}`);
+            toast.success(`Property data found via ${formatPropertySource(result.data.source)}`);
+          } else {
+            toast.info('Property found but no details available - please enter manually');
           }
+        } else {
+          // No data and no error - unlikely but handle
+          setLookupError('No property data found for this address');
+          toast.info('No property data found - please enter manually');
         }
       } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'Property lookup failed';
         console.error('Property lookup failed:', err);
-        // Silent fail - user can enter manually
+        setLookupError(errorMsg);
+        toast.error(errorMsg);
       } finally {
         setIsLookingUp(false);
       }
@@ -230,6 +265,10 @@ const Locations = () => {
     setGateCode(location.gate_code || '');
     setAccessNotes(location.access_notes || '');
     setIsPrimary(location.is_primary || false);
+    setLatitude(location.latitude || null);
+    setLongitude(location.longitude || null);
+    setGooglePlaceId(location.google_place_id || '');
+    setLookupError(null);
     setDialogOpen(true);
   };
 
@@ -260,6 +299,9 @@ const Locations = () => {
         property_data_source: propertyDataSource || 'manual',
         property_data_verified_at: propertyDataSource ? new Date().toISOString() : null,
         property_data_auto_populated: autoPopulatedFields.size > 0,
+        latitude: latitude,
+        longitude: longitude,
+        google_place_id: googlePlaceId || null,
       };
 
       if (editingLocation) {
@@ -634,6 +676,32 @@ const Locations = () => {
                 placeholder="e.g., Dallas County"
               />
             </div>
+
+            {/* Map Preview */}
+            {latitude && longitude && (
+              <MapPreview
+                lat={latitude}
+                lng={longitude}
+                address={`${addressLine1}, ${city}, ${state} ${zipCode}`}
+                county={county}
+                className="mt-2"
+              />
+            )}
+
+            {!latitude && addressLine1 && !isLookingUp && (
+              <div className="text-sm text-muted-foreground p-3 border border-dashed rounded-lg text-center">
+                <MapPin className="h-4 w-4 inline mr-1" />
+                Select an address from the dropdown to see map preview
+              </div>
+            )}
+
+            {/* Property Lookup Error */}
+            {lookupError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{lookupError}</AlertDescription>
+              </Alert>
+            )}
 
             <TooltipProvider>
               <div className="grid grid-cols-3 gap-4">
