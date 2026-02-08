@@ -162,6 +162,9 @@ async function createEvent(
   calendarId: string,
   event: GoogleCalendarEvent
 ) {
+  // Remove attendees - service accounts cannot invite without Domain-Wide Delegation
+  const { attendees, ...eventWithoutAttendees } = event;
+  
   const response = await fetch(
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
       calendarId
@@ -172,7 +175,7 @@ async function createEvent(
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(event),
+      body: JSON.stringify(eventWithoutAttendees),
     }
   );
 
@@ -190,6 +193,9 @@ async function updateEvent(
   eventId: string,
   event: GoogleCalendarEvent
 ) {
+  // Remove attendees - service accounts cannot invite without Domain-Wide Delegation
+  const { attendees, ...eventWithoutAttendees } = event;
+  
   const response = await fetch(
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
       calendarId
@@ -200,7 +206,7 @@ async function updateEvent(
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(event),
+      body: JSON.stringify(eventWithoutAttendees),
     }
   );
 
