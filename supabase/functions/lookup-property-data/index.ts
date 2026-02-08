@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface PropertyLookupRequest {
@@ -26,6 +26,13 @@ interface PropertyData {
   rawData?: Record<string, unknown>;
 }
 
+interface LookupResult {
+  data: PropertyData | null;
+  error: string | null;
+  attemptedSource: string | null;
+  httpStatus?: number;
+}
+
 // Normalize county name for matching
 function normalizeCounty(county: string): string {
   if (!county) return "";
@@ -36,58 +43,84 @@ function normalizeCounty(county: string): string {
     .trim();
 }
 
-// County-specific CAD lookup functions
-// These use public web APIs where available
+// Sanitize address for SQL-like query
+function sanitizeAddress(address: string): string {
+  return address
+    .toUpperCase()
+    .replace(/'/g, "''")
+    .replace(/[^\w\s]/g, " ")
+    .trim();
+}
+
+// County-specific CAD lookup functions using verified working endpoints
 
 async function dallasCadLookup(
   address: string,
   city: string,
   zipCode: string
-): Promise<PropertyData | null> {
+): Promise<LookupResult> {
+  const source = "dallas_cad";
   try {
-    // Dallas CAD uses a search endpoint
-    // Format: https://www.dallascad.org/SearchOwner.aspx (web interface)
-    // They have a GIS REST API for property data
-    const searchUrl = `https://gis.dallascad.org/arcgis/rest/services/Layers/DC_Parcels/MapServer/0/query`;
+    // Dallas CAD verified working endpoint - ParcelQuery MapServer layer 4
+    const searchUrl = `https://maps.dcad.org/prdwa/rest/services/Property/ParcelQuery/MapServer/4/query`;
+    
+    const sanitizedAddress = sanitizeAddress(address);
     
     const params = new URLSearchParams({
-      where: `SITUS_ADDR LIKE '${address.toUpperCase().replace(/'/g, "''")}%' AND SITUS_ZIP = '${zipCode}'`,
-      outFields: "LIVING_AREA,YR_BUILT,LAND_SQFT,PROPERTY_TYPE,ACREAGE",
+      where: `SITEADDRESS LIKE '${sanitizedAddress}%'`,
+      outFields: "RESFLRAREA,RESYRBLT,FLOORCOUNT,SITEADDRESS,BLDGAREA,LANDAREA",
       returnGeometry: "false",
       f: "json",
     });
 
+    console.log(`Dallas CAD query: ${sanitizedAddress}`);
+
     const response = await fetch(`${searchUrl}?${params}`, {
       headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(10000), // 10 second timeout
     });
 
     if (!response.ok) {
-      console.log("Dallas CAD lookup failed:", response.status);
-      return null;
+      const errorMsg = `Dallas CAD returned HTTP ${response.status}`;
+      console.log(errorMsg);
+      return { data: null, error: errorMsg, attemptedSource: source, httpStatus: response.status };
     }
 
     const data = await response.json();
     
+    if (data.error) {
+      const errorMsg = `Dallas CAD API error: ${data.error.message || JSON.stringify(data.error)}`;
+      console.log(errorMsg);
+      return { data: null, error: errorMsg, attemptedSource: source };
+    }
+    
     if (!data.features || data.features.length === 0) {
       console.log("No Dallas CAD results found");
-      return null;
+      return { data: null, error: "No property records found in Dallas CAD", attemptedSource: source };
     }
 
     const attrs = data.features[0].attributes;
+    console.log(`Dallas CAD found record: ${JSON.stringify(attrs)}`);
+    
     return {
-      squareFootage: attrs.LIVING_AREA || null,
-      yearBuilt: attrs.YR_BUILT || null,
-      stories: null, // Dallas CAD doesn't typically expose this
-      lotSizeSqft: attrs.LAND_SQFT || (attrs.ACREAGE ? Math.round(attrs.ACREAGE * 43560) : null),
-      bedrooms: null,
-      bathrooms: null,
-      propertyClass: attrs.PROPERTY_TYPE || null,
-      source: "dallas_cad",
-      rawData: attrs,
+      data: {
+        squareFootage: attrs.RESFLRAREA || attrs.BLDGAREA || null,
+        yearBuilt: attrs.RESYRBLT || null,
+        stories: attrs.FLOORCOUNT || null,
+        lotSizeSqft: attrs.LANDAREA || null,
+        bedrooms: null,
+        bathrooms: null,
+        propertyClass: null,
+        source,
+        rawData: attrs,
+      },
+      error: null,
+      attemptedSource: source,
     };
   } catch (error) {
-    console.error("Dallas CAD lookup error:", error);
-    return null;
+    const errorMsg = error instanceof Error ? error.message : "Unknown error";
+    console.error("Dallas CAD lookup error:", errorMsg);
+    return { data: null, error: `Dallas CAD lookup failed: ${errorMsg}`, attemptedSource: source };
   }
 }
 
@@ -95,99 +128,84 @@ async function tarrantCadLookup(
   address: string,
   city: string,
   zipCode: string
-): Promise<PropertyData | null> {
-  try {
-    // Tarrant Appraisal District GIS API
-    const searchUrl = `https://gis.tad.org/arcgis/rest/services/Public/TAD_Property/MapServer/0/query`;
-    
-    const params = new URLSearchParams({
-      where: `StreetAddr LIKE '${address.toUpperCase().replace(/'/g, "''")}%' AND Zip = '${zipCode}'`,
-      outFields: "LivingArea,YearBuilt,LandSqFt,ImprovType,Stories",
-      returnGeometry: "false",
-      f: "json",
-    });
-
-    const response = await fetch(`${searchUrl}?${params}`, {
-      headers: { Accept: "application/json" },
-    });
-
-    if (!response.ok) {
-      console.log("Tarrant CAD lookup failed:", response.status);
-      return null;
-    }
-
-    const data = await response.json();
-    
-    if (!data.features || data.features.length === 0) {
-      console.log("No Tarrant CAD results found");
-      return null;
-    }
-
-    const attrs = data.features[0].attributes;
-    return {
-      squareFootage: attrs.LivingArea || null,
-      yearBuilt: attrs.YearBuilt || null,
-      stories: attrs.Stories || null,
-      lotSizeSqft: attrs.LandSqFt || null,
-      bedrooms: null,
-      bathrooms: null,
-      propertyClass: attrs.ImprovType || null,
-      source: "tarrant_cad",
-      rawData: attrs,
-    };
-  } catch (error) {
-    console.error("Tarrant CAD lookup error:", error);
-    return null;
-  }
+): Promise<LookupResult> {
+  // Tarrant County does not have a public REST API that we've verified
+  // Return null immediately and let Attom fallback handle it
+  console.log("Tarrant CAD: No public API available, skipping to fallback");
+  return { 
+    data: null, 
+    error: "Tarrant County CAD does not have a public API. Please enter property details manually or configure Attom API.", 
+    attemptedSource: "tarrant_cad" 
+  };
 }
 
 async function collinCadLookup(
   address: string,
   city: string,
   zipCode: string
-): Promise<PropertyData | null> {
+): Promise<LookupResult> {
+  const source = "collin_cad";
   try {
-    // Collin CAD GIS API
-    const searchUrl = `https://gis.collincad.org/arcgis/rest/services/Layers/CC_Parcels/MapServer/0/query`;
+    // Collin County verified working endpoint
+    const searchUrl = `https://maps.collincountytx.gov/server/rest/services/InteractiveMap/Appraisal_District/MapServer/1/query`;
+    
+    const sanitizedAddress = sanitizeAddress(address);
     
     const params = new URLSearchParams({
-      where: `SITUS_ADDR LIKE '${address.toUpperCase().replace(/'/g, "''")}%'`,
-      outFields: "LIVING_AREA,YEAR_BUILT,LAND_SQFT,PROP_TYPE,NUM_STORIES",
+      where: `situs_disp LIKE '${sanitizedAddress}%'`,
+      outFields: "yr_blt,situs_disp,legal_desc",
       returnGeometry: "false",
       f: "json",
     });
 
+    console.log(`Collin CAD query: ${sanitizedAddress}`);
+
     const response = await fetch(`${searchUrl}?${params}`, {
       headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!response.ok) {
-      console.log("Collin CAD lookup failed:", response.status);
-      return null;
+      const errorMsg = `Collin CAD returned HTTP ${response.status}`;
+      console.log(errorMsg);
+      return { data: null, error: errorMsg, attemptedSource: source, httpStatus: response.status };
     }
 
     const data = await response.json();
     
+    if (data.error) {
+      const errorMsg = `Collin CAD API error: ${data.error.message || JSON.stringify(data.error)}`;
+      console.log(errorMsg);
+      return { data: null, error: errorMsg, attemptedSource: source };
+    }
+    
     if (!data.features || data.features.length === 0) {
       console.log("No Collin CAD results found");
-      return null;
+      return { data: null, error: "No property records found in Collin CAD", attemptedSource: source };
     }
 
     const attrs = data.features[0].attributes;
+    console.log(`Collin CAD found record: ${JSON.stringify(attrs)}`);
+    
     return {
-      squareFootage: attrs.LIVING_AREA || null,
-      yearBuilt: attrs.YEAR_BUILT || null,
-      stories: attrs.NUM_STORIES || null,
-      lotSizeSqft: attrs.LAND_SQFT || null,
-      bedrooms: null,
-      bathrooms: null,
-      propertyClass: attrs.PROP_TYPE || null,
-      source: "collin_cad",
-      rawData: attrs,
+      data: {
+        squareFootage: null, // Not available in this layer
+        yearBuilt: attrs.yr_blt || null,
+        stories: null, // Not available
+        lotSizeSqft: null,
+        bedrooms: null,
+        bathrooms: null,
+        propertyClass: null,
+        source,
+        rawData: attrs,
+      },
+      error: null,
+      attemptedSource: source,
     };
   } catch (error) {
-    console.error("Collin CAD lookup error:", error);
-    return null;
+    const errorMsg = error instanceof Error ? error.message : "Unknown error";
+    console.error("Collin CAD lookup error:", errorMsg);
+    return { data: null, error: `Collin CAD lookup failed: ${errorMsg}`, attemptedSource: source };
   }
 }
 
@@ -195,49 +213,69 @@ async function dentonCadLookup(
   address: string,
   city: string,
   zipCode: string
-): Promise<PropertyData | null> {
+): Promise<LookupResult> {
+  const source = "denton_cad";
   try {
-    // Denton CAD GIS API
-    const searchUrl = `https://gis.dentoncad.com/arcgis/rest/services/Parcels/DCADParcels/MapServer/0/query`;
+    // Denton County verified working endpoint
+    const searchUrl = `https://gis.dentoncounty.gov/arcgis/rest/services/CAD/MapServer/0/query`;
+    
+    const sanitizedAddress = sanitizeAddress(address);
     
     const params = new URLSearchParams({
-      where: `SITUS LIKE '${address.toUpperCase().replace(/'/g, "''")}%'`,
-      outFields: "SQFT,YEARBUILT,ACRES,PROPTYPE,STORIES",
+      where: `situs LIKE '${sanitizedAddress}%'`,
+      outFields: "living_area,yr_blt,situs,acres",
       returnGeometry: "false",
       f: "json",
     });
 
+    console.log(`Denton CAD query: ${sanitizedAddress}`);
+
     const response = await fetch(`${searchUrl}?${params}`, {
       headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!response.ok) {
-      console.log("Denton CAD lookup failed:", response.status);
-      return null;
+      const errorMsg = `Denton CAD returned HTTP ${response.status}`;
+      console.log(errorMsg);
+      return { data: null, error: errorMsg, attemptedSource: source, httpStatus: response.status };
     }
 
     const data = await response.json();
     
+    if (data.error) {
+      const errorMsg = `Denton CAD API error: ${data.error.message || JSON.stringify(data.error)}`;
+      console.log(errorMsg);
+      return { data: null, error: errorMsg, attemptedSource: source };
+    }
+    
     if (!data.features || data.features.length === 0) {
       console.log("No Denton CAD results found");
-      return null;
+      return { data: null, error: "No property records found in Denton CAD", attemptedSource: source };
     }
 
     const attrs = data.features[0].attributes;
+    console.log(`Denton CAD found record: ${JSON.stringify(attrs)}`);
+    
     return {
-      squareFootage: attrs.SQFT || null,
-      yearBuilt: attrs.YEARBUILT || null,
-      stories: attrs.STORIES || null,
-      lotSizeSqft: attrs.ACRES ? Math.round(attrs.ACRES * 43560) : null,
-      bedrooms: null,
-      bathrooms: null,
-      propertyClass: attrs.PROPTYPE || null,
-      source: "denton_cad",
-      rawData: attrs,
+      data: {
+        squareFootage: attrs.living_area || null,
+        yearBuilt: attrs.yr_blt || null,
+        stories: null, // Not available in this dataset
+        lotSizeSqft: attrs.acres ? Math.round(attrs.acres * 43560) : null,
+        bedrooms: null,
+        bathrooms: null,
+        propertyClass: null,
+        source,
+        rawData: attrs,
+      },
+      error: null,
+      attemptedSource: source,
     };
   } catch (error) {
-    console.error("Denton CAD lookup error:", error);
-    return null;
+    const errorMsg = error instanceof Error ? error.message : "Unknown error";
+    console.error("Denton CAD lookup error:", errorMsg);
+    return { data: null, error: `Denton CAD lookup failed: ${errorMsg}`, attemptedSource: source };
   }
 }
 
@@ -247,11 +285,12 @@ async function attomLookup(
   city: string,
   state: string,
   zipCode: string
-): Promise<PropertyData | null> {
+): Promise<LookupResult> {
+  const source = "attom";
   const apiKey = Deno.env.get("ATTOM_API_KEY");
   if (!apiKey) {
     console.log("No ATTOM_API_KEY configured");
-    return null;
+    return { data: null, error: "Attom API key not configured", attemptedSource: source };
   }
 
   try {
@@ -263,11 +302,13 @@ async function attomLookup(
         apikey: apiKey,
         Accept: "application/json",
       },
+      signal: AbortSignal.timeout(15000),
     });
 
     if (!response.ok) {
-      console.log("Attom API lookup failed:", response.status);
-      return null;
+      const errorMsg = `Attom API returned HTTP ${response.status}`;
+      console.log(errorMsg);
+      return { data: null, error: errorMsg, attemptedSource: source, httpStatus: response.status };
     }
 
     const data = await response.json();
@@ -275,26 +316,31 @@ async function attomLookup(
     
     if (!property) {
       console.log("No Attom results found");
-      return null;
+      return { data: null, error: "No property records found in Attom", attemptedSource: source };
     }
 
     const building = property.building || {};
     const lot = property.lot || {};
 
     return {
-      squareFootage: building.size?.universalsize || building.size?.livingsize || null,
-      yearBuilt: building.yearbuilt || null,
-      stories: building.stories || null,
-      lotSizeSqft: lot.lotsize1 || null,
-      bedrooms: building.rooms?.beds || null,
-      bathrooms: building.rooms?.bathstotal || null,
-      propertyClass: property.summary?.proptype || null,
-      source: "attom",
-      rawData: property,
+      data: {
+        squareFootage: building.size?.universalsize || building.size?.livingsize || null,
+        yearBuilt: building.yearbuilt || null,
+        stories: building.stories || null,
+        lotSizeSqft: lot.lotsize1 || null,
+        bedrooms: building.rooms?.beds || null,
+        bathrooms: building.rooms?.bathstotal || null,
+        propertyClass: property.summary?.proptype || null,
+        source,
+        rawData: property,
+      },
+      error: null,
+      attemptedSource: source,
     };
   } catch (error) {
-    console.error("Attom API lookup error:", error);
-    return null;
+    const errorMsg = error instanceof Error ? error.message : "Unknown error";
+    console.error("Attom API lookup error:", errorMsg);
+    return { data: null, error: `Attom lookup failed: ${errorMsg}`, attemptedSource: source };
   }
 }
 
@@ -310,7 +356,11 @@ Deno.serve(async (req) => {
 
     if (!address || !city || !zipCode) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: address, city, zipCode" }),
+        JSON.stringify({ 
+          data: null,
+          error: "Missing required fields: address, city, zipCode",
+          attemptedSource: null
+        }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -321,56 +371,81 @@ Deno.serve(async (req) => {
     const normalizedCounty = normalizeCounty(county || "");
     console.log(`Normalized county: ${normalizedCounty}`);
 
-    let propertyData: PropertyData | null = null;
+    let result: LookupResult = { data: null, error: null, attemptedSource: null };
 
     // Try county-specific CAD first (free)
     switch (normalizedCounty) {
       case "dallas":
         console.log("Trying Dallas CAD...");
-        propertyData = await dallasCadLookup(address, city, zipCode);
+        result = await dallasCadLookup(address, city, zipCode);
         break;
       case "tarrant":
         console.log("Trying Tarrant CAD...");
-        propertyData = await tarrantCadLookup(address, city, zipCode);
+        result = await tarrantCadLookup(address, city, zipCode);
         break;
       case "collin":
         console.log("Trying Collin CAD...");
-        propertyData = await collinCadLookup(address, city, zipCode);
+        result = await collinCadLookup(address, city, zipCode);
         break;
       case "denton":
         console.log("Trying Denton CAD...");
-        propertyData = await dentonCadLookup(address, city, zipCode);
+        result = await dentonCadLookup(address, city, zipCode);
         break;
       default:
-        console.log(`No CAD integration for county: ${county}`);
+        console.log(`No CAD integration for county: ${county || "unknown"}`);
+        result = { 
+          data: null, 
+          error: `No property lookup available for ${county || "unknown county"}. Please enter details manually.`,
+          attemptedSource: "none"
+        };
     }
 
     // If no CAD data and Attom API key exists, try paid fallback
-    if (!propertyData) {
+    if (!result.data) {
       console.log("Trying Attom API fallback...");
-      propertyData = await attomLookup(address, city, state, zipCode);
+      const attomResult = await attomLookup(address, city, state, zipCode);
+      
+      // Use Attom result if it has data, otherwise keep original error
+      if (attomResult.data) {
+        result = attomResult;
+      } else if (!result.error) {
+        result.error = attomResult.error;
+        result.attemptedSource = attomResult.attemptedSource;
+      }
     }
 
-    // Return result
-    if (propertyData) {
-      console.log(`Property data found via ${propertyData.source}`);
-      return new Response(JSON.stringify(propertyData), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // Return result with full error context
+    if (result.data) {
+      console.log(`Property data found via ${result.data.source}`);
+      return new Response(
+        JSON.stringify({
+          data: result.data,
+          error: null,
+          attemptedSource: result.data.source,
+        }), 
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // No data found
+    // No data found - return with error details
+    console.log(`No property data found. Error: ${result.error}`);
     return new Response(
       JSON.stringify({ 
-        source: "not_found",
-        message: "No property data found for this address"
+        data: null,
+        error: result.error || "No property data found for this address",
+        attemptedSource: result.attemptedSource || "unknown",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Property lookup error:", error);
+    const errorMsg = error instanceof Error ? error.message : "Unknown error";
     return new Response(
-      JSON.stringify({ error: "Internal server error", details: error.message }),
+      JSON.stringify({ 
+        data: null,
+        error: `Internal server error: ${errorMsg}`,
+        attemptedSource: null 
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
