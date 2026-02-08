@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,18 +8,21 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { ArrowLeft, Calendar, DollarSign, MapPin, User, Phone, Mail, ChevronRight, Users } from 'lucide-react';
+import { ArrowLeft, Calendar, DollarSign, MapPin, User, Phone, Mail, ChevronRight, Users, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { WorkEdgePanel } from '@/components/admin/jobs/WorkEdgePanel';
-import SchedulingWidget from '@/components/admin/calendar/SchedulingWidget';
+import JobAppointmentsCard from '@/components/admin/jobs/JobAppointmentsCard';
+import JobFormDialog from '@/components/admin/jobs/JobFormDialog';
 import { AIAssistantWidget } from '@/components/admin/ai/AIAssistantWidget';
 
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const { data: job, isLoading } = useQuery({
     queryKey: ['crm_job', id],
@@ -98,6 +102,32 @@ export default function JobDetail() {
         .from('crm_teams')
         .select('*, assignments:crm_team_assignments(*, member:crm_team_members(*))')
         .eq('is_active', true);
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const { data: jobTypes = [] } = useQuery({
+    queryKey: ['crm_job_types'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_job_types')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const { data: allStages = [] } = useQuery({
+    queryKey: ['crm_job_stages_all'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_job_stages')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
       if (error) throw error;
       return data;
     }
@@ -205,10 +235,16 @@ export default function JobDetail() {
               <h1 className="text-2xl font-bold mt-1">{job.title}</h1>
             </div>
           </div>
-          <AIAssistantWidget 
-            jobId={job.id} 
-            jobTitle={job.title}
-          />
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setIsEditOpen(true)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit Job
+            </Button>
+            <AIAssistantWidget 
+              jobId={job.id} 
+              jobTitle={job.title}
+            />
+          </div>
         </div>
 
         {/* Stage Progress Bar */}
@@ -316,21 +352,25 @@ export default function JobDetail() {
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Scheduled Start</p>
+                  <p className="text-sm text-muted-foreground">Scheduled Date</p>
                   <p className="font-medium flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    {job.scheduled_start 
-                      ? format(new Date(job.scheduled_start), 'PPP p') 
-                      : 'Not scheduled'}
+                    {(job as any).scheduled_date 
+                      ? format(new Date((job as any).scheduled_date + 'T00:00:00'), 'PPP') 
+                      : job.scheduled_start 
+                        ? format(new Date(job.scheduled_start), 'PPP')
+                        : 'Not scheduled'}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Scheduled End</p>
+                  <p className="text-sm text-muted-foreground">End Date</p>
                   <p className="font-medium flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    {job.scheduled_end 
-                      ? format(new Date(job.scheduled_end), 'PPP p') 
-                      : 'Not set'}
+                    {(job as any).scheduled_end_date 
+                      ? format(new Date((job as any).scheduled_end_date + 'T00:00:00'), 'PPP') 
+                      : job.scheduled_end
+                        ? format(new Date(job.scheduled_end), 'PPP')
+                        : 'Not set'}
                   </p>
                 </div>
                 {(job.actual_start || job.actual_end) && (
@@ -518,35 +558,14 @@ export default function JobDetail() {
               </CardContent>
             </Card>
 
-            {/* Scheduling Widget */}
-            <SchedulingWidget 
-              job={{
-                id: job.id,
-                job_number: job.job_number,
-                title: job.title,
-                scheduled_start: job.scheduled_start,
-                scheduled_end: job.scheduled_end,
-                google_calendar_event_id: job.google_calendar_event_id,
-                google_calendar_id: job.google_calendar_id,
-                customer: job.customer ? {
-                  first_name: job.customer.first_name,
-                  last_name: job.customer.last_name,
-                  phone: job.customer.phone
-                } : null,
-                location: job.location ? {
-                  address_line1: job.location.address_line1,
-                  city: job.location.city,
-                  state: job.location.state,
-                  zip_code: job.location.zip_code
-                } : null,
-                job_type: job.job_type ? {
-                  name: job.job_type.name,
-                  default_duration_hours: job.job_type.default_duration_hours
-                } : null,
-                priority: job.priority,
-                customer_notes: job.customer_notes
-              }}
-              onUpdate={() => queryClient.invalidateQueries({ queryKey: ['crm_job', id] })}
+            {/* Calendar Appointments */}
+            <JobAppointmentsCard
+              jobId={job.id}
+              jobNumber={job.job_number}
+              jobTitle={job.title}
+              customerName={job.customer?.company_name || `${job.customer?.first_name || ''} ${job.customer?.last_name || ''}`.trim() || 'Unknown'}
+              customerPhone={job.customer?.phone}
+              location={job.location ? `${job.location.address_line1}, ${job.location.city}, ${job.location.state} ${job.location.zip_code}` : null}
             />
 
             {/* WorkEdge Panel */}
@@ -554,6 +573,19 @@ export default function JobDetail() {
           </div>
         </div>
       </div>
+
+      {/* Edit Job Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <JobFormDialog
+          editingJob={job}
+          jobTypes={jobTypes}
+          allStages={allStages}
+          onClose={() => {
+            setIsEditOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['crm_job', id] });
+          }}
+        />
+      </Dialog>
     </AdminLayout>
   );
 }
