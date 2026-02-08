@@ -47,7 +47,8 @@ import {
   MoreHorizontal, 
   Edit, 
   Trash2,
-  ExternalLink
+  ExternalLink,
+  Copy
 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -99,19 +100,27 @@ const Locations = () => {
     },
   });
 
-  // Fetch customers for the dropdown
+  // Fetch customers for the dropdown (with billing address for auto-fill)
   const { data: customers } = useQuery({
-    queryKey: ['crm_customers_list'],
+    queryKey: ['crm_customers_list_with_billing'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('crm_customers')
-        .select('id, first_name, last_name, company_name')
+        .select('id, first_name, last_name, company_name, billing_address, billing_city, billing_state, billing_zip')
         .is('deleted_at', null)
         .order('first_name');
       if (error) throw error;
       return data;
     },
   });
+
+  // Find selected customer and check for billing address
+  const selectedCustomer = useMemo(() => 
+    customers?.find(c => c.id === selectedCustomerId),
+    [customers, selectedCustomerId]
+  );
+
+  const hasBillingAddress = selectedCustomer?.billing_address && selectedCustomer?.billing_city;
 
   const resetForm = () => {
     setSelectedCustomerId('');
@@ -420,6 +429,27 @@ const Locations = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Use Billing Address Button - only for new locations when customer has billing info */}
+            {!editingLocation && hasBillingAddress && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  setAddressLine1(selectedCustomer!.billing_address || '');
+                  setCity(selectedCustomer!.billing_city || '');
+                  setState(selectedCustomer!.billing_state || 'TX');
+                  setZipCode(selectedCustomer!.billing_zip || '');
+                  setIsPrimary(true);
+                  toast.success('Billing address applied');
+                }}
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Use Billing Address
+              </Button>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
