@@ -8,8 +8,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Shield, Crown, Trash2, ArrowRight, Zap, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
-
+import { Loader2, Shield, Crown, Trash2, ArrowRight, Zap, CheckCircle, AlertCircle, XCircle, FileText } from 'lucide-react';
+import { SystemDocumentation } from '@/components/admin/settings/SystemDocumentation';
 interface GhlVerificationResult {
   success: boolean;
   configured: string[];
@@ -21,7 +21,7 @@ interface GhlVerificationResult {
 
 const Settings = () => {
   const { user } = useAuth();
-  const { role, isAdmin, loading: roleLoading } = useUserRole();
+  const { role, isAdmin, isSuperAdmin, loading: roleLoading } = useUserRole();
   const { toast } = useToast();
   const [claiming, setClaiming] = useState(false);
   const [verifyingGhl, setVerifyingGhl] = useState(false);
@@ -285,6 +285,23 @@ const Settings = () => {
                   )}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {isSuperAdmin && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-muted-foreground" />
+                <CardTitle>System Documentation</CardTitle>
+              </div>
+              <CardDescription>
+                Export technical documentation for external AI assistants like Claude
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SystemDocumentation />
             </CardContent>
           </Card>
         )}
