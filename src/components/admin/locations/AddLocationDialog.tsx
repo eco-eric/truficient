@@ -86,6 +86,17 @@ const BUILDING_TYPES = [
   { value: 'commercial_other', label: 'Commercial Other' },
 ];
 
+const COUNTY_APPRAISAL_LINKS = [
+  { county: 'Dallas', url: 'https://www.dallascad.org' },
+  { county: 'Collin', url: 'https://www.collincad.org' },
+  { county: 'Denton', url: 'https://www.dentoncad.com' },
+  { county: 'Tarrant', url: 'https://www.tad.org' },
+  { county: 'Rockwall', url: 'https://www.rockwallcad.com' },
+  { county: 'Hunt', url: 'https://www.hunt-cad.org' },
+  { county: 'Kaufman', url: 'https://www.kaufman-cad.org' },
+  { county: 'Grayson', url: 'https://www.graysonappraisal.org' },
+];
+
 export function AddLocationDialog({ open, onOpenChange, customers, editingLocation }: AddLocationDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -713,6 +724,24 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
                 Data source: {propertyDataSource}
               </div>
             )}
+
+            {/* County Appraisal District Links */}
+            <div className="text-xs text-muted-foreground mt-2 pt-2 border-t">
+              <p className="mb-1">Can't find data? Try these appraisal districts:</p>
+              <div className="flex flex-wrap gap-x-3 gap-y-1">
+                {COUNTY_APPRAISAL_LINKS.map(({ county, url }) => (
+                  <a
+                    key={county}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    {county}
+                  </a>
+                ))}
+              </div>
+            </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
