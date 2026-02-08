@@ -81,6 +81,7 @@ import AdminCalendar from "./pages/admin/Calendar";
 import AdminCalendarSettings from "./pages/admin/CalendarSettings";
 import AdminAISettings from "./pages/admin/AISettings";
 import AdminAutomations from "./pages/admin/Automations";
+import AdminRolePermissions from "./pages/admin/RolePermissions";
 import { Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
@@ -203,6 +204,7 @@ const router = createBrowserRouter([
       { path: "/admin/campaign-tags", element: <ProtectedRoute><AdminCampaignTagsConfig /></ProtectedRoute> },
       { path: "/admin/ai-settings", element: <ProtectedRoute><AdminAISettings /></ProtectedRoute> },
       { path: "/admin/automations", element: <ProtectedRoute><AdminAutomations /></ProtectedRoute> },
+      { path: "/admin/permissions", element: <ProtectedRoute><AdminRolePermissions /></ProtectedRoute> },
       
       // Catch-all route
       { path: "*", element: <NotFound /> },

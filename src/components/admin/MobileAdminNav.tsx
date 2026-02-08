@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import truficientLogo from '@/assets/truficient-logo.png';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useRolePermissions, hasPermission } from '@/hooks/useRolePermissions';
 import { navSections } from './adminNavConfig';
 
 interface MobileAdminNavProps {
@@ -14,7 +15,8 @@ interface MobileAdminNavProps {
 export const MobileAdminNav = ({ onClose }: MobileAdminNavProps) => {
   const location = useLocation();
   const { signOut } = useAuth();
-  const { isAdmin } = useUserRole();
+  const { isSuperAdmin } = useUserRole();
+  const { permissions } = useRolePermissions();
 
   const handleSignOut = async () => {
     await signOut();
@@ -25,12 +27,13 @@ export const MobileAdminNav = ({ onClose }: MobileAdminNavProps) => {
     onClose();
   };
 
-  // Filter sections and items based on role
+  // Filter sections and items based on permissions
   const visibleSections = navSections
-    .filter(section => !section.adminOnly || isAdmin)
     .map(section => ({
       ...section,
-      items: section.items.filter(item => !item.adminOnly || isAdmin),
+      items: section.items.filter(item => 
+        hasPermission(permissions, item.permissionKey, isSuperAdmin)
+      ),
     }))
     .filter(section => section.items.length > 0);
 

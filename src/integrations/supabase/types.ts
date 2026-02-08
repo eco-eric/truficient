@@ -3489,6 +3489,33 @@ export type Database = {
         }
         Relationships: []
       }
+      role_permissions: {
+        Row: {
+          enabled: boolean
+          id: string
+          permission_key: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          enabled?: boolean
+          id?: string
+          permission_key: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          id?: string
+          permission_key?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       social_link_clicks: {
         Row: {
           clicked_at: string
