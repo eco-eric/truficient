@@ -288,21 +288,83 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
     saveMutation.mutate();
   };
 
-  const handleCopyBillingAddress = () => {
+  const handleCopyBillingAddress = async () => {
     const selectedCustomer = customers.find(c => c.id === formData.customer_id);
     if (selectedCustomer && selectedCustomer.billing_address) {
+      const billingAddress = selectedCustomer.billing_address || '';
+      const billingCity = selectedCustomer.billing_city || '';
+      const billingState = selectedCustomer.billing_state || 'TX';
+      const billingZip = selectedCustomer.billing_zip || '';
+
+      // Update form with billing address first
       setFormData(prev => ({
         ...prev,
-        address_line1: selectedCustomer.billing_address || '',
-        city: selectedCustomer.billing_city || '',
-        state: selectedCustomer.billing_state || 'TX',
-        zip_code: selectedCustomer.billing_zip || '',
+        address_line1: billingAddress,
+        city: billingCity,
+        state: billingState,
+        zip_code: billingZip,
       }));
       
       toast({
         title: 'Address Copied',
-        description: 'Billing address has been copied to location',
+        description: 'Billing address copied. Geocoding to get coordinates and county...',
       });
+
+      // Geocode the address to get lat/lng and county
+      try {
+        const fullAddress = `${billingAddress}, ${billingCity}, ${billingState} ${billingZip}`;
+        
+        // Check if Google Maps is loaded
+        if (window.google?.maps) {
+          const geocoder = new google.maps.Geocoder();
+          
+          geocoder.geocode({ address: fullAddress }, (results, status) => {
+            if (status === 'OK' && results && results[0]) {
+              const place = results[0];
+              const location = place.geometry?.location;
+              
+              // Extract county from address components
+              let county = '';
+              if (place.address_components) {
+                const countyComponent = place.address_components.find(
+                  (c) => c.types.includes('administrative_area_level_2')
+                );
+                if (countyComponent) {
+                  county = countyComponent.long_name.replace(' County', '');
+                }
+              }
+              
+              setFormData(prev => ({
+                ...prev,
+                latitude: location?.lat() || null,
+                longitude: location?.lng() || null,
+                county: county || prev.county,
+                formatted_address: place.formatted_address || '',
+                google_place_id: place.place_id || '',
+              }));
+              
+              toast({
+                title: 'Location Found',
+                description: county ? `Coordinates and county (${county}) populated.` : 'Coordinates populated.',
+              });
+            } else {
+              console.error('Geocoding failed:', status);
+              toast({
+                title: 'Geocoding Note',
+                description: 'Address copied but could not get coordinates. Try using property lookup.',
+              });
+            }
+          });
+        } else {
+          // If Google Maps not loaded, just show a note to use property lookup
+          toast({
+            title: 'Address Copied',
+            description: 'Click "Lookup Property Data" to get coordinates and property details.',
+          });
+        }
+      } catch (error) {
+        console.error('Error geocoding billing address:', error);
+      }
     }
   };
 
