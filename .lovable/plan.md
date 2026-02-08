@@ -1,154 +1,94 @@
 
-# Multi-Calendar Filter with Toggle Checkboxes
 
-## Overview
+# Start Calendar View at 6 AM
 
-Replace the single-select dropdown with a Google Calendar-style multi-select sidebar that allows you to toggle individual calendars on/off while viewing multiple calendars at once.
+## Problem
 
----
+The calendar time grid currently starts at midnight (12 AM) and requires scrolling down to see business hours where most appointments occur.
 
-## Current State
+## Solution
 
-- The calendar page has a `Select` dropdown with "All Calendars" or single calendar options
-- Selecting a specific calendar hides all other calendar events
-- There's no way to view a subset of calendars (e.g., just Install + Service calendars)
-
----
-
-## Solution: Calendar Sidebar with Checkboxes
-
-Add a collapsible sidebar panel on the left side of the calendar that shows:
-- **CRM Jobs** toggle (always visible, controls job appointment visibility)
-- **Google Calendars** section with checkboxes for each synced calendar
-- Color indicator next to each calendar name
-- "Show All" / "Hide All" quick actions
-
----
-
-## UI Design
-
-```text
-┌─────────────────────┬──────────────────────────────────────┐
-│ CALENDARS           │                                      │
-│ ─────────────────── │     (Calendar Grid - unchanged)      │
-│ ☑ CRM Jobs          │                                      │
-│                     │                                      │
-│ GOOGLE CALENDARS    │                                      │
-│ ☑ ● Install Team    │                                      │
-│ ☑ ● Service Team    │                                      │
-│ ☐ ● Personal        │                                      │
-│                     │                                      │
-│ Show All | Hide All │                                      │
-└─────────────────────┴──────────────────────────────────────┘
-```
+Two changes are needed:
+1. Change the displayed hours to start at 6 AM instead of midnight
+2. Auto-scroll the view to 6 AM when the calendar loads
 
 ---
 
 ## Technical Changes
 
-### State Management
+### File: `src/components/admin/calendar/CalendarView.tsx`
 
-Replace the single `selectedCalendarId` state with two pieces of state:
-- `showCrmJobs: boolean` - toggles CRM job appointments visibility
-- `visibleCalendarIds: Set<string>` - set of Google Calendar IDs currently enabled
+**1. Update the HOURS constant**
 
-Initialize with all calendars visible by default.
-
-### Calendar Sidebar Component
-
-Create a new component `CalendarFilterSidebar.tsx` with:
-- Checkbox for CRM Jobs with primary color indicator
-- List of Google calendars with colored checkboxes
-- Quick toggle buttons (Show All / Hide All)
-- Responsive design that collapses on mobile
-
-### Filter Logic Updates
-
-Update the `combinedEvents` memo to:
-- Only include CRM job appointments if `showCrmJobs` is true
-- Only include Google events from calendars in `visibleCalendarIds`
-- Also update the edge function query to only fetch from visible calendars (optimization)
-
-### Layout Changes
-
-- Wrap the calendar controls and grid in a flex container
-- Add the sidebar as a fixed-width panel on the left (200-250px)
-- On mobile, show as a dropdown/popover instead of sidebar
-
----
-
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/pages/admin/Calendar.tsx` | Add sidebar, update state management, update filter logic |
-| `src/components/admin/calendar/CalendarFilterSidebar.tsx` | **NEW** - sidebar component with checkbox controls |
-
----
-
-## Implementation Details
-
-### New Sidebar Component
-
-```tsx
-interface CalendarFilterSidebarProps {
-  calendars: GoogleCalendar[];
-  showCrmJobs: boolean;
-  onShowCrmJobsChange: (show: boolean) => void;
-  visibleCalendarIds: Set<string>;
-  onVisibleCalendarsChange: (ids: Set<string>) => void;
-}
-```
-
-### Updated State in Calendar.tsx
+Change the hours array to start at 6 AM:
 
 ```tsx
 // Before
-const [selectedCalendarId, setSelectedCalendarId] = useState<string>("all");
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
-// After
-const [showCrmJobs, setShowCrmJobs] = useState(true);
-const [visibleCalendarIds, setVisibleCalendarIds] = useState<Set<string>>(new Set());
-
-// Initialize with all calendars visible when data loads
-useEffect(() => {
-  if (calendars?.length) {
-    setVisibleCalendarIds(new Set(calendars.map(c => c.id)));
-  }
-}, [calendars]);
+// After  
+const START_HOUR = 6;
+const HOURS = Array.from({ length: 24 }, (_, i) => (i + START_HOUR) % 24);
 ```
 
-### Updated Event Filtering
+**2. Adjust event positioning**
+
+Update `getEventStyle` to account for the 6 AM offset:
 
 ```tsx
-const combinedEvents = useMemo(() => {
-  const events = [];
+const getEventStyle = (event: CalendarEvent) => {
+  const eventHour = event.start.getHours();
+  const startMinutes = event.start.getHours() * 60 + event.start.getMinutes();
   
-  // Add CRM jobs only if toggle is on
-  if (showCrmJobs) {
-    appointments?.forEach(apt => { /* ... */ });
-  }
+  // Adjust for 6 AM start - events before 6 AM appear at top
+  const adjustedMinutes = startMinutes - (START_HOUR * 60);
+  const topPosition = adjustedMinutes < 0 ? 0 : adjustedMinutes;
   
-  // Add Google events only from visible calendars
-  googleEvents?.forEach(event => {
-    const calendar = calendars?.find(c => c.calendar_id === event.calendarId);
-    if (calendar && visibleCalendarIds.has(calendar.id)) {
-      // ... add event
-    }
-  });
-  
-  return events;
-}, [appointments, googleEvents, calendars, showCrmJobs, visibleCalendarIds]);
+  // ... rest of styling
+  return {
+    top: `${(topPosition / 60) * HOUR_HEIGHT}px`,
+    // ...
+  };
+};
 ```
+
+**3. Handle edge cases**
+
+Events scheduled before 6 AM will still be visible at the top of the grid, just positioned above the 6 AM line (or we can show a small "early hours" section if needed).
 
 ---
 
-## User Experience
+## Alternative Approach (Recommended)
 
-After implementation:
-1. A sidebar shows all available calendars with checkboxes
-2. Click any checkbox to toggle that calendar's events
-3. Each calendar shows its assigned color
-4. CRM Jobs toggle controls internal appointment visibility
-5. "Show All" and "Hide All" buttons for quick selection
-6. State persists within the session
+Instead of reordering hours, keep the full 24-hour grid but **auto-scroll to 6 AM** on mount. This is simpler and preserves the ability to see early morning events:
+
+```tsx
+import { useEffect, useRef } from "react";
+
+// Add ref to ScrollArea
+const scrollRef = useRef<HTMLDivElement>(null);
+
+// Auto-scroll to 6 AM on mount
+useEffect(() => {
+  if (scrollRef.current) {
+    const scrollPosition = START_HOUR * HOUR_HEIGHT;
+    scrollRef.current.scrollTop = scrollPosition;
+  }
+}, [viewMode]);
+```
+
+This way:
+- Calendar opens scrolled to 6 AM
+- Users can still scroll up to see midnight-6 AM if needed
+- No complex event repositioning logic required
+
+---
+
+## Summary
+
+| Change | Description |
+|--------|-------------|
+| Add `START_HOUR = 6` constant | Define the default starting hour |
+| Add scroll ref | Reference to the ScrollArea component |
+| Add useEffect | Auto-scroll to 6 AM on component mount |
+
