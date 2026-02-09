@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,9 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { 
   RefreshCw, ExternalLink, Image, Video, FileText, Mic, Camera, 
-  Upload, AlertCircle, CheckCircle, Clock
+  Upload, AlertCircle, Plus, Link2
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { LinkWorkEdgeDialog } from './LinkWorkEdgeDialog';
 
 interface WorkEdgePanelProps {
   jobId: string;
@@ -27,6 +29,7 @@ interface ProjectMedia {
 }
 
 export function WorkEdgePanel({ jobId, workedgeProjectId }: WorkEdgePanelProps) {
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: config } = useQuery({
@@ -118,38 +121,59 @@ export function WorkEdgePanel({ jobId, workedgeProjectId }: WorkEdgePanelProps) 
   // Not linked to WorkEdge yet
   if (!workedgeProjectId) {
     return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Camera className="h-5 w-5" />
-            WorkEdge
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-4">
-            <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground mb-4">
-              Not linked to WorkEdge yet
-            </p>
-            <Button
-              onClick={() => createProjectMutation.mutate()}
-              disabled={createProjectMutation.isPending}
-            >
-              {createProjectMutation.isPending ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Create WorkEdge Project
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Camera className="h-5 w-5" />
+              WorkEdge
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-4">
+              <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground mb-4">
+                Not linked to WorkEdge yet
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button
+                  onClick={() => createProjectMutation.mutate()}
+                  disabled={createProjectMutation.isPending}
+                >
+                  {createProjectMutation.isPending ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create New
+                    </>
+                  )}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowLinkDialog(true)}
+                  disabled={createProjectMutation.isPending}
+                >
+                  <Link2 className="h-4 w-4 mr-2" />
+                  Link Existing
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <LinkWorkEdgeDialog
+          open={showLinkDialog}
+          onOpenChange={setShowLinkDialog}
+          jobId={jobId}
+          onLinked={() => {
+            queryClient.invalidateQueries({ queryKey: ['crm_job', jobId] });
+            setShowLinkDialog(false);
+          }}
+        />
+      </>
     );
   }
 
