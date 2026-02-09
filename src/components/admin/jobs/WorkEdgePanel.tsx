@@ -263,7 +263,7 @@ export function WorkEdgePanel({ jobId, workedgeProjectId }: WorkEdgePanelProps) 
           <div className="text-center py-4">
             <Camera className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
             <p className="text-sm text-muted-foreground mb-2">No field media yet</p>
-            <Button
+           <Button
               variant="outline"
               size="sm"
               onClick={() => syncMediaMutation.mutate()}
@@ -271,6 +271,21 @@ export function WorkEdgePanel({ jobId, workedgeProjectId }: WorkEdgePanelProps) 
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Sync from WorkEdge
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full gap-2 mt-2"
+              asChild
+            >
+              <a 
+                href={`https://app.workedge.pro/projects/${workedgeProjectId}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Open in WorkEdge
+              </a>
             </Button>
           </div>
         ) : (

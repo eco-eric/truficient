@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,9 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { Dialog } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { ArrowLeft, Calendar, DollarSign, MapPin, User, Phone, Mail, ChevronRight, Users, Pencil } from 'lucide-react';
+import { ArrowLeft, Calendar, DollarSign, MapPin, User, Phone, Mail, ChevronRight, Users, Pencil, ExternalLink, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { WorkEdgePanel } from '@/components/admin/jobs/WorkEdgePanel';
@@ -23,6 +24,8 @@ export default function JobDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [internalNotes, setInternalNotes] = useState('');
+  const [customerNotes, setCustomerNotes] = useState('');
 
   const { data: job, isLoading } = useQuery({
     queryKey: ['crm_job', id],
@@ -182,6 +185,54 @@ export default function JobDetail() {
     }
   });
 
+  const updateNotesMutation = useMutation({
+    mutationFn: async (notes: { internal_notes: string | null; customer_notes: string | null }) => {
+      const { error } = await supabase.from('crm_jobs').update(notes).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_job', id] });
+      toast.success('Notes saved');
+    },
+    onError: (error) => toast.error('Failed to save notes: ' + error.message)
+  });
+
+  const updateLocationMutation = useMutation({
+    mutationFn: async (locationId: string) => {
+      const { error } = await supabase.from('crm_jobs').update({ location_id: locationId }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_job', id] });
+      toast.success('Job location updated');
+    },
+    onError: (error) => toast.error('Failed to update location: ' + error.message)
+  });
+
+  const { data: customerLocations = [] } = useQuery({
+    queryKey: ['crm_locations_for_customer', job?.customer_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_locations')
+        .select('id, address_line1, city, state, zip_code, is_primary')
+        .eq('customer_id', job!.customer_id)
+        .is('deleted_at', null)
+        .order('is_primary', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!job?.customer_id
+  });
+
+  useEffect(() => {
+    if (job) {
+      setInternalNotes(job.internal_notes || '');
+      setCustomerNotes(job.customer_notes || '');
+    }
+  }, [job]);
+
+  const notesChanged = job && (internalNotes !== (job.internal_notes || '') || customerNotes !== (job.customer_notes || ''));
+
   if (isLoading) {
     return (
       <AdminLayout title="Job Details">
@@ -236,6 +287,18 @@ export default function JobDetail() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {job.workedge_project_id && (
+              <Button variant="outline" size="sm" asChild>
+                <a 
+                  href={`https://app.workedge.pro/projects/${job.workedge_project_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  WorkEdge
+                </a>
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setIsEditOpen(true)}>
               <Pencil className="h-4 w-4 mr-2" />
               Edit Job
@@ -326,22 +389,50 @@ export default function JobDetail() {
                     </Button>
                   </div>
                 </div>
-                {job.location && (
-                  <>
-                    <Separator />
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
-                        <MapPin className="h-6 w-6 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{job.location.address_line1}</h4>
+                <Separator />
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+                    <MapPin className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    {job.location ? (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${job.location.address_line1}, ${job.location.city}, ${job.location.state} ${job.location.zip_code}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                      >
+                        <h4 className="font-medium flex items-center gap-1">
+                          {job.location.address_line1}
+                          <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                        </h4>
                         <p className="text-sm text-muted-foreground">
                           {job.location.city}, {job.location.state} {job.location.zip_code}
                         </p>
-                      </div>
-                    </div>
-                  </>
-                )}
+                      </a>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No location assigned</p>
+                    )}
+                    {customerLocations.length > 0 && (
+                      <Select
+                        value={job.location_id || ''}
+                        onValueChange={(v) => updateLocationMutation.mutate(v)}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder="Change location..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {customerLocations.map((loc: any) => (
+                            <SelectItem key={loc.id} value={loc.id}>
+                              {loc.address_line1}, {loc.city} {loc.zip_code}
+                              {loc.is_primary ? ' (Primary)' : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -393,27 +484,44 @@ export default function JobDetail() {
             </Card>
 
             {/* Notes */}
-            {(job.internal_notes || job.customer_notes) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Notes</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {job.internal_notes && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Internal Notes</p>
-                      <p className="text-sm whitespace-pre-wrap">{job.internal_notes}</p>
-                    </div>
-                  )}
-                  {job.customer_notes && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Customer Notes</p>
-                      <p className="text-sm whitespace-pre-wrap">{job.customer_notes}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-lg">Notes</CardTitle>
+                {notesChanged && (
+                  <Button
+                    size="sm"
+                    onClick={() => updateNotesMutation.mutate({
+                      internal_notes: internalNotes || null,
+                      customer_notes: customerNotes || null
+                    })}
+                    disabled={updateNotesMutation.isPending}
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    Save
+                  </Button>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Internal Notes</p>
+                  <Textarea
+                    value={internalNotes}
+                    onChange={(e) => setInternalNotes(e.target.value)}
+                    placeholder="Add internal notes..."
+                    className="min-h-[80px]"
+                  />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Customer Notes</p>
+                  <Textarea
+                    value={customerNotes}
+                    onChange={(e) => setCustomerNotes(e.target.value)}
+                    placeholder="Add customer-facing notes..."
+                    className="min-h-[80px]"
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Stage History */}
             <Card>
