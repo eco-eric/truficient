@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MultiSelect } from '@/components/ui/multi-select';
-import { Calendar, RefreshCw, CheckCircle2, Users } from 'lucide-react';
+import { Calendar, RefreshCw, CheckCircle2, Users, MapPin } from 'lucide-react';
 import { format, addHours } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -57,7 +57,8 @@ export default function JobAppointmentDialog({
     calendarId: '',
     teamId: '',
     notes: '',
-    attendeeIds: [] as string[]
+    attendeeIds: [] as string[],
+    location: ''
   });
 
   // Fetch team members for attendee selection
@@ -88,9 +89,11 @@ export default function JobAppointmentDialog({
         calendarId: appointment.google_calendar_id || '',
         teamId: appointment.assigned_team_id || '',
         notes: appointment.notes || '',
-        attendeeIds: appointment.attendee_member_ids || []
+        attendeeIds: appointment.attendee_member_ids || [],
+        location: ''
       });
     } else {
+      // New appointment - auto-populate from job location
       setFormData({
         title: '',
         startDate: '',
@@ -100,10 +103,11 @@ export default function JobAppointmentDialog({
         calendarId: '',
         teamId: '',
         notes: '',
-        attendeeIds: []
+        attendeeIds: [],
+        location: location || ''
       });
     }
-  }, [appointment, open]);
+  }, [appointment, open, location]);
 
   const { data: calendars = [] } = useQuery({
     queryKey: ['google-calendars-active'],
@@ -206,7 +210,7 @@ export default function JobAppointmentDialog({
           const eventPayload = {
             summary: `${jobNumber} - ${customerName} - ${formData.title || jobTitle}`,
             description,
-            location: location || '',
+            location: formData.location || '',
             start: {
               dateTime: startDateTime.toISOString(),
               timeZone: 'America/Chicago',
@@ -350,6 +354,37 @@ export default function JobAppointmentDialog({
                 required
               />
             </div>
+          </div>
+
+          {/* Location */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Location
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                placeholder="Event location address"
+                className="flex-1"
+              />
+              {location && formData.location !== location && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFormData({ ...formData, location: location })}
+                >
+                  Use Job Address
+                </Button>
+              )}
+            </div>
+            {location && (
+              <p className="text-xs text-muted-foreground">
+                Job address: {location}
+              </p>
+            )}
           </div>
 
           {/* Team Assignment */}
