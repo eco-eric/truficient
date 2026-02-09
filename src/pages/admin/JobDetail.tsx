@@ -257,6 +257,7 @@ export default function JobDetail() {
   };
 
   const paymentStatusColors: Record<string, string> = {
+    no_charge_yet: 'bg-gray-500/10 text-gray-600',
     pending: 'bg-yellow-500/10 text-yellow-600',
     deposit_received: 'bg-blue-500/10 text-blue-600',
     partial: 'bg-purple-500/10 text-purple-600',
@@ -587,6 +588,7 @@ export default function JobDetail() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="no_charge_yet">No Charge Yet</SelectItem>
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="deposit_received">Deposit Received</SelectItem>
                       <SelectItem value="partial">Partial</SelectItem>
