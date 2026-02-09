@@ -1,154 +1,125 @@
 
-# Import Address from Job in Calendar Appointment Dialog
+
+# Update WorkEdge Integration to Match Actual API
 
 ## Overview
 
-Add a visible location field to the `JobAppointmentDialog` that auto-populates with the job's address when creating a new appointment. This allows users to see, verify, and optionally edit the location before syncing to Google Calendar.
+Update the `workedge-sync` edge function and integration configuration to use the correct WorkEdge API format based on the documented endpoints.
 
 ---
 
-## Current State
+## Changes Required
 
-- The `location` prop is passed through from `JobDetail` → `JobAppointmentsCard` → `JobAppointmentDialog`
-- Currently only used silently when syncing to Google Calendar (line 209)
-- Users cannot see or edit the location before syncing
+### 1. Update Database Configuration
 
----
+Update the `integration_configs` table to use the correct API URL:
 
-## Solution
-
-Add a location input field with a "Use Job Address" button that imports the address from the job.
-
----
-
-## UI Design
-
-```text
-┌─────────────────────────────────────────────────────┐
-│ Location                                            │
-│ ┌─────────────────────────────────┐ ┌─────────────┐ │
-│ │ 1234 Main St, Dallas, TX 75001  │ │ Use Job Addr│ │
-│ └─────────────────────────────────┘ └─────────────┘ │
-└─────────────────────────────────────────────────────┘
+```sql
+UPDATE integration_configs 
+SET config = jsonb_set(
+  config, 
+  '{api_url}', 
+  '"https://vesncoasnajcdinipgkv.supabase.co/functions/v1"'
+)
+WHERE integration_name = 'workedge';
 ```
 
 ---
 
-## Technical Changes
+### 2. Update Edge Function: `workedge-sync/index.ts`
 
-### File: `src/components/admin/jobs/JobAppointmentDialog.tsx`
+**Authentication Header Change:**
+```typescript
+// BEFORE
+headers: {
+  'Authorization': `Bearer ${WORKEDGE_API_KEY}`,
+  'Content-Type': 'application/json'
+}
 
-**1. Add location to formData state:**
-```tsx
-const [formData, setFormData] = useState({
-  title: '',
-  startDate: '',
-  startTime: '08:00',
-  endDate: '',
-  endTime: '17:00',
-  calendarId: '',
-  teamId: '',
-  notes: '',
-  attendeeIds: [] as string[],
-  location: ''  // NEW
-});
+// AFTER
+headers: {
+  'x-api-key': WORKEDGE_API_KEY,
+  'Content-Type': 'application/json'
+}
 ```
 
-**2. Auto-populate location for new appointments:**
-```tsx
-useEffect(() => {
-  if (appointment) {
-    // Editing existing - keep existing data
-    setFormData({
-      // ... existing fields
-      location: '' // Could store in DB if needed
-    });
-  } else {
-    // New appointment - auto-populate from job location
-    setFormData({
-      // ... existing defaults
-      location: location || ''  // Pre-fill with job address
-    });
-  }
-}, [appointment, open, location]);
+**Endpoint Path Change:**
+```typescript
+// BEFORE
+const response = await fetch(`${apiUrl}/v1/projects`, { ... });
+
+// AFTER  
+const response = await fetch(`${apiUrl}/api-projects`, { ... });
 ```
 
-**3. Add location input field with import button:**
-```tsx
-{/* Location */}
-<div className="space-y-2">
-  <Label className="flex items-center gap-2">
-    <MapPin className="h-4 w-4" />
-    Location
-  </Label>
-  <div className="flex gap-2">
-    <Input
-      value={formData.location}
-      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-      placeholder="Event location address"
-      className="flex-1"
-    />
-    {location && formData.location !== location && (
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => setFormData({ ...formData, location: location })}
-      >
-        Use Job Address
-      </Button>
-    )}
-  </div>
-  {location && (
-    <p className="text-xs text-muted-foreground">
-      Job address: {location}
-    </p>
-  )}
-</div>
-```
+**Payload Structure Change (create-project):**
+```typescript
+// BEFORE
+const projectPayload = {
+  name: `${job.job_number} - ${job.title}`,
+  customer: {
+    name: job.customer?.company_name || `${job.customer?.first_name} ${job.customer?.last_name}`,
+    email: job.customer?.email,
+    phone: job.customer?.phone
+  },
+  address: {
+    street: job.location?.address_line1,
+    city: job.location?.city,
+    state: job.location?.state,
+    zip: job.location?.zip_code
+  },
+  type: job.job_type?.name || 'Service',
+  notes: job.internal_notes,
+  scheduled_date: job.scheduled_start
+};
 
-**4. Update event payload to use form location:**
-```tsx
-const eventPayload = {
-  summary: `${jobNumber} - ${customerName} - ${formData.title || jobTitle}`,
-  description,
-  location: formData.location || '',  // Use editable form value
-  start: { ... },
-  end: { ... },
-  attendees: attendees.length > 0 ? attendees : undefined,
+// AFTER (matching API docs)
+const projectPayload = {
+  name: `${job.job_number} - ${job.title}`,
+  client_name: job.customer?.company_name || 
+               `${job.customer?.first_name} ${job.customer?.last_name}`.trim(),
+  property_address: [
+    job.location?.address_line1,
+    job.location?.city,
+    job.location?.state,
+    job.location?.zip_code
+  ].filter(Boolean).join(', '),
+  project_type: job.job_type?.name?.toLowerCase() || 'service'
 };
 ```
 
-**5. Add MapPin icon import:**
-```tsx
-import { Calendar, RefreshCw, CheckCircle2, Users, MapPin } from 'lucide-react';
+---
+
+### 3. Update Webhook Handler: `workedge-webhook/index.ts`
+
+Update the webhook payload interface to match the documented format:
+```typescript
+interface WorkEdgeWebhookPayload {
+  event: 'photo.uploaded' | 'video.uploaded' | 'note.added' | 'report.generated';
+  timestamp: string;
+  data: {
+    id: string;
+    project_id: string;
+    file_path: string;
+    caption?: string;
+  };
+}
 ```
 
 ---
 
-## Behavior
-
-| Scenario | Location Field Value |
-|----------|---------------------|
-| New appointment, job has location | Pre-filled with job address |
-| New appointment, no job location | Empty |
-| Editing existing appointment | Empty (or stored value if we add DB field) |
-| User clicks "Use Job Address" | Populated with job location |
-| User manually types | Custom address used |
-
----
-
-## Files to Modify
+## Summary of All Changes
 
 | File | Changes |
 |------|---------|
-| `src/components/admin/jobs/JobAppointmentDialog.tsx` | Add location field to form state, add UI input with import button |
+| Database: `integration_configs` | Update `api_url` to correct base URL |
+| `supabase/functions/workedge-sync/index.ts` | Update auth header (`x-api-key`), endpoint paths (`/api-projects`), payload structure |
+| `supabase/functions/workedge-webhook/index.ts` | Update payload interface to match documented webhook format |
 
 ---
 
-## Optional Enhancement
+## Technical Notes
 
-To persist the location on saved appointments, a future enhancement could add a `location` column to `crm_job_appointments`. However, for this initial implementation, the location will be:
-1. Auto-populated from the job when creating new appointments
-2. Editable before sync
-3. Sent to Google Calendar with the event
+- The `sync-customer`, `get-project-media`, `get-equipment`, and `create-service-record` actions may need additional API documentation to implement correctly. For now, the primary focus is fixing `create-project` which is the action causing the current error.
+- The webhook handler will work once the API URL is correct and projects can be created successfully.
+
