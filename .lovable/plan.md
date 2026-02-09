@@ -1,210 +1,106 @@
 
-# Add Job Board & Calendar Widgets to Dashboard
 
-## Overview
+# Job Detail Page Enhancements
 
-Add two new dashboard widgets for quick access to Jobs and Calendar, positioned **before** the GHL Sync Health section (as indicated in the screenshot). These will provide at-a-glance operations visibility without leaving the dashboard.
+## 1. Inline Notes Editing
 
----
+Currently the Notes card (lines 396-416) only appears when notes already exist, with no way to add them from the detail page.
 
-## Current Dashboard Layout
-
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│                        Stats Cards Row                          │
-├───────────────────────────────┬─────────────────────────────────┤
-│        Revenue Summary        │        Pipeline Status          │
-├───────────────────────────────┼─────────────────────────────────┤
-│        GHL Sync Health        │        Sync Issues              │  ◀── Move DOWN
-├───────────────────────────────┼─────────────────────────────────┤
-│       Ducted Estimator        │      Ductless Estimator         │
-└───────────────────────────────┴─────────────────────────────────┘
-```
-
-## Proposed Layout
-
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│                        Stats Cards Row                          │
-├───────────────────────────────┬─────────────────────────────────┤
-│        Revenue Summary        │        Pipeline Status          │
-├───────────────────────────────┼─────────────────────────────────┤
-│     Jobs Board Preview        │    Upcoming Appointments        │  ◀── NEW ROW
-├───────────────────────────────┼─────────────────────────────────┤
-│        GHL Sync Health        │        Sync Issues              │
-├───────────────────────────────┼─────────────────────────────────┤
-│       Ducted Estimator        │      Ductless Estimator         │
-└───────────────────────────────┴─────────────────────────────────┘
-```
+**Changes to `src/pages/admin/JobDetail.tsx`:**
+- Remove the conditional wrapper so the Notes card always shows
+- Add `useState` for `internalNotes` and `customerNotes`, initialized from `job` data
+- Replace static text with `Textarea` fields
+- Add a "Save Notes" button with a `useMutation` that updates `crm_jobs.internal_notes` and `crm_jobs.customer_notes`
 
 ---
 
-## New Components
+## 2. Job Location -- Clickable + Changeable from Customer Locations
 
-### 1. JobBoardPreview
+Currently the location section (lines 329-344) shows a static address with no interaction.
 
-A compact card showing recent jobs grouped by stage:
-
-```text
-┌──────────────────────────────────────────────────────────────────┐
-│ 📋 Jobs Board                                    [View All →]    │
-├──────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  Initial (2)    In Progress (3)    Review (1)    Completed (0)  │
-│  ┌─────────┐   ┌─────────┐        ┌─────────┐                   │
-│  │ TRU-... │   │ TRU-... │        │ TRU-... │                   │
-│  └─────────┘   │ TRU-... │        └─────────┘                   │
-│                │ TRU-... │                                       │
-│                └─────────┘                                       │
-│                                                                  │
-│  📊 5 active jobs  •  2 urgent priority  •  $24,500 total       │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-Features:
-- Shows job counts by stage type (Initial, In Progress, Review, Completed)
-- Displays up to 2-3 job cards per column (compact)
-- Summary stats at bottom: active jobs, urgent count, total quoted
-- "View All" link to `/admin/jobs`
-- Click on job card navigates to job detail
+**Changes to `src/pages/admin/JobDetail.tsx`:**
+- Add a query to fetch all `crm_locations` where `customer_id` matches the job's customer
+- Make the current location address clickable -- opens Google Maps in a new tab
+- Add a dropdown/select below to change the job's location to any of the customer's locations
+- Add a mutation to update `crm_jobs.location_id`
 
 ---
 
-### 2. UpcomingAppointments
+## 3. WorkEdge "Open" Link in Empty Media State
 
-A compact calendar widget showing today's and upcoming appointments:
+Currently the "Open in WorkEdge" button (lines 331-345 of WorkEdgePanel) only shows when media exists. When media is empty (lines 263-275), there's no link.
 
-```text
-┌──────────────────────────────────────────────────────────────────┐
-│ 📅 Upcoming Appointments                       [View Calendar →] │
-├──────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  Today, Feb 9                                                    │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │ ■ 9:00 AM  TRU-2026-0042 - AC Installation    [Team Blue] │ │
-│  │ ■ 2:00 PM  TRU-2026-0045 - Heat Pump Service              │ │
-│  └────────────────────────────────────────────────────────────┘ │
-│                                                                  │
-│  Tomorrow, Feb 10                                                │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │ ■ 10:30 AM TRU-2026-0048 - Ductless Install               │ │
-│  └────────────────────────────────────────────────────────────┘ │
-│                                                                  │
-│  📊 3 appointments this week  •  Next 7 days: 8 scheduled       │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-Features:
-- Groups appointments by day (Today, Tomorrow, then dates)
-- Shows time, job number, title, and team assignment
-- Color-coded by team or job type
-- Summary: this week count, next 7 days total
-- "View Calendar" link to `/admin/calendar`
-- Click appointment navigates to job detail
+**Changes to `src/components/admin/jobs/WorkEdgePanel.tsx`:**
+- Add the "Open in WorkEdge" link button to the empty media state (after the "Sync from WorkEdge" button)
 
 ---
 
-## Technical Implementation
-
-### Files to Create
-
-| File | Purpose |
-|------|---------|
-| `src/components/admin/dashboard/JobBoardPreview.tsx` | Mini kanban view of jobs by stage |
-| `src/components/admin/dashboard/UpcomingAppointments.tsx` | Today/upcoming appointments list |
-
-### Files to Modify
+## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/pages/admin/Dashboard.tsx` | Import new components, insert row between Pipeline Status and GHL Sync Health |
+| `src/pages/admin/JobDetail.tsx` | Always-visible notes with inline editing; customer locations query + dropdown; clickable location link |
+| `src/components/admin/jobs/WorkEdgePanel.tsx` | Add "Open in WorkEdge" button to empty media state |
 
 ---
 
-## Data Queries
+## Technical Details
 
-### JobBoardPreview
-
+### Notes Mutation
 ```typescript
-// Fetch recent jobs with stage info
-const { data: jobs } = useQuery({
-  queryKey: ['dashboard-jobs-preview'],
-  queryFn: async () => {
-    const { data } = await supabase
-      .from('crm_jobs')
-      .select(`
-        id, job_number, title, priority, quoted_amount,
-        current_stage:crm_job_stages(stage_type, name, color),
-        customer:crm_customers(first_name, last_name, company_name)
-      `)
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false })
-      .limit(20);
-    return data;
+const updateNotesMutation = useMutation({
+  mutationFn: async (notes: { internal_notes: string; customer_notes: string }) => {
+    const { error } = await supabase.from('crm_jobs').update(notes).eq('id', id);
+    if (error) throw error;
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['crm_job', id] });
+    toast.success('Notes saved');
   }
 });
 ```
 
-### UpcomingAppointments
-
+### Customer Locations Query
 ```typescript
-// Fetch appointments from today onwards
-const { data: appointments } = useQuery({
-  queryKey: ['dashboard-appointments'],
+const { data: customerLocations = [] } = useQuery({
+  queryKey: ['crm_locations_for_customer', job?.customer?.id],
   queryFn: async () => {
-    const today = startOfDay(new Date()).toISOString();
-    const weekEnd = addDays(new Date(), 7).toISOString();
-    
-    const { data } = await supabase
-      .from('crm_job_appointments')
-      .select(`
-        id, title, start_datetime, end_datetime,
-        job:crm_jobs(id, job_number, title),
-        team:crm_teams(id, name, color)
-      `)
-      .gte('start_datetime', today)
-      .lte('start_datetime', weekEnd)
-      .order('start_datetime')
-      .limit(10);
+    const { data, error } = await supabase
+      .from('crm_locations')
+      .select('id, address_line1, city, state, zip_code, is_primary')
+      .eq('customer_id', job.customer.id)
+      .is('deleted_at', null);
+    if (error) throw error;
     return data;
+  },
+  enabled: !!job?.customer?.id
+});
+```
+
+### Update Location Mutation
+```typescript
+const updateLocationMutation = useMutation({
+  mutationFn: async (locationId: string) => {
+    const { error } = await supabase.from('crm_jobs').update({ location_id: locationId }).eq('id', id);
+    if (error) throw error;
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['crm_job', id] });
+    toast.success('Job location updated');
   }
 });
 ```
 
----
-
-## Dashboard Layout Update
-
-Update `Dashboard.tsx` to insert the new row:
-
+### Clickable Location
+The current location address will open Google Maps when clicked:
 ```tsx
-{/* Revenue & Pipeline Row */}
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-  <RevenueSummary />
-  <PipelineStatus />
-</div>
-
-{/* NEW: Jobs & Calendar Row */}
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-  <JobBoardPreview />
-  <UpcomingAppointments />
-</div>
-
-{/* GHL Sync Health Row - MOVED DOWN */}
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-  <GHLSyncHealth />
-  <FailedSyncsAlert />
-</div>
+<a
+  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="hover:underline cursor-pointer"
+>
+  {job.location.address_line1}
+</a>
 ```
-
----
-
-## Component Styling
-
-Both components will follow the existing dashboard card patterns:
-- Use `Card`, `CardHeader`, `CardTitle`, `CardContent` from shadcn/ui
-- Consistent icon usage (Briefcase for Jobs, Calendar for Appointments)
-- "View All" button in header
-- Skeleton loaders during loading state
-- Compact layout optimized for dashboard (max height ~280px with scroll if needed)
 
