@@ -223,7 +223,28 @@ export default function JobAppointmentDialog({
           };
 
           let response;
-          if (appointment?.google_calendar_event_id) {
+          const calendarChanged = appointment?.google_calendar_id && appointment.google_calendar_id !== formData.calendarId;
+
+          if (calendarChanged && appointment?.google_calendar_event_id) {
+            // Calendar changed: delete from old, create on new
+            const oldCalendar = calendars.find((c: any) => c.id === appointment.google_calendar_id);
+            if (oldCalendar) {
+              await supabase.functions.invoke('google-calendar-sync', {
+                body: {
+                  action: 'delete-event',
+                  calendarId: oldCalendar.calendar_id,
+                  eventId: appointment.google_calendar_event_id,
+                },
+              });
+            }
+            response = await supabase.functions.invoke('google-calendar-sync', {
+              body: {
+                action: 'create-event',
+                calendarId: calendar.calendar_id,
+                event: eventPayload,
+              },
+            });
+          } else if (appointment?.google_calendar_event_id) {
             response = await supabase.functions.invoke('google-calendar-sync', {
               body: {
                 action: 'update-event',
