@@ -1,116 +1,140 @@
 
-
-# Link Individual Team Members to Calendars
+# Import Address from Job in Calendar Appointment Dialog
 
 ## Overview
 
-Add the ability to associate individual team members with Google Calendars on the Calendar Settings page, similar to the existing "Link to Team" functionality.
+Add a visible location field to the `JobAppointmentDialog` that auto-populates with the job's address when creating a new appointment. This allows users to see, verify, and optionally edit the location before syncing to Google Calendar.
 
 ---
 
 ## Current State
 
-The `google_calendars` table currently supports:
-- `linked_job_type_id` - Links calendar to a job type
-- `linked_team_id` - Links calendar to a team
-
-**Missing**: No ability to link a calendar to an individual team member (e.g., "Sheyla's Calendar" linked to Sheyla)
+- The `location` prop is passed through from `JobDetail` → `JobAppointmentsCard` → `JobAppointmentDialog`
+- Currently only used silently when syncing to Google Calendar (line 209)
+- Users cannot see or edit the location before syncing
 
 ---
 
 ## Solution
 
-Add a new "Link to Member" dropdown next to the existing "Link to Team" dropdown, allowing calendars to be associated with specific individuals from `crm_team_members`.
+Add a location input field with a "Use Job Address" button that imports the address from the job.
 
 ---
 
 ## UI Design
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│ ● Sheyla Calendar | Installer                                     Active [●]    │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│  Set as Primary      Link to Job Type      Link to Team       Link to Member   │
-│  [Make Primary]      [None           ▼]    [None        ▼]    [Sheyla Rios  ▼] │
-│                                                                                 │
-│  Last synced: 2/8/2026, 5:42:50 PM                                             │
-└─────────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│ Location                                            │
+│ ┌─────────────────────────────────┐ ┌─────────────┐ │
+│ │ 1234 Main St, Dallas, TX 75001  │ │ Use Job Addr│ │
+│ └─────────────────────────────────┘ └─────────────┘ │
+└─────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## Technical Changes
 
-### 1. Database Migration
+### File: `src/components/admin/jobs/JobAppointmentDialog.tsx`
 
-Add a new column to `google_calendars`:
-
-```sql
-ALTER TABLE google_calendars 
-ADD COLUMN linked_member_id uuid REFERENCES crm_team_members(id) ON DELETE SET NULL;
-```
-
-### 2. CalendarSettings.tsx Updates
-
-**Fetch team members:**
+**1. Add location to formData state:**
 ```tsx
-const { data: teamMembers } = useQuery({
-  queryKey: ["team-members"],
-  queryFn: async () => {
-    const { data, error } = await supabase
-      .from("crm_team_members")
-      .select("id, first_name, last_name, email")
-      .eq("is_active", true)
-      .order("first_name");
-    if (error) throw error;
-    return data;
-  },
+const [formData, setFormData] = useState({
+  title: '',
+  startDate: '',
+  startTime: '08:00',
+  endDate: '',
+  endTime: '17:00',
+  calendarId: '',
+  teamId: '',
+  notes: '',
+  attendeeIds: [] as string[],
+  location: ''  // NEW
 });
 ```
 
-**Add new dropdown in the grid (4 columns instead of 3):**
+**2. Auto-populate location for new appointments:**
 ```tsx
-<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-  {/* Existing: Primary, Job Type, Team */}
-  
-  {/* NEW: Link to Member */}
-  <div>
-    <label className="text-sm font-medium mb-1.5 flex items-center gap-1">
-      <User className="h-4 w-4" />
-      Link to Member
-    </label>
-    <Select
-      value={calendar.linked_member_id || "none"}
-      onValueChange={(value) =>
-        updateCalendarMutation.mutate({
-          id: calendar.id,
-          linked_member_id: value === "none" ? null : value,
-        })
-      }
-    >
-      <SelectTrigger>
-        <SelectValue placeholder="Select member" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="none">None</SelectItem>
-        {teamMembers?.map((m) => (
-          <SelectItem key={m.id} value={m.id}>
-            {m.first_name} {m.last_name || ''}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+useEffect(() => {
+  if (appointment) {
+    // Editing existing - keep existing data
+    setFormData({
+      // ... existing fields
+      location: '' // Could store in DB if needed
+    });
+  } else {
+    // New appointment - auto-populate from job location
+    setFormData({
+      // ... existing defaults
+      location: location || ''  // Pre-fill with job address
+    });
+  }
+}, [appointment, open, location]);
+```
+
+**3. Add location input field with import button:**
+```tsx
+{/* Location */}
+<div className="space-y-2">
+  <Label className="flex items-center gap-2">
+    <MapPin className="h-4 w-4" />
+    Location
+  </Label>
+  <div className="flex gap-2">
+    <Input
+      value={formData.location}
+      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+      placeholder="Event location address"
+      className="flex-1"
+    />
+    {location && formData.location !== location && (
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => setFormData({ ...formData, location: location })}
+      >
+        Use Job Address
+      </Button>
+    )}
   </div>
+  {location && (
+    <p className="text-xs text-muted-foreground">
+      Job address: {location}
+    </p>
+  )}
 </div>
 ```
 
-**Update interface:**
+**4. Update event payload to use form location:**
 ```tsx
-interface GoogleCalendar {
-  // ... existing fields
-  linked_member_id: string | null;  // NEW
-}
+const eventPayload = {
+  summary: `${jobNumber} - ${customerName} - ${formData.title || jobTitle}`,
+  description,
+  location: formData.location || '',  // Use editable form value
+  start: { ... },
+  end: { ... },
+  attendees: attendees.length > 0 ? attendees : undefined,
+};
 ```
+
+**5. Add MapPin icon import:**
+```tsx
+import { Calendar, RefreshCw, CheckCircle2, Users, MapPin } from 'lucide-react';
+```
+
+---
+
+## Behavior
+
+| Scenario | Location Field Value |
+|----------|---------------------|
+| New appointment, job has location | Pre-filled with job address |
+| New appointment, no job location | Empty |
+| Editing existing appointment | Empty (or stored value if we add DB field) |
+| User clicks "Use Job Address" | Populated with job location |
+| User manually types | Custom address used |
 
 ---
 
@@ -118,15 +142,13 @@ interface GoogleCalendar {
 
 | File | Changes |
 |------|---------|
-| Database migration | Add `linked_member_id` column with FK to `crm_team_members` |
-| `src/pages/admin/CalendarSettings.tsx` | Add team members query, new dropdown, update interface |
+| `src/components/admin/jobs/JobAppointmentDialog.tsx` | Add location field to form state, add UI input with import button |
 
 ---
 
-## Benefits
+## Optional Enhancement
 
-- Associate individual team members' calendars with their profiles
-- Useful for filtering events by team member
-- Complements the team-level linking (a calendar can be linked to both a team AND a specific member)
-- Enables future features like "Show only my calendar" for logged-in technicians
-
+To persist the location on saved appointments, a future enhancement could add a `location` column to `crm_job_appointments`. However, for this initial implementation, the location will be:
+1. Auto-populated from the job when creating new appointments
+2. Editable before sync
+3. Sent to Google Calendar with the event
