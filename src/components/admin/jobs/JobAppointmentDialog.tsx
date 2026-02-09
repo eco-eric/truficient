@@ -281,7 +281,7 @@ export default function JobAppointmentDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="max-w-lg"
+        className="max-w-lg max-h-[90vh] overflow-y-auto"
         onInteractOutside={(e) => {
           const target = e.target as HTMLElement;
           if (target?.closest('[data-radix-popper-content-wrapper]')) {
