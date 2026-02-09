@@ -38,9 +38,10 @@ export function LinkWorkEdgeDialog({ open, onOpenChange, jobId, onLinked }: Link
       });
       if (response.error) throw new Error(response.error.message);
       
-      // Handle various response structures
+      // Handle nested response: { projects: { projects: [...] } }
       const data = response.data;
       if (Array.isArray(data)) return data as WorkEdgeProject[];
+      if (Array.isArray(data?.projects?.projects)) return data.projects.projects as WorkEdgeProject[];
       if (Array.isArray(data?.projects)) return data.projects as WorkEdgeProject[];
       if (Array.isArray(data?.items)) return data.items as WorkEdgeProject[];
       return [];
