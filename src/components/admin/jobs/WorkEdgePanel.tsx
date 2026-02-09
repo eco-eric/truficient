@@ -7,10 +7,21 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { 
   RefreshCw, ExternalLink, Image, Video, FileText, Mic, Camera, 
-  Upload, AlertCircle, Plus, Link2
+  Upload, AlertCircle, Plus, Link2, Link2Off
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { LinkWorkEdgeDialog } from './LinkWorkEdgeDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface WorkEdgePanelProps {
   jobId: string;
@@ -91,6 +102,21 @@ export function WorkEdgePanel({ jobId, workedgeProjectId }: WorkEdgePanelProps) 
       toast.success(`Synced ${data.media_count || 0} media items`);
     },
     onError: (error) => toast.error('Failed to sync media: ' + error.message)
+  });
+
+  const unlinkProjectMutation = useMutation({
+    mutationFn: async () => {
+      const response = await supabase.functions.invoke('workedge-sync', {
+        body: { action: 'unlink-project', jobId }
+      });
+      if (response.error) throw new Error(response.error.message);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_job', jobId] });
+      toast.success('WorkEdge project unlinked');
+    },
+    onError: (error) => toast.error('Failed to unlink: ' + error.message)
   });
 
   const mediaTypeIcon = (type: string) => {
@@ -198,6 +224,35 @@ export function WorkEdgePanel({ jobId, workedgeProjectId }: WorkEdgePanelProps) 
             >
               <RefreshCw className={`h-4 w-4 ${syncMediaMutation.isPending ? 'animate-spin' : ''}`} />
             </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  disabled={unlinkProjectMutation.isPending}
+                >
+                  <Link2Off className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Unlink WorkEdge Project?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will remove the connection between this job and the WorkEdge project. 
+                    The project will not be deleted from WorkEdge, but synced media will be removed locally.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={() => unlinkProjectMutation.mutate()}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Unlink
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </CardHeader>
