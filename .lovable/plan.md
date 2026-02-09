@@ -1,118 +1,100 @@
 
-# Add "Unlink WorkEdge Project" Functionality
+# Fix WorkEdge Media and Notes Import
 
-## Overview
+## Problem
+When clicking "Sync from WorkEdge", the system reports "Synced 0 media items" even though the project has 8 photos. The issue is that the edge function expects media data in a specific format (`mediaData.items`) but the WorkEdge API likely returns it in a different structure.
 
-Add the ability to unlink a WorkEdge project from a job. This will allow users to disconnect a job from its linked WorkEdge project without deleting the project from WorkEdge itself.
+## Root Cause Analysis
+The sync logs confirm:
+- `get-project-media` calls are returning `media_count: 0`  
+- The linked project shows `photo_count: 8` in the project list
 
----
-
-## Current State
-
-When a job is linked to WorkEdge, the panel shows:
-- The WorkEdge project ID badge
-- A refresh/sync button
-- Media grid and external link
-
-**Missing:** No way to unlink/disconnect the project
-
----
-
-## UI Design
-
-Add an "Unlink" option in the linked state header:
-
-```text
-┌─────────────────────────────────────────────────────┐
-│ WorkEdge                                            │
-│                                                     │
-│  [abc123] [🔄 Sync] [⋮ Menu]                       │
-│                         ├─ Unlink Project           │
-│                         └─ Open in WorkEdge         │
-└─────────────────────────────────────────────────────┘
+The code on line 201 of `workedge-sync/index.ts` only checks for `.items`:
+```typescript
+const mediaRecords = (mediaData.items || []).map(...)
 ```
 
-Or simpler approach - add an unlink button with confirmation:
-
-```text
-┌─────────────────────────────────────────────────────┐
-│ WorkEdge                      [abc123] [🔄] [🔗✕]   │
-├─────────────────────────────────────────────────────┤
-│ (media content)                                     │
-└─────────────────────────────────────────────────────┘
-```
+The WorkEdge API (hosted at `vesncoasnajcdinipgkv.supabase.co/functions/v1`) likely returns media in a different format - possibly as a direct array, or nested under `photos`, `media`, or `data.items`.
 
 ---
 
-## Technical Changes
+## Solution
 
-### 1. Edge Function: Add `unlink-project` Action
+### 1. Add Debug Logging to Edge Function
+First, add logging to see the actual API response structure.
 
-**File:** `supabase/functions/workedge-sync/index.ts`
-
-Add new action to clear the WorkEdge link from the job:
+### 2. Update Media Extraction Logic
+Make the media extraction more defensive to handle multiple response structures:
 
 ```typescript
-case 'unlink-project': {
-  if (!jobId) {
-    throw new Error('jobId is required');
-  }
-
-  // Clear the WorkEdge project ID from the job
-  await supabase
-    .from('crm_jobs')
-    .update({ 
-      workedge_project_id: null,
-      workedge_last_sync: null
-    })
-    .eq('id', jobId);
-
-  // Optionally: delete synced media from local table
-  await supabase
-    .from('workedge_project_media')
-    .delete()
-    .eq('job_id', jobId);
-
-  result = { success: true };
-  break;
+// Extract items from response - handle various structures
+function extractItems(response: any): any[] {
+  if (!response || typeof response !== 'object') return [];
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response.items)) return response.items;
+  if (Array.isArray(response.photos)) return response.photos;
+  if (Array.isArray(response.media)) return response.media;
+  if (Array.isArray(response.data)) return response.data;
+  if (response.data && Array.isArray(response.data.items)) return response.data.items;
+  if (response.data && Array.isArray(response.data.photos)) return response.data.photos;
+  return [];
 }
 ```
 
----
+### 3. Map Media Fields Defensively
+WorkEdge may use different field names. Update mapping to handle:
+- `type` or `media_type`
+- `url` or `media_url` or `file_url`
+- `thumbnail_url` or `thumb_url` or `thumbnail`
+- `created_at` or `captured_at` or `taken_at`
 
-### 2. Update `WorkEdgePanel.tsx`
-
-**File:** `src/components/admin/jobs/WorkEdgePanel.tsx`
-
-Add unlink functionality to the linked state:
-
-- Add `Unlink2` (or use `Link2Off`) icon import from lucide-react
-- Add `unlinkProjectMutation` mutation
-- Add unlink button with confirmation dialog
-- Show confirmation before unlinking
-
-Changes:
-- Add `AlertDialog` for confirmation
-- Add unlink mutation
-- Update header to include unlink option
+### 4. Add Notes Support
+Notes may come from a separate endpoint or be included with media. Add logic to fetch notes if not included in media response.
 
 ---
 
 ## Files to Modify
 
-| File | Action | Changes |
-|------|--------|---------|
-| `supabase/functions/workedge-sync/index.ts` | Modify | Add `unlink-project` action |
-| `src/components/admin/jobs/WorkEdgePanel.tsx` | Modify | Add unlink button with confirmation dialog |
+| File | Changes |
+|------|---------|
+| `supabase/functions/workedge-sync/index.ts` | Add `extractItems` helper, update `get-project-media` to handle multiple response formats, add console logging for debugging |
 
 ---
 
-## User Flow
+## Implementation Details
 
-1. User views a job linked to WorkEdge
-2. Clicks "Unlink" button (or menu option)
-3. Confirmation dialog appears: "Are you sure you want to unlink this WorkEdge project? This will remove the connection but won't delete the project from WorkEdge."
-4. User confirms
-5. Job's `workedge_project_id` is set to null
-6. Local synced media is cleared
-7. Panel refreshes to show "Not linked" state with Create/Link options
+### Edge Function Changes (`workedge-sync/index.ts`)
+
+1. **Add helper function** to safely extract items from API responses
+
+2. **Update get-project-media case** (around line 183-234):
+   - Log the raw API response for debugging
+   - Use `extractItems()` to handle various response structures
+   - Map fields defensively with fallbacks
+   - Handle notes if included in media or fetch separately
+
+3. **Enhanced media record mapping**:
+```typescript
+const mediaRecords = extractItems(mediaData).map((item: any) => ({
+  job_id: jobId,
+  workedge_project_id: workedgeProjectId,
+  media_type: item.type || item.media_type || 'photo',
+  media_url: item.url || item.media_url || item.file_url,
+  thumbnail_url: item.thumbnail_url || item.thumb_url || item.thumbnail,
+  title: item.title || item.name || item.filename,
+  description: item.description || item.caption || item.content,
+  transcription: item.transcription,
+  captured_by: item.captured_by || item.author || item.created_by,
+  captured_at: item.captured_at || item.created_at || item.taken_at,
+  synced_at: new Date().toISOString()
+}));
+```
+
+---
+
+## Testing
+After implementation:
+1. Link a WorkEdge project with known photos
+2. Click "Sync from WorkEdge"
+3. Check edge function logs for the raw API response structure
+4. Verify media items appear in the panel
