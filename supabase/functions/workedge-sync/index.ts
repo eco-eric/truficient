@@ -324,6 +324,30 @@ Deno.serve(async (req) => {
           break;
         }
 
+        case 'unlink-project': {
+          if (!jobId) {
+            throw new Error('jobId is required');
+          }
+
+          // Clear the WorkEdge project ID from the job
+          await supabase
+            .from('crm_jobs')
+            .update({ 
+              workedge_project_id: null,
+              workedge_last_sync: null
+            })
+            .eq('id', jobId);
+
+          // Delete synced media from local table
+          await supabase
+            .from('workedge_project_media')
+            .delete()
+            .eq('job_id', jobId);
+
+          result = { success: true };
+          break;
+        }
+
         default:
           throw new Error(`Unknown action: ${action}`);
       }
