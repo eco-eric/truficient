@@ -6,11 +6,12 @@ const corsHeaders = {
 };
 
 interface WorkEdgeSyncRequest {
-  action: 'create-project' | 'sync-customer' | 'get-project-media' | 'get-equipment' | 'create-service-record';
+  action: 'create-project' | 'sync-customer' | 'get-project-media' | 'get-equipment' | 'create-service-record' | 'list-projects' | 'link-project';
   jobId?: string;
   customerId?: string;
   locationId?: string;
   workedgeProjectId?: string;
+  searchQuery?: string;
 }
 
 Deno.serve(async (req) => {
@@ -284,6 +285,42 @@ Deno.serve(async (req) => {
           }
 
           result = { success: true };
+          break;
+        }
+
+        case 'list-projects': {
+          const response = await fetch(`${apiUrl}/api-projects`, {
+            method: 'GET',
+            headers: { 'x-api-key': WORKEDGE_API_KEY }
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`WorkEdge API error: ${response.status} ${errorText}`);
+          }
+
+          const projectsData = await response.json();
+          result = { 
+            success: true, 
+            projects: projectsData.items || projectsData || [] 
+          };
+          break;
+        }
+
+        case 'link-project': {
+          if (!jobId || !workedgeProjectId) {
+            throw new Error('jobId and workedgeProjectId are required');
+          }
+
+          await supabase
+            .from('crm_jobs')
+            .update({ 
+              workedge_project_id: workedgeProjectId,
+              workedge_last_sync: new Date().toISOString()
+            })
+            .eq('id', jobId);
+
+          result = { success: true, workedge_project_id: workedgeProjectId };
           break;
         }
 
