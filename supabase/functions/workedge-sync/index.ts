@@ -5,6 +5,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper to extract items from various API response structures
+function extractItems(response: any): any[] {
+  if (!response || typeof response !== 'object') return [];
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response.items)) return response.items;
+  if (Array.isArray(response.photos)) return response.photos;
+  if (Array.isArray(response.media)) return response.media;
+  if (Array.isArray(response.data)) return response.data;
+  if (response.data && Array.isArray(response.data.items)) return response.data.items;
+  if (response.data && Array.isArray(response.data.photos)) return response.data.photos;
+  if (response.data && Array.isArray(response.data.media)) return response.data.media;
+  return [];
+}
+
 interface WorkEdgeSyncRequest {
   action: 'create-project' | 'sync-customer' | 'get-project-media' | 'get-equipment' | 'create-service-record' | 'list-projects' | 'link-project';
   jobId?: string;
@@ -196,29 +210,46 @@ Deno.serve(async (req) => {
           }
 
           const mediaData = await response.json();
+          
+          // Debug logging to understand API response structure
+          console.log('WorkEdge media API response structure:', JSON.stringify({
+            isArray: Array.isArray(mediaData),
+            hasItems: !!mediaData?.items,
+            hasPhotos: !!mediaData?.photos,
+            hasMedia: !!mediaData?.media,
+            hasData: !!mediaData?.data,
+            keys: mediaData ? Object.keys(mediaData) : [],
+            rawResponse: mediaData
+          }, null, 2));
 
-          // Upsert media records
-          const mediaRecords = (mediaData.items || []).map((item: any) => ({
+          // Extract items using defensive helper
+          const extractedItems = extractItems(mediaData);
+          console.log(`Extracted ${extractedItems.length} media items`);
+
+          // Map media records with defensive field mapping
+          const mediaRecords = extractedItems.map((item: any) => ({
             job_id: jobId,
             workedge_project_id: workedgeProjectId,
-            media_type: item.type || 'photo',
-            media_url: item.url,
-            thumbnail_url: item.thumbnail_url,
-            title: item.title,
-            description: item.description,
-            transcription: item.transcription,
-            captured_by: item.captured_by,
-            captured_at: item.captured_at,
+            media_type: item.type || item.media_type || item.file_type || 'photo',
+            media_url: item.url || item.media_url || item.file_url || item.src,
+            thumbnail_url: item.thumbnail_url || item.thumb_url || item.thumbnail || item.preview_url,
+            title: item.title || item.name || item.filename || item.file_name,
+            description: item.description || item.caption || item.content || item.notes,
+            transcription: item.transcription || item.transcript,
+            captured_by: item.captured_by || item.author || item.created_by || item.user_name,
+            captured_at: item.captured_at || item.created_at || item.taken_at || item.date,
             synced_at: new Date().toISOString()
-          }));
+          })).filter((record: any) => record.media_url); // Only include records with a valid URL
+
+          console.log(`Created ${mediaRecords.length} valid media records`);
+
+          // Clear existing and insert fresh (even if empty, to clear stale data)
+          await supabase
+            .from('workedge_project_media')
+            .delete()
+            .eq('job_id', jobId);
 
           if (mediaRecords.length > 0) {
-            // Clear existing and insert fresh
-            await supabase
-              .from('workedge_project_media')
-              .delete()
-              .eq('job_id', jobId);
-
             await supabase
               .from('workedge_project_media')
               .insert(mediaRecords);
