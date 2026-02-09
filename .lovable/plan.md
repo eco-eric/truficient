@@ -1,62 +1,44 @@
 
-
-# Add "Link Existing WorkEdge Project" Option
+# Add "Unlink WorkEdge Project" Functionality
 
 ## Overview
 
-Enhance the WorkEdge panel to provide two options when a job isn't linked:
-1. **Create New Project** (existing functionality)
-2. **Link Existing Project** (new - allows searching/selecting from existing WorkEdge projects)
+Add the ability to unlink a WorkEdge project from a job. This will allow users to disconnect a job from its linked WorkEdge project without deleting the project from WorkEdge itself.
 
 ---
 
 ## Current State
 
-- `WorkEdgePanel.tsx` only shows "Create WorkEdge Project" button when not linked
-- No ability to search or browse existing WorkEdge projects
-- No edge function action to list/search projects
+When a job is linked to WorkEdge, the panel shows:
+- The WorkEdge project ID badge
+- A refresh/sync button
+- Media grid and external link
+
+**Missing:** No way to unlink/disconnect the project
 
 ---
 
 ## UI Design
 
-When job is not linked to WorkEdge:
+Add an "Unlink" option in the linked state header:
 
 ```text
 ┌─────────────────────────────────────────────────────┐
 │ WorkEdge                                            │
-├─────────────────────────────────────────────────────┤
 │                                                     │
-│              Not linked to WorkEdge yet             │
-│                                                     │
-│  ┌─────────────────────┐  ┌─────────────────────┐  │
-│  │  + Create New       │  │  🔗 Link Existing   │  │
-│  └─────────────────────┘  └─────────────────────┘  │
-│                                                     │
+│  [abc123] [🔄 Sync] [⋮ Menu]                       │
+│                         ├─ Unlink Project           │
+│                         └─ Open in WorkEdge         │
 └─────────────────────────────────────────────────────┘
 ```
 
-After clicking "Link Existing":
+Or simpler approach - add an unlink button with confirmation:
 
 ```text
 ┌─────────────────────────────────────────────────────┐
-│ Link Existing WorkEdge Project                 [X]  │
+│ WorkEdge                      [abc123] [🔄] [🔗✕]   │
 ├─────────────────────────────────────────────────────┤
-│ Search projects...                    [🔍]          │
-│                                                     │
-│ ┌─────────────────────────────────────────────────┐ │
-│ │ 📋 TRU-2025-0042 - Smith HVAC Install          │ │
-│ │    123 Main St, Dallas, TX                     │ │
-│ └─────────────────────────────────────────────────┘ │
-│ ┌─────────────────────────────────────────────────┐ │
-│ │ 📋 TRU-2025-0039 - Johnson Heat Pump           │ │
-│ │    456 Oak Ave, Frisco, TX                     │ │
-│ └─────────────────────────────────────────────────┘ │
-│                                                     │
-│ Or enter Project ID manually:                       │
-│ ┌────────────────────────────┐ ┌────────┐          │
-│ │ e.g., abc123...            │ │  Link  │          │
-│ └────────────────────────────┘ └────────┘          │
+│ (media content)                                     │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -64,127 +46,73 @@ After clicking "Link Existing":
 
 ## Technical Changes
 
-### 1. Edge Function: Add `list-projects` Action
+### 1. Edge Function: Add `unlink-project` Action
 
 **File:** `supabase/functions/workedge-sync/index.ts`
 
-Add new action to fetch existing projects from WorkEdge:
+Add new action to clear the WorkEdge link from the job:
 
 ```typescript
-interface WorkEdgeSyncRequest {
-  action: 'create-project' | 'sync-customer' | 'get-project-media' | 
-          'get-equipment' | 'create-service-record' | 'list-projects' | 'link-project';
-  // ... existing fields
-  searchQuery?: string;
-}
-
-// New case in switch:
-case 'list-projects': {
-  const response = await fetch(`${apiUrl}/api-projects`, {
-    method: 'GET',
-    headers: { 'x-api-key': WORKEDGE_API_KEY }
-  });
-
-  if (!response.ok) {
-    throw new Error(`WorkEdge API error: ${response.status}`);
+case 'unlink-project': {
+  if (!jobId) {
+    throw new Error('jobId is required');
   }
 
-  const projectsData = await response.json();
-  result = { 
-    success: true, 
-    projects: projectsData.items || projectsData || [] 
-  };
-  break;
-}
-
-case 'link-project': {
-  if (!jobId || !workedgeProjectId) {
-    throw new Error('jobId and workedgeProjectId are required');
-  }
-
-  // Just update the local job with the WorkEdge project ID
+  // Clear the WorkEdge project ID from the job
   await supabase
     .from('crm_jobs')
     .update({ 
-      workedge_project_id: workedgeProjectId,
-      workedge_last_sync: new Date().toISOString()
+      workedge_project_id: null,
+      workedge_last_sync: null
     })
     .eq('id', jobId);
 
-  result = { success: true, workedge_project_id: workedgeProjectId };
+  // Optionally: delete synced media from local table
+  await supabase
+    .from('workedge_project_media')
+    .delete()
+    .eq('job_id', jobId);
+
+  result = { success: true };
   break;
 }
 ```
 
 ---
 
-### 2. New Component: `LinkWorkEdgeDialog.tsx`
-
-**File:** `src/components/admin/jobs/LinkWorkEdgeDialog.tsx`
-
-Create a dialog component with:
-- Search input to filter projects
-- List of available WorkEdge projects (from API)
-- Manual project ID input as fallback
-- Link button that calls the `link-project` action
-
----
-
-### 3. Update `WorkEdgePanel.tsx`
+### 2. Update `WorkEdgePanel.tsx`
 
 **File:** `src/components/admin/jobs/WorkEdgePanel.tsx`
 
-Update the "not linked" state to show two buttons:
-- Keep existing "Create WorkEdge Project"
-- Add new "Link Existing" that opens the dialog
+Add unlink functionality to the linked state:
 
-```tsx
-// Add state for dialog
-const [showLinkDialog, setShowLinkDialog] = useState(false);
+- Add `Unlink2` (or use `Link2Off`) icon import from lucide-react
+- Add `unlinkProjectMutation` mutation
+- Add unlink button with confirmation dialog
+- Show confirmation before unlinking
 
-// Update the not-linked UI:
-<div className="flex gap-2 justify-center">
-  <Button onClick={() => createProjectMutation.mutate()} disabled={createProjectMutation.isPending}>
-    <Plus className="h-4 w-4 mr-2" />
-    Create New
-  </Button>
-  <Button variant="outline" onClick={() => setShowLinkDialog(true)}>
-    <Link2 className="h-4 w-4 mr-2" />
-    Link Existing
-  </Button>
-</div>
-
-<LinkWorkEdgeDialog 
-  open={showLinkDialog}
-  onOpenChange={setShowLinkDialog}
-  jobId={jobId}
-  onLinked={() => {
-    queryClient.invalidateQueries({ queryKey: ['crm_job', jobId] });
-    setShowLinkDialog(false);
-  }}
-/>
-```
+Changes:
+- Add `AlertDialog` for confirmation
+- Add unlink mutation
+- Update header to include unlink option
 
 ---
 
-## Files to Create/Modify
+## Files to Modify
 
 | File | Action | Changes |
 |------|--------|---------|
-| `supabase/functions/workedge-sync/index.ts` | Modify | Add `list-projects` and `link-project` actions |
-| `src/components/admin/jobs/LinkWorkEdgeDialog.tsx` | Create | New dialog for searching/linking projects |
-| `src/components/admin/jobs/WorkEdgePanel.tsx` | Modify | Add "Link Existing" button and dialog integration |
+| `supabase/functions/workedge-sync/index.ts` | Modify | Add `unlink-project` action |
+| `src/components/admin/jobs/WorkEdgePanel.tsx` | Modify | Add unlink button with confirmation dialog |
 
 ---
 
 ## User Flow
 
-1. User opens job detail page with no WorkEdge link
-2. Sees two options: "Create New" or "Link Existing"
-3. If "Link Existing":
-   - Dialog opens showing list of WorkEdge projects
-   - User can search/filter or manually enter ID
-   - User selects project and clicks "Link"
-   - Job is updated with WorkEdge project ID
-   - Dialog closes and panel refreshes to show linked state
-
+1. User views a job linked to WorkEdge
+2. Clicks "Unlink" button (or menu option)
+3. Confirmation dialog appears: "Are you sure you want to unlink this WorkEdge project? This will remove the connection but won't delete the project from WorkEdge."
+4. User confirms
+5. Job's `workedge_project_id` is set to null
+6. Local synced media is cleared
+7. Panel refreshes to show "Not linked" state with Create/Link options
