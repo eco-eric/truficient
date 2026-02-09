@@ -291,7 +291,7 @@ export default function JobDetail() {
             {job.workedge_project_id && (
               <Button variant="outline" size="sm" asChild>
                 <a 
-                  href={`https://app.workedge.pro/projects/${job.workedge_project_id}`}
+                  href={`https://workedge.pro/projects/${job.workedge_project_id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >

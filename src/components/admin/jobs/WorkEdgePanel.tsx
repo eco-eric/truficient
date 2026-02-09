@@ -279,7 +279,7 @@ export function WorkEdgePanel({ jobId, workedgeProjectId }: WorkEdgePanelProps) 
               asChild
             >
               <a 
-                href={`https://app.workedge.pro/projects/${workedgeProjectId}`} 
+                href={`https://workedge.pro/projects/${workedgeProjectId}`} 
                 target="_blank" 
                 rel="noopener noreferrer"
               >
@@ -350,7 +350,7 @@ export function WorkEdgePanel({ jobId, workedgeProjectId }: WorkEdgePanelProps) 
               asChild
             >
               <a 
-                href={`https://app.workedge.pro/projects/${workedgeProjectId}`} 
+                href={`https://workedge.pro/projects/${workedgeProjectId}`} 
                 target="_blank" 
                 rel="noopener noreferrer"
               >
