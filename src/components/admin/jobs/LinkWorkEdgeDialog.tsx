@@ -37,7 +37,13 @@ export function LinkWorkEdgeDialog({ open, onOpenChange, jobId, onLinked }: Link
         body: { action: 'list-projects' }
       });
       if (response.error) throw new Error(response.error.message);
-      return (response.data?.projects || []) as WorkEdgeProject[];
+      
+      // Handle various response structures
+      const data = response.data;
+      if (Array.isArray(data)) return data as WorkEdgeProject[];
+      if (Array.isArray(data?.projects)) return data.projects as WorkEdgeProject[];
+      if (Array.isArray(data?.items)) return data.items as WorkEdgeProject[];
+      return [];
     },
     enabled: open
   });
