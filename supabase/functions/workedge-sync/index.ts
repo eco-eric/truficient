@@ -96,26 +96,21 @@ Deno.serve(async (req) => {
           // Create project in WorkEdge
           const projectPayload = {
             name: `${job.job_number} - ${job.title}`,
-            customer: {
-              name: job.customer?.company_name || `${job.customer?.first_name} ${job.customer?.last_name}`,
-              email: job.customer?.email,
-              phone: job.customer?.phone
-            },
-            address: {
-              street: job.location?.address_line1,
-              city: job.location?.city,
-              state: job.location?.state,
-              zip: job.location?.zip_code
-            },
-            type: job.job_type?.name || 'Service',
-            notes: job.internal_notes,
-            scheduled_date: job.scheduled_start
+            client_name: job.customer?.company_name || 
+                         `${job.customer?.first_name} ${job.customer?.last_name}`.trim(),
+            property_address: [
+              job.location?.address_line1,
+              job.location?.city,
+              job.location?.state,
+              job.location?.zip_code
+            ].filter(Boolean).join(', '),
+            project_type: job.job_type?.name?.toLowerCase() || 'service'
           };
 
-          const response = await fetch(`${apiUrl}/v1/projects`, {
+          const response = await fetch(`${apiUrl}/api-projects`, {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${WORKEDGE_API_KEY}`,
+              'x-api-key': WORKEDGE_API_KEY,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify(projectPayload)
@@ -159,10 +154,10 @@ Deno.serve(async (req) => {
             type: customer.customer_type
           };
 
-          const response = await fetch(`${apiUrl}/v1/customers`, {
+          const response = await fetch(`${apiUrl}/api-customers`, {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${WORKEDGE_API_KEY}`,
+              'x-api-key': WORKEDGE_API_KEY,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify(customerPayload)
@@ -187,10 +182,10 @@ Deno.serve(async (req) => {
         case 'get-project-media': {
           if (!workedgeProjectId || !jobId) throw new Error('workedgeProjectId and jobId are required');
 
-          const response = await fetch(`${apiUrl}/v1/projects/${workedgeProjectId}/media`, {
+          const response = await fetch(`${apiUrl}/api-projects/${workedgeProjectId}/media`, {
             method: 'GET',
             headers: {
-              'Authorization': `Bearer ${WORKEDGE_API_KEY}`
+              'x-api-key': WORKEDGE_API_KEY
             }
           });
 
@@ -241,10 +236,10 @@ Deno.serve(async (req) => {
         case 'get-equipment': {
           if (!workedgeProjectId) throw new Error('workedgeProjectId is required');
 
-          const response = await fetch(`${apiUrl}/v1/projects/${workedgeProjectId}/equipment`, {
+          const response = await fetch(`${apiUrl}/api-projects/${workedgeProjectId}/equipment`, {
             method: 'GET',
             headers: {
-              'Authorization': `Bearer ${WORKEDGE_API_KEY}`
+              'x-api-key': WORKEDGE_API_KEY
             }
           });
 
@@ -274,10 +269,10 @@ Deno.serve(async (req) => {
             notes: job?.internal_notes
           };
 
-          const response = await fetch(`${apiUrl}/v1/service-records`, {
+          const response = await fetch(`${apiUrl}/api-service-records`, {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${WORKEDGE_API_KEY}`,
+              'x-api-key': WORKEDGE_API_KEY,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify(servicePayload)

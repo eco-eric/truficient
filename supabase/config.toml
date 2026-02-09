@@ -33,5 +33,9 @@ verify_jwt = false
 [functions.ai-assistant]
 verify_jwt = false
 
-[functions.process-automation]
+
+[functions.workedge-sync]
+verify_jwt = false
+
+[functions.workedge-webhook]
 verify_jwt = false

@@ -7,9 +7,24 @@ const corsHeaders = {
 
 interface WorkEdgeWebhookPayload {
   event: 'project.updated' | 'photo.uploaded' | 'video.uploaded' | 'note.added' | 'report.generated';
-  project_id: string;
-  data: any;
   timestamp: string;
+  data: {
+    id: string;
+    project_id: string;
+    file_path?: string;
+    caption?: string;
+    url?: string;
+    thumbnail_url?: string;
+    title?: string;
+    filename?: string;
+    description?: string;
+    content?: string;
+    transcription?: string;
+    captured_by?: string;
+    author?: string;
+    captured_at?: string;
+    status?: string;
+  };
 }
 
 Deno.serve(async (req) => {
@@ -37,8 +52,9 @@ Deno.serve(async (req) => {
       // For now, we'll trust the webhook if the secret is set
     }
 
-    const payload: WorkEdgeWebhookPayload = await req.json();
-    const { event, project_id, data, timestamp } = payload;
+  const payload: WorkEdgeWebhookPayload = await req.json();
+    const { event, timestamp, data } = payload;
+    const project_id = data.project_id;
 
     console.log(`Received WorkEdge webhook: ${event} for project ${project_id}`);
 
