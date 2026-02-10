@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Building2, ChevronsUpDown, X } from 'lucide-react';
+import { Building2, ChevronsUpDown, X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface CompanySelectorProps {
   value: string | null;
@@ -15,6 +16,29 @@ interface CompanySelectorProps {
 export function CompanySelector({ value, onChange }: CompanySelectorProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const queryClient = useQueryClient();
+
+  const createCompanyMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const { data, error } = await supabase
+        .from('crm_companies')
+        .insert({ name })
+        .select('id, name')
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['crm_companies_selector'] });
+      onChange(data.id);
+      setOpen(false);
+      setSearch('');
+      toast.success(`Company "${data.name}" created`);
+    },
+    onError: () => {
+      toast.error('Failed to create company');
+    },
+  });
 
   const { data: companies } = useQuery({
     queryKey: ['crm_companies_selector', search],
@@ -73,7 +97,7 @@ export function CompanySelector({ value, onChange }: CompanySelectorProps) {
             className="mb-2"
           />
           <div className="max-h-[200px] overflow-y-auto space-y-1">
-            {companies?.length === 0 && (
+            {companies?.length === 0 && !search.trim() && (
               <p className="text-sm text-muted-foreground text-center py-2">No companies found</p>
             )}
             {companies?.map((company) => (
@@ -92,6 +116,16 @@ export function CompanySelector({ value, onChange }: CompanySelectorProps) {
                 {company.name}
               </button>
             ))}
+            {search.trim() && (
+              <button
+                className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent text-primary flex items-center gap-1.5"
+                onClick={() => createCompanyMutation.mutate(search.trim())}
+                disabled={createCompanyMutation.isPending}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Create "{search.trim()}"
+              </button>
+            )}
           </div>
         </PopoverContent>
       </Popover>
