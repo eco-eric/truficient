@@ -69,6 +69,7 @@ const Companies = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm_companies'] });
+      queryClient.invalidateQueries({ queryKey: ['crm_companies_contact_counts'] });
       toast.success('Company deleted');
       setDeleteTarget(null);
     },
