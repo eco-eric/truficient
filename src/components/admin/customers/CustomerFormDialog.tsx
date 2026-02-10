@@ -177,6 +177,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm_customers'] });
       queryClient.invalidateQueries({ queryKey: ['crm_customer'] });
+      queryClient.invalidateQueries({ queryKey: ['crm_companies_contact_counts'] });
       toast.success(isEditing ? 'Customer updated' : 'Customer created');
       onOpenChange(false);
     },
