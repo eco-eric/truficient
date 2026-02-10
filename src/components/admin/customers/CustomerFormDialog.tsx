@@ -46,7 +46,7 @@ interface LeadSource {
 const customerSchema = z.object({
   customer_type: z.enum(['residential', 'commercial']),
   customer_status: z.enum(['lead', 'prospect', 'active', 'inactive', 'archived']),
-  company_name: z.string().optional(),
+  
   first_name: z.string().min(1, 'First name is required'),
   last_name: z.string().optional(),
   email: z.string().email('Invalid email').optional().or(z.literal('')),
@@ -94,7 +94,6 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
     defaultValues: {
       customer_type: 'residential',
       customer_status: 'lead',
-      company_name: '',
       first_name: '',
       last_name: '',
       email: '',
@@ -115,7 +114,6 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
       form.reset({
         customer_type: customer.customer_type as 'residential' | 'commercial',
         customer_status: customer.customer_status as CustomerFormValues['customer_status'],
-        company_name: customer.company_name || '',
         first_name: customer.first_name || '',
         last_name: customer.last_name || '',
         email: customer.email || '',
@@ -135,7 +133,6 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
       form.reset({
         customer_type: 'residential',
         customer_status: 'lead',
-        company_name: '',
         first_name: '',
         last_name: '',
         email: '',
@@ -161,6 +158,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
         email: values.email || null,
         tags: selectedTags,
         company_id: selectedCompanyId,
+        company_name: null,
       };
 
       if (isEditing && customer) {
@@ -249,28 +247,13 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
               />
             </div>
 
-            {/* Company Name & Company Account (for commercial) */}
+            {/* Company Account (for commercial) */}
             {form.watch('customer_type') === 'commercial' && (
-              <>
-                <div className="space-y-2">
-                  <FormLabel>Company Account</FormLabel>
-                  <CompanySelector value={selectedCompanyId} onChange={setSelectedCompanyId} />
-                  <p className="text-xs text-muted-foreground">Link this contact to a company account (optional)</p>
-                </div>
-                <FormField
-                  control={form.control}
-                  name="company_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Company Name (legacy)</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </>
+              <div className="space-y-2">
+                <FormLabel>Company Account</FormLabel>
+                <CompanySelector value={selectedCompanyId} onChange={setSelectedCompanyId} />
+                <p className="text-xs text-muted-foreground">Link this contact to a company account (optional)</p>
+              </div>
             )}
 
             {/* Name Fields */}
