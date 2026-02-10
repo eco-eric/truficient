@@ -111,9 +111,9 @@ const CustomerDetail = () => {
     enabled: !!id,
   });
 
-  const getDisplayName = (customer: Customer) => {
-    if (customer.company_name) return customer.company_name;
-    return `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'Unnamed';
+  const getDisplayName = (cust: any) => {
+    if (cust.crm_companies?.name) return cust.crm_companies.name;
+    return `${cust.first_name || ''} ${cust.last_name || ''}`.trim() || 'Unnamed';
   };
 
   if (isLoading) {
