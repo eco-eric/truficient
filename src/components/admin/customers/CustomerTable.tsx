@@ -154,7 +154,6 @@ export function CustomerTable({ onEdit, onDelete }: CustomerTableProps) {
   };
 
   const getDisplayName = (customer: any) => {
-    if (customer.crm_companies?.name) return customer.crm_companies.name;
     return `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'Unnamed';
   };
 
