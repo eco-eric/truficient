@@ -1,45 +1,27 @@
 
+# Add WorkEdge Project Name to the Panel
 
-# Fix: Calendar Timezone Issues Across All Components
+## Change
 
-## Problem
-Your VA is in the Philippines (UTC+8) while your business operates in CST (UTC-6). Several components use browser-local time formatting instead of the CST utilities, causing appointments to display at the wrong time and potentially save incorrectly.
+Pass the job's name info (`job_number` and `title`) down to the `WorkEdgePanel` so it can display the project name (e.g. "J-00042 - Install") below the project ID badge.
 
-The appointment dialog that creates/edits appointments was already fixed to use CST, but the components that **display** those appointments and the older **SchedulingWidget** still use browser-local time.
+### 1. `src/pages/admin/JobDetail.tsx` (line 784)
+Add two new props to `WorkEdgePanel`:
+```tsx
+<WorkEdgePanel
+  jobId={job.id}
+  workedgeProjectId={job.workedge_project_id}
+  jobNumber={job.job_number}
+  jobTitle={job.title}
+/>
+```
 
-## What's Going Wrong
+### 2. `src/components/admin/jobs/WorkEdgePanel.tsx`
+- Add `jobNumber` and `jobTitle` to the props interface
+- In the "linked" view, add a small text line below the header showing the project name:
+  ```
+  Project: J-00042 - Install
+  ```
+  Displayed as muted helper text beneath the existing project ID badge area, so both the human-readable name and the UUID are visible.
 
-| Component | Issue |
-|-----------|-------|
-| Job Appointments Card | Shows appointment times in Philippine Time instead of CST |
-| Upcoming Appointments (Dashboard) | Same -- times shown in Philippine Time |
-| Scheduling Widget (old job view) | Reads and writes times in Philippine Time, causing a 14-hour shift |
-| Calendar page date range query | Query bounds calculated in browser-local time, can return wrong day's events |
-
-## Fixes
-
-### 1. `src/components/admin/jobs/JobAppointmentsCard.tsx`
-Replace `format(new Date(...), 'h:mm a')` calls with `formatTimeCSTDisplay()` from the CST utility, and use `formatInCST()` for the date display. This ensures the appointment list on the Job Detail page always shows Central Time.
-
-### 2. `src/components/admin/dashboard/UpcomingAppointments.tsx`
-Same fix -- replace `format(new Date(apt.start_datetime), 'h:mm a')` with `formatTimeCSTDisplay()` so the dashboard widget shows correct CST times.
-
-### 3. `src/components/admin/calendar/SchedulingWidget.tsx`
-Refactor to use `formatInCST()` when loading existing schedule times into the form, and `buildCSTDateTime()` when constructing the ISO strings to send to Google Calendar. Currently it uses date-fns `format`/`parseISO` which interpret everything in browser-local time.
-
-### 4. `src/pages/admin/Calendar.tsx`
-Update `getDateRange()` to build date bounds in CST rather than browser-local time. This ensures the calendar query fetches the correct day's events regardless of the user's browser timezone.
-
-## Technical Details
-
-All fixes use the existing `src/lib/cstTimezone.ts` utility that is already imported and working correctly in the appointment dialog. The changes are:
-
-- Import `formatInCST`, `buildCSTDateTime`, `formatTimeCSTDisplay` where missing
-- Replace `format(new Date(isoString), 'h:mm a')` with `formatTimeCSTDisplay(isoString)`
-- Replace `format(new Date(isoString), 'EEE, MMM d, yyyy')` with CST-aware date formatting
-- Replace `format(parseISO(isoString), "yyyy-MM-dd'T'HH:mm")` in SchedulingWidget with `formatInCST()` destructured into date + time
-- Replace `new Date(localInput).toISOString()` in SchedulingWidget with `buildCSTDateTime(date, time)`
-- Build calendar query date ranges using CST-aware day boundaries
-
-No new dependencies or database changes required.
-
+Two files changed, display-only enhancement.
