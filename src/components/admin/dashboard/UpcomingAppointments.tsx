@@ -46,7 +46,7 @@ export function UpcomingAppointments() {
         .gte('start_datetime', today.toISOString())
         .lte('start_datetime', weekEnd.toISOString())
         .order('start_datetime')
-        .limit(10);
+        .limit(20);
       
       if (error) throw error;
       return data as Appointment[];
@@ -119,7 +119,7 @@ export function UpcomingAppointments() {
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4 max-h-[200px] overflow-y-auto">
+        <div className="space-y-4 max-h-[400px] overflow-y-auto">
           {sortedDates.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />

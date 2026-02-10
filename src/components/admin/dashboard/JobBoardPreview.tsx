@@ -144,8 +144,8 @@ export function JobBoardPreview() {
                     {stageJobs.length}
                   </Badge>
                 </div>
-                <div className="space-y-1.5 max-h-[140px] overflow-y-auto">
-                  {stageJobs.slice(0, 3).map((job) => (
+                <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
+                  {stageJobs.slice(0, 6).map((job) => (
                     <Link
                       key={job.id}
                       to={`/admin/jobs/${job.id}`}
@@ -170,9 +170,9 @@ export function JobBoardPreview() {
                       No jobs
                     </div>
                   )}
-                  {stageJobs.length > 3 && (
+                  {stageJobs.length > 6 && (
                     <div className="text-xs text-muted-foreground text-center py-1">
-                      +{stageJobs.length - 3} more
+                      +{stageJobs.length - 6} more
                     </div>
                   )}
                 </div>
