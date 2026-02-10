@@ -28,6 +28,7 @@ import MidCitiesArea from "./pages/service-areas/MidCitiesArea";
 import SouthDallasArea from "./pages/service-areas/SouthDallasArea";
 import Careers from "./pages/Careers";
 import Financing from "./pages/Financing";
+import FreeHvacAgeCheckerFB from "./pages/landing/FreeHvacAgeCheckerFB";
 
 // Admin imports
 import AdminLogin from "./pages/admin/Login";
@@ -159,6 +160,7 @@ const router = createBrowserRouter([
       { path: "/scanner/report", element: <EquipmentReport /> },
       { path: "/equipment", element: <EquipmentLibrary /> },
       { path: "/equipment/*", element: <EquipmentDetail /> },
+      { path: "/free-hvac-age-checker-fb-feb-2026", element: <FreeHvacAgeCheckerFB /> },
       
       // Admin Routes
       { path: "/admin/login", element: <AdminLogin /> },
