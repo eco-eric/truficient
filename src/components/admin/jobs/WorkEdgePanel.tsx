@@ -26,6 +26,8 @@ import {
 interface WorkEdgePanelProps {
   jobId: string;
   workedgeProjectId: string | null;
+  jobNumber?: string;
+  jobTitle?: string;
 }
 
 interface ProjectMedia {
@@ -39,7 +41,7 @@ interface ProjectMedia {
   captured_at: string | null;
 }
 
-export function WorkEdgePanel({ jobId, workedgeProjectId }: WorkEdgePanelProps) {
+export function WorkEdgePanel({ jobId, workedgeProjectId, jobNumber, jobTitle }: WorkEdgePanelProps) {
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const queryClient = useQueryClient();
 
@@ -255,6 +257,11 @@ export function WorkEdgePanel({ jobId, workedgeProjectId }: WorkEdgePanelProps) 
             </AlertDialog>
           </div>
         </div>
+        {(jobNumber || jobTitle) && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Project: {[jobNumber, jobTitle].filter(Boolean).join(' - ')}
+          </p>
+        )}
       </CardHeader>
       <CardContent>
         {mediaLoading ? (
