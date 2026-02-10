@@ -11,7 +11,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { ArrowLeft, Calendar, DollarSign, MapPin, User, Phone, Mail, ChevronRight, Users, Pencil, ExternalLink, Save } from 'lucide-react';
+import { ArrowLeft, Calendar, DollarSign, MapPin, User, Phone, Mail, ChevronRight, Users, Pencil, ExternalLink, Save, Copy } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { WorkEdgePanel } from '@/components/admin/jobs/WorkEdgePanel';
@@ -26,6 +37,8 @@ export default function JobDetail() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [internalNotes, setInternalNotes] = useState('');
   const [customerNotes, setCustomerNotes] = useState('');
+  const [cloneDialogOpen, setCloneDialogOpen] = useState(false);
+  const [cloneWithAppointments, setCloneWithAppointments] = useState(true);
 
   const { data: job, isLoading } = useQuery({
     queryKey: ['crm_job', id],
@@ -209,6 +222,89 @@ export default function JobDetail() {
     onError: (error) => toast.error('Failed to update location: ' + error.message)
   });
 
+  const cloneJobMutation = useMutation({
+    mutationFn: async (includeAppointments: boolean) => {
+      if (!job) throw new Error('No job data');
+
+      // Get initial stage for job type
+      const { data: firstStage } = await supabase
+        .from('crm_job_stages')
+        .select('id')
+        .eq('job_type_id', job.job_type_id)
+        .eq('is_active', true)
+        .order('sort_order')
+        .limit(1)
+        .single();
+
+      // Generate job number
+      const { data: latestJob } = await supabase
+        .from('crm_jobs')
+        .select('job_number')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      const lastNum = latestJob?.job_number ? parseInt(latestJob.job_number.replace(/\D/g, '')) : 0;
+      const newJobNumber = `JOB-${String(lastNum + 1).padStart(4, '0')}`;
+
+      const { data: newJob, error: insertError } = await supabase
+        .from('crm_jobs')
+        .insert({
+          title: `${job.title} (Copy)`,
+          job_type_id: job.job_type_id,
+          customer_id: job.customer_id,
+          location_id: job.location_id,
+          priority: job.priority,
+          scheduled_date: job.scheduled_date,
+          scheduled_end_date: job.scheduled_end_date,
+          quoted_amount: job.quoted_amount,
+          internal_notes: job.internal_notes,
+          customer_notes: job.customer_notes,
+          current_stage_id: firstStage?.id || null,
+          payment_status: 'no_charge_yet',
+          job_number: newJobNumber,
+        })
+        .select('id')
+        .single();
+      if (insertError) throw insertError;
+
+      if (includeAppointments) {
+        const { data: appointments } = await supabase
+          .from('crm_job_appointments')
+          .select('title, start_datetime, end_datetime, assigned_team_id, attendee_member_ids, notes, google_calendar_id')
+          .eq('job_id', job.id);
+
+        if (appointments && appointments.length > 0) {
+          const clonedAppointments = appointments.map((apt) => ({
+            job_id: newJob.id,
+            title: apt.title,
+            start_datetime: apt.start_datetime,
+            end_datetime: apt.end_datetime,
+            assigned_team_id: apt.assigned_team_id,
+            attendee_member_ids: apt.attendee_member_ids,
+            notes: apt.notes,
+            google_calendar_id: apt.google_calendar_id,
+            google_calendar_event_id: null,
+          }));
+          const { error: aptError } = await supabase
+            .from('crm_job_appointments')
+            .insert(clonedAppointments);
+          if (aptError) throw aptError;
+        }
+      }
+
+      return newJob.id;
+    },
+    onSuccess: (newJobId) => {
+      toast.success('Job cloned successfully');
+      setCloneDialogOpen(false);
+      navigate(`/admin/jobs/${newJobId}`);
+    },
+    onError: (error: any) => {
+      toast.error(`Clone failed: ${error.message}`);
+    }
+  });
+
   const { data: customerLocations = [] } = useQuery({
     queryKey: ['crm_locations_for_customer', job?.customer_id],
     queryFn: async () => {
@@ -300,6 +396,10 @@ export default function JobDetail() {
                 </a>
               </Button>
             )}
+            <Button variant="outline" onClick={() => setCloneDialogOpen(true)}>
+              <Copy className="h-4 w-4 mr-2" />
+              Clone Job
+            </Button>
             <Button variant="outline" onClick={() => setIsEditOpen(true)}>
               <Pencil className="h-4 w-4 mr-2" />
               Edit Job
@@ -696,6 +796,37 @@ export default function JobDetail() {
           }}
         />
       </Dialog>
+
+      {/* Clone Job Dialog */}
+      <AlertDialog open={cloneDialogOpen} onOpenChange={setCloneDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clone Job</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will create a duplicate of "{job.title}" with a fresh job number, reset workflow stage, and no WorkEdge link.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex items-center space-x-2 py-2">
+            <Checkbox 
+              id="clone-appointments" 
+              checked={cloneWithAppointments}
+              onCheckedChange={(checked) => setCloneWithAppointments(checked === true)}
+            />
+            <label htmlFor="clone-appointments" className="text-sm font-medium leading-none cursor-pointer">
+              Include calendar appointments (un-synced copies)
+            </label>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => cloneJobMutation.mutate(cloneWithAppointments)}
+              disabled={cloneJobMutation.isPending}
+            >
+              {cloneJobMutation.isPending ? 'Cloning...' : 'Clone Job'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }
