@@ -1,20 +1,27 @@
 
 
-# Fix: Company Contact Count Not Updating on Companies List
+# Fix: Name Column Showing Company Name Instead of Customer Name
 
 ## Problem
-The Companies list page shows "0" contacts for "Estate Adu" even though 2 contacts are linked. The Company Detail page correctly shows both contacts.
-
-## Root Cause
-The contact count query (`crm_companies_contact_counts`) is never invalidated when a customer is saved or updated. So the cached count stays at 0 until a full page refresh.
+The `getDisplayName` helper in `CustomerTable.tsx` prioritizes the linked company name over the customer's first/last name. Since there's already a separate "Company" column, the "Name" column should always show the person's name.
 
 ## Fix
 
-### File: `src/components/admin/customers/CustomerFormDialog.tsx`
-- In the mutation's `onSuccess` callback, add invalidation for `crm_companies_contact_counts` so the Companies list reflects the updated count immediately after saving a customer.
+### File: `src/components/admin/customers/CustomerTable.tsx`
 
-### File: `src/pages/admin/Companies.tsx` (minor improvement)
-- Also invalidate `crm_companies_contact_counts` in the delete mutation's `onSuccess`, since deleting a company should refresh counts too.
+Update the `getDisplayName` function (around line 131) to always return the customer's personal name:
 
-This is a one-line addition in each file -- just adding `queryClient.invalidateQueries({ queryKey: ['crm_companies_contact_counts'] })` to the success handlers.
+```typescript
+// Before (wrong -- shows company name in the Name column)
+const getDisplayName = (customer: any) => {
+  if (customer.crm_companies?.name) return customer.crm_companies.name;
+  return `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'Unnamed';
+};
 
+// After (correct -- always shows customer name)
+const getDisplayName = (customer: any) => {
+  return `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'Unnamed';
+};
+```
+
+One line removed, one file changed.
