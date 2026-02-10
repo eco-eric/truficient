@@ -358,7 +358,8 @@ export default function JobDetail() {
     deposit_received: 'bg-blue-500/10 text-blue-600',
     partial: 'bg-purple-500/10 text-purple-600',
     paid: 'bg-green-500/10 text-green-600',
-    refunded: 'bg-red-500/10 text-red-600'
+    refunded: 'bg-red-500/10 text-red-600',
+    not_charging: 'bg-orange-500/10 text-orange-600',
   };
 
   const currentStageIndex = stages.findIndex(s => s.id === job.current_stage?.id);
@@ -694,6 +695,7 @@ export default function JobDetail() {
                       <SelectItem value="partial">Partial</SelectItem>
                       <SelectItem value="paid">Paid</SelectItem>
                       <SelectItem value="refunded">Refunded</SelectItem>
+                      <SelectItem value="not_charging">Not Charging</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
