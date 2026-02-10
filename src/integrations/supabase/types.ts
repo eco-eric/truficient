@@ -551,6 +551,63 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_companies: {
+        Row: {
+          billing_address: string | null
+          billing_city: string | null
+          billing_state: string | null
+          billing_zip: string | null
+          created_at: string
+          deleted_at: string | null
+          email: string | null
+          id: string
+          lead_source: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          tags: string[] | null
+          updated_at: string
+          website: string | null
+          workedge_customer_id: string | null
+        }
+        Insert: {
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_state?: string | null
+          billing_zip?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          lead_source?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          website?: string | null
+          workedge_customer_id?: string | null
+        }
+        Update: {
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_state?: string | null
+          billing_zip?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          lead_source?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          website?: string | null
+          workedge_customer_id?: string | null
+        }
+        Relationships: []
+      }
       crm_customer_contacts: {
         Row: {
           contact_type: string
@@ -609,6 +666,7 @@ export type Database = {
           billing_city: string | null
           billing_state: string | null
           billing_zip: string | null
+          company_id: string | null
           company_name: string | null
           created_at: string
           customer_status: string
@@ -634,6 +692,7 @@ export type Database = {
           billing_city?: string | null
           billing_state?: string | null
           billing_zip?: string | null
+          company_id?: string | null
           company_name?: string | null
           created_at?: string
           customer_status?: string
@@ -659,6 +718,7 @@ export type Database = {
           billing_city?: string | null
           billing_state?: string | null
           billing_zip?: string | null
+          company_id?: string | null
           company_name?: string | null
           created_at?: string
           customer_status?: string
@@ -677,7 +737,15 @@ export type Database = {
           updated_at?: string
           workedge_customer_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "crm_customers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "crm_companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_interactions: {
         Row: {

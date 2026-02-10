@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -35,7 +35,8 @@ import {
   Eye, 
   Edit,
   Trash2,
-  ArrowUpDown
+  ArrowUpDown,
+  Building2
 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -102,7 +103,7 @@ export function CustomerTable({ onEdit, onDelete }: CustomerTableProps) {
     queryFn: async () => {
       let query = supabase
         .from('crm_customers')
-        .select('*')
+        .select('*, crm_companies!company_id(id, name)')
         .is('deleted_at', null)
         .order(sortField, { ascending: sortDirection === 'asc' });
 
@@ -225,6 +226,7 @@ export function CustomerTable({ onEdit, onDelete }: CustomerTableProps) {
               <TableHead>Status</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Source</TableHead>
+              <TableHead>Company</TableHead>
               <TableHead>Tags</TableHead>
               <TableHead>
                 <Button
@@ -243,7 +245,7 @@ export function CustomerTable({ onEdit, onDelete }: CustomerTableProps) {
           <TableBody>
             {filteredCustomers?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                   No customers found
                 </TableCell>
               </TableRow>
@@ -295,6 +297,20 @@ export function CustomerTable({ onEdit, onDelete }: CustomerTableProps) {
                           </div>
                         );
                       })()}
+                    </TableCell>
+                    <TableCell>
+                      {(customer as any).company_id && (customer as any).crm_companies ? (
+                        <Link
+                          to={`/admin/companies/${(customer as any).company_id}`}
+                          className="flex items-center gap-1 text-sm text-primary hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Building2 className="h-3 w-3" />
+                          {(customer as any).crm_companies?.name}
+                        </Link>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {customer.tags && customer.tags.length > 0 ? (
