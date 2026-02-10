@@ -20,7 +20,7 @@ function extractItems(response: any): any[] {
 }
 
 interface WorkEdgeSyncRequest {
-  action: 'create-project' | 'sync-customer' | 'get-project-media' | 'get-equipment' | 'create-service-record' | 'list-projects' | 'link-project';
+  action: 'create-project' | 'sync-customer' | 'get-project-media' | 'get-equipment' | 'create-service-record' | 'list-projects' | 'link-project' | 'unlink-project' | 'create-property';
   jobId?: string;
   customerId?: string;
   locationId?: string;
@@ -162,11 +162,20 @@ Deno.serve(async (req) => {
 
           if (customerError || !customer) throw new Error('Customer not found');
 
+          const addressParts = [
+            customer.billing_address,
+            customer.billing_city,
+            customer.billing_state,
+            customer.billing_zip
+          ].filter(Boolean);
+
           const customerPayload = {
-            name: customer.company_name || `${customer.first_name} ${customer.last_name}`,
+            name: customer.company_name || `${customer.first_name || ''} ${customer.last_name || ''}`.trim(),
             email: customer.email,
             phone: customer.phone,
-            type: customer.customer_type
+            company: customer.company_name || null,
+            address: addressParts.length > 0 ? addressParts.join(', ') : null,
+            contact_type: customer.customer_type === 'commercial' ? 'business' : 'homeowner'
           };
 
           const response = await fetch(`${apiUrl}/api-customers`, {
@@ -184,13 +193,71 @@ Deno.serve(async (req) => {
           }
 
           const customerData = await response.json();
+          const weCustomerId = customerData?.customer?.id || customerData?.id;
 
           await supabase
             .from('crm_customers')
-            .update({ workedge_customer_id: customerData.id })
+            .update({ workedge_customer_id: weCustomerId })
             .eq('id', customerId);
 
-          result = { success: true, workedge_customer_id: customerData.id };
+          result = { success: true, workedge_customer_id: weCustomerId };
+          break;
+        }
+
+        case 'create-property': {
+          if (!locationId) throw new Error('locationId is required');
+
+          const { data: location, error: locationError } = await supabase
+            .from('crm_locations')
+            .select('*, customer:crm_customers(*)')
+            .eq('id', locationId)
+            .single();
+
+          if (locationError || !location) throw new Error('Location not found');
+
+          const customerName = location.customer?.company_name || 
+            `${location.customer?.first_name || ''} ${location.customer?.last_name || ''}`.trim();
+
+          const propertyName = location.location_name || `${customerName} - ${location.address_line1}`;
+          const propertyAddress = `${location.address_line1}, ${location.city}, ${location.state} ${location.zip_code}`;
+          
+          const descParts: string[] = [];
+          if (location.square_footage) descParts.push(`Sq ft: ${location.square_footage}`);
+          if (location.year_built) descParts.push(`Year built: ${location.year_built}`);
+          if (location.stories) descParts.push(`Stories: ${location.stories}`);
+          if (location.gate_code) descParts.push(`Gate: ${location.gate_code}`);
+          if (location.access_notes) descParts.push(`Access: ${location.access_notes}`);
+
+          const propertyPayload = {
+            name: propertyName,
+            address: propertyAddress,
+            property_type: location.location_type || 'residential',
+            description: descParts.length > 0 ? descParts.join(' | ') : null
+          };
+
+          const response = await fetch(`${apiUrl}/api-properties`, {
+            method: 'POST',
+            headers: {
+              'x-api-key': WORKEDGE_API_KEY,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(propertyPayload)
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`WorkEdge API error: ${response.status} ${errorText}`);
+          }
+
+          const propertyData = await response.json();
+          const wePropertyId = propertyData?.property?.id || propertyData?.id;
+
+          await supabase
+            .from('crm_locations')
+            .update({ workedge_property_id: wePropertyId })
+            .eq('id', locationId);
+
+          result = { success: true, workedge_property_id: wePropertyId };
           break;
         }
 
