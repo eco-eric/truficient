@@ -11,6 +11,7 @@ import { MultiSelect } from '@/components/ui/multi-select';
 import { Calendar, RefreshCw, CheckCircle2, Users, MapPin } from 'lucide-react';
 import { format, addHours } from 'date-fns';
 import { toast } from 'sonner';
+import { formatInCST, buildCSTDateTime } from '@/lib/cstTimezone';
 
 interface JobAppointmentDialogProps {
   open: boolean;
@@ -78,14 +79,14 @@ export default function JobAppointmentDialog({
   // Reset form when appointment changes
   useEffect(() => {
     if (appointment) {
-      const startDt = new Date(appointment.start_datetime);
-      const endDt = new Date(appointment.end_datetime);
+      const startCST = formatInCST(appointment.start_datetime);
+      const endCST = formatInCST(appointment.end_datetime);
       setFormData({
         title: appointment.title || '',
-        startDate: format(startDt, 'yyyy-MM-dd'),
-        startTime: format(startDt, 'HH:mm'),
-        endDate: format(endDt, 'yyyy-MM-dd'),
-        endTime: format(endDt, 'HH:mm'),
+        startDate: startCST.date,
+        startTime: startCST.time,
+        endDate: endCST.date,
+        endTime: endCST.time,
         calendarId: appointment.google_calendar_id || '',
         teamId: appointment.assigned_team_id || '',
         notes: appointment.notes || '',
@@ -152,14 +153,16 @@ export default function JobAppointmentDialog({
 
   const saveMutation = useMutation({
     mutationFn: async (syncToCalendar: boolean) => {
-      const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
-      const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
+      const startISO = buildCSTDateTime(formData.startDate, formData.startTime);
+      const endISO = buildCSTDateTime(formData.endDate, formData.endTime);
+      const startDateTime = new Date(startISO);
+      const endDateTime = new Date(endISO);
 
       const appointmentData = {
         job_id: jobId,
         title: formData.title || null,
-        start_datetime: startDateTime.toISOString(),
-        end_datetime: endDateTime.toISOString(),
+        start_datetime: startISO,
+        end_datetime: endISO,
         google_calendar_id: formData.calendarId || null,
         assigned_team_id: formData.teamId || null,
         notes: formData.notes || null,
@@ -345,7 +348,7 @@ export default function JobAppointmentDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label>Start Time</Label>
+              <Label>Start Time <span className="text-xs text-muted-foreground font-normal">(CST)</span></Label>
               <Input
                 type="time"
                 value={formData.startTime}
@@ -367,7 +370,7 @@ export default function JobAppointmentDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label>End Time</Label>
+              <Label>End Time <span className="text-xs text-muted-foreground font-normal">(CST)</span></Label>
               <Input
                 type="time"
                 value={formData.endTime}

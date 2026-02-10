@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { formatTimeCSTDisplay, getCSTHoursMinutes } from "@/lib/cstTimezone";
 
 interface CalendarEvent {
   id: string;
@@ -56,8 +57,10 @@ export default function CalendarView({ events, currentDate, viewMode, onDateChan
   };
 
   const getEventStyle = (event: CalendarEvent) => {
-    const startMinutes = event.start.getHours() * 60 + event.start.getMinutes();
-    const endMinutes = event.end.getHours() * 60 + event.end.getMinutes();
+    const startCST = getCSTHoursMinutes(event.start);
+    const endCST = getCSTHoursMinutes(event.end);
+    const startMinutes = startCST.hours * 60 + startCST.minutes;
+    const endMinutes = endCST.hours * 60 + endCST.minutes;
     const duration = Math.max(endMinutes - startMinutes, 30); // minimum 30 min
     
     return {
@@ -149,7 +152,7 @@ function EventBlock({ event, style }: { event: CalendarEvent; style: React.CSSPr
     >
       <div className="font-medium truncate">{event.title}</div>
       <div className="text-white/80 truncate">
-        {format(event.start, "h:mm a")} - {format(event.end, "h:mm a")}
+        {formatTimeCSTDisplay(event.start)} - {formatTimeCSTDisplay(event.end)}
       </div>
     </div>
   );
