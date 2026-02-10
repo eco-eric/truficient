@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -17,9 +17,13 @@ import {
   Package, 
   Activity,
   Edit,
-  MessageSquare
+  MessageSquare,
+  Upload,
+  CheckCircle2,
+  Loader2
 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { CustomerFormDialog } from '@/components/admin/customers/CustomerFormDialog';
 import { InteractionLog } from '@/components/admin/customers/InteractionLog';
 import { CustomerLocations } from '@/components/admin/customers/CustomerLocations';
@@ -42,6 +46,25 @@ const CustomerDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [editOpen, setEditOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  const syncCustomerMutation = useMutation({
+    mutationFn: async (customerId: string) => {
+      const { data, error } = await supabase.functions.invoke('workedge-sync', {
+        body: { action: 'sync-customer', customerId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_customer', id] });
+      toast.success('Customer synced to WorkEdge');
+    },
+    onError: (error: Error) => {
+      toast.error(`Sync failed: ${error.message}`);
+    },
+  });
 
   const { data: customer, isLoading } = useQuery({
     queryKey: ['crm_customer', id],
@@ -144,6 +167,26 @@ const CustomerDetail = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {customer.workedge_customer_id ? (
+              <Badge variant="outline" className="text-green-600 border-green-600 gap-1">
+                <CheckCircle2 className="h-3 w-3" />
+                WorkEdge Synced
+              </Badge>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => syncCustomerMutation.mutate(customer.id)}
+                disabled={syncCustomerMutation.isPending}
+              >
+                {syncCustomerMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4 mr-2" />
+                )}
+                Sync to WorkEdge
+              </Button>
+            )}
             <AIAssistantWidget 
               customerId={customer.id} 
               customerName={getDisplayName(customer)}

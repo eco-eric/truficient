@@ -12,7 +12,10 @@ import {
   Building2,
   Edit,
   Trash2,
-  MoreHorizontal
+  MoreHorizontal,
+  Upload,
+  CheckCircle2,
+  Loader2
 } from 'lucide-react';
 import {
   Dialog,
@@ -147,6 +150,29 @@ export function CustomerLocations({ customerId, locations }: CustomerLocationsPr
     },
   });
 
+  const [syncingLocationId, setSyncingLocationId] = useState<string | null>(null);
+
+  const syncPropertyMutation = useMutation({
+    mutationFn: async (locationId: string) => {
+      setSyncingLocationId(locationId);
+      const { data, error } = await supabase.functions.invoke('workedge-sync', {
+        body: { action: 'create-property', locationId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_locations', customerId] });
+      toast.success('Property synced to WorkEdge');
+      setSyncingLocationId(null);
+    },
+    onError: (error: Error) => {
+      toast.error(`Sync failed: ${error.message}`);
+      setSyncingLocationId(null);
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (locationId: string) => {
       const { error } = await supabase
@@ -200,6 +226,12 @@ export function CustomerLocations({ customerId, locations }: CustomerLocationsPr
                         {location.is_primary && (
                           <Badge variant="secondary" className="text-xs">Primary</Badge>
                         )}
+                        {location.workedge_property_id && (
+                          <Badge variant="outline" className="text-xs text-green-600 border-green-600 gap-1">
+                            <CheckCircle2 className="h-3 w-3" />
+                            WE
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {location.address_line1}
@@ -228,6 +260,19 @@ export function CustomerLocations({ customerId, locations }: CustomerLocationsPr
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
                       </DropdownMenuItem>
+                      {!location.workedge_property_id && (
+                        <DropdownMenuItem 
+                          onClick={() => syncPropertyMutation.mutate(location.id)}
+                          disabled={syncPropertyMutation.isPending}
+                        >
+                          {syncingLocationId === location.id && syncPropertyMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Upload className="h-4 w-4 mr-2" />
+                          )}
+                          Sync to WorkEdge
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem 
                         className="text-destructive"
                         onClick={() => deleteMutation.mutate(location.id)}
