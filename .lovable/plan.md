@@ -1,45 +1,45 @@
 
 
-# Facebook Scanner Landing Page: `/free-hvac-age-checker-fb-feb-2026`
+# Fix: Calendar Timezone Issues Across All Components
 
-## Overview
-Create a standalone, conversion-optimized landing page for a Facebook ad campaign promoting the free HVAC equipment scanner. The page will have no site header/footer navigation (to minimize exit points), a strong hero section, social proof, benefit highlights, and a clear CTA that routes into the existing `/scanner` flow.
+## Problem
+Your VA is in the Philippines (UTC+8) while your business operates in CST (UTC-6). Several components use browser-local time formatting instead of the CST utilities, causing appointments to display at the wrong time and potentially save incorrectly.
 
-## New File
+The appointment dialog that creates/edits appointments was already fixed to use CST, but the components that **display** those appointments and the older **SchedulingWidget** still use browser-local time.
 
-### `src/pages/landing/FreeHvacAgeCheckerFB.tsx`
+## What's Going Wrong
 
-A self-contained landing page with these sections:
+| Component | Issue |
+|-----------|-------|
+| Job Appointments Card | Shows appointment times in Philippine Time instead of CST |
+| Upcoming Appointments (Dashboard) | Same -- times shown in Philippine Time |
+| Scheduling Widget (old job view) | Reads and writes times in Philippine Time, causing a 14-hour shift |
+| Calendar page date range query | Query bounds calculated in browser-local time, can return wrong day's events |
 
-1. **Minimal Top Bar** -- Truficient logo only (no nav links to reduce bounce)
-2. **Hero Section**
-   - Headline: "How Old Is Your AC? Find Out in 30 Seconds"
-   - Subheadline: "Snap a photo of your data plate and instantly get your system's age, specs, and downloadable manuals -- 100% free."
-   - Large CTA button: "Check My System's Age" linking to `/scanner`
-   - Trust badges: "Free", "No appointment", "30 seconds"
-3. **How It Works** -- 3-step visual (Enter zip, Snap photo, Get results)
-4. **Benefits Grid** -- Reuse the same 4 benefits from `ScannerPromo` (instant ID, manufacturing year, SEER rating, manuals)
-5. **Coupon Teaser** -- Embed the existing `ScannerCoupon` component (compact variant) to show the exclusive savings offer
-6. **Social Proof** -- Star rating, install count (matches existing stats)
-7. **Final CTA** -- Repeated CTA button at bottom
-8. **Minimal Footer** -- Company name, license number, privacy/terms links only
+## Fixes
 
-### Tracking & Analytics
-- Fire `fbq('track', 'ViewContent', { content_name: 'FB Scanner Landing - Feb 2026' })` on page load for Meta Pixel attribution
-- Fire `gtag` page_view with custom campaign params
-- Track CTA clicks via existing `useButtonTracking` hook with `buttonLocation: 'FB Landing Page - Feb 2026'`
-- UTM params from Facebook will be preserved in the URL and carried through to the scanner
+### 1. `src/components/admin/jobs/JobAppointmentsCard.tsx`
+Replace `format(new Date(...), 'h:mm a')` calls with `formatTimeCSTDisplay()` from the CST utility, and use `formatInCST()` for the date display. This ensures the appointment list on the Job Detail page always shows Central Time.
 
-## Route Registration
+### 2. `src/components/admin/dashboard/UpcomingAppointments.tsx`
+Same fix -- replace `format(new Date(apt.start_datetime), 'h:mm a')` with `formatTimeCSTDisplay()` so the dashboard widget shows correct CST times.
 
-### `src/App.tsx`
-- Import the new page component
-- Add route: `{ path: "/free-hvac-age-checker-fb-feb-2026", element: <FreeHvacAgeCheckerFB /> }`
+### 3. `src/components/admin/calendar/SchedulingWidget.tsx`
+Refactor to use `formatInCST()` when loading existing schedule times into the form, and `buildCSTDateTime()` when constructing the ISO strings to send to Google Calendar. Currently it uses date-fns `format`/`parseISO` which interpret everything in browser-local time.
+
+### 4. `src/pages/admin/Calendar.tsx`
+Update `getDateRange()` to build date bounds in CST rather than browser-local time. This ensures the calendar query fetches the correct day's events regardless of the user's browser timezone.
 
 ## Technical Details
 
-- No new dependencies needed -- uses existing Framer Motion, Lucide icons, shadcn/ui components, and the `ScannerCoupon` component
-- The page is intentionally **outside** the normal Header/Footer layout to maximize ad conversion (no distracting navigation)
-- The CTA links to `/scanner` which preserves the full scanner flow (zip gate, scan, results, email capture)
-- Mobile-first responsive design since Facebook traffic is predominantly mobile
+All fixes use the existing `src/lib/cstTimezone.ts` utility that is already imported and working correctly in the appointment dialog. The changes are:
+
+- Import `formatInCST`, `buildCSTDateTime`, `formatTimeCSTDisplay` where missing
+- Replace `format(new Date(isoString), 'h:mm a')` with `formatTimeCSTDisplay(isoString)`
+- Replace `format(new Date(isoString), 'EEE, MMM d, yyyy')` with CST-aware date formatting
+- Replace `format(parseISO(isoString), "yyyy-MM-dd'T'HH:mm")` in SchedulingWidget with `formatInCST()` destructured into date + time
+- Replace `new Date(localInput).toISOString()` in SchedulingWidget with `buildCSTDateTime(date, time)`
+- Build calendar query date ranges using CST-aware day boundaries
+
+No new dependencies or database changes required.
 
