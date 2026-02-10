@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { CampaignTagSelector } from './CampaignTagSelector';
+import { CompanySelector } from '@/components/admin/companies/CompanySelector';
 import type { Database } from '@/integrations/supabase/types';
 
 type Customer = Database['public']['Tables']['crm_customers']['Row'];
@@ -72,6 +73,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
   const queryClient = useQueryClient();
   const isEditing = !!customer;
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
 
   // Fetch lead sources from database
   const { data: leadSources } = useQuery({
@@ -128,7 +130,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
         notes: customer.notes || '',
       });
       setSelectedTags(customer.tags || []);
-    } else {
+      setSelectedCompanyId((customer as any).company_id || null);
       form.reset({
         customer_type: 'residential',
         customer_status: 'lead',
@@ -147,6 +149,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
         notes: '',
       });
       setSelectedTags([]);
+      setSelectedCompanyId(null);
     }
   }, [customer, form]);
 
@@ -156,6 +159,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
         ...values,
         email: values.email || null,
         tags: selectedTags,
+        company_id: selectedCompanyId,
       };
 
       if (isEditing && customer) {
@@ -244,21 +248,28 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
               />
             </div>
 
-            {/* Company Name (for commercial) */}
+            {/* Company Name & Company Account (for commercial) */}
             {form.watch('customer_type') === 'commercial' && (
-              <FormField
-                control={form.control}
-                name="company_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Company Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <>
+                <div className="space-y-2">
+                  <FormLabel>Company Account</FormLabel>
+                  <CompanySelector value={selectedCompanyId} onChange={setSelectedCompanyId} />
+                  <p className="text-xs text-muted-foreground">Link this contact to a company account (optional)</p>
+                </div>
+                <FormField
+                  control={form.control}
+                  name="company_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Company Name (legacy)</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
             )}
 
             {/* Name Fields */}

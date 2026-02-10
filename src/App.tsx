@@ -82,6 +82,8 @@ import AdminCalendarSettings from "./pages/admin/CalendarSettings";
 import AdminAISettings from "./pages/admin/AISettings";
 import AdminAutomations from "./pages/admin/Automations";
 import AdminRolePermissions from "./pages/admin/RolePermissions";
+import AdminCompanies from "./pages/admin/Companies";
+import AdminCompanyDetail from "./pages/admin/CompanyDetail";
 import { Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
@@ -163,6 +165,8 @@ const router = createBrowserRouter([
       { path: "/admin", element: <ProtectedRoute><AdminDashboard /></ProtectedRoute> },
       { path: "/admin/abandoned-carts", element: <ProtectedRoute><AdminAbandonedCarts /></ProtectedRoute> },
       { path: "/admin/customers", element: <ProtectedRoute><AdminCustomers /></ProtectedRoute> },
+      { path: "/admin/companies", element: <ProtectedRoute><AdminCompanies /></ProtectedRoute> },
+      { path: "/admin/companies/:id", element: <ProtectedRoute><AdminCompanyDetail /></ProtectedRoute> },
       { path: "/admin/customers/:id", element: <ProtectedRoute><AdminCustomerDetail /></ProtectedRoute> },
       { path: "/admin/locations", element: <ProtectedRoute><AdminLocations /></ProtectedRoute> },
       { path: "/admin/submissions", element: <ProtectedRoute><AdminUnifiedSubmissions /></ProtectedRoute> },

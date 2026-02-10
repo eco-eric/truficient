@@ -34,7 +34,8 @@ import {
   UsersRound,
   Wrench,
   Camera,
-  Shield
+  Shield,
+  Building2
 } from 'lucide-react';
 
 export interface NavItem {
@@ -61,6 +62,7 @@ export const navSections: NavSection[] = [
     title: 'CRM',
     items: [
       { label: 'Customers', href: '/admin/customers', icon: UserCircle, permissionKey: 'nav.customers' },
+      { label: 'Companies', href: '/admin/companies', icon: Building2, permissionKey: 'nav.companies' },
       { label: 'Locations', href: '/admin/locations', icon: MapPin, permissionKey: 'nav.locations' },
       { label: 'Submissions', href: '/admin/submissions', icon: FileText, permissionKey: 'nav.submissions' },
       { label: 'Pipeline', href: '/admin/pipeline', icon: Kanban, permissionKey: 'nav.pipeline' },

@@ -20,10 +20,12 @@ import {
   MessageSquare,
   Upload,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Building2
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 import { CustomerFormDialog } from '@/components/admin/customers/CustomerFormDialog';
 import { InteractionLog } from '@/components/admin/customers/InteractionLog';
 import { CustomerLocations } from '@/components/admin/customers/CustomerLocations';
@@ -71,11 +73,11 @@ const CustomerDetail = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('crm_customers')
-        .select('*')
+        .select('*, crm_companies!company_id(id, name)')
         .eq('id', id)
         .single();
       if (error) throw error;
-      return data as Customer;
+      return data;
     },
     enabled: !!id,
   });
@@ -248,6 +250,18 @@ const CustomerDetail = () => {
               )}
               {!customer.email && !customer.phone && !customer.billing_address && (
                 <p className="text-muted-foreground text-sm">No contact information</p>
+              )}
+
+              {(customer as any).crm_companies && (
+                <div className="flex items-center gap-3">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  <Link 
+                    to={`/admin/companies/${(customer as any).crm_companies.id}`}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    {(customer as any).crm_companies.name}
+                  </Link>
+                </div>
               )}
 
               {customer.notes && (
