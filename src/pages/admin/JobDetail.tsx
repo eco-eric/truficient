@@ -781,7 +781,7 @@ export default function JobDetail() {
             />
 
             {/* WorkEdge Panel */}
-            <WorkEdgePanel jobId={job.id} workedgeProjectId={job.workedge_project_id} />
+            <WorkEdgePanel jobId={job.id} workedgeProjectId={job.workedge_project_id} jobNumber={job.job_number} jobTitle={job.title} />
           </div>
         </div>
       </div>
