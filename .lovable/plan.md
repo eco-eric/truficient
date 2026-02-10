@@ -1,51 +1,74 @@
 
 
-# Fix: Force All Calendar Times to CST (America/Chicago)
+# WorkEdge Customer and Property Sync
 
-## Problem
-When your VA in the Philippines enters "10:00 AM" for an appointment, the browser interprets that as 10:00 AM Philippine Time (UTC+8). The system then converts it to UTC for storage, which shifts it 14 hours away from the intended CST time. The result: the appointment shows up at the wrong time on the calendar.
+## Overview
+Add sync buttons to the Customer Detail page and Location cards so you can push CRM customers and locations (as properties) to WorkEdge with one click. Also update the existing `sync-customer` action to match the actual API field names and add a new `create-property` action.
 
-## Solution
-Force all date/time handling to use CST (America/Chicago), regardless of where the user is located. When someone enters 10:00 AM, it will always mean 10:00 AM Central Time.
+## What Changes
 
-## Changes
+### 1. Edge Function: `supabase/functions/workedge-sync/index.ts`
 
-### 1. `src/components/admin/jobs/JobAppointmentDialog.tsx`
+**Update `sync-customer` action** to send the correct fields per API docs:
+- `name`, `email`, `phone`, `company`, `address`, `contact_type`
+- Extract response ID from `response.customer.id` (not `response.id`)
 
-**Saving (creating the timestamp):**
-- Instead of `new Date("2026-02-10T10:00")` (which uses the browser's local timezone), explicitly construct an ISO string that represents that time in CST.
-- CST is UTC-6, CDT is UTC-5. To handle daylight saving automatically, we'll calculate the correct UTC offset for the "America/Chicago" timezone.
+**Add `create-property` action:**
+- Accepts `locationId` (required)
+- Fetches `crm_locations` record with joined customer
+- Sends `POST /api-properties` with:
+  - `name` (location_name or customer name + address)
+  - `address` (full formatted address)
+  - `property_type` (mapped from location_type: residential/commercial)
+  - `description` (compiled from sq ft, year built, stories, gate code, access notes)
+- Stores returned `property.id` in `crm_locations.workedge_property_id`
 
-**Loading (populating the form):**
-- When an existing appointment is loaded, convert the stored UTC timestamp to CST before extracting the date and time strings for the form fields.
+**Add `'create-property'` to the action union type.**
 
-**Approach:**
-- Add a helper that formats a UTC date as CST date/time parts using `toLocaleString` with `timeZone: 'America/Chicago'`.
-- Add a helper that takes a date string + time string (intended as CST) and produces the correct UTC ISO string.
-- Add a small label "(CST)" next to the time inputs so users know the timezone.
+### 2. Customer Detail Page: `src/pages/admin/CustomerDetail.tsx`
 
-### 2. `src/components/admin/calendar/CalendarView.tsx`
+Add a **"Sync to WorkEdge"** button in the customer header:
+- If `workedge_customer_id` is null: show outlined button with upload icon
+- If already synced: show green badge with checkmark
+- Uses `useMutation` calling the `sync-customer` action
+- Invalidates `crm_customer` query on success
 
-- Event display times (the "h:mm a" labels) are currently rendered in the viewer's local timezone. These will also be forced to display in CST using `toLocaleString` with the America/Chicago timezone.
+### 3. Customer Locations: `src/components/admin/customers/CustomerLocations.tsx`
 
-### 3. `src/pages/admin/Calendar.tsx`
+Add a **"Sync Property"** option to each location card's dropdown menu:
+- If `workedge_property_id` is null: show "Sync to WorkEdge" menu item
+- If already synced: show a small green badge on the card
+- Calls `create-property` action with `locationId`
+- Toast notification on success/error
 
-- The combined events are built from parsed dates. Google Calendar events already include `timeZone: 'America/Chicago'` in the payload, so they should render correctly. The job appointment dates stored in UTC will be displayed using CST-aware formatting in CalendarView.
+### 4. No database migrations needed
+Both `workedge_customer_id` and `workedge_property_id` columns already exist.
 
 ## Technical Details
 
-**New helper functions** (added at the top of `JobAppointmentDialog.tsx` or a shared util):
+### Property payload mapping (crm_locations to WorkEdge):
 
 ```text
-formatInCST(date) -> { date: "YYYY-MM-DD", time: "HH:mm" }
-  Uses Intl/toLocaleString with timeZone "America/Chicago"
-
-buildCSTDateTime(dateStr, timeStr) -> ISO string (UTC)
-  Constructs the correct UTC moment for "dateStr at timeStr in CST"
-  Uses a temporary Date + timezone offset calculation
+name:          location_name || "{customer_name} - {address_line1}"
+address:       "{address_line1}, {city}, {state} {zip_code}"
+property_type: location_type (residential | commercial)
+description:   "Sq ft: X | Year built: Y | Stories: Z | Gate: CODE | Access: NOTES"
 ```
 
-**Form label update:** Time inputs will show "(CST)" to make the timezone explicit for all users.
+### Customer payload mapping (already mostly correct, minor fixes):
 
-**No database changes required** -- the stored UTC timestamps are correct in concept; the fix is entirely in how we convert to/from UTC.
+```text
+name:         company_name || "{first_name} {last_name}"
+email:        email
+phone:        phone
+company:      company_name
+address:      "{billing_address}, {billing_city}, {billing_state} {billing_zip}"
+contact_type: customer_type (residential -> homeowner, commercial -> business)
+```
+
+### Response ID extraction fix:
+
+The current `sync-customer` stores `customerData.id` but the API returns `{ customer: { id: "uuid" } }`, so it needs to be `customerData.customer.id`.
+
+Similarly for properties: `propertyData.property.id`.
 
