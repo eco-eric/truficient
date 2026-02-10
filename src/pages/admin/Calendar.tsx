@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, RefreshCw, Settings, Share } from "lucide-react";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, subWeeks, subMonths, parseISO } from "date-fns";
+import { buildCSTDateTime } from "@/lib/cstTimezone";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import CalendarView from "@/components/admin/calendar/CalendarView";
@@ -112,24 +113,38 @@ export default function Calendar() {
   });
 
   function getDateRange() {
+    // Build date ranges using CST-aware boundaries so queries return
+    // correct events regardless of the user's browser timezone.
+    const cstDateStr = currentDate.toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }); // YYYY-MM-DD
+    const cstDate = new Date(cstDateStr + 'T00:00:00');
+    
     let start: Date, end: Date;
     switch (viewMode) {
       case "day":
-        start = new Date(currentDate);
-        start.setHours(0, 0, 0, 0);
-        end = new Date(currentDate);
-        end.setHours(23, 59, 59, 999);
+        start = new Date(cstDateStr + 'T00:00:00Z');
+        // Shift from CST midnight to UTC: CST is UTC-6 (or -5 during DST)
+        // Use buildCSTDateTime for accuracy
+        start = new Date(buildCSTDateTime(cstDateStr, '00:00'));
+        end = new Date(buildCSTDateTime(cstDateStr, '23:59'));
         break;
       case "week":
-        start = startOfWeek(currentDate, { weekStartsOn: 0 });
-        end = endOfWeek(currentDate, { weekStartsOn: 0 });
+        const weekStart = startOfWeek(cstDate, { weekStartsOn: 0 });
+        const weekEnd = endOfWeek(cstDate, { weekStartsOn: 0 });
+        const wsStr = weekStart.toISOString().slice(0, 10);
+        const weStr = weekEnd.toISOString().slice(0, 10);
+        start = new Date(buildCSTDateTime(wsStr, '00:00'));
+        end = new Date(buildCSTDateTime(weStr, '23:59'));
         break;
       case "month":
-        start = startOfMonth(currentDate);
-        end = endOfMonth(currentDate);
+        const monthStart = startOfMonth(cstDate);
+        const monthEnd = endOfMonth(cstDate);
+        const msStr = monthStart.toISOString().slice(0, 10);
+        const meStr = monthEnd.toISOString().slice(0, 10);
+        start = new Date(buildCSTDateTime(msStr, '00:00'));
+        end = new Date(buildCSTDateTime(meStr, '23:59'));
         break;
     }
-    return { start, end };
+    return { start: start!, end: end! };
   }
 
   const navigate = (direction: "prev" | "next") => {

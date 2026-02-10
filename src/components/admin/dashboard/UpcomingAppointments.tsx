@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { format, isToday, isTomorrow, startOfDay, addDays, startOfWeek, endOfWeek } from 'date-fns';
+import { startOfDay, addDays, startOfWeek, endOfWeek } from 'date-fns';
+import { formatTimeCSTDisplay } from '@/lib/cstTimezone';
 
 interface Appointment {
   id: string;
@@ -65,9 +66,15 @@ export function UpcomingAppointments() {
 
   const getDateLabel = (dateStr: string) => {
     const date = new Date(dateStr);
-    if (isToday(date)) return 'Today';
-    if (isTomorrow(date)) return 'Tomorrow';
-    return format(date, 'EEE, MMM d');
+    const today = new Date();
+    const todayCST = today.toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    const tomorrowDate = new Date(today);
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrowCST = tomorrowDate.toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    const dateCST = date.toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    if (dateCST === todayCST) return 'Today';
+    if (dateCST === tomorrowCST) return 'Tomorrow';
+    return date.toLocaleDateString('en-US', { timeZone: 'America/Chicago', weekday: 'short', month: 'short', day: 'numeric' });
   };
 
   // Calculate stats
@@ -148,7 +155,7 @@ export function UpcomingAppointments() {
                         <div className="flex items-center gap-2">
                           <Clock className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                           <span className="text-xs font-medium">
-                            {format(new Date(apt.start_datetime), 'h:mm a')}
+                            {formatTimeCSTDisplay(apt.start_datetime)}
                           </span>
                           {apt.job && (
                             <span className="text-xs font-mono text-muted-foreground">
