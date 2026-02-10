@@ -248,14 +248,12 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
               />
             </div>
 
-            {/* Company Account (for commercial) */}
-            {form.watch('customer_type') === 'commercial' && (
-              <div className="space-y-2">
-                <FormLabel>Company Account</FormLabel>
-                <CompanySelector value={selectedCompanyId} onChange={setSelectedCompanyId} />
-                <p className="text-xs text-muted-foreground">Link this contact to a company account (optional)</p>
-              </div>
-            )}
+            {/* Company Account */}
+            <div className="space-y-2">
+              <FormLabel>Company Account</FormLabel>
+              <CompanySelector value={selectedCompanyId} onChange={setSelectedCompanyId} />
+              <p className="text-xs text-muted-foreground">Link this contact to a company account (optional)</p>
+            </div>
 
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
