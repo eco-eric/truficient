@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, AlertTriangle, CheckCircle2, RefreshCw, ExternalLink } from "lucide-react";
-import { format, parseISO, addHours } from "date-fns";
+import { addHours } from "date-fns";
+import { formatInCST, buildCSTDateTime } from "@/lib/cstTimezone";
 import { toast } from "sonner";
 
 interface SchedulingWidgetProps {
@@ -43,12 +44,16 @@ interface SchedulingWidgetProps {
 
 export default function SchedulingWidget({ job, onUpdate }: SchedulingWidgetProps) {
   const queryClient = useQueryClient();
-  const [scheduledStart, setScheduledStart] = useState(
-    job.scheduled_start ? format(parseISO(job.scheduled_start), "yyyy-MM-dd'T'HH:mm") : ""
-  );
-  const [scheduledEnd, setScheduledEnd] = useState(
-    job.scheduled_end ? format(parseISO(job.scheduled_end), "yyyy-MM-dd'T'HH:mm") : ""
-  );
+  const [scheduledStart, setScheduledStart] = useState(() => {
+    if (!job.scheduled_start) return "";
+    const { date, time } = formatInCST(job.scheduled_start);
+    return `${date}T${time}`;
+  });
+  const [scheduledEnd, setScheduledEnd] = useState(() => {
+    if (!job.scheduled_end) return "";
+    const { date, time } = formatInCST(job.scheduled_end);
+    return `${date}T${time}`;
+  });
   const [selectedCalendarId, setSelectedCalendarId] = useState(job.google_calendar_id || "");
   const [syncing, setSyncing] = useState(false);
   const [conflicts, setConflicts] = useState<any[]>([]);
@@ -81,8 +86,12 @@ export default function SchedulingWidget({ job, onUpdate }: SchedulingWidgetProp
   useEffect(() => {
     if (scheduledStart && !scheduledEnd) {
       const duration = job.job_type?.default_duration_hours || 4;
-      const endTime = addHours(new Date(scheduledStart), duration);
-      setScheduledEnd(format(endTime, "yyyy-MM-dd'T'HH:mm"));
+      // scheduledStart is already in CST wall-clock, convert to UTC, add hours, convert back
+      const [datePart, timePart] = scheduledStart.split('T');
+      const startUtc = buildCSTDateTime(datePart, timePart);
+      const endTime = addHours(new Date(startUtc), duration);
+      const { date: endDate, time: endTimeStr } = formatInCST(endTime);
+      setScheduledEnd(`${endDate}T${endTimeStr}`);
     }
   }, [scheduledStart, job.job_type?.default_duration_hours]);
 
@@ -99,8 +108,8 @@ export default function SchedulingWidget({ job, onUpdate }: SchedulingWidgetProp
         body: {
           action: "check-availability",
           calendarIds: [calendar.calendar_id],
-          timeMin: new Date(scheduledStart).toISOString(),
-          timeMax: new Date(scheduledEnd).toISOString(),
+          timeMin: buildCSTDateTime(...scheduledStart.split('T') as [string, string]),
+          timeMax: buildCSTDateTime(...scheduledEnd.split('T') as [string, string]),
           excludeEventId: job.google_calendar_event_id,
         },
       });
@@ -149,16 +158,21 @@ export default function SchedulingWidget({ job, onUpdate }: SchedulingWidgetProp
         job.customer_notes ? `Notes:\n${job.customer_notes}` : null,
       ].filter(Boolean).join("\n");
 
+      const [startDate, startTime] = scheduledStart.split('T');
+      const [endDate, endTime] = scheduledEnd.split('T');
+      const startISO = buildCSTDateTime(startDate, startTime);
+      const endISO = buildCSTDateTime(endDate, endTime);
+
       const eventPayload = {
         summary: `${job.job_number} - ${customerName} - ${job.job_type?.name || job.title}`,
         description,
         location,
         start: {
-          dateTime: new Date(scheduledStart).toISOString(),
+          dateTime: startISO,
           timeZone: "America/Chicago",
         },
         end: {
-          dateTime: new Date(scheduledEnd).toISOString(),
+          dateTime: endISO,
           timeZone: "America/Chicago",
         },
       };
@@ -191,8 +205,8 @@ export default function SchedulingWidget({ job, onUpdate }: SchedulingWidgetProp
       const { error: updateError } = await supabase
         .from("crm_jobs")
         .update({
-          scheduled_start: new Date(scheduledStart).toISOString(),
-          scheduled_end: new Date(scheduledEnd).toISOString(),
+          scheduled_start: startISO,
+          scheduled_end: endISO,
           google_calendar_id: selectedCalendarId,
           google_calendar_event_id: response.data.id,
         })

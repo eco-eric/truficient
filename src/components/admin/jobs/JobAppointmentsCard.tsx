@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Plus, Pencil, Trash2, CheckCircle2, Clock, Users } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatInCST, formatTimeCSTDisplay } from '@/lib/cstTimezone';
 import { toast } from 'sonner';
 import JobAppointmentDialog from './JobAppointmentDialog';
 import {
@@ -137,9 +137,9 @@ export default function JobAppointmentsCard({
                     </h4>
                     <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {format(new Date(apt.start_datetime), 'EEE, MMM d, yyyy')}
+                      {new Date(apt.start_datetime).toLocaleDateString('en-US', { timeZone: 'America/Chicago', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                       {' • '}
-                      {format(new Date(apt.start_datetime), 'h:mm a')} - {format(new Date(apt.end_datetime), 'h:mm a')}
+                      {formatTimeCSTDisplay(apt.start_datetime)} - {formatTimeCSTDisplay(apt.end_datetime)}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       {apt.team && (
