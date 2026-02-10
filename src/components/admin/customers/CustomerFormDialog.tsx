@@ -131,6 +131,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
       });
       setSelectedTags(customer.tags || []);
       setSelectedCompanyId((customer as any).company_id || null);
+    } else {
       form.reset({
         customer_type: 'residential',
         customer_status: 'lead',
