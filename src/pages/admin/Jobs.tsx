@@ -157,6 +157,9 @@ export default function Jobs() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm_jobs'] });
       toast.success('Job deleted');
+    },
+    onError: (error: any) => {
+      toast.error('Failed to delete job: ' + error.message);
     }
   });
 
