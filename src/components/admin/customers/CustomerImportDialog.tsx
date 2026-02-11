@@ -10,7 +10,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Download } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface CustomerImportDialogProps {
@@ -345,16 +345,30 @@ export function CustomerImportDialog({ open, onOpenChange }: CustomerImportDialo
             </div>
           )}
 
-          {/* Expected Format */}
-          <details className="text-sm">
-            <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-              View expected CSV format
-            </summary>
-            <div className="mt-2 p-3 bg-muted/50 rounded-lg font-mono text-xs overflow-x-auto">
-              <p className="mb-1">Supported columns:</p>
-              <p className="text-muted-foreground">{EXPECTED_HEADERS.join(', ')}</p>
-            </div>
-          </details>
+          {/* Download Template & Expected Format */}
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const header = EXPECTED_HEADERS.join(',');
+                const sample = 'John,Doe,john@example.com,555-123-4567,Acme Corp,residential,lead,"123 Main St",Dallas,TX,75201,website,New customer';
+                const blob = new Blob([header + '\n' + sample + '\n'], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'customer-import-template.csv';
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download Template
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              CSV with columns: {EXPECTED_HEADERS.slice(0, 4).join(', ')}, …
+            </span>
+          </div>
 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-2">
