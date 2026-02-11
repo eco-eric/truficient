@@ -111,6 +111,47 @@ const CustomerDetail = () => {
     enabled: !!id,
   });
 
+  const { data: jobs } = useQuery({
+    queryKey: ['crm_jobs', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_jobs')
+        .select('*, crm_job_stages!current_stage_id(name, color)')
+        .eq('customer_id', id!)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  const { data: estimatesCount } = useQuery({
+    queryKey: ['estimates_count', id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('estimates')
+        .select('*', { count: 'exact', head: true })
+        .eq('customer_id', id!);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!id,
+  });
+
+  const { data: submissionLinksCount } = useQuery({
+    queryKey: ['submission_links_count', id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('crm_submission_links')
+        .select('*', { count: 'exact', head: true })
+        .eq('customer_id', id!);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!id,
+  });
+
   const getDisplayName = (cust: any) => {
     if (cust.crm_companies?.name) return cust.crm_companies.name;
     return `${cust.first_name || ''} ${cust.last_name || ''}`.trim() || 'Unnamed';
@@ -293,9 +334,9 @@ const CustomerDetail = () => {
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="locations">Locations ({locations?.length || 0})</TabsTrigger>
                 <TabsTrigger value="activity">Activity ({interactions?.length || 0})</TabsTrigger>
-                <TabsTrigger value="jobs">Jobs</TabsTrigger>
-                <TabsTrigger value="estimates">Estimates</TabsTrigger>
-                <TabsTrigger value="equipment">Equipment</TabsTrigger>
+                <TabsTrigger value="jobs">Jobs ({jobs?.length || 0})</TabsTrigger>
+                <TabsTrigger value="estimates">Estimates ({(estimatesCount || 0) + (submissionLinksCount || 0)})</TabsTrigger>
+                <TabsTrigger value="equipment">Equipment (0)</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="mt-4">
@@ -370,15 +411,50 @@ const CustomerDetail = () => {
               </TabsContent>
 
               <TabsContent value="jobs" className="mt-4">
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col items-center py-8">
-                      <Calendar className="h-8 w-8 text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground">No jobs found</p>
-                      <p className="text-xs text-muted-foreground mt-1">Jobs will appear here once created</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                {jobs && jobs.length > 0 ? (
+                  <div className="space-y-3">
+                    {jobs.map((job) => {
+                      const stage = (job as any).crm_job_stages;
+                      return (
+                        <Link key={job.id} to={`/admin/jobs/${job.id}`}>
+                          <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+                            <CardContent className="flex items-center justify-between py-4">
+                              <div className="flex items-center gap-4">
+                                <div>
+                                  <p className="font-medium">{job.title}</p>
+                                  <p className="text-sm text-muted-foreground">{job.job_number}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {job.scheduled_date && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(job.scheduled_date).toLocaleDateString()}
+                                  </span>
+                                )}
+                                {job.priority && (
+                                  <Badge variant="outline" className="capitalize text-xs">{job.priority}</Badge>
+                                )}
+                                {stage && (
+                                  <Badge variant="secondary" className="text-xs">{stage.name}</Badge>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex flex-col items-center py-8">
+                        <Calendar className="h-8 w-8 text-muted-foreground mb-2" />
+                        <p className="text-muted-foreground">No jobs found</p>
+                        <p className="text-xs text-muted-foreground mt-1">Jobs will appear here once created</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               <TabsContent value="estimates" className="mt-4">
