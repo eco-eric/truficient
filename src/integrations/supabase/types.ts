@@ -50,6 +50,181 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_notification_preferences: {
+        Row: {
+          created_at: string
+          general_enabled: boolean
+          id: string
+          job_enabled: boolean
+          lead_enabled: boolean
+          pipeline_enabled: boolean
+          sound_enabled: boolean
+          system_enabled: boolean
+          team_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          general_enabled?: boolean
+          id?: string
+          job_enabled?: boolean
+          lead_enabled?: boolean
+          pipeline_enabled?: boolean
+          sound_enabled?: boolean
+          system_enabled?: boolean
+          team_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          general_enabled?: boolean
+          id?: string
+          job_enabled?: boolean
+          lead_enabled?: boolean
+          pipeline_enabled?: boolean
+          sound_enabled?: boolean
+          system_enabled?: boolean
+          team_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      admin_notifications: {
+        Row: {
+          category: string
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          is_dismissed: boolean
+          is_read: boolean
+          link_url: string | null
+          message: string | null
+          related_entity_id: string | null
+          related_entity_type: string | null
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          category?: string
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_dismissed?: boolean
+          is_read?: boolean
+          link_url?: string | null
+          message?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_dismissed?: boolean
+          is_read?: boolean
+          link_url?: string | null
+          message?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      admin_tasks: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          job_id: string | null
+          pipeline_entry_id: string | null
+          priority: string
+          source: string | null
+          source_event: string | null
+          status: string
+          submission_id: string | null
+          submission_type: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          job_id?: string | null
+          pipeline_entry_id?: string | null
+          priority?: string
+          source?: string | null
+          source_event?: string | null
+          status?: string
+          submission_id?: string | null
+          submission_type?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          job_id?: string | null
+          pipeline_entry_id?: string | null
+          priority?: string
+          source?: string | null
+          source_event?: string | null
+          status?: string
+          submission_id?: string | null
+          submission_type?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_tasks_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_tasks_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "crm_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_tasks_pipeline_entry_id_fkey"
+            columns: ["pipeline_entry_id"]
+            isOneToOne: false
+            referencedRelation: "crm_pipeline_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_config: {
         Row: {
           api_key_secret_name: string | null

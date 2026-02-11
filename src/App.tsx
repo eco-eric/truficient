@@ -85,6 +85,7 @@ import AdminAutomations from "./pages/admin/Automations";
 import AdminRolePermissions from "./pages/admin/RolePermissions";
 import AdminCompanies from "./pages/admin/Companies";
 import AdminCompanyDetail from "./pages/admin/CompanyDetail";
+import AdminTasks from "./pages/admin/Tasks";
 import { Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
@@ -220,6 +221,7 @@ const router = createBrowserRouter([
       { path: "/admin/ai-settings", element: <ProtectedRoute><AdminAISettings /></ProtectedRoute> },
       { path: "/admin/automations", element: <ProtectedRoute><AdminAutomations /></ProtectedRoute> },
       { path: "/admin/permissions", element: <ProtectedRoute><AdminRolePermissions /></ProtectedRoute> },
+      { path: "/admin/tasks", element: <ProtectedRoute><AdminTasks /></ProtectedRoute> },
       
       // Catch-all route
       { path: "*", element: <NotFound /> },
