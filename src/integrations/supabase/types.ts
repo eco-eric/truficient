@@ -2885,6 +2885,7 @@ export type Database = {
           created_by: string | null
           customer_address: string | null
           customer_email: string | null
+          customer_id: string | null
           customer_name: string
           customer_phone: string | null
           estimate_number: string
@@ -2893,6 +2894,7 @@ export type Database = {
           id: string
           job_notes: string | null
           job_type: Database["public"]["Enums"]["job_type"]
+          location_id: string | null
           profit_margin: number
           status: Database["public"]["Enums"]["estimate_status"]
           subtotal_charge: number
@@ -2907,6 +2909,7 @@ export type Database = {
           created_by?: string | null
           customer_address?: string | null
           customer_email?: string | null
+          customer_id?: string | null
           customer_name: string
           customer_phone?: string | null
           estimate_number: string
@@ -2915,6 +2918,7 @@ export type Database = {
           id?: string
           job_notes?: string | null
           job_type?: Database["public"]["Enums"]["job_type"]
+          location_id?: string | null
           profit_margin?: number
           status?: Database["public"]["Enums"]["estimate_status"]
           subtotal_charge?: number
@@ -2929,6 +2933,7 @@ export type Database = {
           created_by?: string | null
           customer_address?: string | null
           customer_email?: string | null
+          customer_id?: string | null
           customer_name?: string
           customer_phone?: string | null
           estimate_number?: string
@@ -2937,6 +2942,7 @@ export type Database = {
           id?: string
           job_notes?: string | null
           job_type?: Database["public"]["Enums"]["job_type"]
+          location_id?: string | null
           profit_margin?: number
           status?: Database["public"]["Enums"]["estimate_status"]
           subtotal_charge?: number
@@ -2946,7 +2952,22 @@ export type Database = {
           updated_at?: string
           valid_until?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "estimates_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimates_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "crm_locations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       financing_options: {
         Row: {

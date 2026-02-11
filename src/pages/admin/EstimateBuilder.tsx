@@ -34,6 +34,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { toast } from 'sonner';
 import { 
   Save, 
@@ -46,8 +48,13 @@ import {
   Search,
   FileDown,
   LayoutTemplate,
-  History
+  History,
+  X,
+  MapPin,
+  ChevronsUpDown,
+  Check
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { generateEstimatePDF } from '@/utils/generateEstimatePDF';
 import { VersionHistoryDialog } from '@/components/admin/estimates/VersionHistoryDialog';
 import { 
@@ -129,6 +136,12 @@ const EstimateBuilder = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSavedState, setLastSavedState] = useState<{ formData: EstimateData; lineItems: LineItem[] } | null>(null);
   
+  // CRM customer/location picker state
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const [customerComboOpen, setCustomerComboOpen] = useState(false);
+  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
+
   // Percentage-based admin cost dialog state
   const [percentageCostDialogOpen, setPercentageCostDialogOpen] = useState(false);
   const [selectedPercentageCost, setSelectedPercentageCost] = useState<any>(null);
@@ -138,6 +151,36 @@ const EstimateBuilder = () => {
   const blocker = useBlocker(
     useCallback(() => hasUnsavedChanges, [hasUnsavedChanges])
   );
+
+  // Fetch CRM customers for picker
+  const { data: crmCustomers = [] } = useQuery({
+    queryKey: ['crm-customers-picker'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_customers')
+        .select('id, first_name, last_name, email, phone')
+        .is('deleted_at', null)
+        .order('last_name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch locations for selected customer
+  const { data: customerLocations = [] } = useQuery({
+    queryKey: ['crm-locations-picker', selectedCustomerId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_locations')
+        .select('id, location_name, address_line1, address_line2, city, state, zip_code, is_primary')
+        .eq('customer_id', selectedCustomerId!)
+        .is('deleted_at', null)
+        .order('is_primary', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedCustomerId,
+  });
 
   // Fetch estimate templates
   const { data: templates = [] } = useQuery({
@@ -259,6 +302,9 @@ const EstimateBuilder = () => {
         tax_rate: Number(estimate.tax_rate) || 0.0825,
       };
       setFormData(loadedFormData);
+      // Restore CRM links
+      setSelectedCustomerId((estimate as any).customer_id || null);
+      setSelectedLocationId((estimate as any).location_id || null);
       // Store initial state for change detection
       setLastSavedState(prev => prev ? { ...prev, formData: loadedFormData } : { formData: loadedFormData, lineItems: [] });
     }
@@ -369,7 +415,9 @@ const EstimateBuilder = () => {
             status: formData.status,
             profit_margin: formData.profit_margin,
             tax_rate: formData.tax_rate,
-          })
+            customer_id: selectedCustomerId || null,
+            location_id: selectedLocationId || null,
+          } as any)
           .select()
           .single();
 
@@ -390,7 +438,9 @@ const EstimateBuilder = () => {
             status: formData.status,
             profit_margin: formData.profit_margin,
             tax_rate: formData.tax_rate,
-          })
+            customer_id: selectedCustomerId || null,
+            location_id: selectedLocationId || null,
+          } as any)
           .eq('id', id);
 
         if (updateError) throw updateError;
@@ -982,6 +1032,105 @@ const EstimateBuilder = () => {
                 <CardTitle>Customer Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* CRM Customer Picker */}
+                <div className="flex items-end gap-2">
+                  <div className="flex-1 space-y-2">
+                    <Label>CRM Customer</Label>
+                    <Popover open={customerComboOpen} onOpenChange={setCustomerComboOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={customerComboOpen}
+                          className="w-full justify-between font-normal"
+                        >
+                          {selectedCustomerId
+                            ? (() => {
+                                const c = crmCustomers.find(c => c.id === selectedCustomerId);
+                                return c ? `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.email || 'Unnamed' : 'Select customer...';
+                              })()
+                            : 'Search CRM customer...'}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[400px] p-0" align="start">
+                        <Command shouldFilter={false}>
+                          <CommandInput
+                            placeholder="Search by name, email, or phone..."
+                            value={customerSearchTerm}
+                            onValueChange={setCustomerSearchTerm}
+                          />
+                          <CommandList>
+                            <CommandEmpty>No customers found.</CommandEmpty>
+                            <CommandGroup>
+                              {crmCustomers
+                                .filter(c => {
+                                  if (!customerSearchTerm) return true;
+                                  const term = customerSearchTerm.toLowerCase();
+                                  return (
+                                    (c.first_name || '').toLowerCase().includes(term) ||
+                                    (c.last_name || '').toLowerCase().includes(term) ||
+                                    (c.email || '').toLowerCase().includes(term) ||
+                                    (c.phone || '').includes(term)
+                                  );
+                                })
+                                .slice(0, 50)
+                                .map(c => (
+                                  <CommandItem
+                                    key={c.id}
+                                    value={c.id}
+                                    onSelect={() => {
+                                      setSelectedCustomerId(c.id);
+                                      setSelectedLocationId(null);
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        customer_name: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+                                        customer_email: c.email || '',
+                                        customer_phone: c.phone || '',
+                                      }));
+                                      setCustomerComboOpen(false);
+                                      setCustomerSearchTerm('');
+                                    }}
+                                  >
+                                    <Check className={cn("mr-2 h-4 w-4", selectedCustomerId === c.id ? "opacity-100" : "opacity-0")} />
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">
+                                        {`${c.first_name || ''} ${c.last_name || ''}`.trim() || 'Unnamed'}
+                                      </span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {[c.email, c.phone].filter(Boolean).join(' · ')}
+                                      </span>
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  {selectedCustomerId && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setSelectedCustomerId(null);
+                        setSelectedLocationId(null);
+                        setFormData(prev => ({
+                          ...prev,
+                          customer_name: '',
+                          customer_email: '',
+                          customer_phone: '',
+                          customer_address: '',
+                        }));
+                      }}
+                      title="Clear customer"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="customer_name">Customer Name *</Label>
@@ -1022,6 +1171,43 @@ const EstimateBuilder = () => {
                     />
                   </div>
                 </div>
+
+                {/* Location Picker - shown when customer is selected */}
+                {selectedCustomerId && (
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5" />
+                      Customer Location
+                    </Label>
+                    {customerLocations.length > 0 ? (
+                      <Select
+                        value={selectedLocationId || ''}
+                        onValueChange={(v) => {
+                          setSelectedLocationId(v || null);
+                          const loc = customerLocations.find(l => l.id === v);
+                          if (loc) {
+                            const parts = [loc.address_line1, loc.address_line2, `${loc.city}, ${loc.state} ${loc.zip_code}`].filter(Boolean);
+                            setFormData(prev => ({ ...prev, customer_address: parts.join(', ') }));
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a location..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {customerLocations.map(loc => (
+                            <SelectItem key={loc.id} value={loc.id}>
+                              {loc.address_line1}, {loc.city}, {loc.state} {loc.zip_code}
+                              {loc.is_primary && ' (Primary)'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">No locations on file for this customer</p>
+                    )}
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="job_type">Job Type</Label>
