@@ -9,6 +9,8 @@ export interface ChatMessage {
   timestamp: Date;
   isLoading?: boolean;
   isError?: boolean;
+  hasConfirmation?: boolean;
+  confirmationState?: 'pending' | 'confirmed' | 'cancelled';
 }
 
 interface AssistantContextType {
@@ -20,6 +22,7 @@ interface AssistantContextType {
   closePanel: () => void;
   sendMessage: (content: string) => Promise<void>;
   clearConversation: () => void;
+  confirmAction: (messageId: string, action: 'confirmed' | 'cancelled') => void;
 }
 
 const AssistantContext = createContext<AssistantContextType | null>(null);
@@ -29,6 +32,14 @@ export const useAssistant = () => {
   if (!ctx) throw new Error('useAssistant must be used within AssistantProvider');
   return ctx;
 };
+
+// Detection: message has "?" and 2+ bold markers
+function detectConfirmation(content: string): boolean {
+  if (!content) return false;
+  const hasBold = (content.match(/\*\*/g) || []).length >= 2;
+  const hasQuestion = content.includes('?');
+  return hasBold && hasQuestion;
+}
 
 export const AssistantProvider = ({ children }: { children: ReactNode }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -77,14 +88,19 @@ export const AssistantProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
+      const responseContent = data?.message || "Sorry, I couldn't generate a response.";
+      const isConfirmation = detectConfirmation(responseContent);
+
       setMessages(prev =>
         prev.map(m =>
           m.id === loadingMsg.id
             ? {
                 ...m,
-                content: data?.message || "Sorry, I couldn't generate a response.",
+                content: responseContent,
                 toolsUsed: data?.toolsUsed,
                 isLoading: false,
+                hasConfirmation: isConfirmation,
+                confirmationState: isConfirmation ? 'pending' : undefined,
               }
             : m
         )
@@ -108,9 +124,20 @@ export const AssistantProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [messages, isLoading]);
 
+  const confirmAction = useCallback((messageId: string, action: 'confirmed' | 'cancelled') => {
+    setMessages(prev =>
+      prev.map(m =>
+        m.id === messageId ? { ...m, confirmationState: action } : m
+      )
+    );
+    // Send the follow-up message
+    const followUp = action === 'confirmed' ? 'Yes, confirmed' : 'Cancel that';
+    sendMessage(followUp);
+  }, [sendMessage]);
+
   return (
     <AssistantContext.Provider
-      value={{ isOpen, messages, isLoading, togglePanel, openPanel, closePanel, sendMessage, clearConversation }}
+      value={{ isOpen, messages, isLoading, togglePanel, openPanel, closePanel, sendMessage, clearConversation, confirmAction }}
     >
       {children}
     </AssistantContext.Provider>

@@ -5,8 +5,8 @@ const PROMPTS = [
   "What's on the schedule tomorrow?",
   'How many leads this week?',
   'Show me the pipeline',
-  'Recent submissions',
-  'Team & crew info',
+  'Log a call with a customer',
+  'Create a new job',
 ];
 
 interface QuickPromptsProps {
@@ -17,9 +17,9 @@ export const QuickPrompts = ({ onSelect }: QuickPromptsProps) => {
   return (
     <div className="flex flex-col items-center justify-center h-full px-6 py-8 text-center">
       <Sparkles className="h-8 w-8 text-[#C4A962] mb-3" />
-      <h3 className="text-lg font-semibold text-gray-800 mb-1">Hi! I'm Tru</h3>
+      <h3 className="text-lg font-semibold text-gray-800 mb-1">Hi! I'm Bach</h3>
       <p className="text-sm text-gray-500 mb-6 max-w-[280px]">
-        Your AI operations assistant. I can help you search customers, check schedules, and more.
+        Your AI operations assistant. I can search customers, manage jobs, log interactions, and more.
       </p>
       <div className="grid grid-cols-2 gap-2 w-full max-w-[320px]">
         {PROMPTS.map(prompt => (

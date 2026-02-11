@@ -1,13 +1,19 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, AlertCircle, RotateCcw } from 'lucide-react';
+import { ChevronDown, ChevronUp, AlertCircle, RotateCcw, CheckCircle2 } from 'lucide-react';
 import type { ChatMessage as ChatMessageType } from './AssistantContext';
+import { ConfirmationCard } from './ConfirmationCard';
 
 interface ChatMessageProps {
   message: ChatMessageType;
+  isLatestAssistant?: boolean;
+  onConfirm?: () => void;
+  onCancel?: () => void;
   onRetry?: () => void;
 }
 
-export const ChatMessage = ({ message, onRetry }: ChatMessageProps) => {
+const SUCCESS_KEYWORDS = ['Created job', 'Moved', 'Logged', 'Updated', 'Added', 'Scheduled'];
+
+export const ChatMessage = ({ message, isLatestAssistant, onConfirm, onCancel, onRetry }: ChatMessageProps) => {
   const [showTools, setShowTools] = useState(false);
 
   // Loading state
@@ -47,17 +53,15 @@ export const ChatMessage = ({ message, onRetry }: ChatMessageProps) => {
   }
 
   const isUser = message.role === 'user';
+  const isSuccess = !isUser && SUCCESS_KEYWORDS.some(kw => message.content.startsWith(kw) || message.content.includes(`✅ ${kw}`) || message.content.includes(kw));
 
   // Format assistant content
   const formatContent = (text: string) => {
     return text.split('\n').map((line, i) => {
-      // Bold text
       let formatted = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      // Info rows
-      if (/^[📞📧📍🏠📅💰🔧]/.test(line)) {
+      if (/^[📞📧📍🏠📅💰🔧👷⚠️✅]/.test(line)) {
         return <p key={i} className="text-sm my-0.5" dangerouslySetInnerHTML={{ __html: formatted }} />;
       }
-      // Bullets
       if (line.startsWith('• ') || line.startsWith('- ')) {
         return <p key={i} className="text-sm pl-3 my-0.5" dangerouslySetInnerHTML={{ __html: `• ${formatted.slice(2)}` }} />;
       }
@@ -67,6 +71,9 @@ export const ChatMessage = ({ message, onRetry }: ChatMessageProps) => {
   };
 
   const timeStr = message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const showConfirmationCard = message.hasConfirmation && !isUser;
+  const isConfirmationInteractive = isLatestAssistant && message.confirmationState === 'pending';
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -81,9 +88,26 @@ export const ChatMessage = ({ message, onRetry }: ChatMessageProps) => {
           {isUser ? (
             <p className="text-sm">{message.content}</p>
           ) : (
-            <div>{formatContent(message.content)}</div>
+            <div>
+              {isSuccess && (
+                <div className="flex items-center gap-1 mb-1">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                </div>
+              )}
+              {formatContent(message.content)}
+            </div>
           )}
         </div>
+
+        {/* Confirmation card */}
+        {showConfirmationCard && (
+          <ConfirmationCard
+            onConfirm={onConfirm || (() => {})}
+            onCancel={onCancel || (() => {})}
+            disabled={!isConfirmationInteractive}
+            action={message.confirmationState !== 'pending' ? message.confirmationState : undefined}
+          />
+        )}
 
         <div className={`flex items-center gap-2 mt-1 ${isUser ? 'justify-end' : 'justify-start'}`}>
           <span className="text-xs text-gray-400">{timeStr}</span>
