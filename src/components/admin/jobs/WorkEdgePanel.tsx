@@ -264,6 +264,19 @@ export function WorkEdgePanel({ jobId, workedgeProjectId, jobNumber, jobTitle }:
         )}
       </CardHeader>
       <CardContent>
+        {media.length > 0 && (() => {
+          const counts = [
+            { label: 'Photos', count: media.filter(m => m.media_type === 'photo').length },
+            { label: 'Videos', count: media.filter(m => m.media_type === 'video').length },
+            { label: 'Files', count: media.filter(m => m.media_type === 'document').length },
+            { label: 'Notes', count: media.filter(m => m.media_type === 'note' || m.media_type === 'voice_note').length },
+          ].filter(c => c.count > 0);
+          return counts.length > 0 ? (
+            <p className="text-xs text-muted-foreground mb-3">
+              {counts.map(c => `${c.count} ${c.label}`).join('  ·  ')}
+            </p>
+          ) : null;
+        })()}
         {mediaLoading ? (
           <p className="text-sm text-muted-foreground text-center py-4">Loading media...</p>
         ) : media.length === 0 ? (
