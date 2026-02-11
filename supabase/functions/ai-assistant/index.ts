@@ -458,6 +458,152 @@ IMPORTANT:
 }
 
 // ============================================================
+// AI PROVIDER ROUTING
+// ============================================================
+
+interface AIProviderConfig {
+  provider: string;
+  model: string;
+  temperature: number;
+  max_tokens: number;
+  system_prompt: string | null;
+}
+
+async function getAIConfig(serviceClient: any): Promise<AIProviderConfig> {
+  const { data } = await serviceClient
+    .from("ai_config")
+    .select("provider, model, temperature, max_tokens, system_prompt, is_active")
+    .eq("config_key", "ai_assistant")
+    .eq("is_active", true)
+    .single();
+
+  if (data) {
+    return {
+      provider: data.provider || "lovable",
+      model: data.model || "google/gemini-2.5-flash",
+      temperature: Number(data.temperature) ?? 0.3,
+      max_tokens: data.max_tokens || 2048,
+      system_prompt: data.system_prompt || null,
+    };
+  }
+
+  // Default fallback
+  return { provider: "lovable", model: "google/gemini-2.5-flash", temperature: 0.3, max_tokens: 2048, system_prompt: null };
+}
+
+function getProviderEndpoint(provider: string): { url: string; keyEnvVar: string } {
+  switch (provider) {
+    case "xai":
+      return { url: "https://api.x.ai/v1/chat/completions", keyEnvVar: "XAI_API_KEY" };
+    case "openai":
+      return { url: "https://api.openai.com/v1/chat/completions", keyEnvVar: "OPENAI_API_KEY" };
+    case "anthropic":
+      return { url: "https://api.anthropic.com/v1/messages", keyEnvVar: "ANTHROPIC_API_KEY" };
+    case "google":
+      return { url: "https://generativelanguage.googleapis.com/v1beta/chat/completions", keyEnvVar: "GOOGLE_AI_API_KEY" };
+    case "lovable":
+    default:
+      return { url: "https://ai.gateway.lovable.dev/v1/chat/completions", keyEnvVar: "LOVABLE_API_KEY" };
+  }
+}
+
+async function callAI(config: AIProviderConfig, messages: any[], toolsDef: any[]): Promise<Response> {
+  const { url, keyEnvVar } = getProviderEndpoint(config.provider);
+  const apiKey = Deno.env.get(keyEnvVar);
+  
+  if (!apiKey) {
+    throw new Error(`API key not configured for provider "${config.provider}". Set the ${keyEnvVar} secret.`);
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  // Anthropic uses a different auth header
+  if (config.provider === "anthropic") {
+    headers["x-api-key"] = apiKey;
+    headers["anthropic-version"] = "2023-06-01";
+  } else {
+    headers["Authorization"] = `Bearer ${apiKey}`;
+  }
+
+  // Anthropic uses a different request format
+  if (config.provider === "anthropic") {
+    const systemMsg = messages.find((m: any) => m.role === "system");
+    const nonSystemMsgs = messages.filter((m: any) => m.role !== "system");
+    
+    return fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: config.model,
+        system: systemMsg?.content || "",
+        messages: nonSystemMsgs,
+        tools: toolsDef.map(t => ({
+          name: t.function.name,
+          description: t.function.description,
+          input_schema: t.function.parameters,
+        })),
+        max_tokens: config.max_tokens,
+        temperature: config.temperature,
+      }),
+    });
+  }
+
+  // OpenAI-compatible format (xAI, OpenAI, Google, Lovable Gateway)
+  return fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      model: config.model,
+      messages,
+      tools: toolsDef,
+      temperature: config.temperature,
+      max_tokens: config.max_tokens,
+    }),
+  });
+}
+
+function parseAIResponse(provider: string, data: any): { content: string | null; toolCalls: any[] | null; finishReason: string } {
+  if (provider === "anthropic") {
+    const content = data.content || [];
+    const textBlocks = content.filter((b: any) => b.type === "text").map((b: any) => b.text).join("");
+    const toolUseBlocks = content.filter((b: any) => b.type === "tool_use");
+    
+    return {
+      content: textBlocks || null,
+      toolCalls: toolUseBlocks.length > 0 ? toolUseBlocks.map((t: any) => ({
+        id: t.id,
+        function: { name: t.name, arguments: JSON.stringify(t.input) },
+      })) : null,
+      finishReason: data.stop_reason === "tool_use" ? "tool_calls" : "stop",
+    };
+  }
+
+  // OpenAI-compatible
+  const choice = data.choices?.[0];
+  return {
+    content: choice?.message?.content || null,
+    toolCalls: choice?.message?.tool_calls || null,
+    finishReason: choice?.finish_reason || "stop",
+  };
+}
+
+function buildToolResultMessage(provider: string, toolCallId: string, content: string): any {
+  if (provider === "anthropic") {
+    return { role: "user", content: [{ type: "tool_result", tool_use_id: toolCallId, content }] };
+  }
+  return { role: "tool", tool_call_id: toolCallId, content };
+}
+
+function buildAssistantToolCallMessage(provider: string, parsed: { content: string | null; toolCalls: any[] }, rawMessage: any): any {
+  if (provider === "anthropic") {
+    return { role: "assistant", content: rawMessage.content };
+  }
+  return rawMessage;
+}
+
+// ============================================================
 // MAIN HANDLER
 // ============================================================
 
@@ -480,7 +626,6 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Verify user has admin/manager role
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -496,15 +641,19 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Message is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY not configured");
-    }
+    // Load AI config from database using service role (bypasses RLS)
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    const aiConfig = await getAIConfig(serviceClient);
 
-    // Build messages
+    // Use custom system prompt from config if set, otherwise default
+    const systemPrompt = aiConfig.system_prompt || getSystemPrompt();
+
     const trimmedHistory = conversationHistory.slice(-20);
     const messages: any[] = [
-      { role: "system", content: getSystemPrompt() },
+      { role: "system", content: systemPrompt },
       ...trimmedHistory.map((m: any) => ({ role: m.role, content: m.content })),
       { role: "user", content: message },
     ];
@@ -516,20 +665,7 @@ Deno.serve(async (req) => {
     while (maxIterations > 0) {
       maxIterations--;
 
-      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages,
-          tools,
-          temperature: 0.3,
-          max_tokens: 2048,
-        }),
-      });
+      const aiResponse = await callAI(aiConfig, messages, tools);
 
       if (!aiResponse.ok) {
         const errText = await aiResponse.text();
@@ -539,29 +675,23 @@ Deno.serve(async (req) => {
         if (aiResponse.status === 402) {
           return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
-        throw new Error(`AI gateway error: ${aiResponse.status} - ${errText}`);
+        throw new Error(`AI provider error (${aiConfig.provider}/${aiConfig.model}): ${aiResponse.status} - ${errText}`);
       }
 
       const aiData = await aiResponse.json();
-      const choice = aiData.choices?.[0];
+      const parsed = parseAIResponse(aiConfig.provider, aiData);
 
-      if (!choice) {
-        throw new Error("No response from AI");
-      }
-
-      // Check for tool calls
-      const toolCalls = choice.message?.tool_calls;
-
-      if (!toolCalls || toolCalls.length === 0) {
-        finalResponse = choice.message?.content || "";
+      if (!parsed.toolCalls || parsed.toolCalls.length === 0) {
+        finalResponse = parsed.content || "";
         break;
       }
 
-      // Add assistant message with tool calls to conversation
-      messages.push(choice.message);
+      // Add assistant message with tool calls
+      const rawMessage = aiConfig.provider === "anthropic" ? aiData : aiData.choices?.[0]?.message;
+      messages.push(buildAssistantToolCallMessage(aiConfig.provider, parsed, rawMessage));
 
       // Execute each tool call
-      for (const toolCall of toolCalls) {
+      for (const toolCall of parsed.toolCalls) {
         const toolName = toolCall.function.name;
         let toolInput: any;
         try {
@@ -572,34 +702,21 @@ Deno.serve(async (req) => {
 
         try {
           const result = await executeTool(supabase, toolName, toolInput);
-          messages.push({
-            role: "tool",
-            tool_call_id: toolCall.id,
-            content: JSON.stringify(result),
-          });
+          messages.push(buildToolResultMessage(aiConfig.provider, toolCall.id, JSON.stringify(result)));
           toolsUsed.push({ tool: toolName, input: toolInput, summary: `Called ${toolName}` });
         } catch (toolError: any) {
-          messages.push({
-            role: "tool",
-            tool_call_id: toolCall.id,
-            content: JSON.stringify({ error: toolError.message }),
-          });
+          messages.push(buildToolResultMessage(aiConfig.provider, toolCall.id, JSON.stringify({ error: toolError.message })));
           toolsUsed.push({ tool: toolName, input: toolInput, summary: `Error: ${toolError.message}` });
         }
       }
 
-      // If finish_reason is "stop", extract text
-      if (choice.finish_reason === "stop") {
-        finalResponse = choice.message?.content || "";
+      if (parsed.finishReason === "stop") {
+        finalResponse = parsed.content || "";
         break;
       }
     }
 
-    // Log interaction (fire-and-forget using service role client)
-    const serviceClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    // Log interaction (fire-and-forget)
     serviceClient.from("assistant_logs").insert({
       user_id: user.id,
       user_message: message,
@@ -609,7 +726,7 @@ Deno.serve(async (req) => {
     }).then(() => {}).catch(() => {});
 
     return new Response(
-      JSON.stringify({ message: finalResponse, toolsUsed }),
+      JSON.stringify({ message: finalResponse, toolsUsed, provider: aiConfig.provider, model: aiConfig.model }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
