@@ -1,26 +1,22 @@
 
 
-# Add Media Type Counts to WorkEdge Panel
+# Show All Media Counts Including Zero
+
+## Problem
+
+The current code filters out categories with zero items (`.filter(c => c.count > 0)`), so if there are no videos, the "Videos" label doesn't appear at all. The user wants to always see Photos, Videos, Files, and Notes counts -- even when some are zero.
 
 ## Change
 
-In the "linked" view of `src/components/admin/jobs/WorkEdgePanel.tsx`, add a row of small count badges (e.g. "4 Photos | 2 Videos | 1 Note") between the project name and the media grid. This uses data already loaded — no new queries needed.
-
 ### `src/components/admin/jobs/WorkEdgePanel.tsx`
 
-- Compute counts from the existing `media` array:
-  ```typescript
-  const counts = {
-    photos: media.filter(m => m.media_type === 'photo').length,
-    videos: media.filter(m => m.media_type === 'video').length,
-    documents: media.filter(m => m.media_type === 'document').length,
-    notes: media.filter(m => m.media_type === 'note' || m.media_type === 'voice_note').length,
-  };
-  ```
-- Render a compact row of non-zero counts using small badges or muted text, e.g.:
-  ```
-  3 Photos  ·  1 Video  ·  2 Notes
-  ```
-- Only show this row when `media.length > 0`
+Remove the `.filter(c => c.count > 0)` so all four categories always display. Also show the counts row even in the empty state (all zeros), and remove the media grid and activity list since the user only wants counts.
 
-One file changed, display-only, no database or API changes.
+Result will always show something like:
+
+```
+101 Photos  ·  0 Videos  ·  0 Files  ·  2 Notes
+```
+
+One file changed, display-only.
+
