@@ -544,11 +544,7 @@ const TemplateBuilder = () => {
               </div>
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
                 {filteredEquipment.map((eq) => {
-                  const totalPrice = (parseFloat(eq.system_price as any) || 0) +
-                    (parseFloat(eq.condenser_price as any) || 0) +
-                    (parseFloat(eq.furnace_air_handler_price as any) || 0) +
-                    (parseFloat(eq.evap_coil_price as any) || 0) +
-                    (parseFloat(eq.heat_kit_price as any) || 0);
+                  const totalPrice = parseFloat(eq.system_price as any) || 0;
                   return (
                     <div
                       key={eq.id}
