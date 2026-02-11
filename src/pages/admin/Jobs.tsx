@@ -16,6 +16,7 @@ import { Plus, Search, LayoutGrid, List, MoreHorizontal, Eye, Pencil, Trash2, Ca
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import JobFormDialog from '@/components/admin/jobs/JobFormDialog';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface Job {
   id: string;
@@ -78,6 +79,7 @@ export default function Jobs() {
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
+  const { isSuperAdmin } = useUserRole();
 
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['crm_jobs'],
@@ -387,12 +389,14 @@ export default function Jobs() {
                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditingJob(job); setIsFormOpen(true); }}>
                               <Pencil className="h-4 w-4 mr-2" /> Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={(e) => { e.stopPropagation(); deleteJobMutation.mutate(job.id); }}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" /> Delete
-                            </DropdownMenuItem>
+                            {isSuperAdmin && (
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={(e) => { e.stopPropagation(); deleteJobMutation.mutate(job.id); }}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" /> Delete
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
