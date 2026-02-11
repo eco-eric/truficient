@@ -1,53 +1,32 @@
 
-
-# Fix WorkEdge Media Sync to Include Videos, Files, and Notes
+# Fix Equipment Pricing Double-Count in Template Builder
 
 ## Problem
 
-The media sync only calls one WorkEdge API endpoint (`/api-projects/{id}/media`), which appears to return only photos. The WorkEdge project actually has 3 videos, 7 files, and 1 note that are not being synced.
+When adding equipment from System Pricing to a template, the `TemplateBuilder` calculates the price by summing `system_price` + `condenser_price` + `furnace_air_handler_price` + `evap_coil_price` + `heat_kit_price`. But `system_price` already includes those component prices, so they get counted twice.
 
-## Root Cause
-
-In `supabase/functions/workedge-sync/index.ts`, the `get-project-media` action fetches from a single endpoint. WorkEdge organizes content into separate endpoints (photos/media, videos, notes, files/documents).
+Example: Mitsubishi 3 Ton system has `system_price` = $4,420.38, plus component prices totaling ~$2,599.35, producing an incorrect total of $7,019.73.
 
 ## Solution
 
-Update the `get-project-media` action in the edge function to call multiple WorkEdge API endpoints and merge the results.
+Change `handleAddEquipment` in `TemplateBuilder.tsx` to use only `system_price` as the unit cost, since it is the pre-calculated authoritative total. This matches how the system pricing database is documented.
 
-### `supabase/functions/workedge-sync/index.ts`
+### `src/pages/admin/TemplateBuilder.tsx` (lines 335-361)
 
-In the `get-project-media` case (around line 264), replace the single API call with calls to four endpoints:
+Replace the price calculation:
 
-1. `/api-projects/{id}/media` (or `/photos`) -- for photos (already working)
-2. `/api-projects/{id}/videos` -- for videos
-3. `/api-projects/{id}/notes` -- for notes
-4. `/api-projects/{id}/files` (or `/documents`) -- for documents/files
+```
+// BEFORE (double-counts):
+const totalPrice = (parseFloat(equipment.system_price) || 0) +
+  (parseFloat(equipment.condenser_price) || 0) +
+  (parseFloat(equipment.furnace_air_handler_price) || 0) +
+  (parseFloat(equipment.evap_coil_price) || 0) +
+  (parseFloat(equipment.heat_kit_price) || 0);
 
-Each call will:
-- Use the same auth header (`x-api-key`)
-- Use the `extractItems()` helper to handle varied response shapes
-- Tag each item with the correct `media_type` (`photo`, `video`, `note`, `document`)
-- Skip any endpoint that returns 404 (in case some endpoints don't exist yet)
-- Merge all results before inserting into `workedge_project_media`
-
-### Technical Detail
-
-```text
-Current flow:
-  GET /api-projects/{id}/media --> extract items --> insert as photos
-
-New flow:
-  GET /api-projects/{id}/media   --> tag as 'photo'   --|
-  GET /api-projects/{id}/videos  --> tag as 'video'   --|-- merge all
-  GET /api-projects/{id}/notes   --> tag as 'note'    --|-- insert into DB
-  GET /api-projects/{id}/files   --> tag as 'document' -|
+// AFTER (correct):
+const totalPrice = parseFloat(equipment.system_price) || 0;
 ```
 
-Each endpoint call is wrapped in a try/catch so a failure on one type doesn't block the others. Console logging will show how many items were fetched from each endpoint.
+This keeps it as a single "system" line item in templates (unlike the Estimate Builder which splits into components), but with the correct price.
 
-### No frontend changes needed
-
-The `WorkEdgePanel.tsx` count logic is already correct -- it filters by `media_type`. Once the sync stores videos, notes, and files in the database, the counts will display accurately.
-
-One file changed: `supabase/functions/workedge-sync/index.ts`
-
+One line changed, no database or API changes needed.
