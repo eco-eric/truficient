@@ -1,32 +1,81 @@
 
 
-# Fix Equipment Price Display in Template Builder Equipment Picker
+# Add CRM Customer & Location Picker to Estimate Builder
 
-## Problem
+## Overview
+Add the ability to select an existing CRM customer on the Estimate Builder form, auto-fill their contact info, and then pick one of their saved locations as the job address.
 
-The previous fix corrected the price assigned when equipment is **added** to the template, but there's a **second** price calculation at lines 547-551 that's used to **display** the price in the equipment selection dialog. This one still double-counts by summing `system_price + condenser_price + furnace_air_handler_price + evap_coil_price + heat_kit_price`.
+## Database Changes
 
-This means:
-- The price shown in the picker dialog is inflated (what the user sees and reports)
-- The price actually saved to the line item is now correct (from the earlier fix)
+### Add columns to `estimates` table
+- `customer_id` (UUID, nullable, FK to `crm_customers.id`) -- links estimate to CRM customer
+- `location_id` (UUID, nullable, FK to `crm_locations.id`) -- links estimate to a specific location
 
-## Fix
+Both nullable so legacy estimates and manual-entry estimates continue to work.
 
-### `src/pages/admin/TemplateBuilder.tsx` (lines 547-551)
+## Frontend Changes
 
-Replace the double-counted display calculation:
+### `src/pages/admin/EstimateBuilder.tsx`
 
+1. **Add CRM customer search/select** above the manual fields in the Customer Information card:
+   - A searchable dropdown (combobox) that queries `crm_customers` by name, email, or phone
+   - On selection: auto-populate `customer_name`, `customer_email`, `customer_phone`, and store `customer_id`
+   - Include a "Clear" button to deselect and revert to manual entry
+
+2. **Add location picker** (appears after a customer is selected):
+   - Fetch locations from `crm_locations` where `customer_id` matches
+   - Show as a dropdown with address summaries
+   - On selection: populate `customer_address` with the full formatted address and store `location_id`
+   - If the customer has no locations, show a note like "No locations on file"
+
+3. **Keep manual fields editable** -- selecting a customer pre-fills the fields but the user can still override them manually
+
+4. **Update save mutation** to include `customer_id` and `location_id` in the insert/update payload
+
+5. **Update load logic** for existing estimates to restore the selected customer and location
+
+### State additions
+- `customer_id: string | null` in `formData` (or separate state)
+- `location_id: string | null` in `formData`
+- New queries: `crm_customers` (with search), `crm_locations` (filtered by selected customer)
+
+## Technical Details
+
+### New queries in EstimateBuilder
+```text
+1. crm_customers query: SELECT id, first_name, last_name, email, phone
+   - Fetched on mount, filtered client-side by search term
+   
+2. crm_locations query (enabled when customer_id is set):
+   SELECT id, location_name, address_line1, city, state, zip_code, is_primary
+   WHERE customer_id = selected_customer_id AND is_active = true
 ```
-// BEFORE (lines 547-551):
-const totalPrice = (parseFloat(eq.system_price as any) || 0) +
-  (parseFloat(eq.condenser_price as any) || 0) +
-  (parseFloat(eq.furnace_air_handler_price as any) || 0) +
-  (parseFloat(eq.evap_coil_price as any) || 0) +
-  (parseFloat(eq.heat_kit_price as any) || 0);
 
-// AFTER:
-const totalPrice = parseFloat(eq.system_price as any) || 0;
+### UI layout (Customer Information card)
+```text
++--------------------------------------------------+
+| Customer Information                              |
++--------------------------------------------------+
+| [Search CRM Customer...    v]  [Clear]            |
+|                                                   |
+| Name: [John Smith]     Email: [john@example.com]  |
+| Phone: [(555) 123-4567]                           |
+|                                                   |
+| Location: [123 Main St, Dallas, TX 75001  v]      |
+| Address: [123 Main St, Dallas, TX 75001]          |
+|                                                   |
+| Job Type: [...]         Heating Type: [...]       |
+| Job Notes: [...]                                  |
++--------------------------------------------------+
 ```
 
-One line changed in one file. This makes the displayed price in the equipment picker match the actual price that gets saved.
+### Migration SQL
+```sql
+ALTER TABLE estimates 
+  ADD COLUMN customer_id UUID REFERENCES crm_customers(id),
+  ADD COLUMN location_id UUID REFERENCES crm_locations(id);
+```
 
+## Files Modified
+- `src/pages/admin/EstimateBuilder.tsx` -- add customer/location picker UI and queries
+- Database migration -- add `customer_id` and `location_id` columns
