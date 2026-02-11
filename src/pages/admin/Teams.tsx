@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -765,6 +765,17 @@ function TeamDialog({
     }
   );
 
+  useEffect(() => {
+    setFormData(editingTeam || {
+      name: '',
+      team_type: 'install',
+      description: '',
+      color: '#10B981',
+      is_active: true,
+      max_concurrent_jobs: 1
+    });
+  }, [editingTeam]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(formData);
@@ -846,29 +857,35 @@ function MemberDialog({
   onSave: (data: Partial<TeamMember>) => void;
   isLoading: boolean;
 }) {
-  const [formData, setFormData] = useState<Partial<TeamMember>>(
-    editingMember || {
-      first_name: '',
-      last_name: '',
-      email: '',
-      phone: '',
-      role: 'technician',
-      member_type: 'technician',
-      certifications: [],
-      specialties: [],
-      hourly_rate: null,
-      overtime_rate: null,
-      license_number: '',
-      license_expiry: null,
-      emergency_contact_name: '',
-      emergency_contact_phone: '',
-      hire_date: null,
-      is_active: true,
-      notes: ''
-    }
-  );
+  const defaultMember: Partial<TeamMember> = {
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    role: 'technician',
+    member_type: 'technician',
+    certifications: [],
+    specialties: [],
+    hourly_rate: null,
+    overtime_rate: null,
+    license_number: '',
+    license_expiry: null,
+    emergency_contact_name: '',
+    emergency_contact_phone: '',
+    hire_date: null,
+    is_active: true,
+    notes: ''
+  };
+
+  const [formData, setFormData] = useState<Partial<TeamMember>>(editingMember || defaultMember);
   const [certInput, setCertInput] = useState('');
   const [specInput, setSpecInput] = useState('');
+
+  useEffect(() => {
+    setFormData(editingMember || defaultMember);
+    setCertInput('');
+    setSpecInput('');
+  }, [editingMember]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
