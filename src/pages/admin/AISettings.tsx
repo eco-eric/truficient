@@ -272,8 +272,8 @@ const AISettingsPage = () => {
     try {
       const { data, error } = await supabase.functions.invoke('ai-assistant', {
         body: {
-          action: 'test',
-          messages: [{ role: 'user', content: 'Say "Hello, the connection is working!" in exactly those words.' }],
+          message: 'Say "Hello, the connection is working!" in exactly those words.',
+          conversationHistory: [],
         },
       });
 
@@ -281,7 +281,7 @@ const AISettingsPage = () => {
 
       setTestResult({
         success: true,
-        message: data?.response || 'Connection successful!',
+        message: data?.message || 'Connection successful!',
       });
     } catch (error: any) {
       console.error('Test failed:', error);
