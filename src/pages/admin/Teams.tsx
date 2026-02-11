@@ -1001,6 +1001,8 @@ function MemberDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="manager">Manager</SelectItem>
+                <SelectItem value="sales">Sales</SelectItem>
                 <SelectItem value="technician">Technician</SelectItem>
                 <SelectItem value="apprentice">Apprentice</SelectItem>
                 <SelectItem value="helper">Helper</SelectItem>
