@@ -1,52 +1,43 @@
 
+# Add Counts to All Tabs + Live Jobs Tab
 
-# Fix Linked Submissions: Show Estimates + Fix Missing Scanner Link
+## Problem 1: Missing Tab Counts
+The "Jobs", "Estimates", and "Equipment" tabs show no counts, while "Locations" and "Activity" do. All tabs should consistently show counts.
 
-## Two Problems
+## Problem 2: Jobs Tab is Static
+The Jobs tab (lines 372-382) is a hardcoded empty placeholder. It never queries `crm_jobs`, so Marrianne's two jobs (TRU-2026-0004 and TRU-2026-0009) don't appear.
 
-1. **Marrianne's scanner submission link is missing** from `crm_submission_links`. The conversion flow should have created it but the row doesn't exist. We need to backfill it and also make the conversion more resilient.
+## Changes to `src/pages/admin/CustomerDetail.tsx`
 
-2. **Estimates from the Estimate Builder never appear** because `LinkedSubmissions.tsx` only queries `crm_submission_links`, not the `estimates` table.
+### 1. Add a query for jobs
+Fetch from `crm_jobs` where `customer_id` matches and `deleted_at` is null. Include related stage info via `current_stage_id` join to `crm_job_stages`.
 
-## Changes
+### 2. Add a query for estimates count
+Fetch from `estimates` where `customer_id` matches, just for the count (the LinkedSubmissions component handles the full display).
 
-### 1. Database: Backfill the missing scanner link
+### 3. Add a query for linked submissions count
+Fetch count from `crm_submission_links` where `customer_id` matches, to combine with estimates count for a total "Estimates" tab count.
 
-Insert the missing `crm_submission_links` row for Marrianne's scanner submission so it shows up immediately.
+### 4. Update all tab labels to show counts
 
-```sql
-INSERT INTO crm_submission_links (customer_id, submission_id, submission_type)
-VALUES ('aaafa1dc-afcd-4b74-8486-2b8aa9393a3a', '82889508-28f9-4c7e-b77b-a0f760073e18', 'scanner');
+```text
+Overview | Locations (1) | Activity (0) | Jobs (2) | Estimates (2) | Equipment (0)
 ```
 
-### 2. Code: Update `src/components/admin/customers/LinkedSubmissions.tsx`
+- Jobs: use `jobs?.length || 0`
+- Estimates: use combined count of `crm_submission_links` + `estimates` rows
+- Equipment: `0` for now (placeholder until equipment records are wired)
 
-**a) Add a query for the `estimates` table**
-- Fetch all estimates where `customer_id` matches
-- Map them into the same `SubmissionDetail` format with type `'estimate'`
+### 5. Replace the static Jobs tab with a live list
+Display each job as a clickable card showing:
+- Job number (e.g., TRU-2026-0004)
+- Title
+- Priority badge
+- Scheduled date (if set)
+- Link to `/admin/jobs/{jobId}`
 
-**b) Add "estimate" to `sourceConfig`**
-- Icon: `FileText` or `Calculator`
-- Label: "Estimate"
-- Color: teal/cyan theme
-
-**c) Merge and display both sources**
-- Combine submission-link results and estimate results
-- Sort by date descending
-- Update the empty state check to account for both queries
-- Navigate to `/admin/estimates/builder?id={estimateId}` when clicking an estimate row
-
-**d) Update the count in the header**
-- Show total count from both sources
-
-### 3. Code: Make conversion link insert more resilient in `ConvertToCustomerDialog.tsx`
-
-The link insert at line 256 logs an error but doesn't surface it to the user. Change it to use `upsert` with `onConflict` so duplicate conversions don't silently fail, and add a toast warning if the link fails so the user knows something went wrong.
+Keep the empty state for when there are truly zero jobs.
 
 ## Scope
-
-- One migration (backfill data)
-- Two files modified:
-  - `src/components/admin/customers/LinkedSubmissions.tsx`
-  - `src/components/admin/submissions/ConvertToCustomerDialog.tsx`
-
+- One file modified: `src/pages/admin/CustomerDetail.tsx`
+- No database changes
