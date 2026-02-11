@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Download, FileText, Pencil, Plus, Trash2, Video } from "lucide-react";
 
 type FinancingOption = {
   id: string;
@@ -422,6 +423,54 @@ const FinancingOptions = () => {
             </Table>
           </div>
         )}
+
+        {/* Training Resources */}
+        <div className="space-y-4 pt-4">
+          <h2 className="text-xl font-semibold text-foreground">Training Resources</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Video className="h-5 w-5 text-primary" />
+                  Submit Sales Slip
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <video
+                  controls
+                  className="w-full rounded-md"
+                  src="/training/Submit_Sales_Slip_-_May_2025.mp4"
+                  preload="metadata"
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  Synchrony Transaction Process
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center gap-4 py-8">
+                <FileText className="h-16 w-16 text-muted-foreground" />
+                <div className="flex gap-2">
+                  <Button variant="outline" asChild>
+                    <a href="/training/Syncrony_Transaction_Process.pdf" target="_blank" rel="noopener noreferrer">
+                      Open PDF
+                    </a>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <a href="/training/Syncrony_Transaction_Process.pdf" download>
+                      <Download className="h-4 w-4 mr-1" />
+                      Download
+                    </a>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </AdminLayout>
   );
