@@ -55,6 +55,7 @@ export const navSections: NavSection[] = [
     title: 'Overview',
     items: [
       { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, permissionKey: 'nav.dashboard' },
+      { label: 'Tasks', href: '/admin/tasks', icon: ClipboardList, permissionKey: 'nav.tasks' },
       { label: 'Abandoned Carts', href: '/admin/abandoned-carts', icon: ShoppingCart, permissionKey: 'nav.abandoned-carts' },
     ],
   },

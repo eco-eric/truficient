@@ -2,6 +2,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { ExternalLink, User, Menu } from 'lucide-react';
+import { NotificationBell } from './notifications/NotificationBell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +40,7 @@ export const AdminHeader = ({ title, onMenuClick }: AdminHeaderProps) => {
       </div>
       
       <div className="flex items-center gap-2 lg:gap-4 flex-shrink-0">
+        <NotificationBell />
         <Button variant="outline" size="sm" asChild className="hidden sm:flex">
           <Link to="/" target="_blank">
             <ExternalLink className="h-4 w-4 mr-2" />

@@ -19,6 +19,7 @@ import { UpcomingAppointments } from '@/components/admin/dashboard/UpcomingAppoi
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { startOfWeek } from 'date-fns';
+import { CommandCenter } from '@/components/admin/command-center/CommandCenter';
 
 interface Submission {
   id: string;
@@ -166,6 +167,9 @@ const Dashboard = () => {
   return (
     <AdminLayout title="Dashboard">
       <div className="space-y-6">
+        {/* Command Center */}
+        <CommandCenter />
+        
         {/* Stats Cards Row */}
         <StatsCards
           totalSubmissions={stats.total}
