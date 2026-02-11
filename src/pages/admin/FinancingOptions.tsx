@@ -427,7 +427,7 @@ const FinancingOptions = () => {
         {/* Training Resources */}
         <div className="space-y-4 pt-4">
           <h2 className="text-xl font-semibold text-foreground">Training Resources</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -467,6 +467,22 @@ const FinancingOptions = () => {
                     </a>
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Video className="h-5 w-5 text-primary" />
+                  Sales Financing Process
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <iframe
+                  src="https://drive.google.com/file/d/136iFPIV2xXT-UHPQovowAcW_1Hp8DGwC/preview"
+                  className="w-full rounded-md aspect-video"
+                  allow="autoplay"
+                  allowFullScreen
+                />
               </CardContent>
             </Card>
           </div>
