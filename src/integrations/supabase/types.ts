@@ -315,6 +315,39 @@ export type Database = {
         }
         Relationships: []
       }
+      assistant_logs: {
+        Row: {
+          assistant_response: string | null
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          id: string
+          tools_used: Json | null
+          user_id: string | null
+          user_message: string
+        }
+        Insert: {
+          assistant_response?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          tools_used?: Json | null
+          user_id?: string | null
+          user_message: string
+        }
+        Update: {
+          assistant_response?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          tools_used?: Json | null
+          user_id?: string | null
+          user_message?: string
+        }
+        Relationships: []
+      }
       author_profiles: {
         Row: {
           avatar_url: string | null
