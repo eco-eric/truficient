@@ -1,33 +1,23 @@
 
-# Restrict Job Deletion to Super Admin
 
-## What Changes
+# Add Training Resources to Admin Financing Page
 
-### `src/pages/admin/Jobs.tsx` (List view)
-- Import `useUserRole` hook
-- Call `const { isSuperAdmin } = useUserRole()` at the top of the component
-- Conditionally render the "Delete" dropdown menu item only when `isSuperAdmin` is true
+## What's Being Added
+A "Training Resources" section below the financing plans table with two cards:
+1. **Submit Sales Slip** -- Embedded video player (MP4)
+2. **Synchrony Transaction Process** -- Viewable/downloadable PDF
 
-### `src/pages/admin/JobDetail.tsx` (Detail view)
-- Import `useUserRole` hook
-- Call `const { isSuperAdmin } = useUserRole()`
-- If there is a delete button/action on this page, wrap it with `isSuperAdmin` check
+## File Changes
 
-## Technical Detail
+### 1. Add uploaded files to the project
+- `user-uploads://Submit_Sales_Slip_-_May_2025.mp4` copied to `public/training/Submit_Sales_Slip_-_May_2025.mp4`
+- `user-uploads://Syncrony_Transaction_Process.pdf` copied to `public/training/Syncrony_Transaction_Process.pdf`
 
-Both files get a single-line hook call and a conditional wrapper around the delete UI:
+### 2. Update `src/pages/admin/FinancingOptions.tsx`
+Add a "Training Resources" section after the plans table:
 
-```tsx
-import { useUserRole } from '@/hooks/useUserRole';
-// ...
-const { isSuperAdmin } = useUserRole();
+- Two responsive cards in a grid
+- **Card 1**: Inline `<video>` player with controls for the sales slip MP4
+- **Card 2**: PDF icon with "Open" and "Download" buttons for the Synchrony transaction PDF
+- Uses existing `Card`, `CardHeader`, `CardTitle`, `CardContent`, and `Button` components plus `Video`, `FileText`, `Download` icons from lucide-react
 
-// In the dropdown/menu:
-{isSuperAdmin && (
-  <DropdownMenuItem className="text-destructive" onClick={...}>
-    <Trash2 className="h-4 w-4 mr-2" /> Delete
-  </DropdownMenuItem>
-)}
-```
-
-No database or permission table changes needed -- this is a UI-level gate using the existing role system. The soft-delete mutation already requires authenticated access via RLS.
