@@ -1,27 +1,26 @@
 
-# Add WorkEdge Project Name to the Panel
+
+# Add Media Type Counts to WorkEdge Panel
 
 ## Change
 
-Pass the job's name info (`job_number` and `title`) down to the `WorkEdgePanel` so it can display the project name (e.g. "J-00042 - Install") below the project ID badge.
+In the "linked" view of `src/components/admin/jobs/WorkEdgePanel.tsx`, add a row of small count badges (e.g. "4 Photos | 2 Videos | 1 Note") between the project name and the media grid. This uses data already loaded — no new queries needed.
 
-### 1. `src/pages/admin/JobDetail.tsx` (line 784)
-Add two new props to `WorkEdgePanel`:
-```tsx
-<WorkEdgePanel
-  jobId={job.id}
-  workedgeProjectId={job.workedge_project_id}
-  jobNumber={job.job_number}
-  jobTitle={job.title}
-/>
-```
+### `src/components/admin/jobs/WorkEdgePanel.tsx`
 
-### 2. `src/components/admin/jobs/WorkEdgePanel.tsx`
-- Add `jobNumber` and `jobTitle` to the props interface
-- In the "linked" view, add a small text line below the header showing the project name:
+- Compute counts from the existing `media` array:
+  ```typescript
+  const counts = {
+    photos: media.filter(m => m.media_type === 'photo').length,
+    videos: media.filter(m => m.media_type === 'video').length,
+    documents: media.filter(m => m.media_type === 'document').length,
+    notes: media.filter(m => m.media_type === 'note' || m.media_type === 'voice_note').length,
+  };
   ```
-  Project: J-00042 - Install
+- Render a compact row of non-zero counts using small badges or muted text, e.g.:
   ```
-  Displayed as muted helper text beneath the existing project ID badge area, so both the human-readable name and the UUID are visible.
+  3 Photos  ·  1 Video  ·  2 Notes
+  ```
+- Only show this row when `media.length > 0`
 
-Two files changed, display-only enhancement.
+One file changed, display-only, no database or API changes.
