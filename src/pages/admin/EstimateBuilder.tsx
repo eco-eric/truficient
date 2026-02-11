@@ -1447,7 +1447,7 @@ const EstimateBuilder = () => {
                   <div
                     key={mat.id}
                     className="p-3 border rounded-lg hover:bg-muted cursor-pointer transition-colors"
-                    onClick={() => { handleAddMaterial(mat); }}
+                    onClick={() => { handleAddMaterial(mat, currentAddSection || undefined); }}
                   >
                     <div className="flex justify-between">
                       <div>
