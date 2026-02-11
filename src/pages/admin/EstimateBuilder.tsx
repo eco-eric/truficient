@@ -142,10 +142,7 @@ const EstimateBuilder = () => {
   const [customerComboOpen, setCustomerComboOpen] = useState(false);
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
 
-  // Percentage-based admin cost dialog state
-  const [percentageCostDialogOpen, setPercentageCostDialogOpen] = useState(false);
-  const [selectedPercentageCost, setSelectedPercentageCost] = useState<any>(null);
-  const [jobTotalForPercentage, setJobTotalForPercentage] = useState('');
+  // (percentage-based admin cost dialog state removed — now auto-calculated)
 
   // Block navigation when there are unsaved changes
   const blocker = useBlocker(
@@ -375,9 +372,17 @@ const EstimateBuilder = () => {
     }
   }, [isNew, adminCosts, lineItems.length]);
 
-  // Calculate totals
+  // Calculate totals — split into base (non-percentage) and full (all items)
   const totals = useMemo(() => {
     const activeItems = lineItems.filter(item => !item.isDeleted);
+    
+    // Base subtotal excludes percentage-based items (unit === 'est. total') to prevent loops
+    const baseSubtotalCost = activeItems
+      .filter(item => item.unit !== 'est. total')
+      .reduce((sum, item) => sum + (item.quantity * item.unit_cost), 0);
+    const baseSubtotalCharge = baseSubtotalCost * formData.profit_margin;
+
+    // Full subtotal includes everything (for display and grand total)
     const subtotalCost = activeItems.reduce((sum, item) => sum + (item.quantity * item.unit_cost), 0);
     const subtotalCharge = subtotalCost * formData.profit_margin;
     const taxAmount = subtotalCharge * formData.tax_rate;
@@ -385,6 +390,7 @@ const EstimateBuilder = () => {
     const netProfit = subtotalCharge - subtotalCost;
 
     return {
+      baseSubtotalCharge,
       subtotalCost,
       subtotalCharge,
       taxAmount,
@@ -393,6 +399,28 @@ const EstimateBuilder = () => {
       profitPercent: subtotalCost > 0 ? ((netProfit / subtotalCost) * 100) : 0,
     };
   }, [lineItems, formData.profit_margin, formData.tax_rate]);
+
+  // Auto-recalculate percentage-based admin cost line items when base changes
+  useEffect(() => {
+    const hasPercentageItems = lineItems.some(item => item.unit === 'est. total' && !item.isDeleted);
+    if (!hasPercentageItems) return;
+
+    const needsUpdate = lineItems.some(item => 
+      item.unit === 'est. total' && !item.isDeleted && item.quantity !== totals.baseSubtotalCharge
+    );
+    if (!needsUpdate) return;
+
+    setLineItems(prev => prev.map(item => {
+      if (item.unit === 'est. total' && !item.isDeleted) {
+        return {
+          ...item,
+          quantity: totals.baseSubtotalCharge,
+          line_total: totals.baseSubtotalCharge * item.unit_cost,
+        };
+      }
+      return item;
+    }));
+  }, [totals.baseSubtotalCharge]);
 
   // Save mutation
   const saveMutation = useMutation({
@@ -616,67 +644,50 @@ const EstimateBuilder = () => {
       return;
     }
 
-    // For percentage-based costs, open a dialog to enter job total
     if (cost.cost_type === 'percentage') {
-      setSelectedPercentageCost(cost);
-      setJobTotalForPercentage('');
-      setPercentageCostDialogOpen(true);
+      // Auto-calculate: use baseSubtotalCharge as quantity, percentage rate as unit_cost
+      const percentageRate = parseFloat(cost.amount) / 100;
+      const newItem: LineItem = {
+        item_type: 'admin_cost',
+        name: cost.name,
+        description: `${cost.amount}% of estimated total`,
+        material_id: null,
+        labor_rate_id: null,
+        admin_cost_id: cost.id,
+        equipment_system_id: null,
+        quantity: totals.baseSubtotalCharge,
+        unit: 'est. total',
+        unit_cost: percentageRate,
+        line_total: totals.baseSubtotalCharge * percentageRate,
+        sort_order: lineItems.length,
+        section: 'admin_costs',
+        isNew: true,
+      };
+      setLineItems([...lineItems, newItem]);
+      toast.success(`Added ${cost.name}`);
+      setIsAddDialogOpen(false);
       return;
     }
 
     // For fixed/per_job costs, add directly
-    addAdminCostLineItem(cost, Number(cost.amount));
-  };
-
-  const addAdminCostLineItem = (cost: any, amount: number, isPercentage: boolean = false, jobTotal?: number) => {
-    // For percentage-based costs:
-    // - quantity = job total (editable)
-    // - unit_cost = percentage rate as decimal (e.g., 0.02 for 2%)
-    // - line_total = quantity * unit_cost
-    const quantity = isPercentage && jobTotal !== undefined ? jobTotal : 1;
-    const unitCost = isPercentage ? amount : amount; // For percentage, amount is already the decimal rate
-    const lineTotal = quantity * unitCost;
-    
     const newItem: LineItem = {
       item_type: 'admin_cost',
       name: cost.name,
-      description: isPercentage 
-        ? `${cost.amount}% of estimated total` 
-        : cost.description,
+      description: cost.description,
       material_id: null,
       labor_rate_id: null,
       admin_cost_id: cost.id,
       equipment_system_id: null,
-      quantity: quantity,
-      unit: isPercentage ? 'est. total' : 'each',
-      unit_cost: unitCost,
-      line_total: lineTotal,
+      quantity: 1,
+      unit: 'each',
+      unit_cost: Number(cost.amount),
+      line_total: Number(cost.amount),
       sort_order: lineItems.length,
       section: 'admin_costs',
       isNew: true,
     };
     setLineItems([...lineItems, newItem]);
     toast.success(`Added ${cost.name}`);
-  };
-
-  const handleConfirmPercentageCost = () => {
-    if (!selectedPercentageCost) return;
-    
-    const jobTotal = parseFloat(jobTotalForPercentage) || 0;
-    if (jobTotal <= 0) {
-      toast.error('Please enter a valid estimated total');
-      return;
-    }
-    
-    const percentage = parseFloat(selectedPercentageCost.amount);
-    const percentageRate = percentage / 100; // Convert 2% to 0.02
-    
-    // Pass the percentage rate as unit_cost and job total as quantity
-    addAdminCostLineItem(selectedPercentageCost, percentageRate, true, jobTotal);
-    setPercentageCostDialogOpen(false);
-    setSelectedPercentageCost(null);
-    setJobTotalForPercentage('');
-    setIsAddDialogOpen(false);
   };
 
   const handleAddEquipment = (equipment: any) => {
@@ -1666,73 +1677,7 @@ const EstimateBuilder = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Percentage Admin Cost Dialog */}
-      <Dialog open={percentageCostDialogOpen} onOpenChange={(open) => {
-        if (!open) {
-          setPercentageCostDialogOpen(false);
-          setSelectedPercentageCost(null);
-          setJobTotalForPercentage('');
-        }
-      }}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle>Enter Job Total</DialogTitle>
-            <DialogDescription>
-              {selectedPercentageCost && (
-                <>
-                  <strong>{selectedPercentageCost.name}</strong> is calculated as {selectedPercentageCost.amount}% of the job total.
-                  Enter the job total to calculate the amount.
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="jobTotal">Job Total ($)</Label>
-              <Input
-                id="jobTotal"
-                type="number"
-                step="0.01"
-                min="0"
-                value={jobTotalForPercentage}
-                onChange={(e) => setJobTotalForPercentage(e.target.value)}
-                placeholder="Enter estimated job total..."
-                autoFocus
-              />
-            </div>
-            {jobTotalForPercentage && parseFloat(jobTotalForPercentage) > 0 && selectedPercentageCost && (
-              <div className="bg-muted p-4 rounded-lg space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Job Total:</span>
-                  <span className="font-mono">{formatCurrency(parseFloat(jobTotalForPercentage))}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Percentage:</span>
-                  <span className="font-mono">{selectedPercentageCost.amount}%</span>
-                </div>
-                <div className="flex justify-between font-medium border-t pt-2">
-                  <span>Calculated Amount:</span>
-                  <span className="font-mono text-primary">
-                    {formatCurrency((parseFloat(selectedPercentageCost.amount) / 100) * parseFloat(jobTotalForPercentage))}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setPercentageCostDialogOpen(false);
-              setSelectedPercentageCost(null);
-              setJobTotalForPercentage('');
-            }}>
-              Cancel
-            </Button>
-            <Button onClick={handleConfirmPercentageCost}>
-              Add Cost
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Percentage admin cost dialog removed — now auto-calculated */}
     </AdminLayout>
   );
 };
