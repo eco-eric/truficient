@@ -264,105 +264,29 @@ export function WorkEdgePanel({ jobId, workedgeProjectId, jobNumber, jobTitle }:
         )}
       </CardHeader>
       <CardContent>
-        {media.length > 0 && (() => {
-          const counts = [
-            { label: 'Photos', count: media.filter(m => m.media_type === 'photo').length },
-            { label: 'Videos', count: media.filter(m => m.media_type === 'video').length },
-            { label: 'Files', count: media.filter(m => m.media_type === 'document').length },
-            { label: 'Notes', count: media.filter(m => m.media_type === 'note' || m.media_type === 'voice_note').length },
-          ].filter(c => c.count > 0);
-          return counts.length > 0 ? (
-            <p className="text-xs text-muted-foreground mb-3">
-              {counts.map(c => `${c.count} ${c.label}`).join('  ·  ')}
-            </p>
-          ) : null;
-        })()}
         {mediaLoading ? (
           <p className="text-sm text-muted-foreground text-center py-4">Loading media...</p>
-        ) : media.length === 0 ? (
-          <div className="text-center py-4">
-            <Camera className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground mb-2">No field media yet</p>
-           <Button
-              variant="outline"
-              size="sm"
-              onClick={() => syncMediaMutation.mutate()}
-              disabled={syncMediaMutation.isPending}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Sync from WorkEdge
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full gap-2 mt-2"
-              asChild
-            >
-              <a 
-                href={`https://workedge.pro/projects/${workedgeProjectId}`} 
-                target="_blank" 
-                rel="noopener noreferrer"
-              >
-                <ExternalLink className="h-4 w-4" />
-                Open in WorkEdge
-              </a>
-            </Button>
-          </div>
         ) : (
-          <div className="space-y-4">
-            {/* Media Grid */}
-            <div className="grid grid-cols-3 gap-2">
-              {media.slice(0, 6).map((item) => (
-                <div
-                  key={item.id}
-                  className="aspect-square bg-muted rounded-lg overflow-hidden relative group cursor-pointer"
-                  onClick={() => item.media_url && window.open(item.media_url, '_blank')}
-                >
-                  {item.thumbnail_url || item.media_url ? (
-                    <img
-                      src={item.thumbnail_url || item.media_url!}
-                      alt={item.title || 'Field media'}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      {mediaTypeIcon(item.media_type)}
-                    </div>
-                  )}
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <p className="text-xs text-white truncate">{item.title || item.media_type}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {media.length > 6 && (
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              {[
+                { label: 'Photos', count: media.filter(m => m.media_type === 'photo').length },
+                { label: 'Videos', count: media.filter(m => m.media_type === 'video').length },
+                { label: 'Files', count: media.filter(m => m.media_type === 'document').length },
+                { label: 'Notes', count: media.filter(m => m.media_type === 'note' || m.media_type === 'voice_note').length },
+              ].map(c => `${c.count} ${c.label}`).join('  ·  ')}
+            </p>
+            {media.length === 0 && (
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full"
-                onClick={() => window.location.href = '/admin/workedge'}
+                onClick={() => syncMediaMutation.mutate()}
+                disabled={syncMediaMutation.isPending}
               >
-                View All {media.length} Items
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Sync from WorkEdge
               </Button>
             )}
-
-            {/* Recent Activity */}
-            <div className="space-y-2 pt-2 border-t">
-              {media.slice(0, 3).map((item) => (
-                <div key={item.id} className="flex items-center gap-2 text-sm">
-                  {mediaTypeIcon(item.media_type)}
-                  <span className="flex-1 truncate">{item.title || item.media_type}</span>
-                  {item.captured_at && (
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(item.captured_at), 'MMM d')}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Open in WorkEdge */}
             <Button
               variant="outline"
               size="sm"
