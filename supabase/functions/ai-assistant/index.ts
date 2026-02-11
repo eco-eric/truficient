@@ -1,6 +1,6 @@
 // supabase/functions/ai-assistant/index.ts
-// AI Operations Assistant - Phase 1 (Read-Only)
-// Uses Lovable AI Gateway with tool-calling to query CRM data
+// AI Operations Assistant - Phase 2 (Read + Write with Confirmation)
+// Renamed: Bach — the AI assistant for Truficient
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -11,10 +11,11 @@ const corsHeaders = {
 };
 
 // ============================================================
-// TOOL DEFINITIONS (OpenAI format for Lovable AI Gateway)
+// TOOL DEFINITIONS (OpenAI format)
 // ============================================================
 
 const tools = [
+  // === PHASE 1: READ TOOLS ===
   {
     type: "function" as const,
     function: {
@@ -67,7 +68,7 @@ const tools = [
     type: "function" as const,
     function: {
       name: "get_schedule",
-      description: "Get scheduled job appointments for a date range. Shows who is working where and when. Use for questions like 'What's on the schedule tomorrow?'",
+      description: "Get scheduled job appointments for a date range. Shows who is working where and when.",
       parameters: {
         type: "object",
         properties: {
@@ -82,13 +83,13 @@ const tools = [
     type: "function" as const,
     function: {
       name: "get_submission_stats",
-      description: "Get submission counts across all form types (contact, ducted, ductless, scanner, landing page). Use for 'How many leads this week?'",
+      description: "Get submission counts across all form types.",
       parameters: {
         type: "object",
         properties: {
           date_from: { type: "string", description: "Start date YYYY-MM-DD" },
           date_to: { type: "string", description: "End date YYYY-MM-DD" },
-          source: { type: "string", enum: ["ducted", "ductless", "scanner", "contact", "landing_page", "all"], description: "Filter by source (default all)" },
+          source: { type: "string", enum: ["ducted", "ductless", "scanner", "contact", "landing_page", "all"], description: "Filter by source" },
         },
       },
     },
@@ -97,7 +98,7 @@ const tools = [
     type: "function" as const,
     function: {
       name: "get_recent_submissions",
-      description: "Get the most recent form submissions across all types. Returns customer info, type, and key details.",
+      description: "Get the most recent form submissions across all types.",
       parameters: {
         type: "object",
         properties: {
@@ -124,7 +125,7 @@ const tools = [
     type: "function" as const,
     function: {
       name: "get_team_info",
-      description: "Get information about teams/crews and their members, certifications, roles, and specialties.",
+      description: "Get information about teams/crews and their members.",
       parameters: {
         type: "object",
         properties: {
@@ -134,10 +135,155 @@ const tools = [
       },
     },
   },
+
+  // === PHASE 2: WRITE TOOLS ===
+  {
+    type: "function" as const,
+    function: {
+      name: "create_job",
+      description: "Create a new job for an existing customer. ALWAYS confirm with the user before executing.",
+      parameters: {
+        type: "object",
+        properties: {
+          customer_id: { type: "string", description: "UUID of the customer" },
+          location_id: { type: "string", description: "UUID of the service location (optional, uses primary)" },
+          job_type_slug: { type: "string", description: "Job type slug (e.g., 'ductless-install', 'repair'). Use get_job_types first." },
+          scheduled_date: { type: "string", description: "Scheduled date YYYY-MM-DD (optional)" },
+          estimated_completion: { type: "string", description: "Estimated completion YYYY-MM-DD (optional)" },
+          notes: { type: "string", description: "Notes for the job" },
+          confirmed: { type: "boolean", description: "Set true ONLY after user confirms. First call: always false." },
+        },
+        required: ["customer_id", "job_type_slug", "confirmed"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "update_job_stage",
+      description: "Move a job to a different workflow stage. ALWAYS confirm first.",
+      parameters: {
+        type: "object",
+        properties: {
+          job_id: { type: "string", description: "UUID of the job" },
+          target_stage_name: { type: "string", description: "Stage name to move to" },
+          notes: { type: "string", description: "Optional notes" },
+          confirmed: { type: "boolean", description: "Set true ONLY after user confirms." },
+        },
+        required: ["job_id", "target_stage_name", "confirmed"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "log_interaction",
+      description: "Add an interaction (call, email, note, text, meeting, task) to a customer's timeline. ALWAYS confirm first.",
+      parameters: {
+        type: "object",
+        properties: {
+          customer_id: { type: "string", description: "UUID of the customer" },
+          interaction_type: { type: "string", enum: ["call", "email", "text", "meeting", "note", "task"], description: "Type of interaction" },
+          direction: { type: "string", enum: ["inbound", "outbound"], description: "Direction (for calls/emails/texts)" },
+          content: { type: "string", description: "Content/summary" },
+          outcome: { type: "string", description: "Outcome (e.g., 'Left voicemail')" },
+          confirmed: { type: "boolean", description: "Set true ONLY after user confirms." },
+        },
+        required: ["customer_id", "interaction_type", "content", "confirmed"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "update_customer_status",
+      description: "Change a customer's lifecycle status. ALWAYS confirm first.",
+      parameters: {
+        type: "object",
+        properties: {
+          customer_id: { type: "string", description: "UUID of the customer" },
+          new_status: { type: "string", enum: ["lead", "prospect", "active", "inactive", "former"], description: "New status" },
+          reason: { type: "string", description: "Reason for change" },
+          confirmed: { type: "boolean", description: "Set true ONLY after user confirms." },
+        },
+        required: ["customer_id", "new_status", "confirmed"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "add_to_pipeline",
+      description: "Add a customer to the sales pipeline. ALWAYS confirm first.",
+      parameters: {
+        type: "object",
+        properties: {
+          customer_id: { type: "string", description: "UUID of the customer" },
+          stage_name: { type: "string", description: "Pipeline stage name" },
+          estimated_value: { type: "number", description: "Estimated deal value in dollars" },
+          probability: { type: "number", description: "Win probability percentage (0-100)" },
+          expected_close_date: { type: "string", description: "Expected close date YYYY-MM-DD" },
+          confirmed: { type: "boolean", description: "Set true ONLY after user confirms." },
+        },
+        required: ["customer_id", "stage_name", "confirmed"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "move_pipeline_entry",
+      description: "Move an existing pipeline entry to a different stage. ALWAYS confirm first.",
+      parameters: {
+        type: "object",
+        properties: {
+          entry_id: { type: "string", description: "UUID of the pipeline entry" },
+          target_stage_name: { type: "string", description: "Stage to move to" },
+          confirmed: { type: "boolean", description: "Set true ONLY after user confirms." },
+        },
+        required: ["entry_id", "target_stage_name", "confirmed"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "schedule_appointment",
+      description: "Create a timed appointment for an existing job. ALWAYS confirm first.",
+      parameters: {
+        type: "object",
+        properties: {
+          job_id: { type: "string", description: "UUID of the job" },
+          start_datetime: { type: "string", description: "Start in ISO 8601 (e.g., '2026-02-15T09:00:00-06:00')" },
+          end_datetime: { type: "string", description: "End in ISO 8601" },
+          team_id: { type: "string", description: "UUID of team/crew (optional)" },
+          notes: { type: "string", description: "Appointment notes" },
+          confirmed: { type: "boolean", description: "Set true ONLY after user confirms." },
+        },
+        required: ["job_id", "start_datetime", "end_datetime", "confirmed"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "get_job_types",
+      description: "Get available job types and slugs. Read-only, no confirmation needed.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "get_pipeline_stages",
+      description: "Get all pipeline stage definitions. Read-only, no confirmation needed.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
 ];
 
 // ============================================================
-// TOOL EXECUTION FUNCTIONS
+// PHASE 1: READ TOOL EXECUTION FUNCTIONS
 // ============================================================
 
 async function executeSearchCustomers(supabase: any, input: { query: string; status?: string; limit?: number }) {
@@ -162,12 +308,8 @@ async function executeSearchCustomers(supabase: any, input: { query: string; sta
     customers: (data || []).map((c: any) => ({
       id: c.id,
       name: `${c.first_name || ""} ${c.last_name || ""}`.trim(),
-      email: c.email,
-      phone: c.phone,
-      status: c.customer_status,
-      type: c.customer_type,
-      lead_source: c.lead_source,
-      tags: c.tags,
+      email: c.email, phone: c.phone, status: c.customer_status, type: c.customer_type,
+      lead_source: c.lead_source, tags: c.tags,
       primary_location: c.crm_locations?.find((l: any) => l.is_primary) || c.crm_locations?.[0] || null,
       location_count: c.crm_locations?.length || 0,
       last_updated: c.updated_at,
@@ -366,6 +508,7 @@ async function executeGetPipelineOverview(supabase: any, input: { include_entrie
       count: stageEntries.length,
       total_value: stageEntries.reduce((sum: number, e: any) => sum + (e.estimated_value || 0), 0),
       entries: input.include_entries ? stageEntries.map((e: any) => ({
+        id: e.id,
         customer: `${e.crm_customers?.first_name || ""} ${e.crm_customers?.last_name || ""}`.trim(),
         value: e.estimated_value, probability: e.probability, expected_close: e.expected_close_date,
       })) : undefined,
@@ -397,11 +540,310 @@ async function executeGetTeamInfo(supabase: any, input: { query?: string; team_i
 }
 
 // ============================================================
+// PHASE 2: WRITE TOOL EXECUTION FUNCTIONS
+// ============================================================
+
+async function generateJobNumber(supabase: any): Promise<string> {
+  const year = new Date().getFullYear();
+  const prefix = `TRU-${year}-`;
+  const { data } = await supabase
+    .from("crm_jobs")
+    .select("job_number")
+    .ilike("job_number", `${prefix}%`)
+    .order("job_number", { ascending: false })
+    .limit(1);
+
+  let nextNum = 1;
+  if (data && data.length > 0) {
+    const lastNum = parseInt(data[0].job_number.split("-").pop() || "0", 10);
+    nextNum = lastNum + 1;
+  }
+  return `${prefix}${String(nextNum).padStart(4, "0")}`;
+}
+
+async function getDefaultStage(supabase: any, jobTypeId: string): Promise<any> {
+  const { data } = await supabase
+    .from("crm_job_stages")
+    .select("id, name")
+    .eq("job_type_id", jobTypeId)
+    .eq("stage_type", "start")
+    .order("sort_order")
+    .limit(1);
+  return data?.[0] || null;
+}
+
+async function executeCreateJob(supabase: any, userId: string, input: any) {
+  const { data: jobType, error: jtError } = await supabase
+    .from("crm_job_types")
+    .select("id, name, slug, category, default_duration_hours")
+    .eq("slug", input.job_type_slug)
+    .single();
+
+  if (jtError || !jobType) {
+    const { data: types } = await supabase.from("crm_job_types").select("name, slug, category").eq("is_active", true);
+    return { error: `Job type "${input.job_type_slug}" not found.`, available_types: types };
+  }
+
+  const { data: customer } = await supabase
+    .from("crm_customers")
+    .select("first_name, last_name, crm_locations(id, address_line1, city, is_primary)")
+    .eq("id", input.customer_id)
+    .single();
+
+  if (!customer) return { error: "Customer not found." };
+
+  let locationId = input.location_id;
+  if (!locationId) {
+    const primaryLocation = customer.crm_locations?.find((l: any) => l.is_primary) || customer.crm_locations?.[0];
+    locationId = primaryLocation?.id;
+  }
+  const locationInfo = customer.crm_locations?.find((l: any) => l.id === locationId);
+
+  if (!input.confirmed) {
+    return {
+      needs_confirmation: true,
+      action: "create_job",
+      summary: {
+        customer: `${customer.first_name} ${customer.last_name}`,
+        job_type: jobType.name,
+        location: locationInfo ? `${locationInfo.address_line1}, ${locationInfo.city}` : "No location on file",
+        scheduled_date: input.scheduled_date || "Not yet scheduled",
+        notes: input.notes || "None",
+      },
+      confirmation_prompt: `Create a new **${jobType.name}** job for **${customer.first_name} ${customer.last_name}** at ${locationInfo ? `${locationInfo.address_line1}, ${locationInfo.city}` : "their primary address"}${input.scheduled_date ? ` scheduled for ${input.scheduled_date}` : ""}?`,
+    };
+  }
+
+  const jobNumber = await generateJobNumber(supabase);
+  const defaultStage = await getDefaultStage(supabase, jobType.id);
+
+  const { data: job, error: createError } = await supabase
+    .from("crm_jobs")
+    .insert({
+      job_number: jobNumber,
+      customer_id: input.customer_id,
+      location_id: locationId,
+      job_type_id: jobType.id,
+      current_stage_id: defaultStage?.id,
+      title: `${jobType.name} - ${customer.first_name} ${customer.last_name}`,
+      scheduled_date: input.scheduled_date || null,
+      internal_notes: input.notes || null,
+      created_by: userId,
+    })
+    .select("id, job_number")
+    .single();
+
+  if (createError) throw new Error(`Failed to create job: ${createError.message}`);
+
+  await supabase.from("crm_interactions").insert({
+    customer_id: input.customer_id,
+    interaction_type: "note",
+    content: `Job ${jobNumber} (${jobType.name}) created via AI Assistant`,
+    logged_by: userId,
+  });
+
+  return { success: true, job_number: job.job_number, job_id: job.id, message: `Created job ${job.job_number} — ${jobType.name} for ${customer.first_name} ${customer.last_name}` };
+}
+
+async function executeUpdateJobStage(supabase: any, userId: string, input: any) {
+  const { data: job, error: jobErr } = await supabase
+    .from("crm_jobs")
+    .select(`id, job_number, current_stage_id, job_type_id, crm_customers(first_name, last_name), crm_job_stages!crm_jobs_current_stage_id_fkey(name), crm_job_types(name)`)
+    .eq("id", input.job_id)
+    .single();
+
+  if (jobErr || !job) return { error: "Job not found." };
+
+  const { data: targetStage } = await supabase
+    .from("crm_job_stages")
+    .select("id, name, stage_type")
+    .eq("job_type_id", job.job_type_id)
+    .ilike("name", `%${input.target_stage_name}%`)
+    .limit(1)
+    .single();
+
+  if (!targetStage) {
+    const { data: stages } = await supabase.from("crm_job_stages").select("name, stage_type, sort_order").eq("job_type_id", job.job_type_id).order("sort_order");
+    return { error: `Stage "${input.target_stage_name}" not found for this job type.`, available_stages: stages?.map((s: any) => s.name) };
+  }
+
+  const currentStageName = job.crm_job_stages?.name || "Unknown";
+  const customerName = `${job.crm_customers?.first_name || ""} ${job.crm_customers?.last_name || ""}`.trim();
+
+  if (!input.confirmed) {
+    return {
+      needs_confirmation: true, action: "update_job_stage",
+      summary: { job_number: job.job_number, job_type: job.crm_job_types?.name, customer: customerName, current_stage: currentStageName, target_stage: targetStage.name },
+      confirmation_prompt: `Move job **${job.job_number}** (${customerName}) from **${currentStageName}** → **${targetStage.name}**?`,
+    };
+  }
+
+  const { error: updateErr } = await supabase.from("crm_jobs").update({ current_stage_id: targetStage.id, updated_at: new Date().toISOString() }).eq("id", input.job_id);
+  if (updateErr) throw new Error(`Failed to update job: ${updateErr.message}`);
+
+  await supabase.from("crm_job_stage_history").insert({ job_id: input.job_id, from_stage_id: job.current_stage_id, to_stage_id: targetStage.id, changed_by: userId, notes: input.notes || "Moved via AI Assistant" });
+
+  return { success: true, message: `Moved ${job.job_number} from "${currentStageName}" to "${targetStage.name}"` };
+}
+
+async function executeLogInteraction(supabase: any, userId: string, input: any) {
+  const { data: customer } = await supabase.from("crm_customers").select("first_name, last_name").eq("id", input.customer_id).single();
+  if (!customer) return { error: "Customer not found." };
+  const customerName = `${customer.first_name} ${customer.last_name}`;
+
+  if (!input.confirmed) {
+    return {
+      needs_confirmation: true, action: "log_interaction",
+      summary: { customer: customerName, type: input.interaction_type, direction: input.direction || "N/A", content: input.content, outcome: input.outcome || "None" },
+      confirmation_prompt: `Add a **${input.direction ? input.direction + " " : ""}${input.interaction_type}** to **${customerName}**'s timeline?\n\n"${input.content}"${input.outcome ? `\nOutcome: ${input.outcome}` : ""}`,
+    };
+  }
+
+  const { error } = await supabase.from("crm_interactions").insert({ customer_id: input.customer_id, interaction_type: input.interaction_type, direction: input.direction || null, content: input.content, outcome: input.outcome || null, logged_by: userId });
+  if (error) throw new Error(`Failed to log interaction: ${error.message}`);
+
+  return { success: true, message: `Logged ${input.interaction_type} for ${customerName}: "${input.content.substring(0, 80)}${input.content.length > 80 ? "..." : ""}"` };
+}
+
+async function executeUpdateCustomerStatus(supabase: any, userId: string, input: any) {
+  const { data: customer } = await supabase.from("crm_customers").select("first_name, last_name, customer_status").eq("id", input.customer_id).single();
+  if (!customer) return { error: "Customer not found." };
+  const customerName = `${customer.first_name} ${customer.last_name}`;
+
+  if (!input.confirmed) {
+    return {
+      needs_confirmation: true, action: "update_customer_status",
+      summary: { customer: customerName, current_status: customer.customer_status, new_status: input.new_status, reason: input.reason || "No reason provided" },
+      confirmation_prompt: `Change **${customerName}**'s status from **${customer.customer_status}** → **${input.new_status}**?${input.reason ? `\nReason: ${input.reason}` : ""}`,
+    };
+  }
+
+  const { error } = await supabase.from("crm_customers").update({ customer_status: input.new_status, updated_at: new Date().toISOString() }).eq("id", input.customer_id);
+  if (error) throw new Error(`Failed to update status: ${error.message}`);
+
+  await supabase.from("crm_interactions").insert({ customer_id: input.customer_id, interaction_type: "note", content: `Status changed from ${customer.customer_status} to ${input.new_status}${input.reason ? `: ${input.reason}` : ""} (via AI Assistant)`, logged_by: userId });
+
+  return { success: true, message: `Updated ${customerName}'s status from "${customer.customer_status}" to "${input.new_status}"` };
+}
+
+async function executeAddToPipeline(supabase: any, userId: string, input: any) {
+  const { data: customer } = await supabase.from("crm_customers").select("first_name, last_name").eq("id", input.customer_id).single();
+  if (!customer) return { error: "Customer not found." };
+  const customerName = `${customer.first_name} ${customer.last_name}`;
+
+  const { data: stage } = await supabase.from("crm_pipeline_stages").select("id, name, display_name").ilike("display_name", `%${input.stage_name}%`).limit(1).single();
+  if (!stage) {
+    const { data: stages } = await supabase.from("crm_pipeline_stages").select("display_name").order("sort_order");
+    return { error: `Stage "${input.stage_name}" not found.`, available_stages: stages?.map((s: any) => s.display_name) };
+  }
+
+  const { data: existing } = await supabase.from("crm_pipeline_entries").select("id, crm_pipeline_stages(display_name)").eq("customer_id", input.customer_id).limit(1);
+  if (existing && existing.length > 0) {
+    return { error: `${customerName} is already in the pipeline at "${existing[0].crm_pipeline_stages?.display_name}". Use move_pipeline_entry instead.` };
+  }
+
+  if (!input.confirmed) {
+    return {
+      needs_confirmation: true, action: "add_to_pipeline",
+      summary: { customer: customerName, stage: stage.display_name, estimated_value: input.estimated_value ? `$${input.estimated_value.toLocaleString()}` : "Not set", probability: input.probability ? `${input.probability}%` : "Not set", expected_close: input.expected_close_date || "Not set" },
+      confirmation_prompt: `Add **${customerName}** to the pipeline at **${stage.display_name}**${input.estimated_value ? ` with estimated value of **$${input.estimated_value.toLocaleString()}**` : ""}?`,
+    };
+  }
+
+  const { error } = await supabase.from("crm_pipeline_entries").insert({ customer_id: input.customer_id, stage_id: stage.id, estimated_value: input.estimated_value || null, probability: input.probability || null, expected_close_date: input.expected_close_date || null });
+  if (error) throw new Error(`Failed to add to pipeline: ${error.message}`);
+
+  await supabase.from("crm_interactions").insert({ customer_id: input.customer_id, interaction_type: "note", content: `Added to pipeline at "${stage.display_name}"${input.estimated_value ? ` — Est. value: $${input.estimated_value.toLocaleString()}` : ""} (via AI Assistant)`, logged_by: userId });
+
+  return { success: true, message: `Added ${customerName} to pipeline at "${stage.display_name}"` };
+}
+
+async function executeMovePipelineEntry(supabase: any, userId: string, input: any) {
+  const { data: entry } = await supabase.from("crm_pipeline_entries").select(`id, estimated_value, crm_customers(first_name, last_name, id), crm_pipeline_stages(display_name)`).eq("id", input.entry_id).single();
+  if (!entry) return { error: "Pipeline entry not found." };
+
+  const { data: targetStage } = await supabase.from("crm_pipeline_stages").select("id, display_name").ilike("display_name", `%${input.target_stage_name}%`).limit(1).single();
+  if (!targetStage) {
+    const { data: stages } = await supabase.from("crm_pipeline_stages").select("display_name").order("sort_order");
+    return { error: `Stage "${input.target_stage_name}" not found.`, available_stages: stages?.map((s: any) => s.display_name) };
+  }
+
+  const customerName = `${entry.crm_customers?.first_name} ${entry.crm_customers?.last_name}`;
+  const currentStage = entry.crm_pipeline_stages?.display_name;
+
+  if (!input.confirmed) {
+    return {
+      needs_confirmation: true, action: "move_pipeline_entry",
+      summary: { customer: customerName, current_stage: currentStage, target_stage: targetStage.display_name, estimated_value: entry.estimated_value },
+      confirmation_prompt: `Move **${customerName}** from **${currentStage}** → **${targetStage.display_name}** in the pipeline?`,
+    };
+  }
+
+  const { error } = await supabase.from("crm_pipeline_entries").update({ stage_id: targetStage.id, updated_at: new Date().toISOString() }).eq("id", input.entry_id);
+  if (error) throw new Error(`Failed to move pipeline entry: ${error.message}`);
+
+  await supabase.from("crm_interactions").insert({ customer_id: entry.crm_customers?.id, interaction_type: "note", content: `Pipeline stage changed from "${currentStage}" to "${targetStage.display_name}" (via AI Assistant)`, logged_by: userId });
+
+  return { success: true, message: `Moved ${customerName} from "${currentStage}" to "${targetStage.display_name}" in the pipeline` };
+}
+
+async function executeScheduleAppointment(supabase: any, userId: string, input: any) {
+  const { data: job } = await supabase.from("crm_jobs").select(`id, job_number, crm_customers(first_name, last_name), crm_locations(address_line1, city), crm_job_types(name)`).eq("id", input.job_id).single();
+  if (!job) return { error: "Job not found." };
+
+  let teamName = "Unassigned";
+  if (input.team_id) {
+    const { data: team } = await supabase.from("crm_teams").select("name").eq("id", input.team_id).single();
+    teamName = team?.name || "Unknown team";
+  }
+
+  const customerName = `${job.crm_customers?.first_name} ${job.crm_customers?.last_name}`;
+
+  const { data: conflicts } = await supabase
+    .from("crm_job_appointments")
+    .select("id, start_datetime, end_datetime, crm_jobs(job_number)")
+    .eq("assigned_team_id", input.team_id || "none")
+    .or(`and(start_datetime.lt.${input.end_datetime},end_datetime.gt.${input.start_datetime})`);
+
+  const startTime = new Date(input.start_datetime).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  const endTime = new Date(input.end_datetime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+  if (!input.confirmed) {
+    return {
+      needs_confirmation: true, action: "schedule_appointment",
+      summary: { job_number: job.job_number, job_type: job.crm_job_types?.name, customer: customerName, location: job.crm_locations ? `${job.crm_locations.address_line1}, ${job.crm_locations.city}` : "No location", time: `${startTime} – ${endTime}`, team: teamName, conflicts: conflicts?.length || 0 },
+      confirmation_prompt: `Schedule **${job.job_number}** (${job.crm_job_types?.name}) for **${customerName}**:\n📅 ${startTime} – ${endTime}\n👷 ${teamName}\n📍 ${job.crm_locations?.address_line1 || "No address"}${conflicts && conflicts.length > 0 ? `\n\n⚠️ **Warning:** ${conflicts.length} scheduling conflict(s) detected for this team at this time.` : ""}`,
+    };
+  }
+
+  const { data: appointment, error } = await supabase
+    .from("crm_job_appointments")
+    .insert({ job_id: input.job_id, start_datetime: input.start_datetime, end_datetime: input.end_datetime, assigned_team_id: input.team_id || null, notes: input.notes || null })
+    .select("id")
+    .single();
+
+  if (error) throw new Error(`Failed to schedule: ${error.message}`);
+
+  return { success: true, appointment_id: appointment.id, message: `Scheduled ${job.job_number} for ${startTime} – ${endTime} with ${teamName}` };
+}
+
+async function executeGetJobTypes(supabase: any) {
+  const { data } = await supabase.from("crm_job_types").select("id, name, slug, category, default_duration_hours, requires_permit").eq("is_active", true).order("sort_order");
+  return { job_types: data || [] };
+}
+
+async function executeGetPipelineStages(supabase: any) {
+  const { data } = await supabase.from("crm_pipeline_stages").select("id, name, display_name, color, is_won_stage, is_lost_stage, sort_order").order("sort_order");
+  return { stages: data || [] };
+}
+
+// ============================================================
 // TOOL ROUTER
 // ============================================================
 
-async function executeTool(supabase: any, toolName: string, toolInput: any): Promise<any> {
+async function executeTool(supabase: any, toolName: string, toolInput: any, userId: string): Promise<any> {
   switch (toolName) {
+    // Read tools
     case "search_customers": return executeSearchCustomers(supabase, toolInput);
     case "get_customer_details": return executeGetCustomerDetails(supabase, toolInput);
     case "search_jobs": return executeSearchJobs(supabase, toolInput);
@@ -410,6 +852,16 @@ async function executeTool(supabase: any, toolName: string, toolInput: any): Pro
     case "get_recent_submissions": return executeGetRecentSubmissions(supabase, toolInput);
     case "get_pipeline_overview": return executeGetPipelineOverview(supabase, toolInput);
     case "get_team_info": return executeGetTeamInfo(supabase, toolInput);
+    // Write tools
+    case "create_job": return executeCreateJob(supabase, userId, toolInput);
+    case "update_job_stage": return executeUpdateJobStage(supabase, userId, toolInput);
+    case "log_interaction": return executeLogInteraction(supabase, userId, toolInput);
+    case "update_customer_status": return executeUpdateCustomerStatus(supabase, userId, toolInput);
+    case "add_to_pipeline": return executeAddToPipeline(supabase, userId, toolInput);
+    case "move_pipeline_entry": return executeMovePipelineEntry(supabase, userId, toolInput);
+    case "schedule_appointment": return executeScheduleAppointment(supabase, userId, toolInput);
+    case "get_job_types": return executeGetJobTypes(supabase);
+    case "get_pipeline_stages": return executeGetPipelineStages(supabase);
     default: throw new Error(`Unknown tool: ${toolName}`);
   }
 }
@@ -421,24 +873,45 @@ async function executeTool(supabase: any, toolName: string, toolInput: any): Pro
 function getSystemPrompt(): string {
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 
-  return `You are Tru, an AI operations assistant for Truficient Energy Solutions, an HVAC company in the Dallas-Fort Worth area. You help the admin team manage their CRM, look up customer information, check schedules, and review business metrics.
+  return `You are Bach, an AI operations assistant for Truficient Energy Solutions, an HVAC company in the Dallas-Fort Worth area. You help the admin team manage their CRM, customers, jobs, schedules, and pipeline using natural language.
 
 PERSONALITY:
 - Professional but conversational — like a competent office assistant
 - Concise — lead with the answer, add detail only if helpful
 - Proactive — if a search returns one obvious match, present it directly
+- Careful — always confirm before making changes to data
 - Honest — say when you can't find something or need more info
 
-CAPABILITIES (Phase 1 - Read Only):
+CAPABILITIES:
+Read operations:
 - Search and view customer records, locations, and interaction history
 - Look up jobs by number, customer, type, or date range
 - Check team schedules and availability
 - View submission counts and pipeline metrics
 - View team/crew information and assignments
 
-LIMITATIONS:
-- You CANNOT create, update, or delete any records yet
-- If asked to modify data, acknowledge the request, explain it's coming soon, and suggest the specific admin page they can use instead
+Write operations (ALWAYS confirm first):
+- Create new jobs for existing customers
+- Move jobs between workflow stages
+- Log interactions (calls, emails, notes, meetings, texts, tasks)
+- Update customer lifecycle status
+- Add customers to the sales pipeline or move between stages
+- Schedule job appointments with team assignments
+
+CONFIRMATION RULES — VERY IMPORTANT:
+1. When a write tool returns needs_confirmation: true, you MUST present the confirmation_prompt to the user and ASK them to confirm before proceeding.
+2. Present the summary clearly so the user can verify the details.
+3. Only call the tool again with confirmed: true AFTER the user explicitly says yes, confirm, do it, go ahead, etc.
+4. If the user says no, cancel, or nevermind — acknowledge and do NOT execute.
+5. If the user corrects a detail, call the tool again with corrected parameters and confirmed: false to show the updated summary.
+6. NEVER set confirmed: true on the first call to any write tool.
+
+MULTI-STEP WORKFLOWS:
+When the user asks to do something that requires multiple steps (e.g., "Create a job for Smith and schedule it for Tuesday with Crew A"), break it into steps:
+1. First search for the customer (search_customers)
+2. Then create the job (create_job with confirmed: false)
+3. After job confirmation, schedule the appointment (schedule_appointment with confirmed: false)
+4. Confirm each step with the user before proceeding to the next
 
 RESPONSE FORMAT:
 - For single customer results: present key info naturally with phone, email, address on separate lines
@@ -447,14 +920,18 @@ RESPONSE FORMAT:
 - Include job numbers (TRU-XXXX-XXXX) when referencing jobs
 - Format phone numbers and addresses clearly
 - Format dollar amounts with commas and 2 decimal places
+- For confirmations: Present the summary in a clear, scannable format
+- After successful writes: confirm what was done in a brief sentence
 
-IMPORTANT:
+CONTEXT:
 - Today's date is ${today}
 - The business serves the Dallas-Fort Worth metroplex (DFW)
 - Job numbers follow format TRU-YYYY-XXXX
 - Customer statuses: lead → prospect → active → inactive → former
-- When a user says "tomorrow", "next week", etc., calculate the actual dates
-- If a search returns no results, suggest alternative search terms`;
+- Pipeline stages: New Lead → Contacted → Estimate Scheduled → Proposal Sent → Negotiating → Won/Lost
+- Timezone: Central Time (CST/CDT)
+- When scheduling, always use the Central timezone offset (-06:00 for CST, -05:00 for CDT)
+- When a user says "tomorrow", "next week", etc., calculate the actual dates`;
 }
 
 // ============================================================
@@ -487,7 +964,6 @@ async function getAIConfig(serviceClient: any): Promise<AIProviderConfig> {
     };
   }
 
-  // Default fallback
   return { provider: "lovable", model: "google/gemini-2.5-flash", temperature: 0.3, max_tokens: 2048, system_prompt: null };
 }
 
@@ -510,16 +986,13 @@ function getProviderEndpoint(provider: string): { url: string; keyEnvVar: string
 async function callAI(config: AIProviderConfig, messages: any[], toolsDef: any[]): Promise<Response> {
   const { url, keyEnvVar } = getProviderEndpoint(config.provider);
   const apiKey = Deno.env.get(keyEnvVar);
-  
+
   if (!apiKey) {
     throw new Error(`API key not configured for provider "${config.provider}". Set the ${keyEnvVar} secret.`);
   }
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
 
-  // Anthropic uses a different auth header
   if (config.provider === "anthropic") {
     headers["x-api-key"] = apiKey;
     headers["anthropic-version"] = "2023-06-01";
@@ -527,11 +1000,10 @@ async function callAI(config: AIProviderConfig, messages: any[], toolsDef: any[]
     headers["Authorization"] = `Bearer ${apiKey}`;
   }
 
-  // Anthropic uses a different request format
   if (config.provider === "anthropic") {
     const systemMsg = messages.find((m: any) => m.role === "system");
     const nonSystemMsgs = messages.filter((m: any) => m.role !== "system");
-    
+
     return fetch(url, {
       method: "POST",
       headers,
@@ -539,28 +1011,17 @@ async function callAI(config: AIProviderConfig, messages: any[], toolsDef: any[]
         model: config.model,
         system: systemMsg?.content || "",
         messages: nonSystemMsgs,
-        tools: toolsDef.map(t => ({
-          name: t.function.name,
-          description: t.function.description,
-          input_schema: t.function.parameters,
-        })),
+        tools: toolsDef.map(t => ({ name: t.function.name, description: t.function.description, input_schema: t.function.parameters })),
         max_tokens: config.max_tokens,
         temperature: config.temperature,
       }),
     });
   }
 
-  // OpenAI-compatible format (xAI, OpenAI, Google, Lovable Gateway)
   return fetch(url, {
     method: "POST",
     headers,
-    body: JSON.stringify({
-      model: config.model,
-      messages,
-      tools: toolsDef,
-      temperature: config.temperature,
-      max_tokens: config.max_tokens,
-    }),
+    body: JSON.stringify({ model: config.model, messages, tools: toolsDef, temperature: config.temperature, max_tokens: config.max_tokens }),
   });
 }
 
@@ -569,18 +1030,13 @@ function parseAIResponse(provider: string, data: any): { content: string | null;
     const content = data.content || [];
     const textBlocks = content.filter((b: any) => b.type === "text").map((b: any) => b.text).join("");
     const toolUseBlocks = content.filter((b: any) => b.type === "tool_use");
-    
     return {
       content: textBlocks || null,
-      toolCalls: toolUseBlocks.length > 0 ? toolUseBlocks.map((t: any) => ({
-        id: t.id,
-        function: { name: t.name, arguments: JSON.stringify(t.input) },
-      })) : null,
+      toolCalls: toolUseBlocks.length > 0 ? toolUseBlocks.map((t: any) => ({ id: t.id, function: { name: t.name, arguments: JSON.stringify(t.input) } })) : null,
       finishReason: data.stop_reason === "tool_use" ? "tool_calls" : "stop",
     };
   }
 
-  // OpenAI-compatible
   const choice = data.choices?.[0];
   return {
     content: choice?.message?.content || null,
@@ -641,14 +1097,12 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Message is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Load AI config from database using service role (bypasses RLS)
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
     const aiConfig = await getAIConfig(serviceClient);
 
-    // Use custom system prompt from config if set, otherwise default
     const systemPrompt = aiConfig.system_prompt || getSystemPrompt();
 
     const trimmedHistory = conversationHistory.slice(-20);
@@ -686,11 +1140,9 @@ Deno.serve(async (req) => {
         break;
       }
 
-      // Add assistant message with tool calls
       const rawMessage = aiConfig.provider === "anthropic" ? aiData : aiData.choices?.[0]?.message;
       messages.push(buildAssistantToolCallMessage(aiConfig.provider, parsed, rawMessage));
 
-      // Execute each tool call
       for (const toolCall of parsed.toolCalls) {
         const toolName = toolCall.function.name;
         let toolInput: any;
@@ -701,7 +1153,7 @@ Deno.serve(async (req) => {
         }
 
         try {
-          const result = await executeTool(supabase, toolName, toolInput);
+          const result = await executeTool(supabase, toolName, toolInput, user.id);
           messages.push(buildToolResultMessage(aiConfig.provider, toolCall.id, JSON.stringify(result)));
           toolsUsed.push({ tool: toolName, input: toolInput, summary: `Called ${toolName}` });
         } catch (toolError: any) {

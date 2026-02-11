@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Minus, Trash2, Send, Mic } from 'lucide-react';
+import { Minus, Trash2, Send, Mic, Zap } from 'lucide-react';
 import { useAssistant } from './AssistantContext';
 import { ChatMessage } from './ChatMessage';
 import { QuickPrompts } from './QuickPrompts';
@@ -7,7 +7,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 
 export const AIAssistantPanel = () => {
-  const { isOpen, messages, isLoading, closePanel, sendMessage, clearConversation } = useAssistant();
+  const { isOpen, messages, isLoading, closePanel, sendMessage, clearConversation, confirmAction } = useAssistant();
   const [input, setInput] = useState('');
   const [sendCooldown, setSendCooldown] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -56,6 +56,15 @@ export const AIAssistantPanel = () => {
     sendMessage(prompt);
   };
 
+  // Find last assistant message index
+  const lastAssistantIdx = messages.reduceRight((found, m, i) => {
+    if (found >= 0) return found;
+    return m.role === 'assistant' && !m.isLoading ? i : -1;
+  }, -1);
+
+  // Check if there's a pending confirmation
+  const hasPendingConfirmation = lastAssistantIdx >= 0 && messages[lastAssistantIdx]?.confirmationState === 'pending';
+
   return (
     <div
       className={`fixed z-[45] flex flex-col bg-white transition-transform duration-300 ease-out
@@ -66,8 +75,8 @@ export const AIAssistantPanel = () => {
       {/* Header */}
       <div className="flex items-center justify-between h-12 px-4 bg-[#1B2A4A] shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-base">✨</span>
-          <span className="text-white font-semibold text-sm">Tru Assistant</span>
+          <span className="text-base">🎵</span>
+          <span className="text-white font-semibold text-sm">Bach Assistant</span>
         </div>
         <div className="flex items-center gap-1">
           {messages.length > 0 && (
@@ -87,12 +96,26 @@ export const AIAssistantPanel = () => {
           <QuickPrompts onSelect={handleQuickPrompt} />
         ) : (
           <div className="space-y-3">
-            {messages.map(msg => (
-              <ChatMessage key={msg.id} message={msg} />
+            {messages.map((msg, idx) => (
+              <ChatMessage
+                key={msg.id}
+                message={msg}
+                isLatestAssistant={idx === lastAssistantIdx}
+                onConfirm={() => confirmAction(msg.id, 'confirmed')}
+                onCancel={() => confirmAction(msg.id, 'cancelled')}
+              />
             ))}
           </div>
         )}
       </div>
+
+      {/* Pending confirmation bar */}
+      {hasPendingConfirmation && (
+        <div className="shrink-0 bg-amber-50 border-b border-amber-200 px-4 py-1.5 flex items-center gap-1.5">
+          <Zap className="h-3 w-3 text-amber-700" />
+          <span className="text-xs text-amber-700 font-medium">Awaiting your confirmation above...</span>
+        </div>
+      )}
 
       {/* Input area */}
       <div className="shrink-0 border-t border-gray-200 bg-gray-50 p-3">
