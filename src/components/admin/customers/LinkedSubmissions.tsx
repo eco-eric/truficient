@@ -5,18 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileText, ExternalLink, Thermometer, Wind, Scan } from 'lucide-react';
+import { FileText, ExternalLink, Thermometer, Wind, Scan, Calculator } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface LinkedSubmissionsProps {
   customerId: string;
-}
-
-interface SubmissionLink {
-  id: string;
-  submission_id: string;
-  submission_type: string;
-  created_at: string;
 }
 
 interface SubmissionDetail {
@@ -27,20 +20,21 @@ interface SubmissionDetail {
   status: string;
   estimatedValue: number | null;
   createdAt: string;
+  label?: string;
 }
 
 const sourceConfig: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
-  ducted: { 
+  ducted_estimate: { 
     icon: <Wind className="h-4 w-4" />, 
     label: 'Ducted Estimator',
     color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
   },
-  ductless: { 
+  ductless_estimate: { 
     icon: <Thermometer className="h-4 w-4" />, 
     label: 'Ductless Estimator',
     color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
   },
-  scanner: { 
+  equipment_scan: { 
     icon: <Scan className="h-4 w-4" />, 
     label: 'Equipment Scanner',
     color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
@@ -55,13 +49,25 @@ const sourceConfig: Record<string, { icon: React.ReactNode; label: string; color
     label: 'Landing Page',
     color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
   },
+  estimate: { 
+    icon: <Calculator className="h-4 w-4" />, 
+    label: 'Estimate',
+    color: 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-300',
+  },
+};
+
+// Map DB submission_type values to the table they come from
+const submissionTableMap: Record<string, string> = {
+  ducted_estimate: 'ducted_estimate_submissions',
+  ductless_estimate: 'ductless_estimate_submissions',
+  equipment_scan: 'equipment_scans',
 };
 
 export function LinkedSubmissions({ customerId }: LinkedSubmissionsProps) {
   const navigate = useNavigate();
 
   // Fetch submission links for this customer
-  const { data: links, isLoading } = useQuery({
+  const { data: links, isLoading: linksLoading } = useQuery({
     queryKey: ['crm_submission_links', customerId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -71,12 +77,27 @@ export function LinkedSubmissions({ customerId }: LinkedSubmissionsProps) {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as SubmissionLink[];
+      return data;
+    },
+  });
+
+  // Fetch estimates linked via customer_id
+  const { data: estimates, isLoading: estimatesLoading } = useQuery({
+    queryKey: ['linked_estimates', customerId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('estimates')
+        .select('id, estimate_number, customer_name, status, grand_total, created_at')
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
     },
   });
 
   // Fetch details for each linked submission
-  const { data: submissions } = useQuery({
+  const { data: submissionDetails } = useQuery({
     queryKey: ['linked_submission_details', links],
     queryFn: async () => {
       if (!links || links.length === 0) return [];
@@ -85,7 +106,7 @@ export function LinkedSubmissions({ customerId }: LinkedSubmissionsProps) {
 
       for (const link of links) {
         try {
-          if (link.submission_type === 'ducted') {
+          if (link.submission_type === 'ducted_estimate') {
             const { data } = await supabase
               .from('ducted_estimate_submissions')
               .select('id, customer_name, status, final_total, created_at')
@@ -95,15 +116,15 @@ export function LinkedSubmissions({ customerId }: LinkedSubmissionsProps) {
             if (data) {
               details.push({
                 id: data.id,
-                type: 'ducted',
-                source: 'ducted',
+                type: 'ducted_estimate',
+                source: 'ducted_estimate',
                 customerName: data.customer_name,
                 status: data.status,
                 estimatedValue: data.final_total,
                 createdAt: data.created_at,
               });
             }
-          } else if (link.submission_type === 'ductless') {
+          } else if (link.submission_type === 'ductless_estimate') {
             const { data } = await supabase
               .from('ductless_estimate_submissions')
               .select('id, customer_name, status, final_total, created_at')
@@ -113,15 +134,15 @@ export function LinkedSubmissions({ customerId }: LinkedSubmissionsProps) {
             if (data) {
               details.push({
                 id: data.id,
-                type: 'ductless',
-                source: 'ductless',
+                type: 'ductless_estimate',
+                source: 'ductless_estimate',
                 customerName: data.customer_name || 'Unknown',
                 status: data.status,
                 estimatedValue: data.final_total,
                 createdAt: data.created_at,
               });
             }
-          } else if (link.submission_type === 'scanner') {
+          } else if (link.submission_type === 'equipment_scan') {
             const { data } = await supabase
               .from('equipment_scans')
               .select('id, customer_name, status, created_at')
@@ -131,8 +152,8 @@ export function LinkedSubmissions({ customerId }: LinkedSubmissionsProps) {
             if (data) {
               details.push({
                 id: data.id,
-                type: 'scanner',
-                source: 'scanner',
+                type: 'equipment_scan',
+                source: 'equipment_scan',
                 customerName: data.customer_name || 'Unknown',
                 status: data.status,
                 estimatedValue: null,
@@ -150,8 +171,32 @@ export function LinkedSubmissions({ customerId }: LinkedSubmissionsProps) {
     enabled: !!links && links.length > 0,
   });
 
+  // Merge submission details with estimates
+  const allItems: SubmissionDetail[] = [
+    ...(submissionDetails || []),
+    ...(estimates || []).map((est) => ({
+      id: est.id,
+      type: 'estimate',
+      source: 'estimate',
+      customerName: est.customer_name || 'Unknown',
+      status: est.status,
+      estimatedValue: est.grand_total,
+      createdAt: est.created_at,
+      label: est.estimate_number || undefined,
+    })),
+  ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
   const handleViewSubmission = (submission: SubmissionDetail) => {
-    navigate(`/admin/submissions/${submission.type}/${submission.id}`);
+    if (submission.type === 'estimate') {
+      navigate(`/admin/estimates/builder?id=${submission.id}`);
+    } else {
+      // Map DB types back to route segments
+      const routeType = submission.type === 'ducted_estimate' ? 'ducted'
+        : submission.type === 'ductless_estimate' ? 'ductless'
+        : submission.type === 'equipment_scan' ? 'scanner'
+        : submission.type;
+      navigate(`/admin/submissions/${routeType}/${submission.id}`);
+    }
   };
 
   const formatCurrency = (value: number | null) => {
@@ -162,6 +207,8 @@ export function LinkedSubmissions({ customerId }: LinkedSubmissionsProps) {
       minimumFractionDigits: 0,
     }).format(value);
   };
+
+  const isLoading = linksLoading || estimatesLoading;
 
   if (isLoading) {
     return (
@@ -179,7 +226,7 @@ export function LinkedSubmissions({ customerId }: LinkedSubmissionsProps) {
     );
   }
 
-  if (!links || links.length === 0) {
+  if (allItems.length === 0) {
     return (
       <Card>
         <CardContent className="pt-6">
@@ -187,7 +234,7 @@ export function LinkedSubmissions({ customerId }: LinkedSubmissionsProps) {
             <FileText className="h-8 w-8 text-muted-foreground mb-2" />
             <p className="text-muted-foreground">No linked submissions</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Estimator and scanner submissions will appear here when linked
+              Estimator, scanner submissions, and estimates will appear here when linked
             </p>
           </div>
         </CardContent>
@@ -198,16 +245,16 @@ export function LinkedSubmissions({ customerId }: LinkedSubmissionsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Linked Submissions ({links.length})</CardTitle>
+        <CardTitle className="text-lg">Linked Submissions ({allItems.length})</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {submissions?.map((submission) => {
+          {allItems.map((submission) => {
             const config = sourceConfig[submission.source] || sourceConfig.contact;
             
             return (
               <div 
-                key={submission.id} 
+                key={`${submission.type}-${submission.id}`} 
                 className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
@@ -216,7 +263,9 @@ export function LinkedSubmissions({ customerId }: LinkedSubmissionsProps) {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">{config.label}</span>
+                      <span className="font-medium">
+                        {submission.label || config.label}
+                      </span>
                       <Badge variant="outline" className="text-xs capitalize">
                         {submission.status}
                       </Badge>
