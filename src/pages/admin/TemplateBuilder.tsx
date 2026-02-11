@@ -333,11 +333,7 @@ const TemplateBuilder = () => {
   };
 
   const handleAddEquipment = (equipment: any) => {
-    const totalPrice = (parseFloat(equipment.system_price) || 0) +
-      (parseFloat(equipment.condenser_price) || 0) +
-      (parseFloat(equipment.furnace_air_handler_price) || 0) +
-      (parseFloat(equipment.evap_coil_price) || 0) +
-      (parseFloat(equipment.heat_kit_price) || 0);
+    const totalPrice = parseFloat(equipment.system_price) || 0;
 
     const newItem: LineItem = {
       item_type: 'equipment',
