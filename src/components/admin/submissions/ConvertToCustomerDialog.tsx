@@ -252,17 +252,18 @@ export const ConvertToCustomerDialog = ({
         }
       }
 
-      // 3. Link submission to customer
+      // 3. Link submission to customer (upsert to handle duplicates)
       const { error: linkError } = await supabase
         .from('crm_submission_links')
-        .insert({
+        .upsert({
           customer_id: customer.id,
           submission_id: submission.id,
           submission_type: submission.source,
-        });
+        }, { onConflict: 'submission_id,submission_type' });
 
       if (linkError) {
         console.error('Failed to link submission:', linkError);
+        toast.warning('Customer created, but the submission link could not be saved. You may need to link it manually.');
       }
 
       // 4. Add to pipeline if requested
