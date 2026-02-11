@@ -1,29 +1,59 @@
 
 
-# Fix: Materials Always Added to Indoor Section Instead of Selected Section
+# Auto-Calculate Percentage-Based Admin Costs (Commission, Credit Card Fee, Insurance)
 
 ## Problem
 
-When you click "Material" from the **Miscellaneous Outside** section (or Ducting, etc.), the material picker dialog opens but the selected section context is lost. On line 1450, `handleAddMaterial(mat)` is called **without** passing the `currentAddSection` state that was set when the dialog opened. This causes the function to fall back to auto-mapping by category, which defaults most materials to `miscellaneous_inside`.
+When adding percentage-based admin costs (Sales Commission, Credit Card Fee, Insurance, etc.), the system currently opens a dialog asking the user to manually type in a "job total." Instead, these should automatically calculate based on the estimate's actual subtotal -- and stay updated as the estimate changes.
 
-## Fix
+## Loop Prevention
 
-### `src/pages/admin/EstimateBuilder.tsx` (line 1450)
+Percentage-based items are excluded from their own calculation base. Only non-percentage line items contribute to the base subtotal. This means updating a commission line item does not change the base, so no infinite loop occurs.
 
-Pass `currentAddSection` as the second argument so the material is placed in the section the user clicked from:
+```text
+Non-percentage items total:    $10,000 (cost)
+  x Profit Margin (1.5):       $15,000 (charge) <-- base for percentages
 
+Sales Commission (3%):          $450
+Credit Card Fee (2.5%):         $375
+Insurance (1.5%):               $225
+
+Grand Total = $15,000 + percentages + tax
 ```
-// BEFORE:
-onClick={() => { handleAddMaterial(mat); }}
 
-// AFTER:
-onClick={() => { handleAddMaterial(mat, currentAddSection || undefined); }}
-```
+## Changes to `src/pages/admin/EstimateBuilder.tsx`
 
-This ensures that when you click "Material" from the Outdoor section, the material goes to Outdoor. If `currentAddSection` is null (shouldn't happen in normal flow), it falls back to the existing auto-mapping logic.
+### 1. Update `totals` useMemo (line ~379)
+
+Split the subtotal calculation:
+- `baseSubtotalCost`: sum of all line items where `unit !== 'est. total'`
+- `baseSubtotalCharge`: `baseSubtotalCost * profit_margin` -- stable base for percentage items
+- Keep `subtotalCost` and `subtotalCharge` as full totals (including percentage items) for display and grand total
+
+### 2. Simplify `handleAddAdminCost` (line ~619)
+
+When `cost.cost_type === 'percentage'`, skip the dialog entirely. Instead, directly call `addAdminCostLineItem` using `baseSubtotalCharge` as the job total. This applies to Sales Commission, Credit Card Fee, Insurance, and any future percentage-based cost.
+
+### 3. Add auto-recalculation useEffect
+
+Watch `baseSubtotalCharge`. When it changes, find all line items with `unit === 'est. total'` and update:
+- `quantity = baseSubtotalCharge`
+- `line_total = baseSubtotalCharge * unit_cost`
+
+Since these items are excluded from `baseSubtotalCharge`, updating them cannot trigger another recalculation.
+
+### 4. Remove manual dialog
+
+Delete the following state variables and the associated Dialog component:
+- `percentageCostDialogOpen`
+- `selectedPercentageCost`
+- `jobTotalForPercentage`
+- The "Enter Job Total" Dialog JSX (lines ~1669-1725)
+- The `handleConfirmPercentageCost` function (lines ~662-679)
 
 ## Scope
 
-- One line changed in one file
+- One file modified: `src/pages/admin/EstimateBuilder.tsx`
 - No database changes needed
+- Applies to all percentage-based admin costs (commission, credit card fee, insurance, and any future ones)
 
