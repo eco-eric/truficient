@@ -264,53 +264,52 @@ Deno.serve(async (req) => {
         case 'get-project-media': {
           if (!workedgeProjectId || !jobId) throw new Error('workedgeProjectId and jobId are required');
 
-          const response = await fetch(`${apiUrl}/api-projects/${workedgeProjectId}/media`, {
-            method: 'GET',
-            headers: {
-              'x-api-key': WORKEDGE_API_KEY
+          const endpoints = [
+            { path: 'media', defaultType: 'photo' },
+            { path: 'videos', defaultType: 'video' },
+            { path: 'notes', defaultType: 'note' },
+            { path: 'files', defaultType: 'document' },
+          ];
+
+          const fetchEndpoint = async (ep: { path: string; defaultType: string }) => {
+            try {
+              const res = await fetch(`${apiUrl}/api-projects/${workedgeProjectId}/${ep.path}`, {
+                method: 'GET',
+                headers: { 'x-api-key': WORKEDGE_API_KEY }
+              });
+              if (!res.ok) {
+                console.log(`WorkEdge /${ep.path} returned ${res.status}, skipping`);
+                return [];
+              }
+              const data = await res.json();
+              const items = extractItems(data);
+              console.log(`WorkEdge /${ep.path}: ${items.length} items`);
+              return items.map((item: any) => ({ ...item, _defaultType: ep.defaultType }));
+            } catch (e: any) {
+              console.log(`WorkEdge /${ep.path} fetch error: ${e.message}`);
+              return [];
             }
-          });
+          };
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`WorkEdge API error: ${response.status} ${errorText}`);
-          }
+          const allItems = (await Promise.all(endpoints.map(fetchEndpoint))).flat();
+          console.log(`Total items from all endpoints: ${allItems.length}`);
 
-          const mediaData = await response.json();
-          
-          // Debug logging to understand API response structure
-          console.log('WorkEdge media API response structure:', JSON.stringify({
-            isArray: Array.isArray(mediaData),
-            hasItems: !!mediaData?.items,
-            hasPhotos: !!mediaData?.photos,
-            hasMedia: !!mediaData?.media,
-            hasData: !!mediaData?.data,
-            keys: mediaData ? Object.keys(mediaData) : [],
-            rawResponse: mediaData
-          }, null, 2));
-
-          // Extract items using defensive helper
-          const extractedItems = extractItems(mediaData);
-          console.log(`Extracted ${extractedItems.length} media items`);
-
-          // Map media records with defensive field mapping
-          const mediaRecords = extractedItems.map((item: any) => ({
+          const mediaRecords = allItems.map((item: any) => ({
             job_id: jobId,
             workedge_project_id: workedgeProjectId,
-            media_type: item.type || item.media_type || item.file_type || 'photo',
-            media_url: item.url || item.media_url || item.file_url || item.src,
+            media_type: item.type || item.media_type || item.file_type || item._defaultType,
+            media_url: item.url || item.media_url || item.file_url || item.src || (item._defaultType === 'note' ? 'note://' + (item.id || 'no-id') : null),
             thumbnail_url: item.thumbnail_url || item.thumb_url || item.thumbnail || item.preview_url,
             title: item.title || item.name || item.filename || item.file_name,
-            description: item.description || item.caption || item.content || item.notes,
+            description: item.description || item.caption || item.content || item.notes || item.body || item.text,
             transcription: item.transcription || item.transcript,
             captured_by: item.captured_by || item.author || item.created_by || item.user_name,
             captured_at: item.captured_at || item.created_at || item.taken_at || item.date,
             synced_at: new Date().toISOString()
-          })).filter((record: any) => record.media_url); // Only include records with a valid URL
+          })).filter((record: any) => record.media_url);
 
           console.log(`Created ${mediaRecords.length} valid media records`);
 
-          // Clear existing and insert fresh (even if empty, to clear stale data)
           await supabase
             .from('workedge_project_media')
             .delete()
@@ -322,7 +321,6 @@ Deno.serve(async (req) => {
               .insert(mediaRecords);
           }
 
-          // Update job last sync
           await supabase
             .from('crm_jobs')
             .update({ workedge_last_sync: new Date().toISOString() })
