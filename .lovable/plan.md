@@ -1,59 +1,37 @@
 
 
-# Auto-Calculate Percentage-Based Admin Costs (Commission, Credit Card Fee, Insurance)
+# Improve Profit Margin Control
 
-## Problem
+## Current Behavior
 
-When adding percentage-based admin costs (Sales Commission, Credit Card Fee, Insurance, etc.), the system currently opens a dialog asking the user to manually type in a "job total." Instead, these should automatically calculate based on the estimate's actual subtotal -- and stay updated as the estimate changes.
+The profit margin slider goes from 1.2x to 2.0x (20% to 100%) in steps of 0.05 (5% increments). There is no way to type a specific number, and the maximum is capped at 100%.
 
-## Loop Prevention
+## Changes
 
-Percentage-based items are excluded from their own calculation base. Only non-percentage line items contribute to the base subtotal. This means updating a commission line item does not change the base, so no infinite loop occurs.
+### `src/pages/admin/EstimateBuilder.tsx` (around lines 1313-1327)
+
+**1. Make the slider more incremental**
+- Change `step` from `0.05` to `0.01` (1% increments instead of 5%)
+
+**2. Increase the maximum to 150%**
+- Change `max` from `2.0` to `2.5` (which represents 150% margin)
+
+**3. Add a numeric input field alongside the slider**
+- Add an `Input` field next to the label that shows the current percentage value
+- The user can type any value (e.g., "37" for 37%) and it will set the margin to 1.37x
+- Clamp the typed value between 20% and 150% on blur to keep it within valid range
+- The slider and input stay in sync -- changing one updates the other
+
+### Updated UI Layout
 
 ```text
-Non-percentage items total:    $10,000 (cost)
-  x Profit Margin (1.5):       $15,000 (charge) <-- base for percentages
-
-Sales Commission (3%):          $450
-Credit Card Fee (2.5%):         $375
-Insurance (1.5%):               $225
-
-Grand Total = $15,000 + percentages + tax
+Profit Margin              [  60  ] %  (1.60x)
+|===========--------------------------| slider
+20%                                 150%
 ```
-
-## Changes to `src/pages/admin/EstimateBuilder.tsx`
-
-### 1. Update `totals` useMemo (line ~379)
-
-Split the subtotal calculation:
-- `baseSubtotalCost`: sum of all line items where `unit !== 'est. total'`
-- `baseSubtotalCharge`: `baseSubtotalCost * profit_margin` -- stable base for percentage items
-- Keep `subtotalCost` and `subtotalCharge` as full totals (including percentage items) for display and grand total
-
-### 2. Simplify `handleAddAdminCost` (line ~619)
-
-When `cost.cost_type === 'percentage'`, skip the dialog entirely. Instead, directly call `addAdminCostLineItem` using `baseSubtotalCharge` as the job total. This applies to Sales Commission, Credit Card Fee, Insurance, and any future percentage-based cost.
-
-### 3. Add auto-recalculation useEffect
-
-Watch `baseSubtotalCharge`. When it changes, find all line items with `unit === 'est. total'` and update:
-- `quantity = baseSubtotalCharge`
-- `line_total = baseSubtotalCharge * unit_cost`
-
-Since these items are excluded from `baseSubtotalCharge`, updating them cannot trigger another recalculation.
-
-### 4. Remove manual dialog
-
-Delete the following state variables and the associated Dialog component:
-- `percentageCostDialogOpen`
-- `selectedPercentageCost`
-- `jobTotalForPercentage`
-- The "Enter Job Total" Dialog JSX (lines ~1669-1725)
-- The `handleConfirmPercentageCost` function (lines ~662-679)
 
 ## Scope
 
 - One file modified: `src/pages/admin/EstimateBuilder.tsx`
-- No database changes needed
-- Applies to all percentage-based admin costs (commission, credit card fee, insurance, and any future ones)
+- No database changes
 
