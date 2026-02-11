@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -6,7 +6,6 @@ interface AuthState {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  isAdmin: boolean;
 }
 
 export const useAuth = () => {
@@ -14,69 +13,37 @@ export const useAuth = () => {
     user: null,
     session: null,
     loading: true,
-    isAdmin: false,
   });
 
-  const checkAdminRole = useCallback(async (userId: string) => {
-    try {
-      // Use raw REST API call to check admin role since types may not be generated yet
-      const { data, error } = await supabase
-        .from('user_roles' as any)
-        .select('role')
-        .eq('user_id', userId)
-        .eq('role', 'admin')
-        .maybeSingle();
-
-      return !error && data !== null;
-    } catch {
-      return false;
-    }
-  }, []);
-
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setAuthState(prev => ({
-          ...prev,
+      (_event, session) => {
+        setAuthState({
           session,
           user: session?.user ?? null,
-        }));
+          loading: false,
+        });
 
-        // Defer admin check with setTimeout to prevent deadlock
-        if (session?.user) {
-          setTimeout(async () => {
-            const isAdmin = await checkAdminRole(session.user.id);
-            setAuthState(prev => ({ ...prev, isAdmin, loading: false }));
-          }, 0);
-        } else {
-          setAuthState(prev => ({ ...prev, isAdmin: false, loading: false }));
+        // Clear caches on sign-out
+        if (!session?.user) {
+          try {
+            sessionStorage.removeItem('cached_user_role');
+            sessionStorage.removeItem('cached_permissions');
+          } catch {}
         }
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const isAdmin = await checkAdminRole(session.user.id);
-        setAuthState({
-          session,
-          user: session.user,
-          isAdmin,
-          loading: false,
-        });
-      } else {
-        setAuthState({
-          session: null,
-          user: null,
-          isAdmin: false,
-          loading: false,
-        });
-      }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAuthState({
+        session,
+        user: session?.user ?? null,
+        loading: false,
+      });
     });
 
     return () => subscription.unsubscribe();
-  }, [checkAdminRole]);
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -103,6 +70,11 @@ export const useAuth = () => {
   };
 
   const signOut = async () => {
+    // Clear caches before signing out
+    try {
+      sessionStorage.removeItem('cached_user_role');
+      sessionStorage.removeItem('cached_permissions');
+    } catch {}
     const { error } = await supabase.auth.signOut();
     return { error };
   };
