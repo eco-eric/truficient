@@ -65,7 +65,7 @@ export default function Calendar() {
         .from("crm_job_appointments")
         .select(`
           *,
-          job:crm_jobs(id, job_number, title),
+          job:crm_jobs(id, job_number, title, customer:crm_customers(first_name, last_name)),
           team:crm_teams(id, name, color),
           calendar:google_calendars(id, name, color, calendar_id)
         `)
@@ -202,12 +202,14 @@ export default function Calendar() {
         if (apt.start_datetime) {
           const start = new Date(apt.start_datetime);
           const end = apt.end_datetime ? new Date(apt.end_datetime) : addDays(start, 0.25);
-          const jobNumber = apt.job?.job_number || "Job";
+          const customer = apt.job?.customer;
+          const customerName = customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : '';
+          const label = customerName || apt.job?.job_number || "Job";
           const title = apt.title || apt.job?.title || "Appointment";
 
           events.push({
             id: apt.id,
-            title: `${jobNumber} - ${title}`,
+            title: `${label} - ${title}`,
             start,
             end,
             type: "job",
