@@ -4,6 +4,26 @@ import { useAuth } from './useAuth';
 
 export type AppRole = 'super_admin' | 'admin' | 'manager' | 'technician' | 'lead_tech' | 'installer' | 'helper';
 
+const CACHE_KEY = 'cached_user_role';
+
+function getCachedRole(): AppRole | null {
+  try {
+    const cached = sessionStorage.getItem(CACHE_KEY);
+    if (cached) return cached as AppRole;
+  } catch {}
+  return null;
+}
+
+function setCachedRole(role: AppRole | null) {
+  try {
+    if (role) {
+      sessionStorage.setItem(CACHE_KEY, role);
+    } else {
+      sessionStorage.removeItem(CACHE_KEY);
+    }
+  } catch {}
+}
+
 interface UserRoleState {
   role: AppRole | null;
   loading: boolean;
@@ -20,25 +40,19 @@ interface UserRoleState {
 
 export const useUserRole = (): UserRoleState => {
   const { user, loading: authLoading } = useAuth();
-  const [role, setRole] = useState<AppRole | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cachedRole = getCachedRole();
+  const [role, setRole] = useState<AppRole | null>(cachedRole);
+  const [loading, setLoading] = useState(!cachedRole);
 
   useEffect(() => {
     const fetchRole = async () => {
-      // Wait for auth to complete first
-      if (authLoading) {
-        return; // Keep loading=true, don't proceed
-      }
+      if (authLoading) return;
 
       if (!user) {
         setRole(null);
+        setCachedRole(null);
         setLoading(false);
         return;
-      }
-
-      // Only set loading if we don't have a cached role (prevents flash)
-      if (!role) {
-        setLoading(true);
       }
 
       try {
@@ -49,15 +63,18 @@ export const useUserRole = (): UserRoleState => {
           .single();
 
         if (error) {
-          // No role found - user doesn't have admin access
           console.log('No role found for user');
           setRole(null);
+          setCachedRole(null);
         } else {
-          setRole(data.role as AppRole);
+          const newRole = data.role as AppRole;
+          setRole(newRole);
+          setCachedRole(newRole);
         }
       } catch (error) {
         console.error('Error fetching user role:', error);
         setRole(null);
+        setCachedRole(null);
       } finally {
         setLoading(false);
       }

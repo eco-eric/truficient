@@ -2,6 +2,22 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from './useUserRole';
 
+const CACHE_KEY = 'cached_permissions';
+
+function getCachedPermissions(): Set<string> | null {
+  try {
+    const cached = sessionStorage.getItem(CACHE_KEY);
+    if (cached) return new Set(JSON.parse(cached) as string[]);
+  } catch {}
+  return null;
+}
+
+function setCachedPermissions(perms: Set<string>) {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify([...perms]));
+  } catch {}
+}
+
 interface UseRolePermissionsResult {
   permissions: Set<string>;
   loading: boolean;
@@ -9,22 +25,21 @@ interface UseRolePermissionsResult {
 }
 
 export const useRolePermissions = (): UseRolePermissionsResult => {
-  const [permissions, setPermissions] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
+  const cached = getCachedPermissions();
+  const [permissions, setPermissions] = useState<Set<string>>(cached ?? new Set());
+  const [loading, setLoading] = useState(!cached);
   const { role, isSuperAdmin, loading: roleLoading } = useUserRole();
 
   const fetchPermissions = async () => {
-    // If super_admin, they have all permissions - no need to query
     if (isSuperAdmin) {
-      setPermissions(new Set(['*'])); // Special marker for "all permissions"
+      const perms = new Set(['*']);
+      setPermissions(perms);
+      setCachedPermissions(perms);
       setLoading(false);
       return;
     }
 
-    // If no role or still loading, wait
-    if (!role || roleLoading) {
-      return;
-    }
+    if (!role || roleLoading) return;
 
     try {
       const { data, error } = await supabase
@@ -43,6 +58,7 @@ export const useRolePermissions = (): UseRolePermissionsResult => {
         data?.map(p => p.permission_key) || []
       );
       setPermissions(enabledPermissions);
+      setCachedPermissions(enabledPermissions);
     } catch (error) {
       console.error('Error fetching permissions:', error);
       setPermissions(new Set());
@@ -70,9 +86,6 @@ export const hasPermission = (
   permissionKey: string,
   isSuperAdmin: boolean
 ): boolean => {
-  // Super admins always have all permissions
-  if (isSuperAdmin || permissions.has('*')) {
-    return true;
-  }
+  if (isSuperAdmin || permissions.has('*')) return true;
   return permissions.has(permissionKey);
 };
