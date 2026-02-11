@@ -233,7 +233,7 @@ async function deleteEvent(
     }
   );
 
-  if (!response.ok && response.status !== 410) {
+  if (!response.ok && response.status !== 410 && response.status !== 404) {
     const error = await response.text();
     throw new Error(`Failed to delete event: ${error}`);
   }
