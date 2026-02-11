@@ -1310,22 +1310,38 @@ const EstimateBuilder = () => {
               <CardContent className="space-y-6">
                 {/* Profit Margin Slider */}
                 <div className="space-y-3">
-                  <div className="flex justify-between">
+                  <div className="flex items-center justify-between">
                     <Label>Profit Margin</Label>
-                    <span className="text-sm font-medium">
-                      {((formData.profit_margin - 1) * 100).toFixed(0)}% ({formData.profit_margin.toFixed(2)}x)
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        type="number"
+                        className="w-16 h-8 text-center text-sm px-1"
+                        value={Math.round((formData.profit_margin - 1) * 100)}
+                        onChange={(e) => {
+                          const raw = Number(e.target.value);
+                          if (!isNaN(raw)) {
+                            setFormData({ ...formData, profit_margin: raw / 100 + 1 });
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const clamped = Math.min(150, Math.max(20, Number(e.target.value) || 20));
+                          setFormData({ ...formData, profit_margin: clamped / 100 + 1 });
+                        }}
+                      />
+                      <span className="text-sm text-muted-foreground">%</span>
+                      <span className="text-xs text-muted-foreground">({formData.profit_margin.toFixed(2)}x)</span>
+                    </div>
                   </div>
                   <Slider
                     value={[formData.profit_margin]}
                     min={1.2}
-                    max={2.0}
-                    step={0.05}
+                    max={2.5}
+                    step={0.01}
                     onValueChange={([value]) => setFormData({ ...formData, profit_margin: value })}
                   />
                   <div className="flex justify-between text-xs text-muted-foreground">
                     <span>20%</span>
-                    <span>100%</span>
+                    <span>150%</span>
                   </div>
                 </div>
 
