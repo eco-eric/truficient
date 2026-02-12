@@ -1,39 +1,24 @@
 
 
-## Fix: Bach Assistant Chat Resets on Navigation
+## Fix Bach Chat Input: Stale Text and Small Size
 
-### Problem
-The `AssistantProvider` (which holds all chat messages) lives inside `AdminLayout`. Since each admin page independently renders its own `<AdminLayout>`, navigating between pages unmounts and remounts the provider, destroying the conversation.
+### Problem 1: Input sometimes retains previous text
+After sending a message, `setInput('')` clears the React state, but the textarea's inline `style.height` (set by the auto-resize handler) is not reset. This can cause visual glitches. Additionally, the speech recognition transcript appending may leave partial text behind in edge cases.
 
-### Solution
-Lift `AssistantProvider` out of `AdminLayout` and into a new persistent wrapper route for all admin pages.
+**Fix:**
+- After `setInput('')` in `handleSend`, also reset the textarea's inline height back to its default using `inputRef.current.style.height = 'auto'`
+- This ensures the textarea visually resets after every send
 
-### Technical Steps
+### Problem 2: Chat entry area is too small
+The textarea is currently capped at `max-h-[100px]` (about 4 lines) both in CSS and in the `onInput` auto-resize handler.
 
-**1. Create `AdminRouteLayout` component (new file)**
-- A small wrapper component that renders `AssistantProvider` around an `<Outlet />`
-- Also includes the `AssistantToggle` and `AIAssistantPanel` (moved from `AdminLayout`)
-- This component stays mounted as long as you're on any `/admin/*` route
+**Fix:**
+- Increase `max-h-[100px]` to `max-h-[280px]` (approximately 14-15 lines at 14px font + padding)
+- Update the `onInput` handler's `Math.min(target.scrollHeight, 100)` cap to `280`
+- Increase `min-h-[40px]` to `min-h-[60px]` so it starts at about 3 lines for better visibility
+- Set `rows={3}` instead of `rows={1}` so the initial render shows 3 lines
 
-**2. Update `AdminLayout.tsx`**
-- Remove `AssistantProvider`, `AssistantToggle`, and `AIAssistantPanel` imports and usage
-- `AdminLayout` becomes purely the sidebar + header + content shell (no assistant state)
-
-**3. Update `App.tsx` route structure**
-- Group all admin routes under a parent route that uses `AdminRouteLayout` as its `element`
-- All current admin routes become `children` of this parent route
-- This ensures `AssistantProvider` mounts once and persists across all admin navigation
-
-```text
-Before:
-  /admin/dashboard  --> ProtectedRoute > AdminDashboard > AdminLayout > AssistantProvider (new instance)
-  /admin/customers  --> ProtectedRoute > AdminCustomers > AdminLayout > AssistantProvider (new instance)
-
-After:
-  /admin/*  --> AdminRouteLayout (AssistantProvider lives here, mounted once)
-    /admin/dashboard  --> ProtectedRoute > AdminDashboard > AdminLayout (no provider)
-    /admin/customers  --> ProtectedRoute > AdminCustomers > AdminLayout (no provider)
-```
-
-No changes to Bach's UI, behavior, or edge function -- just where the state lives in the component tree.
-
+### Files to modify
+- `src/components/admin/assistant/AIAssistantPanel.tsx`
+  - In `handleSend`: add `inputRef.current.style.height = 'auto'` after `setInput('')`
+  - On the textarea element (line 203-220): update `rows`, `max-h`, `min-h`, and the `onInput` height cap value
