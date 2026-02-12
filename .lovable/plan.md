@@ -1,56 +1,23 @@
 
 
-## Fix: Repeated Text in Bach Chat Input (Speech Recognition Bug)
+## Adjust Bach Toggle Button and Textarea Layout
 
-### Root Cause
-The speech recognition `onresult` handler loops over **all** results in `event.results` every time it fires, joining them into one big string. When a final result arrives, it appends that entire accumulated transcript to the input -- including text from previous results that was already added.
+### 1. Move the chat bubble (toggle button) up
+The toggle button currently sits at `bottom-6 right-6` (24px from bottom). Since the input area is now taller (~120px + padding), the button overlaps with it. Move it higher so it clears the input area.
 
-For example:
-- Result 1 fires (final): transcript = "hello" --> input becomes "hello"
-- Result 2 fires (final): transcript = "hello how are you" --> input becomes "hellohello how are you"
+**File: `src/components/admin/assistant/AssistantToggle.tsx`**
+- Change desktop positioning from `bottom-6 right-6` to `bottom-52 right-6` (approximately 208px from the bottom, clearing the expanded input area)
+- Change mobile positioning from `bottom-5 right-5` to `bottom-48 right-5`
 
-### Fix
-Track which results have already been processed using `event.resultIndex`, and only extract the **new final result** instead of re-reading all results.
+### 2. Ensure the textarea starts above the toggle button
+The input area container needs bottom padding/margin so the textarea content area sits above the floating toggle button. Since the toggle is positioned fixed and independent of the panel, we need to adjust the panel's input section to account for the toggle's position when the panel is open. 
 
-### Technical Changes
+Actually, looking more carefully at the screenshot: when the panel is open, the toggle (X button) sits on top of the bottom-right corner of the input area. The simplest fix is to move the toggle button upward so it's above the input container, just outside the panel's bottom edge.
 
-**File: `src/components/admin/assistant/AIAssistantPanel.tsx`**
+**File: `src/components/admin/assistant/AssistantToggle.tsx`**
+- Desktop: change `bottom-6 right-6` to `bottom-48 right-6` (~192px from bottom, above the input area)
+- Mobile: change `bottom-5 right-5` to `bottom-44 right-5`
 
-Replace the `onresult` handler (lines 33-39) with logic that only processes new results:
+### Files to modify
+- `src/components/admin/assistant/AssistantToggle.tsx` -- move toggle button position upward
 
-```typescript
-recognition.onresult = (event: any) => {
-  // Only process the latest result, not all accumulated results
-  const latestResult = event.results[event.results.length - 1];
-  if (latestResult.isFinal) {
-    const transcript = latestResult[0].transcript;
-    setInput(prev => (prev ? prev + ' ' : '') + transcript.trim());
-  }
-};
-```
-
-This ensures:
-- Only the **newest** final transcript segment is appended
-- Previously added text is never re-read or duplicated
-- A space separator is added between segments for readability
-
-### Additional Safety
-Also stop recognition before clearing input in `handleSend`, so any in-flight transcripts don't race with the cleared state:
-
-```typescript
-const handleSend = useCallback(async () => {
-  if (!input.trim() || isLoading || sendCooldown) return;
-  // Stop mic if active to prevent race condition
-  if (isListeningRef.current) {
-    isListeningRef.current = false;
-    recognitionRef.current?.stop();
-    setIsListening(false);
-  }
-  const text = input;
-  setInput('');
-  if (inputRef.current) inputRef.current.style.height = 'auto';
-  // ... rest unchanged
-});
-```
-
-Only one file is modified: `AIAssistantPanel.tsx`.
