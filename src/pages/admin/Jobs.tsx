@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { Plus, Search, LayoutGrid, List, MoreHorizontal, Eye, Pencil, Trash2, Calendar, DollarSign, User } from 'lucide-react';
+import { Plus, Search, LayoutGrid, List, MoreHorizontal, Eye, Pencil, Trash2, Calendar, DollarSign, User, Wrench, HardHat } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import JobFormDialog from '@/components/admin/jobs/JobFormDialog';
@@ -35,6 +35,7 @@ interface Job {
     name: string;
     category: string;
     color: string;
+    slug: string;
   };
   current_stage: {
     id: string;
@@ -58,6 +59,7 @@ interface Job {
 interface JobType {
   id: string;
   name: string;
+  slug: string;
   category: string;
   color: string;
 }
@@ -71,8 +73,14 @@ interface JobStage {
   sort_order: number;
 }
 
+const BOARD_TYPES = [
+  { slug: 'residential-service-call', label: 'Service Calls', icon: Wrench },
+  { slug: 'residential-installation', label: 'Installs', icon: HardHat },
+] as const;
+
 export default function Jobs() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
@@ -81,8 +89,27 @@ export default function Jobs() {
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
-  const [activeMobileStage, setActiveMobileStage] = useState<string>('initial');
+  const [activeMobileStage, setActiveMobileStage] = useState<string>('');
   const { isSuperAdmin } = useUserRole();
+
+  // Board type from URL or default
+  const [activeBoardSlug, setActiveBoardSlug] = useState<string>(
+    searchParams.get('type') || BOARD_TYPES[0].slug
+  );
+
+  // Sync URL param
+  useEffect(() => {
+    const urlType = searchParams.get('type');
+    if (urlType && BOARD_TYPES.some(b => b.slug === urlType)) {
+      setActiveBoardSlug(urlType);
+    }
+  }, [searchParams]);
+
+  const handleBoardChange = (slug: string) => {
+    setActiveBoardSlug(slug);
+    setSearchParams({ type: slug });
+    setActiveMobileStage('');
+  };
 
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['crm_jobs'],
@@ -91,7 +118,7 @@ export default function Jobs() {
         .from('crm_jobs')
         .select(`
           *,
-          job_type:crm_job_types(id, name, category, color),
+          job_type:crm_job_types(id, name, slug, category, color),
           current_stage:crm_job_stages(id, name, stage_type, color),
           customer:crm_customers(id, first_name, last_name, company_name),
           location:crm_locations(id, address_line1, city)
@@ -164,6 +191,24 @@ export default function Jobs() {
     }
   });
 
+  // Get the active board's job type
+  const activeBoardJobType = jobTypes.find(jt => jt.slug === activeBoardSlug);
+
+  // Get stages for the active board type (exclude cancelled)
+  const boardStages = useMemo(() => {
+    if (!activeBoardJobType) return [];
+    return allStages
+      .filter(s => s.job_type_id === activeBoardJobType.id && s.stage_type !== 'cancelled')
+      .sort((a, b) => a.sort_order - b.sort_order);
+  }, [allStages, activeBoardJobType]);
+
+  // Set default mobile stage when board changes
+  useEffect(() => {
+    if (boardStages.length > 0 && !activeMobileStage) {
+      setActiveMobileStage(boardStages[0].id);
+    }
+  }, [boardStages, activeMobileStage]);
+
   const filteredJobs = useMemo(() => {
     return jobs.filter(job => {
       const matchesSearch = searchQuery === '' || 
@@ -172,20 +217,27 @@ export default function Jobs() {
         job.customer?.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         job.customer?.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         job.customer?.company_name?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesType = filterJobType === 'all' || job.job_type?.id === filterJobType;
       const matchesPriority = filterPriority === 'all' || job.priority === filterPriority;
-      return matchesSearch && matchesType && matchesPriority;
-    });
-  }, [jobs, searchQuery, filterJobType, filterPriority]);
 
+      // In list view, use the filter dropdown; in kanban, use the board toggle
+      if (viewMode === 'list') {
+        const matchesType = filterJobType === 'all' || job.job_type?.id === filterJobType;
+        return matchesSearch && matchesType && matchesPriority;
+      } else {
+        // Kanban: filter to active board's job type
+        const matchesBoard = activeBoardJobType ? job.job_type?.id === activeBoardJobType.id : true;
+        return matchesSearch && matchesBoard && matchesPriority;
+      }
+    });
+  }, [jobs, searchQuery, filterJobType, filterPriority, viewMode, activeBoardJobType]);
+
+  // Kanban columns based on actual stages
   const kanbanColumns = useMemo(() => {
-    const stageTypes = ['initial', 'in_progress', 'review', 'completed', 'cancelled'];
-    return stageTypes.map(type => ({
-      type,
-      label: type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      jobs: filteredJobs.filter(job => job.current_stage?.stage_type === type)
+    return boardStages.map(stage => ({
+      stage,
+      jobs: filteredJobs.filter(job => job.current_stage?.id === stage.id)
     }));
-  }, [filteredJobs]);
+  }, [filteredJobs, boardStages]);
 
   const priorityColors: Record<string, string> = {
     low: 'bg-slate-500/10 text-slate-600',
@@ -194,20 +246,12 @@ export default function Jobs() {
     urgent: 'bg-red-500/10 text-red-600'
   };
 
-  const stageColors: Record<string, string> = {
-    initial: '#3B82F6',
-    in_progress: '#F59E0B',
-    review: '#8B5CF6',
-    completed: '#22C55E',
-    cancelled: '#EF4444',
-  };
-
   const getCustomerName = (job: Job) => {
     if (job.customer?.company_name) return job.customer.company_name;
     return `${job.customer?.first_name || ''} ${job.customer?.last_name || ''}`.trim() || 'Unknown';
   };
 
-  const activeMobileJobs = kanbanColumns.find(c => c.type === activeMobileStage)?.jobs || [];
+  const activeMobileJobs = kanbanColumns.find(c => c.stage.id === activeMobileStage)?.jobs || [];
 
   return (
     <AdminLayout title="Jobs Board">
@@ -218,7 +262,6 @@ export default function Jobs() {
             <h1 className="text-2xl md:text-3xl font-bold">Jobs Board</h1>
             <p className="text-sm text-muted-foreground hidden md:block">Track and manage all jobs through their workflow</p>
           </div>
-          {/* Desktop New Job button */}
           <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
               <Button onClick={() => setEditingJob(null)} className="hidden md:inline-flex">
@@ -234,7 +277,29 @@ export default function Jobs() {
           </Dialog>
         </div>
 
-        {/* Filters - stacked on mobile */}
+        {/* Board Type Toggle (kanban mode only) */}
+        {viewMode === 'kanban' && (
+          <div className="flex items-center gap-1 border rounded-lg p-1 w-fit bg-muted/30">
+            {BOARD_TYPES.map(bt => {
+              const Icon = bt.icon;
+              const isActive = activeBoardSlug === bt.slug;
+              return (
+                <Button
+                  key={bt.slug}
+                  variant={isActive ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleBoardChange(bt.slug)}
+                  className="gap-1.5"
+                >
+                  <Icon className="h-4 w-4" />
+                  {bt.label}
+                </Button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Filters */}
         <div className="flex flex-col md:flex-row md:flex-wrap md:items-center gap-3 md:gap-4">
           <div className="relative flex-1 md:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -246,17 +311,20 @@ export default function Jobs() {
             />
           </div>
           <div className="flex items-center gap-3">
-            <Select value={filterJobType} onValueChange={setFilterJobType}>
-              <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="Job Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {jobTypes.map(type => (
-                  <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Job type filter only visible in list view */}
+            {viewMode === 'list' && (
+              <Select value={filterJobType} onValueChange={setFilterJobType}>
+                <SelectTrigger className="w-full md:w-[180px]">
+                  <SelectValue placeholder="Job Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  {jobTypes.map(type => (
+                    <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             <Select value={filterPriority} onValueChange={setFilterPriority}>
               <SelectTrigger className="w-full md:w-[140px]">
                 <SelectValue placeholder="Priority" />
@@ -269,7 +337,6 @@ export default function Jobs() {
                 <SelectItem value="urgent">Urgent</SelectItem>
               </SelectContent>
             </Select>
-            {/* Hide view toggle on mobile */}
             <div className="hidden md:flex items-center gap-1 border rounded-lg p-1">
               <Button
                 variant={viewMode === 'kanban' ? 'default' : 'ghost'}
@@ -294,24 +361,44 @@ export default function Jobs() {
         ) : isMobile ? (
           /* ===== MOBILE: Tabbed single-column layout ===== */
           <div className="space-y-3">
-            {/* Stage pill tabs - horizontally scrollable */}
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none sticky top-0 z-10 bg-gray-50 -mx-4 px-4 py-2">
+            {/* Board type toggle for mobile */}
+            <div className="flex items-center gap-1 border rounded-lg p-1 bg-muted/30">
+              {BOARD_TYPES.map(bt => {
+                const Icon = bt.icon;
+                const isActive = activeBoardSlug === bt.slug;
+                return (
+                  <Button
+                    key={bt.slug}
+                    variant={isActive ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => handleBoardChange(bt.slug)}
+                    className="gap-1.5 flex-1"
+                  >
+                    <Icon className="h-4 w-4" />
+                    {bt.label}
+                  </Button>
+                );
+              })}
+            </div>
+
+            {/* Stage pill tabs */}
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none sticky top-0 z-10 bg-background -mx-4 px-4 py-2">
               {kanbanColumns.map(column => (
                 <button
-                  key={column.type}
-                  onClick={() => setActiveMobileStage(column.type)}
+                  key={column.stage.id}
+                  onClick={() => setActiveMobileStage(column.stage.id)}
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0",
-                    activeMobileStage === column.type
+                    activeMobileStage === column.stage.id
                       ? "text-white shadow-sm"
                       : "bg-muted text-muted-foreground hover:bg-muted/80"
                   )}
-                  style={activeMobileStage === column.type ? { backgroundColor: stageColors[column.type] } : undefined}
+                  style={activeMobileStage === column.stage.id ? { backgroundColor: column.stage.color || '#3B82F6' } : undefined}
                 >
-                  {column.label}
+                  {column.stage.name}
                   <span className={cn(
                     "inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded-full text-xs font-semibold",
-                    activeMobileStage === column.type
+                    activeMobileStage === column.stage.id
                       ? "bg-white/25 text-white"
                       : "bg-background text-foreground"
                   )}>
@@ -332,11 +419,10 @@ export default function Jobs() {
                   <Card
                     key={job.id}
                     className="cursor-pointer hover:shadow-md transition-shadow border-l-4"
-                    style={{ borderLeftColor: stageColors[job.current_stage?.stage_type || 'initial'] }}
+                    style={{ borderLeftColor: job.current_stage?.color || '#3B82F6' }}
                     onClick={() => navigate(`/admin/jobs/${job.id}`)}
                   >
                     <CardContent className="p-3">
-                      {/* Row 1: Job number · Job type · Priority */}
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
                           <span className="font-mono">{job.job_number}</span>
@@ -347,9 +433,7 @@ export default function Jobs() {
                           {job.priority}
                         </Badge>
                       </div>
-                      {/* Row 2: Title */}
                       <h4 className="font-medium text-sm mt-1">{job.title}</h4>
-                      {/* Row 3: Customer · Amount */}
                       <div className="flex items-center justify-between mt-1.5">
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <User className="h-3 w-3" />
@@ -366,56 +450,64 @@ export default function Jobs() {
             </div>
           </div>
         ) : viewMode === 'kanban' ? (
-          /* ===== DESKTOP: Kanban View ===== */
-          <div className="grid grid-cols-5 gap-4 min-h-[600px]">
-            {kanbanColumns.map(column => (
-              <div key={column.type} className="flex flex-col">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-sm">{column.label}</h3>
-                  <Badge variant="secondary">{column.jobs.length}</Badge>
-                </div>
-                <div className="flex-1 space-y-3 p-2 bg-muted/30 rounded-lg min-h-[500px]">
-                  {column.jobs.map(job => (
-                    <Card
-                      key={job.id}
-                      className="cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => navigate(`/admin/jobs/${job.id}`)}
-                    >
-                      <CardContent className="p-3 space-y-2">
-                        <div className="flex items-start justify-between">
-                          <span className="text-xs text-muted-foreground">{job.job_number}</span>
-                          <Badge className={priorityColors[job.priority]}>{job.priority}</Badge>
-                        </div>
-                        <h4 className="font-medium text-sm line-clamp-2">{job.title}</h4>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <User className="h-3 w-3" />
-                          {getCustomerName(job)}
-                        </div>
-                        {job.scheduled_start && (
+          /* ===== DESKTOP: Kanban View with stage-based columns ===== */
+          <div className="overflow-x-auto">
+            <div className="flex gap-4 min-h-[600px]" style={{ minWidth: `${kanbanColumns.length * 260}px` }}>
+              {kanbanColumns.map(column => (
+                <div key={column.stage.id} className="flex flex-col flex-1 min-w-[240px]">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: column.stage.color || '#6B7280' }}
+                      />
+                      <h3 className="font-semibold text-sm">{column.stage.name}</h3>
+                    </div>
+                    <Badge variant="secondary">{column.jobs.length}</Badge>
+                  </div>
+                  <div className="flex-1 space-y-3 p-2 bg-muted/30 rounded-lg min-h-[500px]">
+                    {column.jobs.map(job => (
+                      <Card
+                        key={job.id}
+                        className="cursor-pointer hover:shadow-md transition-shadow"
+                        onClick={() => navigate(`/admin/jobs/${job.id}`)}
+                      >
+                        <CardContent className="p-3 space-y-2">
+                          <div className="flex items-start justify-between">
+                            <span className="text-xs text-muted-foreground">{job.job_number}</span>
+                            <Badge className={priorityColors[job.priority]}>{job.priority}</Badge>
+                          </div>
+                          <h4 className="font-medium text-sm line-clamp-2">{job.title}</h4>
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Calendar className="h-3 w-3" />
-                            {format(new Date(job.scheduled_start), 'MMM d, yyyy')}
+                            <User className="h-3 w-3" />
+                            {getCustomerName(job)}
                           </div>
-                        )}
-                        {job.quoted_amount && (
-                          <div className="flex items-center gap-1 text-xs font-medium">
-                            <DollarSign className="h-3 w-3" />
-                            ${job.quoted_amount.toLocaleString()}
-                          </div>
-                        )}
-                        <div
-                          className="w-full h-1 rounded-full mt-2"
-                          style={{ backgroundColor: job.job_type?.color || '#3B82F6' }}
-                        />
-                      </CardContent>
-                    </Card>
-                  ))}
+                          {job.scheduled_start && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Calendar className="h-3 w-3" />
+                              {format(new Date(job.scheduled_start), 'MMM d, yyyy')}
+                            </div>
+                          )}
+                          {job.quoted_amount && (
+                            <div className="flex items-center gap-1 text-xs font-medium">
+                              <DollarSign className="h-3 w-3" />
+                              ${job.quoted_amount.toLocaleString()}
+                            </div>
+                          )}
+                          <div
+                            className="w-full h-1 rounded-full mt-2"
+                            style={{ backgroundColor: job.job_type?.color || '#3B82F6' }}
+                          />
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         ) : (
-          /* ===== List View ===== */
+          /* ===== List View - shows ALL job types ===== */
           <Card>
             <Table>
               <TableHeader>

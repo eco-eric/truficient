@@ -14,7 +14,7 @@ import { DuctedMetricsCard } from '@/components/admin/dashboard/DuctedMetricsCar
 import { DuctlessMetricsCard } from '@/components/admin/dashboard/DuctlessMetricsCard';
 import { GHLSyncHealth } from '@/components/admin/dashboard/GHLSyncHealth';
 import { FailedSyncsAlert } from '@/components/admin/dashboard/FailedSyncsAlert';
-import { JobBoardPreview } from '@/components/admin/dashboard/JobBoardPreview';
+import { JobTypeBoardPreview } from '@/components/admin/dashboard/JobTypeBoardPreview';
 import { UpcomingAppointments } from '@/components/admin/dashboard/UpcomingAppointments';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
@@ -186,9 +186,12 @@ const Dashboard = () => {
         
         {/* Jobs & Calendar Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <JobBoardPreview />
-          <UpcomingAppointments />
+          <JobTypeBoardPreview jobTypeSlug="residential-service-call" title="Service Calls Board" icon="wrench" />
+          <JobTypeBoardPreview jobTypeSlug="residential-installation" title="Installs Board" icon="hardhat" />
         </div>
+        
+        {/* Upcoming Appointments */}
+        <UpcomingAppointments />
         
         {/* GHL Sync Health Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
