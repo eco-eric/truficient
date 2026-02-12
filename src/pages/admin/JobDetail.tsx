@@ -166,6 +166,8 @@ export default function JobDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm_job', id] });
       queryClient.invalidateQueries({ queryKey: ['crm_job_stage_history', id] });
+      queryClient.invalidateQueries({ queryKey: ['crm_jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-jobs-preview'] });
       toast.success('Job moved to new stage');
     }
   });
