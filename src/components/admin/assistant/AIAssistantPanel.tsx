@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Minus, Trash2, Send, Mic, Zap } from 'lucide-react';
+import { Minus, Trash2, Send, Mic, MicOff, Zap } from 'lucide-react';
 import { useAssistant } from './AssistantContext';
 import { ChatMessage } from './ChatMessage';
 import { QuickPrompts } from './QuickPrompts';
@@ -10,10 +10,77 @@ export const AIAssistantPanel = () => {
   const { isOpen, messages, isLoading, closePanel, sendMessage, clearConversation, confirmAction } = useAssistant();
   const [input, setInput] = useState('');
   const [sendCooldown, setSendCooldown] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<any>(null);
+  const isListeningRef = useRef(false);
   const isMobile = useIsMobile();
   const { toast } = useToast();
+
+  // Speech recognition setup
+  const initRecognition = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast({ title: 'Not supported', description: 'Speech recognition is not supported in this browser.', variant: 'destructive' });
+      return null;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results)
+        .map((result: any) => result[0].transcript)
+        .join('');
+      if (event.results[event.results.length - 1].isFinal) {
+        setInput(prev => prev + transcript);
+      }
+    };
+
+    recognition.onend = () => {
+      if (isListeningRef.current) {
+        try { recognition.start(); } catch {}
+      } else {
+        setIsListening(false);
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      if (event.error === 'not-allowed') {
+        toast({ title: 'Mic blocked', description: 'Please allow microphone access.', variant: 'destructive' });
+        isListeningRef.current = false;
+        setIsListening(false);
+      }
+    };
+
+    return recognition;
+  }, [toast]);
+
+  const handleMicToggle = useCallback(() => {
+    if (isListeningRef.current) {
+      isListeningRef.current = false;
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      if (!recognitionRef.current) {
+        recognitionRef.current = initRecognition();
+      }
+      if (recognitionRef.current) {
+        isListeningRef.current = true;
+        setIsListening(true);
+        recognitionRef.current.start();
+      }
+    }
+  }, [initRecognition]);
+
+  useEffect(() => {
+    return () => {
+      isListeningRef.current = false;
+      recognitionRef.current?.stop();
+    };
+  }, []);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -121,11 +188,17 @@ export const AIAssistantPanel = () => {
       <div className="shrink-0 border-t border-gray-200 bg-gray-50 p-3">
         <div className="flex items-end gap-2">
           <button
-            disabled
-            className="shrink-0 w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center"
-            title="Voice input coming soon"
+            onClick={handleMicToggle}
+            className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+              isListening ? 'bg-red-500 animate-pulse' : 'bg-gray-200 hover:bg-gray-300'
+            }`}
+            title={isListening ? 'Stop listening' : 'Voice input'}
           >
-            <Mic className="h-4 w-4 text-gray-400" />
+            {isListening ? (
+              <MicOff className="h-4 w-4 text-white" />
+            ) : (
+              <Mic className="h-4 w-4 text-gray-600" />
+            )}
           </button>
           <textarea
             ref={inputRef}
