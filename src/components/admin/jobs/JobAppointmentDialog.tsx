@@ -55,7 +55,7 @@ export default function JobAppointmentDialog({
     startTime: '08:00',
     endDate: '',
     endTime: '17:00',
-    calendarId: '',
+    calendarIds: [] as string[],
     teamId: '',
     notes: '',
     attendeeIds: [] as string[],
@@ -76,6 +76,21 @@ export default function JobAppointmentDialog({
     }
   });
 
+  // Fetch existing calendar links for this appointment
+  const { data: existingCalendarLinks = [] } = useQuery({
+    queryKey: ['crm_job_appointment_calendars', appointment?.id],
+    queryFn: async () => {
+      if (!appointment?.id) return [];
+      const { data, error } = await supabase
+        .from('crm_job_appointment_calendars')
+        .select('*')
+        .eq('appointment_id', appointment.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!appointment?.id
+  });
+
   // Reset form when appointment changes
   useEffect(() => {
     if (appointment) {
@@ -87,28 +102,27 @@ export default function JobAppointmentDialog({
         startTime: startCST.time,
         endDate: endCST.date,
         endTime: endCST.time,
-        calendarId: appointment.google_calendar_id || '',
+        calendarIds: existingCalendarLinks.map((l: any) => l.google_calendar_db_id),
         teamId: appointment.assigned_team_id || '',
         notes: appointment.notes || '',
         attendeeIds: appointment.attendee_member_ids || [],
         location: ''
       });
     } else {
-      // New appointment - auto-populate from job location
       setFormData({
         title: '',
         startDate: '',
         startTime: '08:00',
         endDate: '',
         endTime: '17:00',
-        calendarId: '',
+        calendarIds: [],
         teamId: '',
         notes: '',
         attendeeIds: [],
         location: location || ''
       });
     }
-  }, [appointment, open, location]);
+  }, [appointment, open, location, existingCalendarLinks]);
 
   const { data: calendars = [] } = useQuery({
     queryKey: ['google-calendars-active'],
@@ -136,13 +150,15 @@ export default function JobAppointmentDialog({
     }
   });
 
-  // Auto-select primary calendar
+  // Auto-select primary calendar for new appointments
   useEffect(() => {
-    if (!formData.calendarId && calendars.length > 0) {
+    if (!appointment && formData.calendarIds.length === 0 && calendars.length > 0) {
       const primary = calendars.find((c: any) => c.is_primary);
-      setFormData(prev => ({ ...prev, calendarId: primary?.id || calendars[0]?.id || '' }));
+      if (primary) {
+        setFormData(prev => ({ ...prev, calendarIds: [primary.id] }));
+      }
     }
-  }, [calendars, formData.calendarId]);
+  }, [calendars, appointment, formData.calendarIds.length]);
 
   // Auto-set end date when start date changes
   useEffect(() => {
@@ -158,12 +174,13 @@ export default function JobAppointmentDialog({
       const startDateTime = new Date(startISO);
       const endDateTime = new Date(endISO);
 
+      // Keep google_calendar_id for backward compat but no longer drive logic from it
       const appointmentData = {
         job_id: jobId,
         title: formData.title || null,
         start_datetime: startISO,
         end_datetime: endISO,
-        google_calendar_id: formData.calendarId || null,
+        google_calendar_id: formData.calendarIds[0] || null,
         assigned_team_id: formData.teamId || null,
         notes: formData.notes || null,
         attendee_member_ids: formData.attendeeIds
@@ -190,13 +207,57 @@ export default function JobAppointmentDialog({
         savedAppointment = data;
       }
 
+      // Manage junction table rows
+      const currentLinks = existingCalendarLinks;
+      const selectedIds = new Set(formData.calendarIds);
+      const existingIds = new Set(currentLinks.map((l: any) => l.google_calendar_db_id));
+
+      // Remove deselected calendars
+      const toRemove = currentLinks.filter((l: any) => !selectedIds.has(l.google_calendar_db_id));
+      // Add newly selected calendars
+      const toAdd = formData.calendarIds.filter(id => !existingIds.has(id));
+
+      if (toRemove.length > 0) {
+        // Delete Google events for removed calendars if syncing
+        if (syncToCalendar) {
+          for (const link of toRemove) {
+            if (link.google_calendar_event_id) {
+              const cal = calendars.find((c: any) => c.id === link.google_calendar_db_id);
+              if (cal) {
+                try {
+                  await supabase.functions.invoke('google-calendar-sync', {
+                    body: {
+                      action: 'delete-event',
+                      calendarId: cal.calendar_id,
+                      eventId: link.google_calendar_event_id,
+                    },
+                  });
+                } catch (err) {
+                  console.error('Failed to delete calendar event:', err);
+                }
+              }
+            }
+          }
+        }
+        await supabase
+          .from('crm_job_appointment_calendars')
+          .delete()
+          .in('id', toRemove.map((l: any) => l.id));
+      }
+
+      if (toAdd.length > 0) {
+        await supabase
+          .from('crm_job_appointment_calendars')
+          .insert(toAdd.map(calId => ({
+            appointment_id: savedAppointment.id,
+            google_calendar_db_id: calId,
+          })));
+      }
+
       // Sync to Google Calendar if requested
-      if (syncToCalendar && formData.calendarId) {
+      if (syncToCalendar && formData.calendarIds.length > 0) {
         setSyncing(true);
         try {
-          const calendar = calendars.find((c: any) => c.id === formData.calendarId);
-          if (!calendar) throw new Error('Calendar not found');
-
           const description = [
             `Job Type: ${jobTitle}`,
             `Customer: ${customerName}`,
@@ -204,7 +265,6 @@ export default function JobAppointmentDialog({
             formData.notes ? `\nNotes:\n${formData.notes}` : null,
           ].filter(Boolean).join('\n');
 
-          // Get attendee emails for Google Calendar invites
           const attendees = formData.attendeeIds
             .map(id => teamMembers.find(m => m.id === id))
             .filter(m => m?.email)
@@ -225,55 +285,48 @@ export default function JobAppointmentDialog({
             attendees: attendees.length > 0 ? attendees : undefined,
           };
 
-          let response;
-          const calendarChanged = appointment?.google_calendar_id && appointment.google_calendar_id !== formData.calendarId;
+          // Refresh junction rows to get current state
+          const { data: freshLinks } = await supabase
+            .from('crm_job_appointment_calendars')
+            .select('*')
+            .eq('appointment_id', savedAppointment.id);
 
-          if (calendarChanged && appointment?.google_calendar_event_id) {
-            // Calendar changed: delete from old, create on new
-            const oldCalendar = calendars.find((c: any) => c.id === appointment.google_calendar_id);
-            if (oldCalendar) {
-              await supabase.functions.invoke('google-calendar-sync', {
+          for (const link of (freshLinks || [])) {
+            const cal = calendars.find((c: any) => c.id === link.google_calendar_db_id);
+            if (!cal) continue;
+
+            let response;
+            if (link.google_calendar_event_id) {
+              // Update existing event
+              response = await supabase.functions.invoke('google-calendar-sync', {
                 body: {
-                  action: 'delete-event',
-                  calendarId: oldCalendar.calendar_id,
-                  eventId: appointment.google_calendar_event_id,
+                  action: 'update-event',
+                  calendarId: cal.calendar_id,
+                  eventId: link.google_calendar_event_id,
+                  event: eventPayload,
+                },
+              });
+            } else {
+              // Create new event
+              response = await supabase.functions.invoke('google-calendar-sync', {
+                body: {
+                  action: 'create-event',
+                  calendarId: cal.calendar_id,
+                  event: eventPayload,
                 },
               });
             }
-            response = await supabase.functions.invoke('google-calendar-sync', {
-              body: {
-                action: 'create-event',
-                calendarId: calendar.calendar_id,
-                event: eventPayload,
-              },
-            });
-          } else if (appointment?.google_calendar_event_id) {
-            response = await supabase.functions.invoke('google-calendar-sync', {
-              body: {
-                action: 'update-event',
-                calendarId: calendar.calendar_id,
-                eventId: appointment.google_calendar_event_id,
-                event: eventPayload,
-              },
-            });
-          } else {
-            response = await supabase.functions.invoke('google-calendar-sync', {
-              body: {
-                action: 'create-event',
-                calendarId: calendar.calendar_id,
-                event: eventPayload,
-              },
-            });
+
+            if (response.error) throw response.error;
+
+            // Store the event ID on the junction row
+            if (response.data?.id) {
+              await supabase
+                .from('crm_job_appointment_calendars')
+                .update({ google_calendar_event_id: response.data.id })
+                .eq('id', link.id);
+            }
           }
-
-          if (response.error) throw response.error;
-
-          // Update appointment with calendar event ID
-          await supabase
-            .from('crm_job_appointments')
-            .update({ google_calendar_event_id: response.data.id })
-            .eq('id', savedAppointment.id);
-
         } finally {
           setSyncing(false);
         }
@@ -283,6 +336,7 @@ export default function JobAppointmentDialog({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm_job_appointments', jobId] });
+      queryClient.invalidateQueries({ queryKey: ['crm_job_appointment_calendars'] });
       toast.success(appointment ? 'Appointment updated' : 'Appointment created');
       onOpenChange(false);
     },
@@ -300,7 +354,7 @@ export default function JobAppointmentDialog({
     saveMutation.mutate(syncToCalendar);
   };
 
-  const selectedCalendar = calendars.find((c: any) => c.id === formData.calendarId);
+  const syncedCount = existingCalendarLinks.filter((l: any) => l.google_calendar_event_id).length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -459,31 +513,23 @@ export default function JobAppointmentDialog({
             )}
           </div>
 
-          {/* Calendar Selection */}
+          {/* Calendar Selection - Multi-Select */}
           <div className="space-y-2">
-            <Label>Google Calendar</Label>
-            <Select
-              value={formData.calendarId}
-              onValueChange={(v) => setFormData({ ...formData, calendarId: v })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select calendar" />
-              </SelectTrigger>
-              <SelectContent>
-                {calendars.map((cal: any) => (
-                  <SelectItem key={cal.id} value={cal.id}>
-                    <div className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: cal.color }}
-                      />
-                      {cal.name}
-                      {cal.is_primary && <span className="text-xs text-muted-foreground">(Primary)</span>}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Google Calendars</Label>
+            <MultiSelect
+              options={calendars.map((cal: any) => ({
+                value: cal.id,
+                label: `${cal.name}${cal.is_primary ? ' (Primary)' : ''}`,
+              }))}
+              selected={formData.calendarIds}
+              onChange={(ids) => setFormData({ ...formData, calendarIds: ids })}
+              placeholder="Select calendars..."
+            />
+            {formData.calendarIds.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Event will sync to {formData.calendarIds.length} calendar(s)
+              </p>
+            )}
           </div>
 
           {/* Notes */}
@@ -498,10 +544,10 @@ export default function JobAppointmentDialog({
           </div>
 
           {/* Sync status indicator */}
-          {appointment?.google_calendar_event_id && (
+          {syncedCount > 0 && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <CheckCircle2 className="h-4 w-4 text-green-500" />
-              Synced to {selectedCalendar?.name || 'Google Calendar'}
+              Synced to {syncedCount} calendar(s)
             </div>
           )}
 
@@ -520,7 +566,7 @@ export default function JobAppointmentDialog({
             <Button 
               type="button"
               onClick={(e) => handleSubmit(e, true)}
-              disabled={saveMutation.isPending || syncing || !formData.calendarId}
+              disabled={saveMutation.isPending || syncing || formData.calendarIds.length === 0}
             >
               {syncing ? (
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
