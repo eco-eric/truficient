@@ -1,23 +1,38 @@
 
 
-## Adjust Bach Toggle Button and Textarea Layout
+## Fix: Job Board Updates Automatically When Stage Changes
 
-### 1. Move the chat bubble (toggle button) up
-The toggle button currently sits at `bottom-6 right-6` (24px from bottom). Since the input area is now taller (~120px + padding), the button overlaps with it. Move it higher so it clears the input area.
+### Problem
+When you change a job's stage from the Job Detail page, the Jobs Board (Kanban view) doesn't reflect the change until you manually refresh. This happens because the stage change mutation only invalidates the single-job query (`['crm_job', id]`) but not the jobs list query (`['crm_jobs']`) that powers the board.
 
-**File: `src/components/admin/assistant/AssistantToggle.tsx`**
-- Change desktop positioning from `bottom-6 right-6` to `bottom-52 right-6` (approximately 208px from the bottom, clearing the expanded input area)
-- Change mobile positioning from `bottom-5 right-5` to `bottom-48 right-5`
+### Solution
+Add `['crm_jobs']` to the list of invalidated queries whenever a job stage changes. This applies to two locations:
 
-### 2. Ensure the textarea starts above the toggle button
-The input area container needs bottom padding/margin so the textarea content area sits above the floating toggle button. Since the toggle is positioned fixed and independent of the panel, we need to adjust the panel's input section to account for the toggle's position when the panel is open. 
+### Technical Details
 
-Actually, looking more carefully at the screenshot: when the panel is open, the toggle (X button) sits on top of the bottom-right corner of the input area. The simplest fix is to move the toggle button upward so it's above the input container, just outside the panel's bottom edge.
+**File: `src/pages/admin/JobDetail.tsx`**
+- In the `moveJobMutation` `onSuccess` callback (around line 166), add an invalidation for `['crm_jobs']` so the board re-fetches automatically.
+- Also add `['dashboard-jobs-preview']` invalidation so the dashboard mini Kanban stays in sync too.
 
-**File: `src/components/admin/assistant/AssistantToggle.tsx`**
-- Desktop: change `bottom-6 right-6` to `bottom-48 right-6` (~192px from bottom, above the input area)
-- Mobile: change `bottom-5 right-5` to `bottom-44 right-5`
+**Before:**
+```typescript
+onSuccess: () => {
+  queryClient.invalidateQueries({ queryKey: ['crm_job', id] });
+  queryClient.invalidateQueries({ queryKey: ['crm_job_stage_history', id] });
+  toast.success('Job moved to new stage');
+}
+```
 
-### Files to modify
-- `src/components/admin/assistant/AssistantToggle.tsx` -- move toggle button position upward
+**After:**
+```typescript
+onSuccess: () => {
+  queryClient.invalidateQueries({ queryKey: ['crm_job', id] });
+  queryClient.invalidateQueries({ queryKey: ['crm_job_stage_history', id] });
+  queryClient.invalidateQueries({ queryKey: ['crm_jobs'] });
+  queryClient.invalidateQueries({ queryKey: ['dashboard-jobs-preview'] });
+  toast.success('Job moved to new stage');
+}
+```
+
+This is a one-line addition (plus the dashboard key) to one file. When you move a job to a new stage from the detail page and navigate back to the board, it will already show the updated position.
 
