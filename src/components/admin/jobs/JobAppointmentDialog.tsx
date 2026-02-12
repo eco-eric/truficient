@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -91,24 +91,27 @@ export default function JobAppointmentDialog({
     enabled: !!appointment?.id
   });
 
-  // Reset form when appointment changes
+  const calendarIdsInitRef = useRef<string | null>(null);
+
+  // Reset form when appointment changes (without existingCalendarLinks)
   useEffect(() => {
     if (appointment) {
       const startCST = formatInCST(appointment.start_datetime);
       const endCST = formatInCST(appointment.end_datetime);
-      setFormData({
+      setFormData(prev => ({
+        ...prev,
         title: appointment.title || '',
         startDate: startCST.date,
         startTime: startCST.time,
         endDate: endCST.date,
         endTime: endCST.time,
-        calendarIds: existingCalendarLinks.map((l: any) => l.google_calendar_db_id),
         teamId: appointment.assigned_team_id || '',
         notes: appointment.notes || '',
         attendeeIds: appointment.attendee_member_ids || [],
         location: ''
-      });
+      }));
     } else {
+      calendarIdsInitRef.current = null;
       setFormData({
         title: '',
         startDate: '',
@@ -122,7 +125,19 @@ export default function JobAppointmentDialog({
         location: location || ''
       });
     }
-  }, [appointment, open, location, existingCalendarLinks]);
+  }, [appointment, open, location]);
+
+  // Initialize calendar IDs once when data loads for the current appointment
+  useEffect(() => {
+    if (!appointment?.id) return;
+    if (calendarIdsInitRef.current === appointment.id) return;
+    if (existingCalendarLinks.length === 0) return;
+    calendarIdsInitRef.current = appointment.id;
+    setFormData(prev => ({
+      ...prev,
+      calendarIds: existingCalendarLinks.map((l: any) => l.google_calendar_db_id),
+    }));
+  }, [appointment?.id, existingCalendarLinks]);
 
   const { data: calendars = [] } = useQuery({
     queryKey: ['google-calendars-active'],
