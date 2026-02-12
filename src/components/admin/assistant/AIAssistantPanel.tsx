@@ -109,6 +109,7 @@ export const AIAssistantPanel = () => {
     if (!input.trim() || isLoading || sendCooldown) return;
     const text = input;
     setInput('');
+    if (inputRef.current) inputRef.current.style.height = 'auto';
     setSendCooldown(true);
     setTimeout(() => setSendCooldown(false), 1000);
     await sendMessage(text);
@@ -205,8 +206,8 @@ export const AIAssistantPanel = () => {
             value={input}
             onChange={e => setInput(e.target.value)}
             placeholder="Ask me anything..."
-            rows={1}
-            className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4A]/30 focus:border-[#1B2A4A] max-h-[100px] min-h-[40px]"
+            rows={3}
+            className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4A]/30 focus:border-[#1B2A4A] max-h-[280px] min-h-[60px]"
             onKeyDown={e => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -216,7 +217,7 @@ export const AIAssistantPanel = () => {
             onInput={e => {
               const target = e.target as HTMLTextAreaElement;
               target.style.height = 'auto';
-              target.style.height = Math.min(target.scrollHeight, 100) + 'px';
+              target.style.height = Math.min(target.scrollHeight, 280) + 'px';
             }}
           />
           <button
