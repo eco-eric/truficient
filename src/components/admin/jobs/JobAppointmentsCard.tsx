@@ -49,7 +49,12 @@ export default function JobAppointmentsCard({
         .select(`
           *,
           team:crm_teams(id, name, color),
-          calendar:google_calendars(id, name, color, calendar_id)
+          calendar_links:crm_job_appointment_calendars(
+            id,
+            google_calendar_db_id,
+            google_calendar_event_id,
+            calendar:google_calendars(id, name, color, calendar_id)
+          )
         `)
         .eq('job_id', jobId)
         .order('start_datetime');
@@ -63,18 +68,22 @@ export default function JobAppointmentsCard({
     mutationFn: async (id: string) => {
       const appointment = appointments.find((a: any) => a.id === id);
       
-      // Delete from Google Calendar if synced
-      if (appointment?.google_calendar_event_id && appointment?.calendar) {
-        try {
-          await supabase.functions.invoke('google-calendar-sync', {
-            body: {
-              action: 'delete-event',
-              calendarId: appointment.calendar.calendar_id,
-              eventId: appointment.google_calendar_event_id,
-            },
-          });
-        } catch (err) {
-          console.error('Failed to delete calendar event:', err);
+      // Delete from Google Calendar for all linked calendars
+      if (appointment?.calendar_links) {
+        for (const link of appointment.calendar_links) {
+          if (link.google_calendar_event_id && link.calendar) {
+            try {
+              await supabase.functions.invoke('google-calendar-sync', {
+                body: {
+                  action: 'delete-event',
+                  calendarId: link.calendar.calendar_id,
+                  eventId: link.google_calendar_event_id,
+                },
+              });
+            } catch (err) {
+              console.error('Failed to delete calendar event:', err);
+            }
+          }
         }
       }
 
@@ -152,16 +161,30 @@ export default function JobAppointmentsCard({
                           {apt.team.name}
                         </Badge>
                       )}
-                      {apt.google_calendar_event_id ? (
-                        <Badge variant="outline" className="text-xs text-green-600 border-green-600">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Synced
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-xs text-muted-foreground">
-                          Not synced
-                        </Badge>
-                      )}
+                      {(() => {
+                        const syncedCount = apt.calendar_links?.filter((l: any) => l.google_calendar_event_id).length || 0;
+                        const totalLinks = apt.calendar_links?.length || 0;
+                        if (syncedCount > 0) {
+                          return (
+                            <Badge variant="outline" className="text-xs text-green-600 border-green-600">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Synced to {syncedCount} calendar{syncedCount > 1 ? 's' : ''}
+                            </Badge>
+                          );
+                        } else if (totalLinks > 0) {
+                          return (
+                            <Badge variant="outline" className="text-xs text-muted-foreground">
+                              {totalLinks} calendar{totalLinks > 1 ? 's' : ''} (not synced)
+                            </Badge>
+                          );
+                        } else {
+                          return (
+                            <Badge variant="outline" className="text-xs text-muted-foreground">
+                              No calendars
+                            </Badge>
+                          );
+                        }
+                      })()}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">

@@ -1002,6 +1002,45 @@ export type Database = {
           },
         ]
       }
+      crm_job_appointment_calendars: {
+        Row: {
+          appointment_id: string
+          created_at: string
+          google_calendar_db_id: string
+          google_calendar_event_id: string | null
+          id: string
+        }
+        Insert: {
+          appointment_id: string
+          created_at?: string
+          google_calendar_db_id: string
+          google_calendar_event_id?: string | null
+          id?: string
+        }
+        Update: {
+          appointment_id?: string
+          created_at?: string
+          google_calendar_db_id?: string
+          google_calendar_event_id?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_job_appointment_calendars_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "crm_job_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_job_appointment_calendars_google_calendar_db_id_fkey"
+            columns: ["google_calendar_db_id"]
+            isOneToOne: false
+            referencedRelation: "google_calendars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_job_appointments: {
         Row: {
           assigned_team_id: string | null

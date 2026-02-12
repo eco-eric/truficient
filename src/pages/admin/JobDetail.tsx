@@ -273,25 +273,45 @@ export default function JobDetail() {
       if (includeAppointments) {
         const { data: appointments } = await supabase
           .from('crm_job_appointments')
-          .select('title, start_datetime, end_datetime, assigned_team_id, attendee_member_ids, notes, google_calendar_id')
+          .select('id, title, start_datetime, end_datetime, assigned_team_id, attendee_member_ids, notes, google_calendar_id')
           .eq('job_id', job.id);
 
         if (appointments && appointments.length > 0) {
-          const clonedAppointments = appointments.map((apt) => ({
-            job_id: newJob.id,
-            title: apt.title,
-            start_datetime: apt.start_datetime,
-            end_datetime: apt.end_datetime,
-            assigned_team_id: apt.assigned_team_id,
-            attendee_member_ids: apt.attendee_member_ids,
-            notes: apt.notes,
-            google_calendar_id: apt.google_calendar_id,
-            google_calendar_event_id: null,
-          }));
-          const { error: aptError } = await supabase
-            .from('crm_job_appointments')
-            .insert(clonedAppointments);
-          if (aptError) throw aptError;
+          for (const apt of appointments) {
+            // Create cloned appointment
+            const { data: newApt, error: aptError } = await supabase
+              .from('crm_job_appointments')
+              .insert({
+                job_id: newJob.id,
+                title: apt.title,
+                start_datetime: apt.start_datetime,
+                end_datetime: apt.end_datetime,
+                assigned_team_id: apt.assigned_team_id,
+                attendee_member_ids: apt.attendee_member_ids,
+                notes: apt.notes,
+                google_calendar_id: apt.google_calendar_id,
+                google_calendar_event_id: null,
+              })
+              .select('id')
+              .single();
+            if (aptError) throw aptError;
+
+            // Clone junction rows without event IDs
+            const { data: calLinks } = await supabase
+              .from('crm_job_appointment_calendars')
+              .select('google_calendar_db_id')
+              .eq('appointment_id', apt.id);
+
+            if (calLinks && calLinks.length > 0 && newApt) {
+              await supabase
+                .from('crm_job_appointment_calendars')
+                .insert(calLinks.map(link => ({
+                  appointment_id: newApt.id,
+                  google_calendar_db_id: link.google_calendar_db_id,
+                  google_calendar_event_id: null,
+                })));
+            }
+          }
         }
       }
 
