@@ -31,11 +31,10 @@ export const AIAssistantPanel = () => {
     recognition.lang = 'en-US';
 
     recognition.onresult = (event: any) => {
-      const transcript = Array.from(event.results)
-        .map((result: any) => result[0].transcript)
-        .join('');
-      if (event.results[event.results.length - 1].isFinal) {
-        setInput(prev => prev + transcript);
+      const latestResult = event.results[event.results.length - 1];
+      if (latestResult.isFinal) {
+        const transcript = latestResult[0].transcript;
+        setInput(prev => (prev ? prev + ' ' : '') + transcript.trim());
       }
     };
 
@@ -107,6 +106,11 @@ export const AIAssistantPanel = () => {
 
   const handleSend = useCallback(async () => {
     if (!input.trim() || isLoading || sendCooldown) return;
+    if (isListeningRef.current) {
+      isListeningRef.current = false;
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    }
     const text = input;
     setInput('');
     if (inputRef.current) inputRef.current.style.height = 'auto';
