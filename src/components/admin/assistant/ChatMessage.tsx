@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, AlertCircle, RotateCcw, CheckCircle2, Calendar, RefreshCw, XCircle, Sparkles } from 'lucide-react';
+import { ChevronDown, ChevronUp, AlertCircle, RotateCcw, CheckCircle2, Calendar, RefreshCw, XCircle, Sparkles, Volume2, VolumeX, Loader2 } from 'lucide-react';
 import type { ChatMessage as ChatMessageType } from './AssistantContext';
 import { ConfirmationCard } from './ConfirmationCard';
 
@@ -10,13 +10,16 @@ interface ChatMessageProps {
   onCancel?: () => void;
   onRetry?: () => void;
   onSendMessage?: (msg: string) => void;
+  onSpeak?: (text: string, messageId: string) => void;
+  isSpeakingThis?: boolean;
+  isLoadingAudio?: boolean;
 }
 
 const SUCCESS_KEYWORDS = ['Created job', 'Moved', 'Logged', 'Updated', 'Added', 'Scheduled', 'Rescheduled', 'Cancelled'];
 
 const CALENDAR_LINK_REGEX = /https:\/\/(www\.google\.com\/calendar\/event\?eid=|calendar\.google\.com\/calendar\/event\?eid=)[^\s)]+/g;
 
-export const ChatMessage = ({ message, isLatestAssistant, onConfirm, onCancel, onRetry, onSendMessage }: ChatMessageProps) => {
+export const ChatMessage = ({ message, isLatestAssistant, onConfirm, onCancel, onRetry, onSendMessage, onSpeak, isSpeakingThis, isLoadingAudio }: ChatMessageProps) => {
   const [showTools, setShowTools] = useState(false);
 
   // Loading state
@@ -180,6 +183,22 @@ export const ChatMessage = ({ message, isLatestAssistant, onConfirm, onCancel, o
 
         <div className={`flex items-center gap-2 mt-1 ${isUser ? 'justify-end' : 'justify-start'}`}>
           <span className="text-xs text-gray-400">{timeStr}</span>
+          {!isUser && onSpeak && (
+            <button
+              onClick={() => onSpeak(message.content, message.id)}
+              disabled={isLoadingAudio}
+              className="flex items-center gap-0.5 text-xs text-gray-400 hover:text-gray-600 disabled:opacity-40"
+              title={isSpeakingThis ? 'Stop speaking' : 'Listen'}
+            >
+              {isLoadingAudio ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : isSpeakingThis ? (
+                <VolumeX className="h-3 w-3" />
+              ) : (
+                <Volume2 className="h-3 w-3" />
+              )}
+            </button>
+          )}
           {!isUser && message.toolsUsed && message.toolsUsed.length > 0 && (
             <button
               onClick={() => setShowTools(p => !p)}
