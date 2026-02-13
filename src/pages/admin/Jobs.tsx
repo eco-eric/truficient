@@ -198,7 +198,7 @@ export default function Jobs() {
   const boardStages = useMemo(() => {
     if (!activeBoardJobType) return [];
     return allStages
-      .filter(s => s.job_type_id === activeBoardJobType.id && s.stage_type !== 'cancelled')
+      .filter(s => s.job_type_id === activeBoardJobType.id && s.stage_type !== 'cancelled' && s.stage_type !== 'closed_won')
       .sort((a, b) => a.sort_order - b.sort_order);
   }, [allStages, activeBoardJobType]);
 
