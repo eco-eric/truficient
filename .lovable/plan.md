@@ -1,21 +1,24 @@
 
-# Fix Bach's Timezone — Force CST in Briefing & Schedule Tools
 
-## Status: ✅ COMPLETED
+# Add "Closed Won" Stage to All Job Types
 
-## What Was Done
+## What This Does
+Adds a "Closed Won" stage to every active job type so you can mark jobs as successfully completed. These stages will be hidden from the Kanban board view to keep it uncluttered — just like "Cancelled" stages are already hidden.
 
-### 1. `assistant-briefing` edge function
-- ✅ Added CST utility functions (`getCSTDateStr`, `toCSTBoundary`, `formatTimeCST`, `formatDateCST`)
-- ✅ Replaced UTC-based `todayStr`/`tomorrowStr` with CST-aware date strings
-- ✅ Query boundaries now use CST-to-UTC converted timestamps
-- ✅ Added `time_display` and `end_time_display` fields to appointment objects
+## Changes
 
-### 2. `ai-assistant` edge function — `executeGetSchedule`
-- ✅ Compute "today" in CST via `getCSTDateStr`
-- ✅ Query boundaries use `toCSTBoundary` for correct day filtering
-- ✅ Group appointments by CST date (not UTC date)
-- ✅ Added `time_display` and `end_time_display` to schedule data
+### 1. Insert "Closed Won" stages into the database
+- Add a "Closed Won" stage (green, `#22C55E`) for each active job type
+- Uses the `closed_won` stage type (already allowed by the constraint we just added)
+- Placed at the end of each job type's stage order
 
-### 3. System prompt
-- ✅ Added instruction: "All appointment times are in Central Time. Display time_display fields directly."
+### 2. Hide "Closed Won" from the Kanban board
+- **File:** `src/pages/admin/Jobs.tsx` (line 201)
+- The board already filters out `cancelled` stages — we just add `closed_won` to the same filter:
+  ```
+  .filter(s => s.stage_type !== 'cancelled' && s.stage_type !== 'closed_won')
+  ```
+
+### 3. Clean up unused `closed_lost` from the constraint
+- Since you don't need "Closed Lost" (cancelled covers it), we'll remove `closed_lost` from the allowed stage types to keep things clean
+
