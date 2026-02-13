@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, AlertCircle, RotateCcw, CheckCircle2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, AlertCircle, RotateCcw, CheckCircle2, Calendar, RefreshCw, XCircle } from 'lucide-react';
 import type { ChatMessage as ChatMessageType } from './AssistantContext';
 import { ConfirmationCard } from './ConfirmationCard';
 
@@ -11,7 +11,9 @@ interface ChatMessageProps {
   onRetry?: () => void;
 }
 
-const SUCCESS_KEYWORDS = ['Created job', 'Moved', 'Logged', 'Updated', 'Added', 'Scheduled'];
+const SUCCESS_KEYWORDS = ['Created job', 'Moved', 'Logged', 'Updated', 'Added', 'Scheduled', 'Rescheduled', 'Cancelled'];
+
+const CALENDAR_LINK_REGEX = /https:\/\/(www\.google\.com\/calendar\/event\?eid=|calendar\.google\.com\/calendar\/event\?eid=)[^\s)]+/g;
 
 export const ChatMessage = ({ message, isLatestAssistant, onConfirm, onCancel, onRetry }: ChatMessageProps) => {
   const [showTools, setShowTools] = useState(false);
@@ -54,12 +56,23 @@ export const ChatMessage = ({ message, isLatestAssistant, onConfirm, onCancel, o
 
   const isUser = message.role === 'user';
   const isSuccess = !isUser && SUCCESS_KEYWORDS.some(kw => message.content.startsWith(kw) || message.content.includes(`✅ ${kw}`) || message.content.includes(kw));
+  const isReschedule = !isUser && (message.content.includes('Reschedul') || message.content.includes('reschedul'));
+  const isCancellation = !isUser && (message.content.includes('Cancel') || message.content.includes('cancel'));
+  const hasCalendarSynced = !isUser && message.content.includes('calendar updated');
 
-  // Format assistant content
+  // Extract calendar links from message
+  const calendarLinks = !isUser ? (message.content.match(CALENDAR_LINK_REGEX) || []) : [];
+
+  // Format assistant content (strip calendar links from inline text)
   const formatContent = (text: string) => {
-    return text.split('\n').map((line, i) => {
+    let cleaned = text;
+    calendarLinks.forEach(link => {
+      cleaned = cleaned.replace(link, '');
+    });
+
+    return cleaned.split('\n').map((line, i) => {
       let formatted = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      if (/^[📞📧📍🏠📅💰🔧👷⚠️✅]/.test(line)) {
+      if (/^[📞📧📍🏠📅💰🔧👷⚠️✅🔗🔄❌]/.test(line)) {
         return <p key={i} className="text-sm my-0.5" dangerouslySetInnerHTML={{ __html: formatted }} />;
       }
       if (line.startsWith('• ') || line.startsWith('- ')) {
@@ -91,10 +104,41 @@ export const ChatMessage = ({ message, isLatestAssistant, onConfirm, onCancel, o
             <div>
               {isSuccess && (
                 <div className="flex items-center gap-1 mb-1">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                  {isReschedule ? (
+                    <RefreshCw className="h-3.5 w-3.5 text-blue-600" />
+                  ) : isCancellation ? (
+                    <XCircle className="h-3.5 w-3.5 text-red-500" />
+                  ) : (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                  )}
                 </div>
               )}
               {formatContent(message.content)}
+
+              {/* Calendar links */}
+              {calendarLinks.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  {calendarLinks.map((link, i) => (
+                    <a
+                      key={i}
+                      href={link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 mt-1 py-1.5 px-3 bg-white border border-gray-200 rounded-lg text-xs font-medium text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                    >
+                      <Calendar className="h-3.5 w-3.5" />
+                      View in Google Calendar →
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              {/* Calendar synced badge */}
+              {hasCalendarSynced && calendarLinks.length === 0 && (
+                <div className="inline-flex items-center gap-1 mt-1.5 text-xs text-gray-500">
+                  <Calendar className="h-3 w-3" /> synced
+                </div>
+              )}
             </div>
           )}
         </div>

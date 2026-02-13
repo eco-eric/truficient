@@ -249,7 +249,7 @@ const tools = [
     type: "function" as const,
     function: {
       name: "schedule_appointment",
-      description: "Create a timed appointment for an existing job. ALWAYS confirm first.",
+      description: "Create a timed appointment for an existing job with a start/end time and optional team assignment. Automatically creates a Google Calendar event with job details, customer info, and location. ALWAYS confirm with the user before executing.",
       parameters: {
         type: "object",
         properties: {
@@ -258,9 +258,60 @@ const tools = [
           end_datetime: { type: "string", description: "End in ISO 8601" },
           team_id: { type: "string", description: "UUID of team/crew (optional)" },
           notes: { type: "string", description: "Appointment notes" },
+          skip_calendar: { type: "boolean", description: "If true, skip Google Calendar event creation (default false)" },
           confirmed: { type: "boolean", description: "Set true ONLY after user confirms." },
         },
         required: ["job_id", "start_datetime", "end_datetime", "confirmed"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "reschedule_appointment",
+      description: "Reschedule an existing job appointment to a new date/time. Updates both the CRM record and the linked Google Calendar event. Use search_jobs or get_schedule first to find the appointment. ALWAYS confirm before executing.",
+      parameters: {
+        type: "object",
+        properties: {
+          appointment_id: { type: "string", description: "UUID of the appointment to reschedule" },
+          new_start_datetime: { type: "string", description: "New start time in ISO 8601 with Central Time offset" },
+          new_end_datetime: { type: "string", description: "New end time in ISO 8601 with Central Time offset" },
+          new_team_id: { type: "string", description: "Optional new team/crew assignment" },
+          reason: { type: "string", description: "Reason for rescheduling" },
+          confirmed: { type: "boolean", description: "Set to true ONLY after user confirmation." },
+        },
+        required: ["appointment_id", "new_start_datetime", "new_end_datetime", "confirmed"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "cancel_appointment",
+      description: "Cancel a job appointment. Updates the CRM record and deletes the linked Google Calendar event. ALWAYS confirm before executing.",
+      parameters: {
+        type: "object",
+        properties: {
+          appointment_id: { type: "string", description: "UUID of the appointment to cancel" },
+          reason: { type: "string", description: "Reason for cancellation" },
+          confirmed: { type: "boolean", description: "Set to true ONLY after user confirmation." },
+        },
+        required: ["appointment_id", "confirmed"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "get_google_calendar",
+      description: "Read events directly from Google Calendar for a date range. Shows all events including non-job items. Use for checking true availability. No confirmation needed.",
+      parameters: {
+        type: "object",
+        properties: {
+          date_from: { type: "string", description: "Start date (YYYY-MM-DD). Defaults to today." },
+          date_to: { type: "string", description: "End date (YYYY-MM-DD). Defaults to 7 days from start." },
+          team_id: { type: "string", description: "Optional team ID to check that team's specific calendar" },
+        },
       },
     },
   },
@@ -787,8 +838,23 @@ async function executeMovePipelineEntry(supabase: any, userId: string, input: an
   return { success: true, message: `Moved ${customerName} from "${currentStage}" to "${targetStage.display_name}" in the pipeline` };
 }
 
+// Job type color map for Google Calendar
+const JOB_TYPE_COLORS: Record<string, string> = {
+  install: "9", maintenance: "2", repair: "11", inspection: "5", consultation: "7", default: "1",
+};
+
+async function getCalendarIdForTeam(supabase: any, teamId: string | null): Promise<string | null> {
+  if (!teamId) return null;
+  const { data: team } = await supabase.from("crm_teams").select("google_calendar_id").eq("id", teamId).single();
+  if (team?.google_calendar_id) {
+    const { data: cal } = await supabase.from("google_calendars").select("calendar_id").eq("id", team.google_calendar_id).single();
+    return cal?.calendar_id || null;
+  }
+  return null;
+}
+
 async function executeScheduleAppointment(supabase: any, userId: string, input: any) {
-  const { data: job } = await supabase.from("crm_jobs").select(`id, job_number, crm_customers(first_name, last_name), crm_locations(address_line1, city), crm_job_types(name)`).eq("id", input.job_id).single();
+  const { data: job } = await supabase.from("crm_jobs").select(`id, job_number, customer_id, crm_customers(first_name, last_name, phone, email), crm_locations(address_line1, city, state, zip_code), crm_job_types(name, category)`).eq("id", input.job_id).single();
   if (!job) return { error: "Job not found." };
 
   let teamName = "Unassigned";
@@ -798,6 +864,7 @@ async function executeScheduleAppointment(supabase: any, userId: string, input: 
   }
 
   const customerName = `${job.crm_customers?.first_name} ${job.crm_customers?.last_name}`;
+  const location = job.crm_locations ? `${job.crm_locations.address_line1}, ${job.crm_locations.city}, ${job.crm_locations.state} ${job.crm_locations.zip_code}` : "";
 
   const { data: conflicts } = await supabase
     .from("crm_job_appointments")
@@ -805,14 +872,14 @@ async function executeScheduleAppointment(supabase: any, userId: string, input: 
     .eq("assigned_team_id", input.team_id || "none")
     .or(`and(start_datetime.lt.${input.end_datetime},end_datetime.gt.${input.start_datetime})`);
 
-  const startTime = new Date(input.start_datetime).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-  const endTime = new Date(input.end_datetime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  const startTime = new Date(input.start_datetime).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" });
+  const endTime = new Date(input.end_datetime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" });
 
   if (!input.confirmed) {
     return {
       needs_confirmation: true, action: "schedule_appointment",
-      summary: { job_number: job.job_number, job_type: job.crm_job_types?.name, customer: customerName, location: job.crm_locations ? `${job.crm_locations.address_line1}, ${job.crm_locations.city}` : "No location", time: `${startTime} – ${endTime}`, team: teamName, conflicts: conflicts?.length || 0 },
-      confirmation_prompt: `Schedule **${job.job_number}** (${job.crm_job_types?.name}) for **${customerName}**:\n📅 ${startTime} – ${endTime}\n👷 ${teamName}\n📍 ${job.crm_locations?.address_line1 || "No address"}${conflicts && conflicts.length > 0 ? `\n\n⚠️ **Warning:** ${conflicts.length} scheduling conflict(s) detected for this team at this time.` : ""}`,
+      summary: { job_number: job.job_number, job_type: job.crm_job_types?.name, customer: customerName, location: location || "No location", time: `${startTime} – ${endTime}`, team: teamName, conflicts: conflicts?.length || 0 },
+      confirmation_prompt: `Schedule **${job.job_number}** (${job.crm_job_types?.name}) for **${customerName}**:\n📅 ${startTime} – ${endTime}\n👷 ${teamName}\n📍 ${location || "No address"}\n🔗 Google Calendar event will be created${conflicts && conflicts.length > 0 ? `\n\n⚠️ **Warning:** ${conflicts.length} scheduling conflict(s) detected for this team at this time.` : ""}`,
     };
   }
 
@@ -824,7 +891,202 @@ async function executeScheduleAppointment(supabase: any, userId: string, input: 
 
   if (error) throw new Error(`Failed to schedule: ${error.message}`);
 
-  return { success: true, appointment_id: appointment.id, message: `Scheduled ${job.job_number} for ${startTime} – ${endTime} with ${teamName}` };
+  // Google Calendar sync
+  let calendarResult = null;
+  if (!input.skip_calendar) {
+    try {
+      const calendarDescription = [
+        `Job: ${job.job_number}`,
+        `Type: ${job.crm_job_types?.name}`,
+        `Customer: ${customerName}`,
+        `Phone: ${job.crm_customers?.phone || "N/A"}`,
+        `Email: ${job.crm_customers?.email || "N/A"}`,
+        input.notes ? `\nNotes: ${input.notes}` : "",
+        `\n---\nManaged by Truficient AI Assistant`,
+      ].filter(Boolean).join("\n");
+
+      const calendarId = await getCalendarIdForTeam(supabase, input.team_id);
+      let targetCalId = calendarId;
+      if (!targetCalId) {
+        const { data: activeCals } = await supabase.from("google_calendars").select("calendar_id").eq("is_active", true).eq("is_primary", true).limit(1);
+        targetCalId = activeCals?.[0]?.calendar_id;
+      }
+
+      if (targetCalId) {
+        const colorId = JOB_TYPE_COLORS[job.crm_job_types?.category || "default"] || JOB_TYPE_COLORS.default;
+        const { data: gcalResult, error: gcalError } = await supabase.functions.invoke("google-calendar-sync", {
+          body: {
+            action: "create-event",
+            calendarId: targetCalId,
+            event: {
+              summary: `${job.crm_job_types?.name} — ${customerName} (${job.job_number})`,
+              description: calendarDescription,
+              location: location,
+              start: { dateTime: input.start_datetime, timeZone: "America/Chicago" },
+              end: { dateTime: input.end_datetime, timeZone: "America/Chicago" },
+              colorId: colorId,
+            },
+          },
+        });
+
+        if (gcalError) {
+          console.error("Calendar sync failed:", gcalError);
+          calendarResult = { synced: false, error: gcalError.message };
+        } else {
+          if (gcalResult?.id) {
+            await supabase.from("crm_job_appointments").update({ google_calendar_event_id: gcalResult.id }).eq("id", appointment.id);
+          }
+          calendarResult = { synced: true, event_id: gcalResult?.id, calendar_link: gcalResult?.htmlLink };
+        }
+      }
+    } catch (calErr: any) {
+      console.error("Calendar sync error:", calErr);
+      calendarResult = { synced: false, error: calErr.message };
+    }
+  }
+
+  return {
+    success: true, appointment_id: appointment.id,
+    message: `Scheduled ${job.job_number} for ${startTime} – ${endTime} with ${teamName}`,
+    calendar: calendarResult,
+  };
+}
+
+async function executeRescheduleAppointment(supabase: any, userId: string, input: any) {
+  const { data: apt } = await supabase
+    .from("crm_job_appointments")
+    .select(`id, start_datetime, end_datetime, assigned_team_id, google_calendar_event_id, crm_jobs(job_number, customer_id, crm_customers(first_name, last_name, phone), crm_locations(address_line1, city, state, zip_code), crm_job_types(name, category)), crm_teams(name, google_calendar_id)`)
+    .eq("id", input.appointment_id)
+    .single();
+
+  if (!apt) return { error: "Appointment not found." };
+
+  const customerName = `${apt.crm_jobs?.crm_customers?.first_name} ${apt.crm_jobs?.crm_customers?.last_name}`;
+  const jobNumber = apt.crm_jobs?.job_number;
+
+  const oldStart = new Date(apt.start_datetime).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" });
+  const newStart = new Date(input.new_start_datetime).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" });
+  const newEnd = new Date(input.new_end_datetime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" });
+
+  let newTeamName = apt.crm_teams?.name || "Unassigned";
+  if (input.new_team_id && input.new_team_id !== apt.assigned_team_id) {
+    const { data: team } = await supabase.from("crm_teams").select("name").eq("id", input.new_team_id).single();
+    newTeamName = team?.name || "Unknown team";
+  }
+
+  if (!input.confirmed) {
+    return {
+      needs_confirmation: true, action: "reschedule_appointment",
+      summary: { job_number: jobNumber, customer: customerName, old_time: oldStart, new_time: `${newStart} – ${newEnd}`, team: newTeamName, reason: input.reason || "No reason given", has_calendar_event: !!apt.google_calendar_event_id },
+      confirmation_prompt: `Reschedule **${jobNumber}** (${customerName})?\n\n📅 **From:** ${oldStart}\n📅 **To:** ${newStart} – ${newEnd}\n👷 ${newTeamName}${input.reason ? `\n💬 Reason: ${input.reason}` : ""}${apt.google_calendar_event_id ? "\n🔗 Google Calendar event will be updated" : ""}`,
+    };
+  }
+
+  const updateData: any = { start_datetime: input.new_start_datetime, end_datetime: input.new_end_datetime, notes: input.reason ? `Rescheduled: ${input.reason}` : null, updated_at: new Date().toISOString() };
+  if (input.new_team_id) updateData.assigned_team_id = input.new_team_id;
+
+  const { error } = await supabase.from("crm_job_appointments").update(updateData).eq("id", input.appointment_id);
+  if (error) throw new Error(`Failed to reschedule: ${error.message}`);
+
+  let calendarUpdated = false;
+  if (apt.google_calendar_event_id) {
+    try {
+      const calendarId = await getCalendarIdForTeam(supabase, input.new_team_id || apt.assigned_team_id);
+      let targetCalId = calendarId;
+      if (!targetCalId) {
+        const { data: activeCals } = await supabase.from("google_calendars").select("calendar_id").eq("is_active", true).eq("is_primary", true).limit(1);
+        targetCalId = activeCals?.[0]?.calendar_id;
+      }
+      if (targetCalId) {
+        await supabase.functions.invoke("google-calendar-sync", {
+          body: {
+            action: "update-event", calendarId: targetCalId, eventId: apt.google_calendar_event_id,
+            event: { summary: `${apt.crm_jobs?.crm_job_types?.name} — ${customerName} (${jobNumber})`, start: { dateTime: input.new_start_datetime, timeZone: "America/Chicago" }, end: { dateTime: input.new_end_datetime, timeZone: "America/Chicago" } },
+          },
+        });
+        calendarUpdated = true;
+      }
+    } catch (err) { console.error("Calendar update failed:", err); }
+  }
+
+  await supabase.from("crm_interactions").insert({ customer_id: apt.crm_jobs?.customer_id, interaction_type: "note", content: `Appointment for ${jobNumber} rescheduled from ${oldStart} to ${newStart}${input.reason ? ` — ${input.reason}` : ""} (via AI Assistant)`, logged_by: userId });
+
+  return { success: true, message: `Rescheduled ${jobNumber} to ${newStart} – ${newEnd}${calendarUpdated ? " (calendar updated)" : ""}` };
+}
+
+async function executeCancelAppointment(supabase: any, userId: string, input: any) {
+  const { data: apt } = await supabase
+    .from("crm_job_appointments")
+    .select(`id, start_datetime, end_datetime, google_calendar_event_id, assigned_team_id, crm_jobs(job_number, customer_id, crm_customers(first_name, last_name), crm_job_types(name)), crm_teams(name, google_calendar_id)`)
+    .eq("id", input.appointment_id)
+    .single();
+
+  if (!apt) return { error: "Appointment not found." };
+
+  const customerName = `${apt.crm_jobs?.crm_customers?.first_name} ${apt.crm_jobs?.crm_customers?.last_name}`;
+  const jobNumber = apt.crm_jobs?.job_number;
+  const aptTime = new Date(apt.start_datetime).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" });
+
+  if (!input.confirmed) {
+    return {
+      needs_confirmation: true, action: "cancel_appointment",
+      summary: { job_number: jobNumber, customer: customerName, job_type: apt.crm_jobs?.crm_job_types?.name, time: aptTime, team: apt.crm_teams?.name || "Unassigned", has_calendar_event: !!apt.google_calendar_event_id },
+      confirmation_prompt: `Cancel the appointment for **${jobNumber}** (${customerName})?\n📅 ${aptTime}\n👷 ${apt.crm_teams?.name || "Unassigned"}${apt.google_calendar_event_id ? "\n🔗 Google Calendar event will be deleted" : ""}${input.reason ? `\n💬 Reason: ${input.reason}` : ""}\n\n⚠️ This removes the appointment but keeps the job.`,
+    };
+  }
+
+  if (apt.google_calendar_event_id) {
+    try {
+      const calendarId = await getCalendarIdForTeam(supabase, apt.assigned_team_id);
+      let targetCalId = calendarId;
+      if (!targetCalId) {
+        const { data: activeCals } = await supabase.from("google_calendars").select("calendar_id").eq("is_active", true).eq("is_primary", true).limit(1);
+        targetCalId = activeCals?.[0]?.calendar_id;
+      }
+      if (targetCalId) {
+        await supabase.functions.invoke("google-calendar-sync", { body: { action: "delete-event", calendarId: targetCalId, eventId: apt.google_calendar_event_id } });
+      }
+    } catch (err) { console.error("Calendar delete failed:", err); }
+  }
+
+  const { error } = await supabase.from("crm_job_appointments").delete().eq("id", input.appointment_id);
+  if (error) throw new Error(`Failed to cancel: ${error.message}`);
+
+  await supabase.from("crm_interactions").insert({ customer_id: apt.crm_jobs?.customer_id, interaction_type: "note", content: `Appointment for ${jobNumber} on ${aptTime} cancelled${input.reason ? `: ${input.reason}` : ""} (via AI Assistant)`, logged_by: userId });
+
+  return { success: true, message: `Cancelled appointment for ${jobNumber} on ${aptTime}` };
+}
+
+async function executeGetGoogleCalendar(supabase: any, input: any) {
+  const today = new Date().toISOString().split("T")[0];
+  const dateFrom = input.date_from || today;
+  const dateTo = input.date_to || new Date(new Date(dateFrom).getTime() + 7 * 86400000).toISOString().split("T")[0];
+
+  let calendarIds: string[] = [];
+  if (input.team_id) {
+    const calId = await getCalendarIdForTeam(supabase, input.team_id);
+    if (calId) calendarIds = [calId];
+  }
+  if (calendarIds.length === 0) {
+    const { data: activeCals } = await supabase.from("google_calendars").select("calendar_id").eq("is_active", true);
+    calendarIds = (activeCals || []).map((c: any) => c.calendar_id);
+  }
+
+  if (calendarIds.length === 0) return { date_range: { from: dateFrom, to: dateTo }, total_events: 0, events: [], note: "No active calendars configured." };
+
+  const { data, error } = await supabase.functions.invoke("google-calendar-sync", {
+    body: { action: "get-all-events", timeMin: `${dateFrom}T00:00:00-06:00`, timeMax: `${dateTo}T23:59:59-06:00`, calendarIds },
+  });
+
+  if (error) throw new Error(`Calendar read failed: ${error.message}`);
+
+  const events = (data?.items || []).map((e: any) => ({
+    summary: e.summary, location: e.location,
+    start: e.start?.dateTime || e.start?.date, end: e.end?.dateTime || e.end?.date,
+    status: e.status, calendar: e.calendarId,
+  }));
+
+  return { date_range: { from: dateFrom, to: dateTo }, total_events: events.length, events };
 }
 
 async function executeGetJobTypes(supabase: any) {
@@ -860,6 +1122,9 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "add_to_pipeline": return executeAddToPipeline(supabase, userId, toolInput);
     case "move_pipeline_entry": return executeMovePipelineEntry(supabase, userId, toolInput);
     case "schedule_appointment": return executeScheduleAppointment(supabase, userId, toolInput);
+    case "reschedule_appointment": return executeRescheduleAppointment(supabase, userId, toolInput);
+    case "cancel_appointment": return executeCancelAppointment(supabase, userId, toolInput);
+    case "get_google_calendar": return executeGetGoogleCalendar(supabase, toolInput);
     case "get_job_types": return executeGetJobTypes(supabase);
     case "get_pipeline_stages": return executeGetPipelineStages(supabase);
     default: throw new Error(`Unknown tool: ${toolName}`);
@@ -887,6 +1152,7 @@ Read operations:
 - Search and view customer records, locations, and interaction history
 - Look up jobs by number, customer, type, or date range
 - Check team schedules and availability
+- Read Google Calendar directly for full availability picture (includes meetings, blocks, travel time beyond just CRM appointments)
 - View submission counts and pipeline metrics
 - View team/crew information and assignments
 
@@ -896,7 +1162,20 @@ Write operations (ALWAYS confirm first):
 - Log interactions (calls, emails, notes, meetings, texts, tasks)
 - Update customer lifecycle status
 - Add customers to the sales pipeline or move between stages
-- Schedule job appointments with team assignments
+- Schedule job appointments (automatically creates Google Calendar events with job details, customer info, and address)
+- Reschedule appointments (updates both CRM record and Google Calendar event)
+- Cancel appointments (removes CRM appointment and deletes Google Calendar event)
+
+CALENDAR INTEGRATION:
+- When scheduling, the system automatically creates a Google Calendar event
+- Event titles follow format: "Job Type — Customer Name (TRU-XXXX-XXXX)"
+- Events are color-coded by job type (blue=install, green=maintenance, red=repair, yellow=inspection)
+- Each crew can have their own calendar
+- When rescheduling, both CRM and calendar are updated
+- When cancelling, the calendar event is also deleted
+- Use get_google_calendar to check TRUE availability (includes meetings, blocks, etc. not just CRM appointments)
+- Always check both CRM schedule AND Google Calendar before confirming availability
+- Business hours: Monday-Friday 7am-6pm, Saturday 8am-2pm
 
 CONFIRMATION RULES — VERY IMPORTANT:
 1. When a write tool returns needs_confirmation: true, you MUST present the confirmation_prompt to the user and ASK them to confirm before proceeding.
