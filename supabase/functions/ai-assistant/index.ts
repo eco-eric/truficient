@@ -10,6 +10,68 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// === RBAC: Get user's assistant permissions ===
+async function getAssistantPermissions(supabase: any, userId: string) {
+  const { data: roleData } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .single();
+  if (!roleData) return null;
+
+  const { data: perms } = await supabase
+    .from("assistant_role_permissions")
+    .select("*")
+    .eq("role_name", roleData.role)
+    .single();
+
+  return perms ? { ...perms, user_role: roleData.role } : null;
+}
+
+// === Financial data redaction for restricted roles ===
+function redactFinancials(data: any): any {
+  if (data === null || data === undefined) return data;
+  if (typeof data === "string") return data.replace(/\$[\d,]+\.?\d*/g, "$[restricted]");
+  if (Array.isArray(data)) return data.map(redactFinancials);
+  if (typeof data === "object") {
+    const sensitive = new Set([
+      "estimated_value","final_total","subtotal","tax_amount","equipment_cost",
+      "installation_labor","installation_cost","price","hourly_rate",
+      "monthly_payment","monthlyPayment","rebates","addons_cost","addonsCost",
+      "base_price","equipment_total","equipmentTotal","recent_wins_total",
+    ]);
+    const out: any = {};
+    for (const [k, v] of Object.entries(data)) {
+      out[k] = sensitive.has(k) ? "[restricted]" : redactFinancials(v);
+    }
+    return out;
+  }
+  return data;
+}
+
+// === Tool-to-permission mapping ===
+const TOOL_PERMISSIONS: Record<string, string> = {
+  search_customers: "can_access_assistant",
+  get_customer_details: "can_access_assistant",
+  search_jobs: "can_access_assistant",
+  get_schedule: "can_access_assistant",
+  get_submission_stats: "can_access_assistant",
+  get_recent_submissions: "can_access_assistant",
+  get_pipeline_overview: "can_access_assistant",
+  lookup_property_data: "can_access_assistant",
+  get_team_info: "can_access_assistant",
+  create_job: "can_use_write_tools",
+  update_job_stage: "can_use_write_tools",
+  log_interaction: "can_use_write_tools",
+  update_customer_status: "can_use_write_tools",
+  create_pipeline_entry: "can_use_write_tools",
+  schedule_appointment: "can_use_write_tools",
+  reschedule_appointment: "can_use_write_tools",
+  cancel_appointment: "can_use_write_tools",
+  get_google_calendar: "can_use_calendar_tools",
+  get_daily_briefing: "can_view_briefing",
+};
+
 // ============================================================
 // TOOL DEFINITIONS (OpenAI format)
 // ============================================================
@@ -1144,6 +1206,7 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "get_google_calendar": return executeGetGoogleCalendar(supabase, toolInput);
     case "get_job_types": return executeGetJobTypes(supabase);
     case "get_pipeline_stages": return executeGetPipelineStages(supabase);
+    case "get_daily_briefing": return toolInput.briefing_data || { error: "No briefing data available." };
     default: throw new Error(`Unknown tool: ${toolName}`);
   }
 }
@@ -1383,13 +1446,32 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { data: userRole } = await supabase.from("user_roles").select("role").eq("user_id", user.id).single();
-    if (!userRole || !["admin", "manager", "super_admin"].includes(userRole.role)) {
-      return new Response(JSON.stringify({ error: "Insufficient permissions" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // === RBAC check ===
+    const permissions = await getAssistantPermissions(supabase, user.id);
+    if (!permissions || !permissions.can_access_assistant) {
+      return new Response(
+        JSON.stringify({ error: "You don't have access to the AI assistant. Contact your admin." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    const { message, conversationHistory = [] } = await req.json();
-    if (!message || typeof message !== "string") {
+    // === Rate limiting ===
+    const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
+    const { count: msgCount } = await supabase
+      .from("assistant_logs")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", oneHourAgo);
+
+    if ((msgCount || 0) >= permissions.max_messages_per_hour) {
+      return new Response(
+        JSON.stringify({ error: `Rate limit reached (${permissions.max_messages_per_hour}/hr). Try again later.` }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { message, conversationHistory = [], briefing_data, is_auto_briefing } = await req.json();
+    if (!is_auto_briefing && (!message || typeof message !== "string")) {
       return new Response(JSON.stringify({ error: "Message is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -1399,14 +1481,75 @@ Deno.serve(async (req) => {
     );
     const aiConfig = await getAIConfig(serviceClient);
 
-    const systemPrompt = aiConfig.system_prompt || getSystemPrompt();
+    const baseSystemPrompt = aiConfig.system_prompt || getSystemPrompt();
 
-    const trimmedHistory = conversationHistory.slice(-20);
-    const messages: any[] = [
-      { role: "system", content: systemPrompt },
-      ...trimmedHistory.map((m: any) => ({ role: m.role, content: m.content })),
-      { role: "user", content: message },
-    ];
+    // === Briefing instructions ===
+    const briefingInstructions = `
+
+PROACTIVE BRIEFING:
+When you receive briefing_data through the get_daily_briefing tool, generate a natural morning briefing:
+
+1. GREETING — Time-appropriate greeting with the day/date
+2. TODAY'S SCHEDULE — List appointments chronologically with crew, customer, job type, time. Flag overlaps.
+3. ACTION ITEMS — New submissions needing follow-up, uncontacted leads (3+ days), stale estimates (5+ days), overdue jobs
+4. ALERTS — Certification expirations, licensing issues
+5. WINS — Recent pipeline victories
+
+Keep it conversational but efficient. Use emoji sparingly: 📅 schedule, 🔔 alerts, 🎉 wins, ⚠️ urgent.
+Skip empty categories. End with a suggested action.
+
+After the briefing, include follow-up suggestions formatted exactly as:
+[SUGGESTIONS: "action 1", "action 2", "action 3"]
+Make them specific to the briefing content.`;
+
+    // === Dynamic role context ===
+    let roleContext = `\n\nUSER CONTEXT:\nCurrent user role: ${permissions.user_role}`;
+    if (!permissions.can_use_write_tools) {
+      roleContext += "\nThis user has READ-ONLY access. Do NOT create, update, or delete records. If asked, explain they need admin access.";
+    }
+    if (!permissions.can_view_financials) {
+      roleContext += "\nThis user CANNOT view financial data. Omit all dollar amounts, pricing, and cost information from responses. If data shows '[restricted]', skip it silently.";
+    }
+    if (!permissions.can_use_calendar_tools) {
+      roleContext += "\nThis user does NOT have Google Calendar access. Use only CRM schedule data.";
+    }
+    if (!permissions.can_view_briefing) {
+      roleContext += "\nThis user cannot access daily briefings.";
+    }
+
+    const fullSystemPrompt = baseSystemPrompt + briefingInstructions + roleContext;
+
+    // === Build messages ===
+    let messages: any[];
+
+    if (is_auto_briefing && briefing_data) {
+      // Pre-fill the tool call + result so the AI just formats the briefing
+      messages = [
+        { role: "system", content: fullSystemPrompt },
+        { role: "user", content: "Generate my daily operations briefing." },
+        {
+          role: "assistant",
+          content: null,
+          tool_calls: [{
+            id: "briefing_auto_001",
+            type: "function",
+            function: { name: "get_daily_briefing", arguments: JSON.stringify({ briefing_data }) },
+          }],
+        },
+        {
+          role: "tool",
+          tool_call_id: "briefing_auto_001",
+          content: JSON.stringify(briefing_data),
+        },
+      ];
+    } else {
+      const trimmedHistory = conversationHistory.slice(-20);
+      messages = [
+        { role: "system", content: fullSystemPrompt },
+        ...trimmedHistory.map((m: any) => ({ role: m.role, content: m.content })),
+        { role: "user", content: message },
+      ];
+    }
 
     let toolsUsed: any[] = [];
     let finalResponse = "";
@@ -1415,7 +1558,13 @@ Deno.serve(async (req) => {
     while (maxIterations > 0) {
       maxIterations--;
 
-      const aiResponse = await callAI(aiConfig, messages, tools);
+      // Filter tools by permission
+      const authorizedTools = tools.filter((tool: any) => {
+        const req = TOOL_PERMISSIONS[tool.function.name];
+        return !req || permissions[req] === true;
+      });
+
+      const aiResponse = await callAI(aiConfig, messages, authorizedTools);
 
       if (!aiResponse.ok) {
         const errText = await aiResponse.text();
@@ -1449,7 +1598,11 @@ Deno.serve(async (req) => {
         }
 
         try {
-          const result = await executeTool(supabase, toolName, toolInput, user.id);
+          let result = await executeTool(supabase, toolName, toolInput, user.id);
+          // Redact financials for restricted roles
+          if (!permissions.can_view_financials) {
+            result = redactFinancials(result);
+          }
           messages.push(buildToolResultMessage(aiConfig.provider, toolCall.id, JSON.stringify(result)));
           toolsUsed.push({ tool: toolName, input: toolInput, summary: `Called ${toolName}` });
         } catch (toolError: any) {
