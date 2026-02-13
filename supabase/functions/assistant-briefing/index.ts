@@ -6,6 +6,39 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// === CST Timezone Utilities ===
+const TZ = "America/Chicago";
+
+function getCSTDateStr(d: Date): string {
+  return d.toLocaleDateString("en-CA", { timeZone: TZ }); // "YYYY-MM-DD"
+}
+
+function toCSTBoundary(dateStr: string, time: string): string {
+  const naive = new Date(`${dateStr}T${time}:00`);
+  const utcParts = new Date(naive.toLocaleString("en-US", { timeZone: "UTC", hour12: false }));
+  const cstParts = new Date(naive.toLocaleString("en-US", { timeZone: TZ, hour12: false }));
+  const offset = utcParts.getTime() - cstParts.getTime();
+  return new Date(new Date(`${dateStr}T${time}:00Z`).getTime() + offset).toISOString();
+}
+
+function formatTimeCST(iso: string): string {
+  return new Date(iso).toLocaleString("en-US", {
+    timeZone: TZ,
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+function formatDateCST(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    timeZone: TZ,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -62,8 +95,8 @@ serve(async (req) => {
     }
 
     const now = new Date();
-    const todayStr = now.toISOString().split("T")[0];
-    const tomorrowStr = new Date(now.getTime() + 86400000).toISOString().split("T")[0];
+    const todayStr = getCSTDateStr(now);
+    const tomorrowStr = getCSTDateStr(new Date(now.getTime() + 86400000));
 
     // Run all queries in parallel
     const [
@@ -84,8 +117,8 @@ serve(async (req) => {
             crm_customers(first_name, last_name, phone),
             crm_job_types(name, category)),
           crm_teams(name, color)`)
-        .gte("start_datetime", `${todayStr}T00:00:00`)
-        .lte("start_datetime", `${todayStr}T23:59:59`)
+        .gte("start_datetime", toCSTBoundary(todayStr, "00:00"))
+        .lte("start_datetime", toCSTBoundary(todayStr, "23:59"))
         .order("start_datetime"),
 
       // Tomorrow's appointments
@@ -96,8 +129,8 @@ serve(async (req) => {
             crm_customers(first_name, last_name),
             crm_job_types(name)),
           crm_teams(name)`)
-        .gte("start_datetime", `${tomorrowStr}T00:00:00`)
-        .lte("start_datetime", `${tomorrowStr}T23:59:59`)
+        .gte("start_datetime", toCSTBoundary(tomorrowStr, "00:00"))
+        .lte("start_datetime", toCSTBoundary(tomorrowStr, "23:59"))
         .order("start_datetime"),
 
       // New submissions via RPC
@@ -256,6 +289,9 @@ serve(async (req) => {
         id: apt.id,
         time: apt.start_datetime,
         end_time: apt.end_datetime,
+        time_display: formatTimeCST(apt.start_datetime),
+        end_time_display: formatTimeCST(apt.end_datetime),
+        date_display: formatDateCST(apt.start_datetime),
         job_number: apt.crm_jobs?.job_number,
         customer: `${apt.crm_jobs?.crm_customers?.first_name || ""} ${apt.crm_jobs?.crm_customers?.last_name || ""}`.trim(),
         phone: apt.crm_jobs?.crm_customers?.phone,
@@ -266,6 +302,8 @@ serve(async (req) => {
       tomorrow_appointments: (tomorrowAppointments.data || []).map((apt: any) => ({
         id: apt.id,
         time: apt.start_datetime,
+        time_display: formatTimeCST(apt.start_datetime),
+        end_time_display: apt.end_datetime ? formatTimeCST(apt.end_datetime) : undefined,
         job_number: apt.crm_jobs?.job_number,
         customer: `${apt.crm_jobs?.crm_customers?.first_name || ""} ${apt.crm_jobs?.crm_customers?.last_name || ""}`.trim(),
         job_type: apt.crm_jobs?.crm_job_types?.name,
