@@ -1,9 +1,10 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Minus, Trash2, Send, Mic, MicOff, Zap } from 'lucide-react';
+import { Minus, Trash2, Send, Mic, MicOff, Zap, Volume2, VolumeX } from 'lucide-react';
 import { useAssistant } from './AssistantContext';
 import { ChatMessage } from './ChatMessage';
 import { QuickPrompts } from './QuickPrompts';
 import { VoiceWaveform } from './VoiceWaveform';
+import { useTextToSpeech } from './hooks/useTextToSpeech';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 
@@ -14,6 +15,7 @@ interface AIAssistantPanelProps {
 
 export const AIAssistantPanel = ({ enableVoice = true, briefingData }: AIAssistantPanelProps) => {
   const { isOpen, messages, isLoading, closePanel, sendMessage, clearConversation, confirmAction, hasShownBriefing, setHasShownBriefing } = useAssistant();
+  const tts = useTextToSpeech();
   const [input, setInput] = useState('');
   const [sendCooldown, setSendCooldown] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -24,7 +26,7 @@ export const AIAssistantPanel = ({ enableVoice = true, briefingData }: AIAssista
   const isListeningRef = useRef(false);
   const isMobile = useIsMobile();
   const { toast } = useToast();
-
+  const prevMessagesLenRef = useRef(messages.length);
   // Speech recognition setup
   const initRecognition = useCallback(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -86,6 +88,7 @@ export const AIAssistantPanel = ({ enableVoice = true, briefingData }: AIAssista
       setIsListening(false);
       setInterimText('');
     } else {
+      tts.stop(); // Stop TTS when starting mic
       recognitionRef.current = initRecognition();
       if (recognitionRef.current) {
         isListeningRef.current = true;
@@ -137,6 +140,26 @@ export const AIAssistantPanel = ({ enableVoice = true, briefingData }: AIAssista
     return () => window.removeEventListener('keydown', handler);
   }, [isOpen, closePanel]);
 
+  // Stop TTS when panel closes
+  useEffect(() => {
+    if (!isOpen) tts.stop();
+  }, [isOpen, tts.stop]);
+
+  // Auto-speak new assistant messages
+  useEffect(() => {
+    if (!tts.autoSpeak) {
+      prevMessagesLenRef.current = messages.length;
+      return;
+    }
+    if (messages.length > prevMessagesLenRef.current) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg.role === 'assistant' && !lastMsg.isLoading && !lastMsg.isError && lastMsg.content) {
+        tts.speak(lastMsg.content, lastMsg.id);
+      }
+    }
+    prevMessagesLenRef.current = messages.length;
+  }, [messages, tts.autoSpeak]);
+
   // Auto-briefing on first open
   useEffect(() => {
     if (isOpen && !hasShownBriefing && briefingData && messages.length === 0) {
@@ -150,6 +173,8 @@ export const AIAssistantPanel = ({ enableVoice = true, briefingData }: AIAssista
 
   const handleSend = useCallback(async () => {
     if (!input.trim() || isLoading || sendCooldown) return;
+    // Stop TTS when sending
+    tts.stop();
     if (isListeningRef.current) {
       isListeningRef.current = false;
       recognitionRef.current?.stop();
@@ -162,7 +187,7 @@ export const AIAssistantPanel = ({ enableVoice = true, briefingData }: AIAssista
     setSendCooldown(true);
     setTimeout(() => setSendCooldown(false), 1000);
     await sendMessage(text);
-  }, [input, isLoading, sendCooldown, sendMessage]);
+  }, [input, isLoading, sendCooldown, sendMessage, tts.stop]);
 
   const handleClear = () => {
     toast({ title: 'Chat cleared', description: 'Conversation history has been reset.' });
@@ -209,6 +234,17 @@ export const AIAssistantPanel = ({ enableVoice = true, briefingData }: AIAssista
           <span className="text-white font-semibold text-sm">Bach Assistant</span>
         </div>
         <div className="flex items-center gap-1">
+          <button
+            onClick={tts.toggleAutoSpeak}
+            className={`p-1.5 rounded hover:bg-white/10 transition-colors ${tts.autoSpeak ? 'bg-white/15' : ''}`}
+            title={tts.autoSpeak ? 'Auto-speak on' : 'Auto-speak off'}
+          >
+            {tts.autoSpeak ? (
+              <Volume2 className="h-4 w-4 text-[#C4A962]" />
+            ) : (
+              <VolumeX className="h-4 w-4 text-[#C4A962]/50" />
+            )}
+          </button>
           {messages.length > 0 && (
             <button onClick={handleClear} className="p-1.5 rounded hover:bg-white/10 transition-colors" title="Clear chat">
               <Trash2 className="h-4 w-4 text-[#C4A962]" />
@@ -234,6 +270,9 @@ export const AIAssistantPanel = ({ enableVoice = true, briefingData }: AIAssista
                 onConfirm={() => confirmAction(msg.id, 'confirmed')}
                 onCancel={() => confirmAction(msg.id, 'cancelled')}
                 onSendMessage={handleQuickPrompt}
+                onSpeak={tts.speak}
+                isSpeakingThis={tts.speakingMessageId === msg.id && tts.isSpeaking}
+                isLoadingAudio={tts.speakingMessageId === msg.id && tts.isLoadingAudio}
               />
             ))}
           </div>

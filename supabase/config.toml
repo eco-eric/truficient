@@ -42,3 +42,6 @@ verify_jwt = false
 
 [functions.assistant-briefing]
 verify_jwt = false
+
+[functions.text-to-speech]
+verify_jwt = false
