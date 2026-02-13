@@ -2,11 +2,11 @@ import { Sparkles } from 'lucide-react';
 
 const PROMPTS = [
   'Find a customer',
-  "What's on the schedule tomorrow?",
+  "What's on the calendar this week?",
   'How many leads this week?',
-  'Show me the pipeline',
-  'Log a call with a customer',
+  'Schedule an appointment',
   'Create a new job',
+  'Reschedule an appointment',
 ];
 
 interface QuickPromptsProps {

@@ -3,6 +3,7 @@ import { Minus, Trash2, Send, Mic, MicOff, Zap } from 'lucide-react';
 import { useAssistant } from './AssistantContext';
 import { ChatMessage } from './ChatMessage';
 import { QuickPrompts } from './QuickPrompts';
+import { VoiceWaveform } from './VoiceWaveform';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 
@@ -11,6 +12,7 @@ export const AIAssistantPanel = () => {
   const [input, setInput] = useState('');
   const [sendCooldown, setSendCooldown] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [interimText, setInterimText] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -26,46 +28,60 @@ export const AIAssistantPanel = () => {
       return null;
     }
     const recognition = new SpeechRecognition();
-    recognition.continuous = true;
+    recognition.continuous = false;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setInterimText('');
+    };
 
     recognition.onresult = (event: any) => {
-      const latestResult = event.results[event.results.length - 1];
-      if (latestResult.isFinal) {
-        const transcript = latestResult[0].transcript;
-        setInput(prev => (prev ? prev + ' ' : '') + transcript.trim());
+      const result = event.results[event.results.length - 1];
+      if (result.isFinal) {
+        const transcript = result[0].transcript.trim();
+        setInterimText('');
+        if (transcript) {
+          // Auto-send on final transcript
+          isListeningRef.current = false;
+          setIsListening(false);
+          sendMessage(transcript);
+        }
+      } else {
+        setInterimText(result[0].transcript);
       }
     };
 
     recognition.onend = () => {
-      if (isListeningRef.current) {
-        try { recognition.start(); } catch {}
-      } else {
-        setIsListening(false);
-      }
+      setIsListening(false);
+      isListeningRef.current = false;
+      setInterimText('');
     };
 
     recognition.onerror = (event: any) => {
       if (event.error === 'not-allowed') {
         toast({ title: 'Mic blocked', description: 'Please allow microphone access.', variant: 'destructive' });
-        isListeningRef.current = false;
-        setIsListening(false);
+      } else if (event.error !== 'no-speech') {
+        toast({ title: 'Voice error', description: `Speech error: ${event.error}`, variant: 'destructive' });
       }
+      isListeningRef.current = false;
+      setIsListening(false);
+      setInterimText('');
     };
 
     return recognition;
-  }, [toast]);
+  }, [toast, sendMessage]);
 
   const handleMicToggle = useCallback(() => {
     if (isListeningRef.current) {
       isListeningRef.current = false;
       recognitionRef.current?.stop();
       setIsListening(false);
+      setInterimText('');
     } else {
-      if (!recognitionRef.current) {
-        recognitionRef.current = initRecognition();
-      }
+      recognitionRef.current = initRecognition();
       if (recognitionRef.current) {
         isListeningRef.current = true;
         setIsListening(true);
@@ -73,6 +89,18 @@ export const AIAssistantPanel = () => {
       }
     }
   }, [initRecognition]);
+
+  // Keyboard shortcut: Ctrl+Shift+V to toggle voice
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'V') {
+        e.preventDefault();
+        handleMicToggle();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [handleMicToggle]);
 
   useEffect(() => {
     return () => {
@@ -110,6 +138,7 @@ export const AIAssistantPanel = () => {
       isListeningRef.current = false;
       recognitionRef.current?.stop();
       setIsListening(false);
+      setInterimText('');
     }
     const text = input;
     setInput('');
@@ -144,6 +173,19 @@ export const AIAssistantPanel = () => {
         ${isOpen ? 'translate-x-0' : 'translate-x-full'}
         shadow-[-4px_0_12px_rgba(0,0,0,0.1)]`}
     >
+      {/* Voice listening bar */}
+      {isListening && (
+        <div
+          className="shrink-0 bg-red-500 text-white text-xs font-medium px-4 py-2 flex items-center gap-2 cursor-pointer"
+          onClick={handleMicToggle}
+          role="button"
+          aria-label="Stop listening"
+        >
+          <VoiceWaveform />
+          <span>Listening... speak your command</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between h-12 px-4 bg-[#1B2A4A] shrink-0">
         <div className="flex items-center gap-2">
@@ -182,10 +224,17 @@ export const AIAssistantPanel = () => {
       </div>
 
       {/* Pending confirmation bar */}
-      {hasPendingConfirmation && (
+      {hasPendingConfirmation && !isListening && (
         <div className="shrink-0 bg-amber-50 border-b border-amber-200 px-4 py-1.5 flex items-center gap-1.5">
           <Zap className="h-3 w-3 text-amber-700" />
           <span className="text-xs text-amber-700 font-medium">Awaiting your confirmation above...</span>
+        </div>
+      )}
+
+      {/* Interim text preview */}
+      {isListening && interimText && (
+        <div className="shrink-0 px-4 py-2 bg-gray-50 border-t border-gray-200">
+          <p className="text-sm text-gray-400 italic">"{interimText}"</p>
         </div>
       )}
 
@@ -194,22 +243,27 @@ export const AIAssistantPanel = () => {
         <div className="flex items-end gap-2">
           <button
             onClick={handleMicToggle}
-            className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
-              isListening ? 'bg-red-500 animate-pulse' : 'bg-gray-200 hover:bg-gray-300'
+            disabled={isLoading}
+            className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+              isListening 
+                ? 'bg-red-500 text-white' 
+                : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
             }`}
-            title={isListening ? 'Stop listening' : 'Voice input'}
+            style={isListening ? { animation: 'voice-pulse 1.5s ease-in-out infinite' } : undefined}
+            title={isListening ? 'Stop listening' : 'Voice input (Ctrl+Shift+V)'}
+            aria-label={isListening ? 'Stop listening' : 'Start voice input'}
           >
             {isListening ? (
-              <MicOff className="h-4 w-4 text-white" />
+              <MicOff className="h-4 w-4" />
             ) : (
-              <Mic className="h-4 w-4 text-gray-600" />
+              <Mic className="h-4 w-4" />
             )}
           </button>
           <textarea
             ref={inputRef}
             value={input}
             onChange={e => setInput(e.target.value)}
-            placeholder="Ask me anything..."
+            placeholder={isListening ? 'Listening...' : 'Ask me anything...'}
             rows={6}
             className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4A]/30 focus:border-[#1B2A4A] max-h-[280px] min-h-[120px]"
             onKeyDown={e => {
@@ -226,13 +280,22 @@ export const AIAssistantPanel = () => {
           />
           <button
             onClick={handleSend}
-            disabled={!input.trim() || isLoading || sendCooldown}
+            disabled={!input.trim() || isLoading || sendCooldown || isListening}
             className="shrink-0 w-9 h-9 rounded-full bg-[#1B2A4A] flex items-center justify-center disabled:opacity-40 transition-opacity hover:opacity-90"
           >
             <Send className="h-4 w-4 text-white" />
           </button>
         </div>
       </div>
+
+      {/* Voice pulse animation */}
+      <style>{`
+        @keyframes voice-pulse {
+          0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+          70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+      `}</style>
     </div>
   );
 };
