@@ -1,37 +1,31 @@
 
 
-## Fix: WorkEdge Photo Thumbnails Not Loading (Expired Signed URLs)
+## Auto-Sync Google Calendars Every 2 Hours
 
-### Root Cause
-When media is synced from WorkEdge, the URLs stored in `workedge_project_media.media_url` are **signed URLs** from WorkEdge's storage with short-lived tokens (they expire in ~1 hour). After expiration, the images silently fail to load, showing only the "Field media" alt text you're seeing.
+Right now the only way to refresh your calendar list is by clicking "Sync Calendars" manually. We'll set up an automatic background job that runs every 2 hours so the calendar data stays fresh without any manual action.
 
-### Solution
-Download each photo from WorkEdge during sync and re-upload it to your own file storage bucket, then store the permanent public URL in the database. This ensures thumbnails always load regardless of when you view them.
+### What Changes
 
-### Changes
+**1. Enable required database extensions**
+- Enable `pg_cron` and `pg_net` extensions (needed for scheduled background jobs)
 
-**1. Create a storage bucket for WorkEdge media**
-- Create a `workedge-media` public storage bucket via SQL migration
-- Add RLS policies allowing authenticated users to read/upload
+**2. Create a scheduled cron job**
+- Schedule `google-calendar-sync` with the `sync-calendars` action to run every 2 hours
+- The job calls the existing edge function -- no new backend code needed
 
-**2. Update the `workedge-sync` edge function (`get-project-media` action)**
-- After fetching media items from the WorkEdge API, download each photo/video thumbnail binary
-- Upload each file to the `workedge-media` bucket under a path like `{workedge_project_id}/{filename}`
-- Store the resulting permanent public URL in `media_url` instead of the expiring signed URL
-- Add error handling: if a download/upload fails for a specific item, fall back to storing the original URL (better than losing the record entirely)
+**3. Update the Calendar Settings page**
+- Show when the next auto-sync is expected (based on `last_synced_at` + 2 hours)
+- Keep the manual "Sync Calendars" button for on-demand refreshes
+- Add a small note like "Calendars auto-sync every 2 hours" so you know it's working in the background
 
-**3. Update `WorkEdgeProjects.tsx` Field Media grid**
-- Add an `onError` handler on the `<img>` tag that shows the media type icon as a fallback when an image fails to load (handles any remaining old expired URLs gracefully)
-- Add a subtle "expired" indicator for items whose URLs no longer work
+### Technical Details
 
-**4. Update `WorkEdgePanel.tsx` (job detail sidebar)**
-- Same `onError` fallback treatment for any thumbnail display
+- The cron job uses `pg_cron` + `pg_net` to make an HTTP POST to the edge function URL every 2 hours
+- Since `google-calendar-sync` has `verify_jwt = false`, the cron call can authenticate with the anon key in the Authorization header
+- The edge function already handles the `sync-calendars` action, so no changes are needed there
+- A single SQL migration enables the extensions and creates the scheduled job
 
 ### Files to modify
-1. **Database migration** -- create `workedge-media` storage bucket + RLS policies
-2. `supabase/functions/workedge-sync/index.ts` -- download and re-upload media during sync
-3. `src/pages/admin/WorkEdgeProjects.tsx` -- add image error fallback in the Field Media grid
-
-### What this does NOT change
-- Existing expired URLs in the database will still be broken until you re-sync those projects (click the refresh icon on each linked project). The `onError` fallback ensures they show an icon instead of a broken image in the meantime.
+1. **New SQL migration** -- enable `pg_cron`, `pg_net`, and create the cron schedule
+2. `src/pages/admin/CalendarSettings.tsx` -- add auto-sync status indicator
 
