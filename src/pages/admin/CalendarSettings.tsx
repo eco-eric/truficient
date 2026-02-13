@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RefreshCw, Calendar, CheckCircle2, Star, Users, Briefcase, Plus, User } from "lucide-react";
+import { RefreshCw, Calendar, CheckCircle2, Star, Users, Briefcase, Plus, User, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { formatDistanceToNow, addHours } from "date-fns";
 
 interface GoogleCalendar {
   id: string;
@@ -188,6 +189,23 @@ export default function CalendarSettings() {
             <p className="text-muted-foreground">
               Manage Google Calendars synced with your CRM
             </p>
+            {(() => {
+              const lastSynced = calendars?.reduce((latest, cal) => {
+                if (!cal.last_synced_at) return latest;
+                const d = new Date(cal.last_synced_at);
+                return !latest || d > latest ? d : latest;
+              }, null as Date | null);
+              const nextSync = lastSynced ? addHours(lastSynced, 2) : null;
+              return (
+                <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  <span>
+                    Auto-syncs every 2 hours
+                    {nextSync && ` · Next sync ${formatDistanceToNow(nextSync, { addSuffix: true })}`}
+                  </span>
+                </div>
+              );
+            })()}
           </div>
           <div className="flex gap-2">
             <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
