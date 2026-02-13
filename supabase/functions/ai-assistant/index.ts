@@ -10,6 +10,27 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// === CST Timezone Utilities ===
+const TZ = "America/Chicago";
+
+function getCSTDateStr(d: Date): string {
+  return d.toLocaleDateString("en-CA", { timeZone: TZ });
+}
+
+function toCSTBoundary(dateStr: string, time: string): string {
+  const naive = new Date(`${dateStr}T${time}:00`);
+  const utcParts = new Date(naive.toLocaleString("en-US", { timeZone: "UTC", hour12: false }));
+  const cstParts = new Date(naive.toLocaleString("en-US", { timeZone: TZ, hour12: false }));
+  const offset = utcParts.getTime() - cstParts.getTime();
+  return new Date(new Date(`${dateStr}T${time}:00Z`).getTime() + offset).toISOString();
+}
+
+function formatTimeCST(iso: string): string {
+  return new Date(iso).toLocaleString("en-US", {
+    timeZone: TZ, hour: "numeric", minute: "2-digit", hour12: true,
+  });
+}
+
 // === RBAC: Get user's assistant permissions ===
 async function getAssistantPermissions(supabase: any, userId: string) {
   const { data: roleData } = await supabase
@@ -525,15 +546,15 @@ async function executeSearchJobs(supabase: any, input: { query?: string; job_typ
 }
 
 async function executeGetSchedule(supabase: any, input: { date_from?: string; date_to?: string; team_id?: string }) {
-  const today = new Date().toISOString().split("T")[0];
+  const today = getCSTDateStr(new Date());
   const dateFrom = input.date_from || today;
-  const dateTo = input.date_to || new Date(new Date(dateFrom).getTime() + 7 * 86400000).toISOString().split("T")[0];
+  const dateTo = input.date_to || getCSTDateStr(new Date(Date.now() + 7 * 86400000));
 
   let query = supabase
     .from("crm_job_appointments")
     .select(`id, start_datetime, end_datetime, notes, title, crm_jobs(job_number, crm_customers(first_name, last_name, phone), crm_locations(address_line1, city, state), crm_job_types(name)), crm_teams(id, name, color)`)
-    .gte("start_datetime", `${dateFrom}T00:00:00`)
-    .lte("start_datetime", `${dateTo}T23:59:59`)
+    .gte("start_datetime", toCSTBoundary(dateFrom, "00:00"))
+    .lte("start_datetime", toCSTBoundary(dateTo, "23:59"))
     .order("start_datetime");
 
   if (input.team_id) query = query.eq("assigned_team_id", input.team_id);
@@ -543,10 +564,13 @@ async function executeGetSchedule(supabase: any, input: { date_from?: string; da
 
   const byDate: Record<string, any[]> = {};
   (data || []).forEach((apt: any) => {
-    const date = apt.start_datetime?.split("T")[0];
+    const date = getCSTDateStr(new Date(apt.start_datetime));
     if (!byDate[date]) byDate[date] = [];
     byDate[date].push({
-      time_start: apt.start_datetime, time_end: apt.end_datetime,
+      time_start: apt.start_datetime,
+      time_end: apt.end_datetime,
+      time_display: formatTimeCST(apt.start_datetime),
+      end_time_display: apt.end_datetime ? formatTimeCST(apt.end_datetime) : undefined,
       job_number: apt.crm_jobs?.job_number,
       customer: apt.crm_jobs?.crm_customers ? `${apt.crm_jobs.crm_customers.first_name} ${apt.crm_jobs.crm_customers.last_name}` : "Unknown",
       customer_phone: apt.crm_jobs?.crm_customers?.phone,
@@ -1497,6 +1521,7 @@ When you receive briefing_data through the get_daily_briefing tool, generate a n
 
 Keep it conversational but efficient. Use emoji sparingly: 📅 schedule, 🔔 alerts, 🎉 wins, ⚠️ urgent.
 Skip empty categories. End with a suggested action.
+All appointment times provided are already in Central Time (CST/CDT). Display the time_display and end_time_display fields directly — do NOT convert or offset them.
 
 After the briefing, include follow-up suggestions formatted exactly as:
 [SUGGESTIONS: "action 1", "action 2", "action 3"]
