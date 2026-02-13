@@ -348,6 +348,48 @@ export type Database = {
         }
         Relationships: []
       }
+      assistant_role_permissions: {
+        Row: {
+          can_access_assistant: boolean
+          can_use_calendar_tools: boolean
+          can_use_voice_input: boolean
+          can_use_write_tools: boolean
+          can_view_briefing: boolean
+          can_view_financials: boolean
+          created_at: string
+          id: string
+          max_messages_per_hour: number
+          role_name: string
+          updated_at: string
+        }
+        Insert: {
+          can_access_assistant?: boolean
+          can_use_calendar_tools?: boolean
+          can_use_voice_input?: boolean
+          can_use_write_tools?: boolean
+          can_view_briefing?: boolean
+          can_view_financials?: boolean
+          created_at?: string
+          id?: string
+          max_messages_per_hour?: number
+          role_name: string
+          updated_at?: string
+        }
+        Update: {
+          can_access_assistant?: boolean
+          can_use_calendar_tools?: boolean
+          can_use_voice_input?: boolean
+          can_use_write_tools?: boolean
+          can_view_briefing?: boolean
+          can_view_financials?: boolean
+          created_at?: string
+          id?: string
+          max_messages_per_hour?: number
+          role_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       author_profiles: {
         Row: {
           avatar_url: string | null
@@ -4204,6 +4246,7 @@ export type Database = {
     Functions: {
       generate_estimate_number: { Args: never; Returns: string }
       generate_job_number: { Args: never; Returns: string }
+      get_new_submission_counts: { Args: never; Returns: Json }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

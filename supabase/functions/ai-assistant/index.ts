@@ -331,6 +331,23 @@ const tools = [
       parameters: { type: "object", properties: {} },
     },
   },
+  // === PHASE 4: BRIEFING TOOL ===
+  {
+    type: "function" as const,
+    function: {
+      name: "get_daily_briefing",
+      description: "Generate a daily operations briefing. Call this when the user opens the assistant for the first time in a session, or when they ask for a summary/briefing/update. Returns today's schedule, new leads, alerts, and action items. No confirmation needed.",
+      parameters: {
+        type: "object",
+        properties: {
+          briefing_data: {
+            type: "object",
+            description: "Pre-fetched briefing data from the assistant-briefing edge function. Pass this directly.",
+          },
+        },
+      },
+    },
+  },
 ];
 
 // ============================================================

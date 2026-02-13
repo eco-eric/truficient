@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, AlertCircle, RotateCcw, CheckCircle2, Calendar, RefreshCw, XCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, AlertCircle, RotateCcw, CheckCircle2, Calendar, RefreshCw, XCircle, Sparkles } from 'lucide-react';
 import type { ChatMessage as ChatMessageType } from './AssistantContext';
 import { ConfirmationCard } from './ConfirmationCard';
 
@@ -9,13 +9,14 @@ interface ChatMessageProps {
   onConfirm?: () => void;
   onCancel?: () => void;
   onRetry?: () => void;
+  onSendMessage?: (msg: string) => void;
 }
 
 const SUCCESS_KEYWORDS = ['Created job', 'Moved', 'Logged', 'Updated', 'Added', 'Scheduled', 'Rescheduled', 'Cancelled'];
 
 const CALENDAR_LINK_REGEX = /https:\/\/(www\.google\.com\/calendar\/event\?eid=|calendar\.google\.com\/calendar\/event\?eid=)[^\s)]+/g;
 
-export const ChatMessage = ({ message, isLatestAssistant, onConfirm, onCancel, onRetry }: ChatMessageProps) => {
+export const ChatMessage = ({ message, isLatestAssistant, onConfirm, onCancel, onRetry, onSendMessage }: ChatMessageProps) => {
   const [showTools, setShowTools] = useState(false);
 
   // Loading state
@@ -102,7 +103,16 @@ export const ChatMessage = ({ message, isLatestAssistant, onConfirm, onCancel, o
             <p className="text-sm">{message.content}</p>
           ) : (
             <div>
-              {isSuccess && (
+              {message.isBriefing && (
+                <div className="flex items-center gap-2 mb-2 text-xs text-amber-600 font-medium">
+                  <Sparkles className="w-3 h-3" />
+                  <span>Daily Briefing</span>
+                  <span className="text-gray-400">
+                    {new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}
+                  </span>
+                </div>
+              )}
+              {isSuccess && !message.isBriefing && (
                 <div className="flex items-center gap-1 mb-1">
                   {isReschedule ? (
                     <RefreshCw className="h-3.5 w-3.5 text-blue-600" />
@@ -142,6 +152,21 @@ export const ChatMessage = ({ message, isLatestAssistant, onConfirm, onCancel, o
             </div>
           )}
         </div>
+
+        {/* Suggestion chips after briefing */}
+        {message.isBriefing && message.suggestions && message.suggestions.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {message.suggestions.map((suggestion, i) => (
+              <button
+                key={i}
+                onClick={() => onSendMessage?.(suggestion)}
+                className="px-3 py-1.5 text-xs font-medium rounded-full border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Confirmation card */}
         {showConfirmationCard && (

@@ -7,8 +7,13 @@ import { VoiceWaveform } from './VoiceWaveform';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 
-export const AIAssistantPanel = () => {
-  const { isOpen, messages, isLoading, closePanel, sendMessage, clearConversation, confirmAction } = useAssistant();
+interface AIAssistantPanelProps {
+  enableVoice?: boolean;
+  briefingData?: any;
+}
+
+export const AIAssistantPanel = ({ enableVoice = true, briefingData }: AIAssistantPanelProps) => {
+  const { isOpen, messages, isLoading, closePanel, sendMessage, clearConversation, confirmAction, hasShownBriefing, setHasShownBriefing } = useAssistant();
   const [input, setInput] = useState('');
   const [sendCooldown, setSendCooldown] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -132,6 +137,17 @@ export const AIAssistantPanel = () => {
     return () => window.removeEventListener('keydown', handler);
   }, [isOpen, closePanel]);
 
+  // Auto-briefing on first open
+  useEffect(() => {
+    if (isOpen && !hasShownBriefing && briefingData && messages.length === 0) {
+      setHasShownBriefing(true);
+      sendMessage("__AUTO_BRIEFING__", {
+        auto_briefing: true,
+        briefing_data: briefingData,
+      });
+    }
+  }, [isOpen, hasShownBriefing, briefingData, messages.length, sendMessage, setHasShownBriefing]);
+
   const handleSend = useCallback(async () => {
     if (!input.trim() || isLoading || sendCooldown) return;
     if (isListeningRef.current) {
@@ -217,6 +233,7 @@ export const AIAssistantPanel = () => {
                 isLatestAssistant={idx === lastAssistantIdx}
                 onConfirm={() => confirmAction(msg.id, 'confirmed')}
                 onCancel={() => confirmAction(msg.id, 'cancelled')}
+                onSendMessage={handleQuickPrompt}
               />
             ))}
           </div>
@@ -241,24 +258,26 @@ export const AIAssistantPanel = () => {
       {/* Input area */}
       <div className="shrink-0 border-t border-gray-200 bg-gray-50 p-3">
         <div className="flex items-end gap-2">
-          <button
-            onClick={handleMicToggle}
-            disabled={isLoading}
-            className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all ${
-              isListening 
-                ? 'bg-red-500 text-white' 
-                : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
-            }`}
-            style={isListening ? { animation: 'voice-pulse 1.5s ease-in-out infinite' } : undefined}
-            title={isListening ? 'Stop listening' : 'Voice input (Ctrl+Shift+V)'}
-            aria-label={isListening ? 'Stop listening' : 'Start voice input'}
-          >
-            {isListening ? (
-              <MicOff className="h-4 w-4" />
-            ) : (
-              <Mic className="h-4 w-4" />
-            )}
-          </button>
+          {enableVoice && (
+            <button
+              onClick={handleMicToggle}
+              disabled={isLoading}
+              className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                isListening 
+                  ? 'bg-red-500 text-white' 
+                  : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
+              }`}
+              style={isListening ? { animation: 'voice-pulse 1.5s ease-in-out infinite' } : undefined}
+              title={isListening ? 'Stop listening' : 'Voice input (Ctrl+Shift+V)'}
+              aria-label={isListening ? 'Stop listening' : 'Start voice input'}
+            >
+              {isListening ? (
+                <MicOff className="h-4 w-4" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+            </button>
+          )}
           <textarea
             ref={inputRef}
             value={input}

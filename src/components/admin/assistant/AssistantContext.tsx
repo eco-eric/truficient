@@ -11,6 +11,8 @@ export interface ChatMessage {
   isError?: boolean;
   hasConfirmation?: boolean;
   confirmationState?: 'pending' | 'confirmed' | 'cancelled';
+  isBriefing?: boolean;
+  suggestions?: string[];
 }
 
 interface AssistantContextType {
@@ -20,9 +22,11 @@ interface AssistantContextType {
   togglePanel: () => void;
   openPanel: () => void;
   closePanel: () => void;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, metadata?: any) => Promise<void>;
   clearConversation: () => void;
   confirmAction: (messageId: string, action: 'confirmed' | 'cancelled') => void;
+  hasShownBriefing: boolean;
+  setHasShownBriefing: (v: boolean) => void;
 }
 
 const AssistantContext = createContext<AssistantContextType | null>(null);
@@ -45,21 +49,27 @@ export const AssistantProvider = ({ children }: { children: ReactNode }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasShownBriefing, setHasShownBriefing] = useState(false);
 
   const togglePanel = useCallback(() => setIsOpen(p => !p), []);
   const openPanel = useCallback(() => setIsOpen(true), []);
   const closePanel = useCallback(() => setIsOpen(false), []);
   const clearConversation = useCallback(() => setMessages([]), []);
 
-  const sendMessage = useCallback(async (content: string) => {
-    if (!content.trim() || isLoading) return;
+  const sendMessage = useCallback(async (content: string, metadata?: any) => {
+    const isAutoBriefing = metadata?.auto_briefing === true;
+    if (!isAutoBriefing && (!content.trim() || isLoading)) return;
 
-    const userMsg: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      content: content.trim(),
-      timestamp: new Date(),
-    };
+    // For auto-briefing, don't show a user message bubble
+    if (!isAutoBriefing) {
+      const userMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'user',
+        content: content.trim(),
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, userMsg]);
+    }
 
     const loadingMsg: ChatMessage = {
       id: crypto.randomUUID(),
@@ -67,22 +77,30 @@ export const AssistantProvider = ({ children }: { children: ReactNode }) => {
       content: '',
       timestamp: new Date(),
       isLoading: true,
+      isBriefing: isAutoBriefing,
     };
 
-    setMessages(prev => [...prev, userMsg, loadingMsg]);
+    setMessages(prev => [...prev, loadingMsg]);
     setIsLoading(true);
 
     try {
-      const conversationHistory = messages.slice(-20).map(m => ({
+      const conversationHistory = isAutoBriefing ? [] : messages.slice(-20).map(m => ({
         role: m.role,
         content: m.content,
       }));
 
+      const body: any = {
+        message: isAutoBriefing ? 'Generate my daily briefing.' : content.trim(),
+        conversationHistory,
+      };
+
+      if (isAutoBriefing && metadata?.briefing_data) {
+        body.briefing_data = metadata.briefing_data;
+        body.is_auto_briefing = true;
+      }
+
       const { data, error } = await supabase.functions.invoke('ai-assistant', {
-        body: {
-          message: content.trim(),
-          conversationHistory,
-        },
+        body,
       });
 
       if (error) throw error;
@@ -91,16 +109,29 @@ export const AssistantProvider = ({ children }: { children: ReactNode }) => {
       const responseContent = data?.message || "Sorry, I couldn't generate a response.";
       const isConfirmation = detectConfirmation(responseContent);
 
+      // Parse suggestions from response
+      let suggestions: string[] | undefined;
+      let cleanedContent = responseContent;
+      const sugMatch = responseContent.match(/\[SUGGESTIONS:\s*(.+?)\]/);
+      if (sugMatch) {
+        try {
+          suggestions = sugMatch[1].split(',').map((s: string) => s.trim().replace(/^"|"$/g, ''));
+          cleanedContent = responseContent.replace(sugMatch[0], '').trim();
+        } catch {}
+      }
+
       setMessages(prev =>
         prev.map(m =>
           m.id === loadingMsg.id
             ? {
                 ...m,
-                content: responseContent,
+                content: cleanedContent,
                 toolsUsed: data?.toolsUsed,
                 isLoading: false,
                 hasConfirmation: isConfirmation,
                 confirmationState: isConfirmation ? 'pending' : undefined,
+                isBriefing: isAutoBriefing,
+                suggestions,
               }
             : m
         )
@@ -137,7 +168,7 @@ export const AssistantProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AssistantContext.Provider
-      value={{ isOpen, messages, isLoading, togglePanel, openPanel, closePanel, sendMessage, clearConversation, confirmAction }}
+      value={{ isOpen, messages, isLoading, togglePanel, openPanel, closePanel, sendMessage, clearConversation, confirmAction, hasShownBriefing, setHasShownBriefing }}
     >
       {children}
     </AssistantContext.Provider>
