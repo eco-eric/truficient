@@ -256,7 +256,7 @@ export const AIAssistantPanel = ({ enableVoice = true, briefingData }: AIAssista
       )}
 
       {/* Input area */}
-      <div className="shrink-0 border-t border-gray-200 bg-gray-50 p-3">
+      <div className="shrink-0 border-t border-gray-200 bg-gray-50 p-3 pb-5">
         <div className="flex items-end gap-2">
           {enableVoice && (
             <button
