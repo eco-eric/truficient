@@ -594,6 +594,7 @@ function StageDialog({
                 <SelectItem value="review">Review</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="closed_won">Closed Won</SelectItem>
               </SelectContent>
             </Select>
           </div>
