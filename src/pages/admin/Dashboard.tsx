@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { StatsCards } from '@/components/admin/dashboard/StatsCards';
 import { RecentSubmissions } from '@/components/admin/dashboard/RecentSubmissions';
@@ -16,10 +17,12 @@ import { GHLSyncHealth } from '@/components/admin/dashboard/GHLSyncHealth';
 import { FailedSyncsAlert } from '@/components/admin/dashboard/FailedSyncsAlert';
 import { JobTypeBoardPreview } from '@/components/admin/dashboard/JobTypeBoardPreview';
 import { UpcomingAppointments } from '@/components/admin/dashboard/UpcomingAppointments';
+import { BriefingSummaryCard } from '@/components/admin/dashboard/BriefingSummaryCard';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { startOfWeek } from 'date-fns';
 import { CommandCenter } from '@/components/admin/command-center/CommandCenter';
+import { useAssistant } from '@/components/admin/assistant/AssistantContext';
 
 interface Submission {
   id: string;
@@ -32,6 +35,8 @@ interface Submission {
 }
 
 const Dashboard = () => {
+  const outletContext = useOutletContext<{ briefingData?: any; canBriefing?: boolean }>();
+  const { openPanel } = useAssistant();
   const [loading, setLoading] = useState(true);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [allSubmissions, setAllSubmissions] = useState<Submission[]>([]);
@@ -167,6 +172,11 @@ const Dashboard = () => {
   return (
     <AdminLayout title="Dashboard">
       <div className="space-y-6">
+        {/* AI Briefing Summary */}
+        {outletContext?.canBriefing && outletContext?.briefingData && (
+          <BriefingSummaryCard briefingData={outletContext.briefingData} onOpenAssistant={openPanel} />
+        )}
+
         {/* Command Center */}
         <CommandCenter />
         

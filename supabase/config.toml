@@ -39,3 +39,6 @@ verify_jwt = false
 
 [functions.workedge-webhook]
 verify_jwt = false
+
+[functions.assistant-briefing]
+verify_jwt = false
