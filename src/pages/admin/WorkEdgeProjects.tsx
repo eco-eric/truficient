@@ -389,16 +389,29 @@ export default function WorkEdgeProjects() {
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {recentMedia.map((media) => (
                   <Card key={media.id} className="overflow-hidden">
-                    <div className="aspect-square bg-muted flex items-center justify-center">
+                    <div className="aspect-square bg-muted flex items-center justify-center relative">
                       {media.thumbnail_url || media.media_url ? (
                         <img 
                           src={media.thumbnail_url || media.media_url!} 
                           alt={media.title || 'Field media'}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            target.style.display = 'none';
+                            const fallback = target.parentElement?.querySelector('.media-fallback');
+                            if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                          }}
                         />
-                      ) : (
-                        mediaTypeIcon(media.media_type)
-                      )}
+                      ) : null}
+                      <div 
+                        className="media-fallback flex-col items-center justify-center gap-1 text-muted-foreground"
+                        style={{ display: media.thumbnail_url || media.media_url ? 'none' : 'flex' }}
+                      >
+                        {mediaTypeIcon(media.media_type)}
+                        {(media.thumbnail_url || media.media_url) && (
+                          <span className="text-[10px] text-orange-500">expired</span>
+                        )}
+                      </div>
                     </div>
                     <CardContent className="p-2">
                       <p className="text-xs font-medium truncate">{media.title || 'Untitled'}</p>

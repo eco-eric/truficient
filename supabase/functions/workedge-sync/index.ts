@@ -264,6 +264,8 @@ Deno.serve(async (req) => {
         case 'get-project-media': {
           if (!workedgeProjectId || !jobId) throw new Error('workedgeProjectId and jobId are required');
 
+          const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+
           const endpoints = [
             { path: 'media', defaultType: 'photo' },
             { path: 'videos', defaultType: 'video' },
@@ -294,6 +296,36 @@ Deno.serve(async (req) => {
           const allItems = (await Promise.all(endpoints.map(fetchEndpoint))).flat();
           console.log(`Total items from all endpoints: ${allItems.length}`);
 
+          // Helper: download from signed URL and re-upload to local storage
+          const reUploadMedia = async (signedUrl: string, mediaType: string, itemIndex: number): Promise<string> => {
+            try {
+              const response = await fetch(signedUrl);
+              if (!response.ok) {
+                console.log(`Failed to download media ${itemIndex}: ${response.status}`);
+                return signedUrl; // fallback to original
+              }
+              const blob = await response.blob();
+              const contentType = response.headers.get('content-type') || 'image/jpeg';
+              const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : contentType.includes('mp4') ? 'mp4' : 'jpg';
+              const filePath = `${workedgeProjectId}/${mediaType}_${itemIndex}_${Date.now()}.${ext}`;
+
+              const { error: uploadError } = await supabase.storage
+                .from('workedge-media')
+                .upload(filePath, blob, { contentType, upsert: true });
+
+              if (uploadError) {
+                console.log(`Upload failed for ${itemIndex}: ${uploadError.message}`);
+                return signedUrl; // fallback
+              }
+
+              const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/workedge-media/${filePath}`;
+              return publicUrl;
+            } catch (e: any) {
+              console.log(`Re-upload error for ${itemIndex}: ${e.message}`);
+              return signedUrl; // fallback
+            }
+          };
+
           const mediaRecords = allItems.map((item: any) => ({
             job_id: jobId,
             workedge_project_id: workedgeProjectId,
@@ -309,6 +341,19 @@ Deno.serve(async (req) => {
           })).filter((record: any) => record.media_url);
 
           console.log(`Created ${mediaRecords.length} valid media records`);
+
+          // Re-upload photos and videos to local storage for permanent URLs
+          const reUploadableTypes = ['photo', 'video'];
+          for (let i = 0; i < mediaRecords.length; i++) {
+            const record = mediaRecords[i];
+            if (reUploadableTypes.includes(record.media_type) && record.media_url && !record.media_url.startsWith('note://')) {
+              record.media_url = await reUploadMedia(record.media_url, record.media_type, i);
+              // Also re-upload thumbnail if present
+              if (record.thumbnail_url) {
+                record.thumbnail_url = await reUploadMedia(record.thumbnail_url, 'thumb', i);
+              }
+            }
+          }
 
           await supabase
             .from('workedge_project_media')
