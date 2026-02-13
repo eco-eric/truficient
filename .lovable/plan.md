@@ -1,26 +1,37 @@
 
 
-## Fix: Date Selection Being Reset in Appointment Dialog
+## Fix: WorkEdge Photo Thumbnails Not Loading (Expired Signed URLs)
 
 ### Root Cause
-In `JobAppointmentDialog.tsx`, the form-reset `useEffect` (line 95) has `existingCalendarLinks` in its dependency array (line 125). React Query returns a new array reference on each render cycle, causing this effect to fire repeatedly -- resetting the form (including dates) back to the original appointment values every time.
+When media is synced from WorkEdge, the URLs stored in `workedge_project_media.media_url` are **signed URLs** from WorkEdge's storage with short-lived tokens (they expire in ~1 hour). After expiration, the images silently fail to load, showing only the "Field media" alt text you're seeing.
 
 ### Solution
-Remove `existingCalendarLinks` from the `useEffect` dependency array and instead load calendar link data only once when the dialog opens or the appointment changes. Use a separate, controlled initialization approach.
+Download each photo from WorkEdge during sync and re-upload it to your own file storage bucket, then store the permanent public URL in the database. This ensures thumbnails always load regardless of when you view them.
 
-### Technical Details
+### Changes
 
-**File: `src/components/admin/jobs/JobAppointmentDialog.tsx`**
+**1. Create a storage bucket for WorkEdge media**
+- Create a `workedge-media` public storage bucket via SQL migration
+- Add RLS policies allowing authenticated users to read/upload
 
-1. Remove `existingCalendarLinks` from the dependency array of the form-reset `useEffect` (line 125)
-2. Add a separate `useEffect` that sets `calendarIds` only when `existingCalendarLinks` transitions from empty to populated (initial load), using a ref to track whether calendar IDs have been initialized for the current appointment
-3. This ensures:
-   - The form initializes correctly with saved calendar selections when editing
-   - Typing into date/time fields no longer triggers a full form reset
-   - All other form behavior remains unchanged
+**2. Update the `workedge-sync` edge function (`get-project-media` action)**
+- After fetching media items from the WorkEdge API, download each photo/video thumbnail binary
+- Upload each file to the `workedge-media` bucket under a path like `{workedge_project_id}/{filename}`
+- Store the resulting permanent public URL in `media_url` instead of the expiring signed URL
+- Add error handling: if a download/upload fails for a specific item, fall back to storing the original URL (better than losing the record entirely)
 
-**Changes summary:**
-- Add a `useRef` to track calendar link initialization state
-- Split the single reset effect into two: one for core appointment fields (depends on `appointment`, `open`, `location`) and one for calendar IDs (depends on `existingCalendarLinks` with guarded logic)
-- Reset the ref when `appointment?.id` changes
+**3. Update `WorkEdgeProjects.tsx` Field Media grid**
+- Add an `onError` handler on the `<img>` tag that shows the media type icon as a fallback when an image fails to load (handles any remaining old expired URLs gracefully)
+- Add a subtle "expired" indicator for items whose URLs no longer work
+
+**4. Update `WorkEdgePanel.tsx` (job detail sidebar)**
+- Same `onError` fallback treatment for any thumbnail display
+
+### Files to modify
+1. **Database migration** -- create `workedge-media` storage bucket + RLS policies
+2. `supabase/functions/workedge-sync/index.ts` -- download and re-upload media during sync
+3. `src/pages/admin/WorkEdgeProjects.tsx` -- add image error fallback in the Field Media grid
+
+### What this does NOT change
+- Existing expired URLs in the database will still be broken until you re-sync those projects (click the refresh icon on each linked project). The `onError` fallback ensures they show an icon instead of a broken image in the meantime.
 
