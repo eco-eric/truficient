@@ -1,73 +1,42 @@
 
 
-# Give Bach a Voice — ElevenLabs Text-to-Speech
+# Add Google Tag Manager (GTM) to the Site
 
-## What This Adds
+## What This Does
+Adds the GTM container tag (`GTM-TPHS4HT7`) to the site so your web team can manage all tracking tags from Google Tag Manager without needing code changes.
 
-Bach will be able to speak responses aloud using ElevenLabs TTS. The feature includes:
+## Approach
+Since GTM is a site-wide container that should load as early as possible, we'll add it in two places following Google's official installation instructions:
 
-- A **speaker button** on each assistant message to replay it
-- A **voice toggle** in the panel header to enable/disable auto-speak
-- **Auto-speak** for new assistant messages (including briefings) when enabled
-- **Stop-on-interrupt** when the user sends a new message, closes the panel, or starts voice input
+### 1. Add GTM script to `index.html` (head section)
+Insert the GTM snippet right after the opening `<head>` tag — this is the standard placement for fastest loading:
 
-## Changes
-
-### 1. Edge Function: `text-to-speech`
-- New file: `supabase/functions/text-to-speech/index.ts`
-- Accepts `{ text, voice_id? }`, cleans markdown/emoji from text, truncates to ~2000 chars, calls ElevenLabs API, returns binary MP3
-- Uses the `ELEVENLABS_API_KEY` secret (already connected)
-- Auth-protected: requires valid user session
-- Config entry in `supabase/config.toml` with `verify_jwt = false` (auth validated in code)
-
-### 2. Frontend Hook: `useTextToSpeech`
-- New file: `src/components/admin/assistant/hooks/useTextToSpeech.ts`
-- Manages speak/stop/loading/error state
-- Uses `fetch()` directly for binary audio response (not `supabase.functions.invoke`)
-- Persists auto-speak preference in localStorage
-
-### 3. ChatMessage Update
-- File: `src/components/admin/assistant/ChatMessage.tsx`
-- Add speaker button (Volume2/VolumeX icon) in the timestamp row of assistant messages
-- Shows loading spinner while generating, stop icon while playing
-
-### 4. AIAssistantPanel Update
-- File: `src/components/admin/assistant/AIAssistantPanel.tsx`
-- Add voice toggle button in panel header (gold accent when active)
-- Wire `useTextToSpeech` hook
-- Auto-speak new assistant messages when toggle is on
-- Stop speaking on: panel close, new message sent, mic activated
-- Pass speak/stop props down to ChatMessage components
-
-### 5. Voice Selection
-- Default voice: "Brian" (`nPczCjzI2devNBz1zQrb`) — professional male, warm tone that fits Bach's personality
-- Model: `eleven_turbo_v2_5` for lowest latency
-- Can be changed via `ELEVENLABS_VOICE_ID` secret without code changes
-
-## Technical Details
-
-### Text Cleaning (server-side)
-Before sending to ElevenLabs, the text is cleaned:
-- Strip `[SUGGESTIONS:...]` tags, code blocks, markdown formatting, bullet markers
-- Truncate at ~2000 chars at a natural sentence break
-- Append "For the full details, check the text above." if truncated
-
-### Audio Flow
-```text
-User clicks speaker (or auto-speak triggers)
-  --> fetch() POST to text-to-speech edge function
-  --> Edge function cleans text, calls ElevenLabs API
-  --> Returns binary MP3
-  --> Browser creates Audio object from blob URL
-  --> Playback with isSpeaking state tracking
+```html
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-TPHS4HT7');</script>
+<!-- End Google Tag Manager -->
 ```
 
-### Files Created
-- `supabase/functions/text-to-speech/index.ts`
-- `src/components/admin/assistant/hooks/useTextToSpeech.ts`
+### 2. Add GTM noscript fallback to `index.html` (body section)
+Insert right after the opening `<body>` tag for users with JavaScript disabled:
 
-### Files Modified
-- `supabase/config.toml` (add function config)
-- `src/components/admin/assistant/ChatMessage.tsx` (add speaker button)
-- `src/components/admin/assistant/AIAssistantPanel.tsx` (add voice toggle, auto-speak logic, interrupt handling)
+```html
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TPHS4HT7"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+```
+
+## Why in `index.html` instead of React?
+GTM should load before React boots up to capture the earliest possible page data. Placing it in `index.html` is the Google-recommended approach and ensures your web team's tags fire correctly from the first page load.
+
+## File Modified
+- `index.html` — two small additions (head script + body noscript)
+
+## Note on Existing Tracking
+Your site already has Google Analytics and Meta Pixel managed through `TrackingScripts.tsx`. Once GTM is live, your web team may want to migrate those into GTM to manage everything in one place — but that's optional and can be done later.
 
