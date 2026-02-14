@@ -325,21 +325,24 @@ const Pipeline = () => {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 overflow-x-auto pb-4">
-              {stages.map((stage) => (
-                <PipelineColumn
-                  key={stage.id}
-                  stage={stage}
-                  entries={entries.filter(e => e.stage_id === stage.id)}
-                  onEditEntry={handleEditEntry}
-                  onDeleteEntry={handleDeleteEntry}
-                />
-              ))}
+            <div className="overflow-x-auto pb-4 -mx-4 px-4">
+              <div className="flex gap-4" style={{ minWidth: `${stages.length * 260 + (stages.length - 1) * 16}px` }}>
+                {stages.map((stage) => (
+                  <div key={stage.id} className="w-[260px] shrink-0">
+                    <PipelineColumn
+                      stage={stage}
+                      entries={entries.filter(e => e.stage_id === stage.id)}
+                      onEditEntry={handleEditEntry}
+                      onDeleteEntry={handleDeleteEntry}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
 
             <DragOverlay>
               {activeEntry && (
-                <div className="w-64 opacity-90">
+                <div className="w-[240px] opacity-90">
                   <PipelineCard
                     entry={activeEntry}
                     onEdit={() => {}}

@@ -1,6 +1,5 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
@@ -77,106 +76,110 @@ export const PipelineCard = ({ entry, onEdit, onDelete }: PipelineCardProps) => 
   };
 
   return (
-    <Card
+    <div
       ref={setNodeRef}
       style={style}
-      className="bg-card border shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing"
+      className="bg-card border rounded-lg shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing group"
     >
-      <CardContent className="p-3">
-        <div className="flex items-start gap-2">
-          <div
-            {...attributes}
-            {...listeners}
-            className="mt-1 text-muted-foreground hover:text-foreground"
-          >
-            <GripVertical className="h-4 w-4" />
+      <div className="p-3">
+        {/* Header: name + actions */}
+        <div className="flex items-start justify-between gap-1">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <div
+              {...attributes}
+              {...listeners}
+              className="text-muted-foreground/40 group-hover:text-muted-foreground transition-colors shrink-0"
+            >
+              <GripVertical className="h-3.5 w-3.5" />
+            </div>
+            <Link 
+              to={`/admin/customers/${entry.customer_id}`}
+              className="font-semibold text-sm hover:text-primary truncate block transition-colors"
+            >
+              {customerName}
+            </Link>
           </div>
           
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <Link 
-                to={`/admin/customers/${entry.customer_id}`}
-                className="font-medium text-sm hover:underline truncate block"
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <MoreHorizontal className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onEdit(entry)}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => onDelete(entry.id)}
+                className="text-destructive"
               >
-                {customerName}
-              </Link>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0">
-                    <MoreHorizontal className="h-3.5 w-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onEdit(entry)}>
-                    <Pencil className="h-4 w-4 mr-2" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => onDelete(entry.id)}
-                    className="text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Remove
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Remove
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant="outline" className="text-xs">
-                {entry.customer.customer_type}
-              </Badge>
-              {entry.probability && (
-                <span className="text-xs text-muted-foreground">
-                  {entry.probability}%
-                </span>
-              )}
-            </div>
+        {/* Type badge + probability */}
+        <div className="flex items-center gap-2 mt-1.5">
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 capitalize">
+            {entry.customer.customer_type}
+          </Badge>
+          {entry.probability != null && (
+            <span className="text-[10px] text-muted-foreground">
+              {entry.probability}% likely
+            </span>
+          )}
+        </div>
 
-            {entry.estimated_value && (
-              <div className="flex items-center gap-1 mt-2 text-sm font-medium text-primary">
-                <DollarSign className="h-3.5 w-3.5" />
-                {formatCurrency(entry.estimated_value)}
-              </div>
+        {/* Value */}
+        {entry.estimated_value != null && (
+          <div className="flex items-center gap-1 mt-2 text-sm font-bold text-primary">
+            <DollarSign className="h-3.5 w-3.5" />
+            {formatCurrency(entry.estimated_value)}
+          </div>
+        )}
+
+        {/* Close date + contact icons row */}
+        <div className="flex items-center justify-between mt-2">
+          {entry.expected_close_date ? (
+            <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+              <Calendar className="h-3 w-3" />
+              {format(new Date(entry.expected_close_date), 'MMM d, yyyy')}
+            </div>
+          ) : <div />}
+          
+          <div className="flex items-center gap-1.5">
+            {entry.customer.phone && (
+              <a 
+                href={`tel:${entry.customer.phone}`}
+                className="text-muted-foreground hover:text-primary transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Phone className="h-3.5 w-3.5" />
+              </a>
             )}
-
-            {entry.expected_close_date && (
-              <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                <Calendar className="h-3 w-3" />
-                {format(new Date(entry.expected_close_date), 'MMM d, yyyy')}
-              </div>
-            )}
-
-            <div className="flex items-center gap-2 mt-2">
-              {entry.customer.phone && (
-                <a 
-                  href={`tel:${entry.customer.phone}`}
-                  className="text-muted-foreground hover:text-foreground"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Phone className="h-3.5 w-3.5" />
-                </a>
-              )}
-              {entry.customer.email && (
-                <a 
-                  href={`mailto:${entry.customer.email}`}
-                  className="text-muted-foreground hover:text-foreground"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Mail className="h-3.5 w-3.5" />
-                </a>
-              )}
-            </div>
-
-            {entry.notes && (
-              <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                {entry.notes}
-              </p>
+            {entry.customer.email && (
+              <a 
+                href={`mailto:${entry.customer.email}`}
+                className="text-muted-foreground hover:text-primary transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Mail className="h-3.5 w-3.5" />
+              </a>
             )}
           </div>
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Notes preview */}
+        {entry.notes && (
+          <p className="text-[11px] text-muted-foreground mt-2 line-clamp-2 leading-relaxed">
+            {entry.notes}
+          </p>
+        )}
+      </div>
+    </div>
   );
 };
