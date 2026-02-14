@@ -1,6 +1,5 @@
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PipelineCard } from './PipelineCard';
 import { cn } from '@/lib/utils';
 
@@ -61,22 +60,25 @@ export const PipelineColumn = ({
   };
 
   return (
-    <Card 
+    <div 
       className={cn(
-        "min-h-[500px] flex flex-col bg-muted/30",
-        isOver && "ring-2 ring-primary ring-offset-2"
+        "min-h-[520px] flex flex-col rounded-xl border bg-muted/20 transition-all",
+        isOver && "ring-2 ring-primary/60 ring-offset-2 bg-primary/5"
       )}
     >
-      <CardHeader className="pb-2 space-y-1">
-        <div className="flex items-center gap-2">
-          <div 
-            className="w-3 h-3 rounded-full shrink-0" 
-            style={{ backgroundColor: stage.color }}
-          />
-          <CardTitle className="text-sm font-medium truncate">
-            {stage.display_name}
-          </CardTitle>
-          <span className="text-xs text-muted-foreground ml-auto">
+      {/* Column header with colored top bar */}
+      <div 
+        className="h-1.5 rounded-t-xl" 
+        style={{ backgroundColor: stage.color }}
+      />
+      <div className="px-3 py-3 space-y-1">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-sm">
+              {stage.display_name}
+            </span>
+          </div>
+          <span className="text-xs font-medium bg-muted rounded-full px-2 py-0.5 text-muted-foreground">
             {entries.length}
           </span>
         </div>
@@ -85,11 +87,12 @@ export const PipelineColumn = ({
             {formatCurrency(totalValue)}
           </p>
         )}
-      </CardHeader>
+      </div>
       
-      <CardContent 
+      {/* Cards area */}
+      <div 
         ref={setNodeRef}
-        className="flex-1 pt-2 space-y-2 overflow-y-auto"
+        className="flex-1 px-2 pb-2 space-y-2 overflow-y-auto"
       >
         <SortableContext 
           items={entries.map(e => e.id)} 
@@ -106,13 +109,13 @@ export const PipelineColumn = ({
         </SortableContext>
         
         {entries.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed rounded-lg bg-background/50">
+          <div className="flex flex-col items-center justify-center py-10 text-center border border-dashed rounded-lg bg-background/30">
             <p className="text-xs text-muted-foreground">
               Drop leads here
             </p>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
