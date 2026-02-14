@@ -124,6 +124,15 @@ export const Step11ThankYou = () => {
 
   return (
     <StepContainer className="px-4 pb-28">
+      {/* Google Tag Manager (noscript) */}
+      <noscript>
+        <iframe
+          src="https://www.googletagmanager.com/ns.html?id=GTM-TPHS4HT7"
+          height="0"
+          width="0"
+          style={{ display: 'none', visibility: 'hidden' }}
+        />
+      </noscript>
       <div className="max-w-lg mx-auto w-full text-center">
         {/* Success icon */}
         <motion.div
