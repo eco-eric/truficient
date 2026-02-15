@@ -58,6 +58,10 @@ export function useBriefing({ enabled = true }: { enabled?: boolean } = {}) {
 
   const fetchBriefing = useCallback(async () => {
     if (!enabled) return null;
+    // Wait for a valid user session before calling the edge function
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return null;
+
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("assistant-briefing");
