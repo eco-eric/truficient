@@ -24,6 +24,9 @@ export const RecentChats = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['ghl-conversations-dashboard'],
     queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
       const { data, error } = await supabase.functions.invoke('get-ghl-conversations', {
         body: null,
       });
