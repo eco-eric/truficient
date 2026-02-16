@@ -12,7 +12,7 @@ import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { Plus, Search, LayoutGrid, List, MoreHorizontal, Eye, Pencil, Trash2, Calendar, DollarSign, User, Wrench, HardHat } from 'lucide-react';
+import { Plus, Search, LayoutGrid, List, MoreHorizontal, Eye, Pencil, Trash2, Calendar, DollarSign, User, Wrench, HardHat, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import JobFormDialog from '@/components/admin/jobs/JobFormDialog';
@@ -76,6 +76,7 @@ interface JobStage {
 const BOARD_TYPES = [
   { slug: 'residential-service-call', label: 'Service Calls', icon: Wrench },
   { slug: 'residential-installation', label: 'Installs', icon: HardHat },
+  { slug: 'commercial-service-call', label: 'Commercial', icon: Building2 },
 ] as const;
 
 export default function Jobs() {
