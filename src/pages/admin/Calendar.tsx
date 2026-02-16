@@ -4,14 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, RefreshCw, Settings, Share } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, RefreshCw, Settings, Share, Clock, MapPin, User, Briefcase, ExternalLink } from "lucide-react";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, subWeeks, subMonths, parseISO } from "date-fns";
-import { buildCSTDateTime } from "@/lib/cstTimezone";
+import { buildCSTDateTime, formatTimeCSTDisplay } from "@/lib/cstTimezone";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import CalendarView from "@/components/admin/calendar/CalendarView";
 import CalendarFilterSidebar from "@/components/admin/calendar/CalendarFilterSidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 
 type ViewMode = "week" | "month" | "day";
 
@@ -29,6 +31,7 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const isMobile = useIsMobile();
 
   // Multi-calendar filter state
@@ -350,9 +353,100 @@ export default function Calendar() {
               currentDate={currentDate}
               viewMode={viewMode}
               onDateChange={setCurrentDate}
+              onEventClick={setSelectedEvent}
             />
           </div>
         </div>
+
+        {/* Event Detail Dialog */}
+        <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: selectedEvent?.color }} />
+                {selectedEvent?.title}
+              </DialogTitle>
+            </DialogHeader>
+            {selectedEvent && (
+              <div className="space-y-4">
+                {/* Time */}
+                <div className="flex items-center gap-2 text-sm">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span>
+                    {format(selectedEvent.start, "EEEE, MMMM d, yyyy")}
+                    <br />
+                    {formatTimeCSTDisplay(selectedEvent.start)} – {formatTimeCSTDisplay(selectedEvent.end)}
+                  </span>
+                </div>
+
+                {/* Job info */}
+                {selectedEvent.type === "job" && selectedEvent.data?.job && (
+                  <>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Briefcase className="h-4 w-4 text-muted-foreground" />
+                      <span>
+                        <span className="font-mono text-muted-foreground">{selectedEvent.data.job.job_number}</span>
+                        {" — "}
+                        {selectedEvent.data.job.title}
+                      </span>
+                    </div>
+                    {selectedEvent.data.job.customer && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span>
+                          {selectedEvent.data.job.customer.first_name} {selectedEvent.data.job.customer.last_name}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Team */}
+                {selectedEvent.data?.team && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <Badge variant="outline" style={{ borderColor: selectedEvent.data.team.color, color: selectedEvent.data.team.color }}>
+                      {selectedEvent.data.team.name}
+                    </Badge>
+                  </div>
+                )}
+
+                {/* Google event location/description */}
+                {selectedEvent.type === "google" && selectedEvent.data?.location && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span>{selectedEvent.data.location}</span>
+                  </div>
+                )}
+
+                {/* Notes */}
+                {selectedEvent.data?.notes && (
+                  <div className="text-sm text-muted-foreground border-t pt-3">
+                    {selectedEvent.data.notes}
+                  </div>
+                )}
+
+                {selectedEvent.type === "google" && selectedEvent.data?.description && (
+                  <div className="text-sm text-muted-foreground border-t pt-3">
+                    {selectedEvent.data.description}
+                  </div>
+                )}
+
+                {/* Action button */}
+                {selectedEvent.type === "job" && selectedEvent.data?.job?.id && (
+                  <div className="border-t pt-3">
+                    <Button asChild size="sm" variant="outline" className="w-full">
+                      <Link to={`/admin/jobs/${selectedEvent.data.job.id}`}>
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        View Job Details
+                      </Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
