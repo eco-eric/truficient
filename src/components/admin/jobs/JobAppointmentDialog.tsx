@@ -23,7 +23,7 @@ interface JobAppointmentDialogProps {
   customerPhone?: string | null;
   location?: string | null;
   appointment?: {
-    id: string;
+    id?: string;
     title: string | null;
     start_datetime: string;
     end_datetime: string;
