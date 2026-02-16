@@ -21,13 +21,14 @@ interface CalendarViewProps {
   currentDate: Date;
   viewMode: "day" | "week" | "month";
   onDateChange: (date: Date) => void;
+  onEventClick?: (event: CalendarEvent) => void;
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const HOUR_HEIGHT = 60; // pixels per hour
 const START_HOUR = 6; // Default scroll position (6 AM)
 
-export default function CalendarView({ events, currentDate, viewMode, onDateChange }: CalendarViewProps) {
+export default function CalendarView({ events, currentDate, viewMode, onDateChange, onEventClick }: CalendarViewProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to 6 AM on mount and when view mode changes
@@ -71,7 +72,7 @@ export default function CalendarView({ events, currentDate, viewMode, onDateChan
   };
 
   if (viewMode === "month") {
-    return <MonthView events={events} currentDate={currentDate} onDateChange={onDateChange} />;
+    return <MonthView events={events} currentDate={currentDate} onDateChange={onDateChange} onEventClick={onEventClick} />;
   }
 
   const daysToShow = viewMode === "day" ? [currentDate] : weekDays;
@@ -133,7 +134,7 @@ export default function CalendarView({ events, currentDate, viewMode, onDateChan
               {/* Events */}
               <div className="absolute inset-0 px-1">
                 {getEventsForDay(day).map(event => (
-                  <EventBlock key={event.id} event={event} style={getEventStyle(event)} />
+                  <EventBlock key={event.id} event={event} style={getEventStyle(event)} onEventClick={onEventClick} />
                 ))}
               </div>
             </div>
@@ -144,11 +145,15 @@ export default function CalendarView({ events, currentDate, viewMode, onDateChan
   );
 }
 
-function EventBlock({ event, style }: { event: CalendarEvent; style: React.CSSProperties }) {
-  const content = (
+function EventBlock({ event, style, onEventClick }: { event: CalendarEvent; style: React.CSSProperties; onEventClick?: (event: CalendarEvent) => void }) {
+  return (
     <div
       className="absolute left-1 right-1 rounded px-1.5 py-0.5 text-white text-xs overflow-hidden cursor-pointer hover:opacity-90 transition-opacity shadow-sm"
       style={style}
+      onClick={(e) => {
+        e.stopPropagation();
+        onEventClick?.(event);
+      }}
     >
       <div className="font-medium truncate">{event.title}</div>
       <div className="text-white/80 truncate">
@@ -156,21 +161,13 @@ function EventBlock({ event, style }: { event: CalendarEvent; style: React.CSSPr
       </div>
     </div>
   );
-
-  if (event.type === "job") {
-    const jobId = event.data?.job?.id || event.data?.job_id || event.data?.jobId;
-    if (jobId) {
-      return <Link to={`/admin/jobs/${jobId}`}>{content}</Link>;
-    }
-  }
-
-  return content;
 }
 
-function MonthView({ events, currentDate, onDateChange }: { 
+function MonthView({ events, currentDate, onDateChange, onEventClick }: { 
   events: CalendarEvent[]; 
   currentDate: Date;
   onDateChange: (date: Date) => void;
+  onEventClick?: (event: CalendarEvent) => void;
 }) {
   const weeks = useMemo(() => {
     const start = startOfWeek(new Date(currentDate.getFullYear(), currentDate.getMonth(), 1), { weekStartsOn: 0 });
@@ -233,8 +230,12 @@ function MonthView({ events, currentDate, onDateChange }: {
                   {dayEvents.slice(0, 3).map(event => (
                     <div
                       key={event.id}
-                      className="text-xs px-1 py-0.5 rounded truncate text-white"
+                      className="text-xs px-1 py-0.5 rounded truncate text-white cursor-pointer hover:opacity-80"
                       style={{ backgroundColor: event.color }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEventClick?.(event);
+                      }}
                     >
                       {event.title}
                     </div>
