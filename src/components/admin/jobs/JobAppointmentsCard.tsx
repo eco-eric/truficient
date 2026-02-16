@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Plus, Pencil, Trash2, CheckCircle2, Clock, Users } from 'lucide-react';
+import { Calendar, Plus, Pencil, Trash2, CheckCircle2, Clock, Users, Copy } from 'lucide-react';
 import { formatInCST, formatTimeCSTDisplay } from '@/lib/cstTimezone';
 import { toast } from 'sonner';
 import JobAppointmentDialog from './JobAppointmentDialog';
@@ -108,6 +108,18 @@ export default function JobAppointmentsCard({
     setDialogOpen(true);
   };
 
+  const handleClone = (appointment: any) => {
+    // Create a clone object without id/calendar links so dialog treats it as new
+    setEditingAppointment({
+      ...appointment,
+      id: undefined,
+      title: `${appointment.title || 'Appointment'} (Copy)`,
+      google_calendar_event_id: null,
+      calendar_links: [],
+    });
+    setDialogOpen(true);
+  };
+
   const handleAdd = () => {
     setEditingAppointment(null);
     setDialogOpen(true);
@@ -188,6 +200,15 @@ export default function JobAppointmentsCard({
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      title="Clone appointment"
+                      onClick={() => handleClone(apt)}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
