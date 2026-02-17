@@ -294,7 +294,7 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
       nextStep();
     } catch (error) {
       console.error("Submission failed:", error);
-      toast.error("Failed to submit. Please try again or call us at (817) 349-8549.");
+      toast.error("Failed to submit. Please try again or call us at (214) 238-4349.");
     } finally {
       setIsSubmitting(false);
     }
