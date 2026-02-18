@@ -1,42 +1,43 @@
 
 
-# Add Google Tag Manager (GTM) to the Site
+## Searchable Customer Selector for Job Form
 
-## What This Does
-Adds the GTM container tag (`GTM-TPHS4HT7`) to the site so your web team can manage all tracking tags from Google Tag Manager without needing code changes.
+### Problem
+The current customer dropdown in the Job Form uses a basic `Select` component. It doesn't support typing to search, and names aren't sorted alphabetically when you start looking through them (company names and personal names are mixed without consistent ordering).
 
-## Approach
-Since GTM is a site-wide container that should load as early as possible, we'll add it in two places following Google's official installation instructions:
+### Solution
+Replace the basic `Select` with a searchable **Combobox** using the existing `Popover` + `Command` components (already in the project). This gives you:
 
-### 1. Add GTM script to `index.html` (head section)
-Insert the GTM snippet right after the opening `<head>` tag — this is the standard placement for fastest loading:
+- A text input where you can type to search by full name (first + last) or company name
+- Results filtered as you type, matching against the combined name
+- Names sorted alphabetically (last name first for individuals, company name for businesses)
 
-```html
-<!-- Google Tag Manager -->
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-TPHS4HT7');</script>
-<!-- End Google Tag Manager -->
+### What Changes
+
+**File: `src/components/admin/jobs/JobFormDialog.tsx`**
+
+1. Replace the `Select` import with `Popover`, `PopoverTrigger`, `PopoverContent` and `Command`, `CommandInput`, `CommandEmpty`, `CommandGroup`, `CommandItem`, `CommandList` imports
+2. Sort customers alphabetically by their display name before rendering
+3. Replace the Customer `Select` with a Combobox pattern:
+   - A button trigger showing the selected customer name (or "Search customers...")
+   - A popover with a search input that filters the customer list by typing any part of the name
+   - Clicking a result selects that customer and closes the popover
+4. The search will match against the full combined name (e.g., typing "emily" or "summers" both find "Emily Summers")
+
+### Technical Details
+
+The Combobox will use the existing `cmdk` library (already installed) via the project's `Command` UI components. The pattern:
+
+```
+Popover
+  PopoverTrigger -> Button showing selected name
+  PopoverContent
+    Command
+      CommandInput (type-to-search)
+      CommandList
+        CommandEmpty ("No customers found")
+        CommandGroup
+          CommandItem (for each customer, filtered by cmdk)
 ```
 
-### 2. Add GTM noscript fallback to `index.html` (body section)
-Insert right after the opening `<body>` tag for users with JavaScript disabled:
-
-```html
-<!-- Google Tag Manager (noscript) -->
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TPHS4HT7"
-height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- End Google Tag Manager (noscript) -->
-```
-
-## Why in `index.html` instead of React?
-GTM should load before React boots up to capture the earliest possible page data. Placing it in `index.html` is the Google-recommended approach and ensures your web team's tags fire correctly from the first page load.
-
-## File Modified
-- `index.html` — two small additions (head script + body noscript)
-
-## Note on Existing Tracking
-Your site already has Google Analytics and Meta Pixel managed through `TrackingScripts.tsx`. Once GTM is live, your web team may want to migrate those into GTM to manage everything in one place — but that's optional and can be done later.
-
+Sorting logic: customers sorted by `getCustomerName()` output using `localeCompare` for proper alphabetical ordering.
