@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -7,6 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface JobType {
@@ -48,7 +52,7 @@ interface JobFormDialogProps {
 
 export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose }: JobFormDialogProps) {
   const queryClient = useQueryClient();
-  
+  const [customerOpen, setCustomerOpen] = useState(false);
   const [formData, setFormData] = useState({
     job_type_id: editingJob?.job_type?.id || '',
     customer_id: editingJob?.customer?.id || '',
@@ -155,6 +159,15 @@ export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose
     return `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
   };
 
+  const sortedCustomers = useMemo(() => 
+    [...customers].sort((a, b) => getCustomerName(a).localeCompare(getCustomerName(b))),
+    [customers]
+  );
+
+  const selectedCustomerName = formData.customer_id
+    ? getCustomerName(customers.find(c => c.id === formData.customer_id) || { id: '', first_name: null, last_name: null, company_name: null })
+    : '';
+
   return (
     <DialogContent 
       className="max-w-2xl max-h-[90vh] overflow-y-auto"
@@ -181,21 +194,45 @@ export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Customer *</Label>
-            <Select
-              value={formData.customer_id}
-              onValueChange={(v) => setFormData({ ...formData, customer_id: v, location_id: '' })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select customer" />
-              </SelectTrigger>
-              <SelectContent>
-                {customers.map(customer => (
-                  <SelectItem key={customer.id} value={customer.id}>
-                    {getCustomerName(customer)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={customerOpen}
+                  className="w-full justify-between font-normal"
+                >
+                  {selectedCustomerName || "Search customers..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[300px] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search customers..." />
+                  <CommandList>
+                    <CommandEmpty>No customers found.</CommandEmpty>
+                    <CommandGroup>
+                      {sortedCustomers.map(customer => {
+                        const name = getCustomerName(customer);
+                        return (
+                          <CommandItem
+                            key={customer.id}
+                            value={name}
+                            onSelect={() => {
+                              setFormData({ ...formData, customer_id: customer.id, location_id: '' });
+                              setCustomerOpen(false);
+                            }}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", formData.customer_id === customer.id ? "opacity-100" : "opacity-0")} />
+                            {name}
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="space-y-2">
             <Label>Location</Label>
