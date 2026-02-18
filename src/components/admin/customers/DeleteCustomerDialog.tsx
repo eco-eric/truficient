@@ -28,21 +28,45 @@ export function DeleteCustomerDialog({ open, onOpenChange, customer }: DeleteCus
     mutationFn: async () => {
       if (!customer) return;
       
-      // Soft delete by setting deleted_at
+      // 1. Delete related submission links
+      const { error: linksError } = await supabase
+        .from('crm_submission_links')
+        .delete()
+        .eq('customer_id', customer.id);
+      if (linksError) {
+        console.error('Failed to delete crm_submission_links:', linksError);
+        throw linksError;
+      }
+
+      // 2. Delete related customer contacts
+      const { error: contactsError } = await supabase
+        .from('crm_customer_contacts')
+        .delete()
+        .eq('customer_id', customer.id);
+      if (contactsError) {
+        console.error('Failed to delete crm_customer_contacts:', contactsError);
+        throw contactsError;
+      }
+
+      // 3. Soft delete the customer
       const { error } = await supabase
         .from('crm_customers')
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', customer.id);
-      
-      if (error) throw error;
+      if (error) {
+        console.error('Failed to delete crm_customers:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm_customers'] });
       toast.success('Customer deleted');
       onOpenChange(false);
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete customer');
+    onError: (error: any) => {
+      const msg = error?.message || 'Failed to delete customer';
+      console.error('Delete customer error:', error);
+      toast.error(msg);
     },
   });
 
