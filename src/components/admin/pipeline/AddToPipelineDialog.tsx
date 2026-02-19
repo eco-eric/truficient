@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,9 +26,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 const formSchema = z.object({
@@ -65,6 +76,7 @@ export const AddToPipelineDialog = ({
 }: AddToPipelineDialogProps) => {
   const queryClient = useQueryClient();
   const isEditing = !!editingEntry;
+  const [customerOpen, setCustomerOpen] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -82,14 +94,12 @@ export const AddToPipelineDialog = ({
   const { data: customers = [] } = useQuery({
     queryKey: ['pipeline-available-customers', editingEntry?.customer_id],
     queryFn: async () => {
-      // Get customers already in pipeline
       const { data: existingEntries } = await supabase
         .from('crm_pipeline_entries')
         .select('customer_id');
       
       const existingIds = existingEntries?.map(e => e.customer_id) || [];
       
-      // If editing, include the current customer
       if (editingEntry) {
         const idx = existingIds.indexOf(editingEntry.customer_id);
         if (idx > -1) existingIds.splice(idx, 1);
@@ -124,6 +134,17 @@ export const AddToPipelineDialog = ({
       return data;
     },
   });
+
+  const getCustomerName = (customer: typeof customers[0]) => {
+    return customer.company_name || 
+      `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 
+      'Unknown';
+  };
+
+  const sortedCustomers = useMemo(() =>
+    [...customers].sort((a, b) => getCustomerName(a).localeCompare(getCustomerName(b))),
+    [customers]
+  );
 
   // Reset form when dialog opens/closes or editing entry changes
   useEffect(() => {
@@ -171,7 +192,6 @@ export const AddToPipelineDialog = ({
           .insert(payload);
         if (error) throw error;
 
-        // Log the pipeline addition for new entries only
         const stage = stages.find(s => s.id === data.stage_id);
         await logSystemInteraction({
           customerId: data.customer_id,
@@ -199,12 +219,6 @@ export const AddToPipelineDialog = ({
     createMutation.mutate(data);
   };
 
-  const getCustomerName = (customer: typeof customers[0]) => {
-    return customer.company_name || 
-      `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 
-      'Unknown';
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
@@ -222,24 +236,53 @@ export const AddToPipelineDialog = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Customer</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value}
-                    disabled={isEditing}
+                  <Popover
+                    open={customerOpen && !isEditing}
+                    onOpenChange={(o) => !isEditing && setCustomerOpen(o)}
                   >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a customer" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {customers.map((customer) => (
-                        <SelectItem key={customer.id} value={customer.id}>
-                          {getCustomerName(customer)} ({customer.customer_type})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          disabled={isEditing}
+                          className="w-full justify-between font-normal"
+                        >
+                          {field.value
+                            ? getCustomerName(sortedCustomers.find(c => c.id === field.value)!)
+                            : 'Search customers...'}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[340px] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search customers..." />
+                        <CommandList>
+                          <CommandEmpty>No customers found.</CommandEmpty>
+                          <CommandGroup>
+                            {sortedCustomers.map((customer) => {
+                              const name = getCustomerName(customer);
+                              return (
+                                <CommandItem
+                                  key={customer.id}
+                                  value={`${name} ${customer.customer_type}`}
+                                  onSelect={() => {
+                                    field.onChange(customer.id);
+                                    setCustomerOpen(false);
+                                  }}
+                                >
+                                  <Check className={cn('mr-2 h-4 w-4', field.value === customer.id ? 'opacity-100' : 'opacity-0')} />
+                                  {name}
+                                  <span className="ml-auto text-xs text-muted-foreground">{customer.customer_type}</span>
+                                </CommandItem>
+                              );
+                            })}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
