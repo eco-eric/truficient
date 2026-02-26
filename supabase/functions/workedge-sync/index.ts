@@ -12,6 +12,9 @@ function extractItems(response: any): any[] {
   if (Array.isArray(response.items)) return response.items;
   if (Array.isArray(response.photos)) return response.photos;
   if (Array.isArray(response.media)) return response.media;
+  if (Array.isArray(response.notes)) return response.notes;
+  if (Array.isArray(response.videos)) return response.videos;
+  if (Array.isArray(response.files)) return response.files;
   if (Array.isArray(response.data)) return response.data;
   if (response.data && Array.isArray(response.data.items)) return response.data.items;
   if (response.data && Array.isArray(response.data.photos)) return response.data.photos;
