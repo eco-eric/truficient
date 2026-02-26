@@ -735,6 +735,42 @@ export type Database = {
           },
         ]
       }
+      campaign_landing_pages: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          name: string
+          notes: string | null
+          platform: string | null
+          slug: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notes?: string | null
+          platform?: string | null
+          slug: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notes?: string | null
+          platform?: string | null
+          slug?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       contact_submissions: {
         Row: {
           created_at: string
