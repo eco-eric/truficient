@@ -5,9 +5,9 @@
   --gb-navy: #003366;
   --gb-navy-dk: #002244;
   --gb-navy-lt: #0a4a8c;
-  --gb-orange: #E8600A;
-  --gb-orange-lt: #F47420;
-  --gb-orange-bg: #FFF3EB;
+  --gb-orange: #FFB547;
+  --gb-orange-lt: #FFC96B;
+  --gb-orange-bg: #FFF8ED;
   --gb-white: #ffffff;
   --gb-gray-lt: #f5f7fa;
   --gb-gray-mid: #e8ecf0;
@@ -39,7 +39,7 @@
 .gb-mobile-sticky-cta a {
   display: block;
   background: var(--gb-orange);
-  color: #fff;
+  color: var(--gb-navy-dk);
   text-align: center;
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
@@ -53,7 +53,7 @@
 /* ─── ANNOUNCEMENT ─── */
 .gb-announce {
   background: var(--gb-orange);
-  color: #fff;
+  color: var(--gb-navy-dk);
   text-align: center;
   padding: 11px 16px;
   font-size: 0.82rem;
@@ -199,7 +199,7 @@
 .gb-btn-orange {
   display: block;
   background: var(--gb-orange);
-  color: #fff;
+  color: var(--gb-navy-dk);
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
   font-size: 1rem;
@@ -366,7 +366,7 @@
 }
 .gb-owner-badge {
   background: var(--gb-orange);
-  color: #fff;
+  color: var(--gb-navy-dk);
   font-family: 'Montserrat', sans-serif;
   font-size: 0.68rem;
   font-weight: 700;
@@ -416,7 +416,7 @@
 .gb-gallery-section { background: var(--gb-gray-lt); }
 .gb-gallery-intro {
   background: var(--gb-orange-bg);
-  border: 1px solid rgba(232,96,10,0.2);
+  border: 1px solid rgba(255,181,71,0.3);
   border-radius: var(--gb-radius);
   padding: 20px 24px;
   margin-bottom: 28px;
@@ -457,7 +457,7 @@
   position: absolute;
   top: 10px; left: 10px;
   background: var(--gb-orange);
-  color: #fff;
+  color: var(--gb-navy-dk);
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
   font-size: 0.65rem;
@@ -551,7 +551,7 @@
 .gb-gb-head p { color: rgba(255,255,255,0.55); font-size: 0.78rem; }
 .gb-pct-badge {
   background: var(--gb-orange);
-  color: #fff;
+  color: var(--gb-navy-dk);
   font-family: 'Montserrat', sans-serif;
   font-weight: 800;
   font-size: 1.5rem;
@@ -657,7 +657,7 @@
 .gb-form-btn {
   width: 100%;
   background: var(--gb-orange);
-  color: #fff;
+  color: var(--gb-navy-dk);
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
   font-size: 1rem;
@@ -683,7 +683,7 @@
 
 .gb-checklist { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 4px; padding: 0; }
 .gb-checklist li { display: flex; align-items: flex-start; gap: 10px; font-size: 0.87rem; color: var(--gb-text); line-height: 1.5; }
-.gb-checklist li::before { content: '✓'; background: var(--gb-orange); color: #fff; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.62rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.gb-checklist li::before { content: '✓'; background: var(--gb-orange); color: var(--gb-navy-dk); width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.62rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
 
 .gb-estimator-box {
   background: var(--gb-navy);
@@ -695,7 +695,7 @@
 .gb-btn-sm {
   display: block;
   background: var(--gb-orange);
-  color: #fff;
+  color: var(--gb-navy-dk);
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
   font-size: 0.85rem;
