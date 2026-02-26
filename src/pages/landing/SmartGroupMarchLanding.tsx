@@ -270,13 +270,12 @@ export default function SmartGroupMarchLanding() {
           <div className="gb-gallery-grid">
             {galleryItems.map((g, i) => (
               <div key={i} className="gb-gallery-item">
-                <g.Component />
+                <img src={g.src} alt={g.caption} loading="lazy" decoding="async" width="600" height="450" />
                 <span className="gb-gallery-tag">{g.tag}</span>
                 <div className="gb-gallery-caption">{g.caption}</div>
               </div>
             ))}
           </div>
-          <p className="gb-gallery-replace-note">📸 Placeholder illustrations — replace with actual Truficient job site photos before publishing</p>
         </div>
       </section>
 
