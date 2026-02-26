@@ -3,35 +3,21 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useButtonTracking } from "@/hooks/useButtonTracking";
 import ownerPhoto from "@/assets/owner-eric.jpg";
+import galleryAttic from "@/assets/gallery/attic-install.jpg";
+import galleryOutdoorSide from "@/assets/gallery/outdoor-units-side.jpg";
+import galleryClosetFurnace from "@/assets/gallery/closet-furnace.jpg";
+import galleryStacked from "@/assets/gallery/stacked-condensers.jpg";
+import galleryYard from "@/assets/gallery/outdoor-unit-yard.jpg";
+import galleryAirHandler from "@/assets/gallery/air-handler-closet.jpg";
 import "./smart-group-march.css";
 
-// SVG gallery placeholders (inline for self-containment)
-const GalleryPlaceholder1 = () => (
-  <svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="450" fill="#1a2b3c"/><linearGradient id="s1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#87CEEB" stopOpacity="0.5"/><stop offset="100%" stopColor="#2a3a50"/></linearGradient><rect width="800" height="450" fill="url(#s1)"/><rect x="0" y="200" width="800" height="250" fill="#c4b8a8"/><rect x="0" y="340" width="800" height="110" fill="#8B7355"/><rect x="280" y="200" width="240" height="190" rx="6" fill="#e0e0e0" stroke="#bbb" strokeWidth="2"/><rect x="280" y="200" width="240" height="30" rx="4" fill="#d0d0d0"/><rect x="295" y="240" width="210" height="130" rx="3" fill="#c8c8c8"/>{[255,270,285,300,315,330,345,360].map(y=><line key={y} x1="295" y1={y} x2="505" y2={y} stroke="#aaa" strokeWidth="1.5"/>)}<rect x="310" y="207" width="90" height="16" rx="2" fill="#E8600A" opacity="0.9"/><text x="355" y="219" fontFamily="Arial" fontSize="10" fontWeight="bold" fill="white" textAnchor="middle">GOODMAN</text><rect x="265" y="385" width="270" height="15" rx="3" fill="#aaa"/></svg>
-);
-const GalleryPlaceholder2 = () => (
-  <svg viewBox="0 0 600 450" xmlns="http://www.w3.org/2000/svg"><rect width="600" height="450" fill="#2a3a50"/><rect x="0" y="220" width="600" height="230" fill="#b0a090"/><rect x="170" y="210" width="200" height="175" rx="5" fill="#ddd" stroke="#bbb" strokeWidth="2"/><rect x="170" y="210" width="200" height="28" rx="4" fill="#ccc"/><rect x="175" y="248" width="190" height="120" rx="3" fill="#c5c5c5"/>{[262,276,290,304,318,332,346,360].map(y=><line key={y} x1="175" y1={y} x2="365" y2={y} stroke="#aaa" strokeWidth="1.5"/>)}<rect x="185" y="215" width="80" height="14" rx="2" fill="#E8600A" opacity="0.9"/><text x="225" y="226" fontFamily="Arial" fontSize="9" fontWeight="bold" fill="white" textAnchor="middle">GOODMAN</text><rect x="155" y="378" width="230" height="13" rx="3" fill="#999"/></svg>
-);
-const GalleryPlaceholder3 = () => (
-  <svg viewBox="0 0 600 450" xmlns="http://www.w3.org/2000/svg"><rect width="600" height="450" fill="#3a4a5a"/><rect x="0" y="180" width="600" height="270" fill="#c4a882"/>{[180,210,240,270,300,330,360].map(y=><rect key={y} x="0" y={y} width="600" height="20" fill="#b89060" opacity="0.4"/>)}<rect x="0" y="400" width="600" height="50" fill="#6a8a4a"/><rect x="160" y="175" width="220" height="210" rx="5" fill="#e5e5e5" stroke="#ccc" strokeWidth="2"/><rect x="160" y="175" width="220" height="32" rx="4" fill="#d5d5d5"/><rect x="168" y="216" width="204" height="145" rx="3" fill="#d0d0d0"/>{[230,246,262,278,294,310,326,342,358].map(y=><line key={y} x1="168" y1={y} x2="372" y2={y} stroke="#bbb" strokeWidth="2"/>)}<rect x="175" y="182" width="90" height="16" rx="2" fill="#E8600A" opacity="0.9"/><text x="220" y="194" fontFamily="Arial" fontSize="10" fontWeight="bold" fill="white" textAnchor="middle">GOODMAN</text><rect x="145" y="382" width="250" height="18" rx="3" fill="#aaa"/></svg>
-);
-const GalleryPlaceholder4 = () => (
-  <svg viewBox="0 0 600 450" xmlns="http://www.w3.org/2000/svg"><linearGradient id="r1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f0e8dc"/><stop offset="100%" stopColor="#c0b8ac"/></linearGradient><rect width="600" height="450" fill="url(#r1)"/><rect x="100" y="80" width="180" height="300" rx="4" fill="#ddd" stroke="#ccc" strokeWidth="2"/><rect x="100" y="80" width="180" height="40" rx="4" fill="#ccc"/><rect x="110" y="130" width="160" height="220" rx="3" fill="#c8c8c8"/>{[148,164,180,196,212,228,244,260,276,292,308,324,340].map(y=><line key={y} x1="110" y1={y} x2="270" y2={y} stroke="#bbb" strokeWidth="2"/>)}<rect x="112" y="87" width="80" height="14" rx="2" fill="#E8600A" opacity="0.9"/><text x="152" y="98" fontFamily="Arial" fontSize="9" fontWeight="bold" fill="white" textAnchor="middle">GOODMAN</text><rect x="295" y="120" width="80" height="110" rx="4" fill="#1a2b3c"/><rect x="140" y="30" width="100" height="52" rx="3" fill="#ccc" stroke="#bbb" strokeWidth="2"/></svg>
-);
-const GalleryPlaceholder5 = () => (
-  <svg viewBox="0 0 600 450" xmlns="http://www.w3.org/2000/svg"><rect width="600" height="450" fill="#1a2b3c"/><rect x="0" y="230" width="600" height="220" fill="#b8a888"/><rect x="0" y="390" width="600" height="60" fill="#5a7a3a"/><rect x="80" y="210" width="185" height="175" rx="5" fill="#e0e0e0" stroke="#ccc" strokeWidth="2"/><rect x="80" y="210" width="185" height="28" rx="4" fill="#d0d0d0"/><rect x="87" y="248" width="171" height="115" rx="3" fill="#ccc"/><rect x="92" y="217" width="80" height="14" rx="2" fill="#E8600A" opacity="0.9"/><text x="132" y="228" fontFamily="Arial" fontSize="9" fontWeight="bold" fill="white" textAnchor="middle">GOODMAN</text><rect x="290" y="210" width="185" height="175" rx="5" fill="#e0e0e0" stroke="#ccc" strokeWidth="2"/><rect x="290" y="210" width="185" height="28" rx="4" fill="#d0d0d0"/><rect x="302" y="217" width="80" height="14" rx="2" fill="#E8600A" opacity="0.9"/><text x="342" y="228" fontFamily="Arial" fontSize="9" fontWeight="bold" fill="white" textAnchor="middle">GOODMAN</text><rect x="68" y="382" width="210" height="14" rx="3" fill="#999"/><rect x="278" y="382" width="210" height="14" rx="3" fill="#999"/></svg>
-);
-const GalleryPlaceholder6 = () => (
-  <svg viewBox="0 0 600 450" xmlns="http://www.w3.org/2000/svg"><rect width="600" height="450" fill="#2a3a4a"/><rect x="0" y="200" width="600" height="250" fill="#c8b898"/><rect x="0" y="380" width="600" height="70" fill="#708860"/><rect x="400" y="100" width="20" height="350" fill="#8B6914"/><rect x="200" y="190" width="175" height="175" rx="5" fill="#ddd" stroke="#ccc" strokeWidth="2"/><rect x="200" y="190" width="175" height="27" rx="4" fill="#ccc"/><rect x="208" y="226" width="159" height="115" rx="3" fill="#c8c8c8"/><rect x="213" y="196" width="80" height="13" rx="2" fill="#E8600A" opacity="0.9"/><text x="253" y="207" fontFamily="Arial" fontSize="9" fontWeight="bold" fill="white" textAnchor="middle">GOODMAN</text><rect x="185" y="360" width="200" height="14" rx="3" fill="#999"/></svg>
-);
-
 const galleryItems = [
-  { Component: GalleryPlaceholder1, tag: "New Install", caption: "Goodman SD Install — Richardson, TX" },
-  { Component: GalleryPlaceholder2, tag: "Fence-Line SD", caption: "Side Discharge — Plano, TX" },
-  { Component: GalleryPlaceholder3, tag: "Brick Home", caption: "Clean Install — Frisco, TX" },
-  { Component: GalleryPlaceholder4, tag: "Air Handler", caption: "Indoor Unit Install — McKinney, TX" },
-  { Component: GalleryPlaceholder5, tag: "Dual System", caption: "Two-System Replace — Garland, TX" },
-  { Component: GalleryPlaceholder6, tag: "Tight Clearance", caption: "SD Fence-Line Install — Irving, TX" },
+  { src: galleryAttic, tag: "Attic Install", caption: "Goodman Air Handler — Attic Install" },
+  { src: galleryOutdoorSide, tag: "Dual Condensers", caption: "Side-by-Side Goodman Condensers" },
+  { src: galleryClosetFurnace, tag: "Furnace Install", caption: "Goodman Furnace — Utility Closet" },
+  { src: galleryStacked, tag: "Stacked Units", caption: "Dual Stacked Condensers — Modern Home" },
+  { src: galleryYard, tag: "Outdoor Unit", caption: "Goodman R32 Heat Pump — Backyard" },
+  { src: galleryAirHandler, tag: "Air Handler", caption: "Goodman Air Handler — Closet Install" },
 ];
 
 export default function SmartGroupMarchLanding() {
@@ -284,13 +270,12 @@ export default function SmartGroupMarchLanding() {
           <div className="gb-gallery-grid">
             {galleryItems.map((g, i) => (
               <div key={i} className="gb-gallery-item">
-                <g.Component />
+                <img src={g.src} alt={g.caption} loading="lazy" decoding="async" width="600" height="450" />
                 <span className="gb-gallery-tag">{g.tag}</span>
                 <div className="gb-gallery-caption">{g.caption}</div>
               </div>
             ))}
           </div>
-          <p className="gb-gallery-replace-note">📸 Placeholder illustrations — replace with actual Truficient job site photos before publishing</p>
         </div>
       </section>
 
