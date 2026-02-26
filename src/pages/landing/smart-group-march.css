@@ -600,6 +600,7 @@
 
 /* ─── REFERRAL ─── */
 .gb-referral-section { background: var(--gb-orange-bg); }
+.gb-referral-section .gb-section-tag { color: var(--gb-navy); }
 .gb-ref-card {
   background: #fff;
   border-radius: var(--gb-radius);
