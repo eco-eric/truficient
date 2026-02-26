@@ -358,12 +358,12 @@ export default function SmartGroupMarchLanding() {
                 <div className="gb-price-example">
                   <h4>Example: 2,200 sq ft DFW Home</h4>
                   <p>Illustration only. Your estimate from our tool reflects your home's requirements.</p>
-                  <div className="gb-p-row"><span className="gb-pl">Standard estimator price</span><span className="gb-pv">$11,500</span></div>
-                  <div className="gb-p-row"><span className="gb-pl">Group Buy discount (20%)</span><span className="gb-pv gb-orange">− $2,300</span></div>
-                  <div className="gb-p-total"><span className="gb-pl">Your Group Buy price</span><span className="gb-pv">$9,200</span></div>
+                  <div className="gb-p-row"><span className="gb-pl">Variable Speed pricing</span><span className="gb-pv">$15,000</span></div>
+                  <div className="gb-p-row"><span className="gb-pl">Group Buy discount (20%)</span><span className="gb-pv gb-orange">− $3,000</span></div>
+                  <div className="gb-p-total"><span className="gb-pl">Your Group Buy price</span><span className="gb-pv">$12,000</span></div>
                 </div>
                 <div className="gb-energy-tag">⚡ Plus est. $70–$110/month in energy savings after install</div>
-                <div className="gb-fin-note"><strong>Financing via Synchrony Bank</strong><br />At $9,200 group price — from ~$115/mo on a 60-month plan at 9.99% APR, subject to credit approval.</div>
+                <div className="gb-fin-note"><strong>Financing via Synchrony Bank</strong><br />At $12,000 group price — from ~$150/mo on a 60-month plan at 9.99% APR, subject to credit approval.</div>
               </div>
             </div>
             <div className="gb-gb-foot">*Financing subject to credit approval through Synchrony Bank. Minimum monthly payments required. Example pricing for illustration only. Energy savings estimates based on typical DFW conditions and may vary. Group discount requires minimum 7 confirmed March 2026 installs.</div>
