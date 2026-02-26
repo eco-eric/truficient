@@ -30,7 +30,8 @@
   position: fixed;
   bottom: 0; left: 0; right: 0;
   z-index: 200;
-  padding: 12px 16px;
+  padding: 10px 16px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
   background: var(--gb-navy-dk);
   border-top: 2px solid var(--gb-orange);
 }
@@ -95,7 +96,7 @@
 .gb-nav-phone:hover { color: #fff; }
 
 /* ─── SECTIONS BASE ─── */
-.gb-page section { padding: 56px 20px; }
+.gb-page section { padding: 40px 16px; }
 .gb-inner { max-width: 1080px; margin: 0 auto; }
 
 .gb-section-tag {
@@ -127,7 +128,7 @@
 /* ─── HERO ─── */
 .gb-hero {
   background: linear-gradient(160deg, var(--gb-navy-dk) 0%, var(--gb-navy) 60%, var(--gb-navy-lt) 100%);
-  padding: 48px 20px 52px;
+  padding: 36px 16px 40px;
   position: relative;
   overflow: hidden;
 }
@@ -340,8 +341,10 @@
 .gb-owner-section { background: var(--gb-navy); }
 .gb-owner-card {
   display: flex;
-  gap: 32px;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  text-align: center;
 }
 .gb-owner-photo-wrap {
   flex-shrink: 0;
@@ -351,8 +354,8 @@
   gap: 12px;
 }
 .gb-owner-photo {
-  width: 130px;
-  height: 130px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   object-fit: cover;
   border: 4px solid var(--gb-orange);
@@ -381,6 +384,10 @@
   position: relative;
   padding-left: 20px;
   border-left: 3px solid var(--gb-orange);
+  text-align: left;
+}
+.gb-owner-content p {
+  text-align: left;
 }
 .gb-owner-content p {
   font-size: 0.88rem;
@@ -393,6 +400,7 @@
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 16px;
+  justify-content: center;
 }
 .gb-cred-chip {
   background: rgba(255,255,255,0.08);
@@ -612,6 +620,7 @@
 
 /* ─── FORM ─── */
 .gb-form-section { background: var(--gb-gray-lt); }
+.gb-form-layout { display: flex; flex-direction: column; gap: 28px; }
 .gb-form-card {
   background: #fff;
   border-radius: var(--gb-radius);
@@ -668,7 +677,8 @@
 .gb-success-msg h4 { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #2e7d32; margin-bottom: 8px; }
 .gb-success-msg p { font-size: 0.86rem; color: #388e3c; line-height: 1.6; }
 
-.gb-form-sidebar { display: flex; flex-direction: column; gap: 16px; }
+.gb-form-sidebar { display: flex; flex-direction: column; gap: 16px; order: 2; }
+.gb-form-card { order: 1; }
 
 .gb-checklist { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 4px; padding: 0; }
 .gb-checklist li { display: flex; align-items: flex-start; gap: 10px; font-size: 0.87rem; color: var(--gb-text); line-height: 1.5; }
@@ -713,7 +723,7 @@
   .gb-page { padding-bottom: 0; }
   .gb-mobile-sticky-cta { display: none !important; }
 
-  .gb-page section { padding: 80px 40px; }
+  .gb-page section { padding: 72px 40px; }
   .gb-nav { padding: 0 40px; height: 70px; }
   .gb-logo { font-size: 1.3rem; }
 
@@ -731,7 +741,7 @@
   .gb-step { flex-direction: column; gap: 0; flex: 1; }
   .gb-step-circle { margin-bottom: 14px; }
 
-  .gb-owner-card { gap: 40px; }
+  .gb-owner-card { flex-direction: row; gap: 40px; align-items: flex-start; text-align: left; }
   .gb-owner-photo { width: 160px; height: 160px; }
 
   .gb-gallery-grid { grid-template-columns: repeat(3, 1fr); }
@@ -746,6 +756,9 @@
   .gb-conditions { margin-bottom: 0; }
 
   .gb-form-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+  .gb-form-sidebar { order: unset; }
+  .gb-form-card { order: unset; }
+  .gb-owner-creds { justify-content: flex-start; }
 
   .gb-ref-card { display: grid; grid-template-columns: 190px 1fr; }
   .gb-ref-card-top { display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 0; }
@@ -760,4 +773,16 @@
   .gb-gallery-grid { grid-template-columns: 1fr; }
   .gb-gallery-item:first-child { grid-column: 1; aspect-ratio: 16/9; }
   .gb-trust-bar-inner { justify-content: flex-start; }
+  .gb-hero h1 { font-size: 1.75rem; }
+  .gb-hero-sub { font-size: 0.9rem; }
+  .gb-oc-head .gb-big { font-size: 1.5rem; }
+  .gb-pct-badge { font-size: 1.2rem; padding: 8px 16px; }
+  .gb-ref-card-top .gb-amt { font-size: 2.5rem; }
+  .gb-big-stat-card .gb-stat-num { font-size: 2.2rem; }
+  .gb-owner-photo { width: 80px; height: 80px; }
+  .gb-step { padding: 20px 16px; }
+  .gb-gb-body { padding: 16px; }
+  .gb-price-example { padding: 16px; }
+  .gb-fc-body { padding: 16px; }
+  .gb-page section { padding: 32px 14px; }
 }
