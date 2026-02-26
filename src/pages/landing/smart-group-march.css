@@ -28,12 +28,13 @@
 .gb-mobile-sticky-cta {
   display: none;
   position: fixed;
-  bottom: 0; left: 0; right: 0;
+  bottom: 0; left: 0; right: calc(60px + 12px);
   z-index: 200;
-  padding: 10px 16px;
+  padding: 10px 12px;
   padding-bottom: max(10px, env(safe-area-inset-bottom));
   background: var(--gb-navy-dk);
   border-top: 2px solid var(--gb-orange);
+  border-radius: 0 12px 0 0;
 }
 .gb-mobile-sticky-cta a {
   display: block;
