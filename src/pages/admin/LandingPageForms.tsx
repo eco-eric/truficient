@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -5,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -13,9 +16,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
-import { Plus, Pencil, Trash2, FileText, Loader2, Eye, Copy } from 'lucide-react';
+import { Plus, Pencil, Trash2, FileText, Loader2, Eye, Copy, Globe, ExternalLink, StickyNote, Save } from 'lucide-react';
 
 interface LandingPageForm {
   id: string;
@@ -27,9 +37,24 @@ interface LandingPageForm {
   created_at: string;
 }
 
+interface CampaignPage {
+  id: string;
+  name: string;
+  slug: string;
+  url: string;
+  platform: string;
+  notes: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function LandingPageForms() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [editingCampaign, setEditingCampaign] = useState<CampaignPage | null>(null);
+  const [showCampaignDialog, setShowCampaignDialog] = useState(false);
+  const [campaignForm, setCampaignForm] = useState({ name: '', slug: '', url: '', platform: 'facebook', notes: '' });
 
   const { data: forms, isLoading } = useQuery({
     queryKey: ['landing-page-forms'],
@@ -40,6 +65,18 @@ export default function LandingPageForms() {
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data as LandingPageForm[];
+    },
+  });
+
+  const { data: campaignPages, isLoading: campaignLoading } = useQuery({
+    queryKey: ['campaign-landing-pages'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('campaign_landing_pages')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as CampaignPage[];
     },
   });
 
@@ -107,9 +144,65 @@ export default function LandingPageForms() {
     },
   });
 
+  const saveCampaignMutation = useMutation({
+    mutationFn: async (data: typeof campaignForm & { id?: string }) => {
+      if (data.id) {
+        const { error } = await supabase.from('campaign_landing_pages').update({
+          name: data.name, slug: data.slug, url: data.url, platform: data.platform, notes: data.notes || null,
+        }).eq('id', data.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('campaign_landing_pages').insert({
+          name: data.name, slug: data.slug, url: data.url, platform: data.platform, notes: data.notes || null,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['campaign-landing-pages'] });
+      setShowCampaignDialog(false);
+      setEditingCampaign(null);
+      toast({ title: editingCampaign ? 'Campaign page updated' : 'Campaign page added' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error saving campaign page', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const deleteCampaignMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('campaign_landing_pages').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['campaign-landing-pages'] });
+      toast({ title: 'Campaign page removed' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error deleting', description: error.message, variant: 'destructive' });
+    },
+  });
+
   const copySlug = (slug: string) => {
     navigator.clipboard.writeText(slug);
     toast({ title: 'Slug copied to clipboard' });
+  };
+
+  const copyFullUrl = (url: string) => {
+    const full = url.startsWith('http') ? url : `https://go.truficient.com${url}`;
+    navigator.clipboard.writeText(full);
+    toast({ title: 'URL copied to clipboard' });
+  };
+
+  const openCampaignDialog = (campaign?: CampaignPage) => {
+    if (campaign) {
+      setEditingCampaign(campaign);
+      setCampaignForm({ name: campaign.name, slug: campaign.slug, url: campaign.url, platform: campaign.platform, notes: campaign.notes || '' });
+    } else {
+      setEditingCampaign(null);
+      setCampaignForm({ name: '', slug: '', url: '/', platform: 'facebook', notes: '' });
+    }
+    setShowCampaignDialog(true);
   };
 
   const getFormTypeColor = (type: string) => {
@@ -125,14 +218,25 @@ export default function LandingPageForms() {
     }
   };
 
+  const getPlatformBadge = (platform: string) => {
+    switch (platform) {
+      case 'facebook':
+        return <Badge variant="outline" className="border-blue-500 text-blue-600">Facebook</Badge>;
+      case 'google':
+        return <Badge variant="outline" className="border-green-500 text-green-600">Google</Badge>;
+      default:
+        return <Badge variant="outline">Other</Badge>;
+    }
+  };
+
   return (
     <AdminLayout title="Landing Page Forms">
       <div className="space-y-6">
         <div className="space-y-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Landing Page Forms</h1>
+            <h1 className="text-2xl font-bold text-foreground">Landing Pages</h1>
             <p className="text-muted-foreground">
-              Create and manage forms for your landing pages
+              Manage campaign landing pages and lead capture forms
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -151,11 +255,83 @@ export default function LandingPageForms() {
           </div>
         </div>
 
+        {/* Campaign Landing Pages Section */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              Campaign Landing Pages
+            </CardTitle>
+            <Button size="sm" onClick={() => openCampaignDialog()}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Page
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {campaignLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : campaignPages && campaignPages.length > 0 ? (
+              <div className="grid gap-4">
+                {campaignPages.map((page) => (
+                  <div key={page.id} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold text-foreground">{page.name}</h3>
+                          {getPlatformBadge(page.platform)}
+                          {!page.is_active && <Badge variant="secondary">Inactive</Badge>}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <code className="text-sm bg-muted px-2 py-0.5 rounded text-muted-foreground truncate">
+                            go.truficient.com{page.url}
+                          </code>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyFullUrl(page.url)}>
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                          <a href={page.url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                            <Button variant="ghost" size="icon" className="h-6 w-6">
+                              <ExternalLink className="h-3 w-3" />
+                            </Button>
+                          </a>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openCampaignDialog(page)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
+                          if (confirm('Remove this campaign page?')) deleteCampaignMutation.mutate(page.id);
+                        }}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                    {page.notes && (
+                      <div className="flex items-start gap-2 bg-muted/50 rounded-md p-3">
+                        <StickyNote className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{page.notes}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                <Globe className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                <p>No campaign pages tracked yet</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Forms Table */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              All Forms
+              Lead Capture Forms
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -242,6 +418,57 @@ export default function LandingPageForms() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Add/Edit Campaign Page Dialog */}
+      <Dialog open={showCampaignDialog} onOpenChange={setShowCampaignDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingCampaign ? 'Edit Campaign Page' : 'Add Campaign Page'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-sm font-medium">Name</label>
+              <Input value={campaignForm.name} onChange={(e) => setCampaignForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Spring Sale Landing" />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Route / URL Path</label>
+              <Input value={campaignForm.url} onChange={(e) => setCampaignForm(f => ({ ...f, url: e.target.value, slug: e.target.value.replace(/^\//, '') }))} placeholder="/my-campaign-page" />
+              <p className="text-xs text-muted-foreground mt-1">Path on go.truficient.com (e.g. /smart-group-march)</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Platform</label>
+              <select
+                className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={campaignForm.platform}
+                onChange={(e) => setCampaignForm(f => ({ ...f, platform: e.target.value }))}
+              >
+                <option value="facebook">Facebook</option>
+                <option value="google">Google</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Notes</label>
+              <Textarea
+                value={campaignForm.notes}
+                onChange={(e) => setCampaignForm(f => ({ ...f, notes: e.target.value }))}
+                placeholder="Campaign details, audience targeting, budget, dates..."
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCampaignDialog(false)}>Cancel</Button>
+            <Button
+              onClick={() => saveCampaignMutation.mutate({ ...campaignForm, id: editingCampaign?.id })}
+              disabled={!campaignForm.name || !campaignForm.url || saveCampaignMutation.isPending}
+            >
+              {saveCampaignMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+              {editingCampaign ? 'Update' : 'Add'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
