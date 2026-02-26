@@ -363,7 +363,7 @@ export default function SmartGroupMarchLanding() {
                   <div className="gb-p-total"><span className="gb-pl">Your Group Buy price</span><span className="gb-pv">$12,000</span></div>
                 </div>
                 <div className="gb-energy-tag">⚡ Plus est. $70–$110/month in energy savings after install</div>
-                <div className="gb-fin-note"><strong>Financing via Synchrony Bank</strong><br />At $12,000 group price — from ~$150/mo on a 60-month plan at 9.99% APR, subject to credit approval.</div>
+                <div className="gb-fin-note"><strong>Financing via Synchrony Bank</strong><br />$150/mo until paid in full at 9.99% APR, subject to credit approval.</div>
               </div>
             </div>
             <div className="gb-gb-foot">*Financing subject to credit approval through Synchrony Bank. Minimum monthly payments required. Example pricing for illustration only. Energy savings estimates based on typical DFW conditions and may vary. Group discount requires minimum 7 confirmed March 2026 installs.</div>
