@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { ArrowLeft, Calendar, DollarSign, MapPin, User, Phone, Mail, ChevronRight, Users, Pencil, ExternalLink, Save, Copy } from 'lucide-react';
+import { ArrowLeft, Calendar, DollarSign, MapPin, User, Phone, Mail, ChevronRight, Users, Pencil, ExternalLink, Save, Copy, Trash2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +29,7 @@ import { WorkEdgePanel } from '@/components/admin/jobs/WorkEdgePanel';
 import JobAppointmentsCard from '@/components/admin/jobs/JobAppointmentsCard';
 import JobFormDialog from '@/components/admin/jobs/JobFormDialog';
 import { AIAssistantWidget } from '@/components/admin/ai/AIAssistantWidget';
+import { useUserRole } from '@/hooks/useUserRole';
 
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>();
@@ -39,6 +40,8 @@ export default function JobDetail() {
   const [customerNotes, setCustomerNotes] = useState('');
   const [cloneDialogOpen, setCloneDialogOpen] = useState(false);
   const [cloneWithAppointments, setCloneWithAppointments] = useState(true);
+  const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
+  const { isSuperAdmin } = useUserRole();
 
   const { data: job, isLoading } = useQuery({
     queryKey: ['crm_job', id],
@@ -327,6 +330,26 @@ export default function JobDetail() {
     }
   });
 
+  const deleteJobMutation = useMutation({
+    mutationFn: async () => {
+      // Soft delete
+      const { error } = await supabase
+        .from('crm_jobs')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Job deleted successfully');
+      setDeleteStep(0);
+      queryClient.invalidateQueries({ queryKey: ['crm_jobs'] });
+      navigate('/admin/jobs');
+    },
+    onError: (error: any) => {
+      toast.error(`Delete failed: ${error.message}`);
+    }
+  });
+
   const { data: customerLocations = [] } = useQuery({
     queryKey: ['crm_locations_for_customer', job?.customer_id],
     queryFn: async () => {
@@ -427,6 +450,12 @@ export default function JobDetail() {
               <Pencil className="h-4 w-4 mr-2" />
               Edit Job
             </Button>
+            {isSuperAdmin && (
+              <Button variant="destructive" size="sm" onClick={() => setDeleteStep(1)}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            )}
             <AIAssistantWidget 
               jobId={job.id} 
               jobTitle={job.title}
@@ -847,6 +876,49 @@ export default function JobDetail() {
               disabled={cloneJobMutation.isPending}
             >
               {cloneJobMutation.isPending ? 'Cloning...' : 'Clone Job'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Job - Step 1 */}
+      <AlertDialog open={deleteStep === 1} onOpenChange={(open) => !open && setDeleteStep(0)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Job {job.job_number}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the job "{job.title}" and all associated data from the active job board. This action can only be undone by a super admin via the trash bin.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => setDeleteStep(2)}
+            >
+              Yes, I want to delete this job
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Job - Step 2 (Final Confirmation) */}
+      <AlertDialog open={deleteStep === 2} onOpenChange={(open) => !open && setDeleteStep(0)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">⚠️ Final Confirmation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you absolutely sure you want to delete job <strong className="text-foreground">{job.job_number}</strong>? This is your last chance to cancel.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No, keep this job</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteJobMutation.mutate()}
+              disabled={deleteJobMutation.isPending}
+            >
+              {deleteJobMutation.isPending ? 'Deleting...' : 'Permanently Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
