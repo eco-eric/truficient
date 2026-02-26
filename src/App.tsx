@@ -29,6 +29,7 @@ import SouthDallasArea from "./pages/service-areas/SouthDallasArea";
 import Careers from "./pages/Careers";
 import Financing from "./pages/Financing";
 import FreeHvacAgeCheckerFB from "./pages/landing/FreeHvacAgeCheckerFB";
+import CampaignLandingPage from "./pages/landing/CampaignLandingPage";
 
 // Admin imports
 import { AdminRouteLayout } from "./components/admin/AdminRouteLayout";
@@ -163,6 +164,10 @@ const router = createBrowserRouter([
       { path: "/equipment", element: <EquipmentLibrary /> },
       { path: "/equipment/*", element: <EquipmentDetail /> },
       { path: "/free-hvac-age-checker-fb-feb-2026", element: <FreeHvacAgeCheckerFB /> },
+      
+      // Campaign landing pages (go.truficient.com subdomain)
+      { path: "/smart-group-march", element: <CampaignLandingPage /> },
+      { path: "/smart-group-march-g", element: <CampaignLandingPage /> },
       
       // Admin Routes
       { path: "/admin/login", element: <AdminLogin /> },
