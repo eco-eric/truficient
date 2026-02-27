@@ -949,6 +949,7 @@ export type Database = {
           alternate_phone: string | null
           assigned_to: string | null
           billing_address: string | null
+          billing_address_line2: string | null
           billing_city: string | null
           billing_state: string | null
           billing_zip: string | null
@@ -975,6 +976,7 @@ export type Database = {
           alternate_phone?: string | null
           assigned_to?: string | null
           billing_address?: string | null
+          billing_address_line2?: string | null
           billing_city?: string | null
           billing_state?: string | null
           billing_zip?: string | null
@@ -1001,6 +1003,7 @@ export type Database = {
           alternate_phone?: string | null
           assigned_to?: string | null
           billing_address?: string | null
+          billing_address_line2?: string | null
           billing_city?: string | null
           billing_state?: string | null
           billing_zip?: string | null

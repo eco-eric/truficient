@@ -54,6 +54,7 @@ const customerSchema = z.object({
   alternate_phone: z.string().optional(),
   preferred_contact_method: z.enum(['phone', 'email', 'text']).optional(),
   billing_address: z.string().optional(),
+  billing_address_line2: z.string().optional(),
   billing_city: z.string().optional(),
   billing_state: z.string().optional(),
   billing_zip: z.string().optional(),
@@ -101,6 +102,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
       alternate_phone: '',
       preferred_contact_method: 'phone',
       billing_address: '',
+      billing_address_line2: '',
       billing_city: '',
       billing_state: '',
       billing_zip: '',
@@ -121,6 +123,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
         alternate_phone: customer.alternate_phone || '',
         preferred_contact_method: (customer.preferred_contact_method as CustomerFormValues['preferred_contact_method']) || 'phone',
         billing_address: customer.billing_address || '',
+        billing_address_line2: (customer as any).billing_address_line2 || '',
         billing_city: customer.billing_city || '',
         billing_state: customer.billing_state || '',
         billing_zip: customer.billing_zip || '',
@@ -140,6 +143,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
         alternate_phone: '',
         preferred_contact_method: 'phone',
         billing_address: '',
+        billing_address_line2: '',
         billing_city: '',
         billing_state: '',
         billing_zip: '',
@@ -361,7 +365,20 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
                 <FormItem>
                   <FormLabel>Billing Address</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} placeholder="Street address" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="billing_address_line2"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address Line 2</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Apt, Suite, Unit #" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
