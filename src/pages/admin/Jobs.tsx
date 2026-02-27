@@ -91,7 +91,7 @@ export default function Jobs() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [activeMobileStage, setActiveMobileStage] = useState<string>('');
-  const { isSuperAdmin } = useUserRole();
+  const { isAdmin } = useUserRole();
 
   // Board type from URL or default
   const [activeBoardSlug, setActiveBoardSlug] = useState<string>(
@@ -572,7 +572,7 @@ export default function Jobs() {
                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditingJob(job); setIsFormOpen(true); }}>
                               <Pencil className="h-4 w-4 mr-2" /> Edit
                             </DropdownMenuItem>
-                            {isSuperAdmin && (
+                            {isAdmin && (
                               <DropdownMenuItem
                                 className="text-destructive"
                                 onClick={(e) => { e.stopPropagation(); deleteJobMutation.mutate(job.id); }}
