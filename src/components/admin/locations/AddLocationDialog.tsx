@@ -423,6 +423,7 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
     const selectedCustomer = customers.find(c => c.id === formData.customer_id);
     if (selectedCustomer && selectedCustomer.billing_address) {
       const billingAddress = selectedCustomer.billing_address || '';
+      const billingLine2 = (selectedCustomer as any).billing_address_line2 || '';
       const billingCity = selectedCustomer.billing_city || '';
       const billingState = selectedCustomer.billing_state || 'TX';
       const billingZip = selectedCustomer.billing_zip || '';
@@ -431,6 +432,7 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
       setFormData(prev => ({
         ...prev,
         address_line1: billingAddress,
+        address_line2: billingLine2,
         city: billingCity,
         state: billingState,
         zip_code: billingZip,
