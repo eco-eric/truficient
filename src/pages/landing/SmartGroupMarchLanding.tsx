@@ -79,16 +79,18 @@ export default function SmartGroupMarchLanding() {
 
     try {
       // Insert into landing_page_submissions
-      await supabase.from("landing_page_submissions").insert({
+      const { error: insertError } = await supabase.from("landing_page_submissions").insert({
         form_id: "b07901ea-0e4b-4d2d-a189-a415067bc68e",
         first_name: firstName,
         last_name: lastName,
         email,
         phone,
-        form_type: "group-buy-march-2026",
-        source: "march_group_buy_landing",
-        form_data: { zip, timeline, referral },
+        service_type: "Group Buy - Goodman SD Variable Speed",
+        message: `Timeline: ${timeline}. Referred by: ${referral || "N/A"}`,
+        custom_fields: { zip, timeline, referral, campaign: "march-group-buy-2026", source: "march_group_buy_landing" },
       });
+
+      if (insertError) throw insertError;
 
       // Sync to GHL
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -116,8 +118,9 @@ export default function SmartGroupMarchLanding() {
 
       trackButtonClick({ buttonName: "Group Buy Form Submit", buttonLocation: "smart-group-march-F-26", destinationUrl: "" });
       setSubmitted(true);
-    } catch {
-      // Still show success to user
+    } catch (err) {
+      console.error("Landing page submission error:", err);
+      // Still show success to avoid confusing the user on the landing page
       setSubmitted(true);
     } finally {
       setSubmitting(false);
