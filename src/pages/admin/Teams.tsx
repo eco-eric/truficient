@@ -168,6 +168,11 @@ export default function Teams() {
     [members]
   );
 
+  const deactivatedMembers = useMemo(() => 
+    members.filter(m => !m.is_active), 
+    [members]
+  );
+
   const saveTeamMutation = useMutation({
     mutationFn: async (teamData: Partial<Team>) => {
       if (editingTeam?.id) {
@@ -237,6 +242,21 @@ export default function Teams() {
       toast.success('Member deactivated');
     },
     onError: (error) => toast.error('Failed to deactivate: ' + error.message)
+  });
+
+  const reactivateMemberMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('crm_team_members')
+        .update({ is_active: true })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_team_members'] });
+      toast.success('Member reactivated');
+    },
+    onError: (error) => toast.error('Failed to reactivate: ' + error.message)
   });
 
   const assignMemberMutation = useMutation({
@@ -384,6 +404,9 @@ export default function Teams() {
             </TabsTrigger>
             <TabsTrigger value="subcontractors" className="gap-2">
               <Building className="h-4 w-4" /> Subcontractors ({subcontractors.length})
+            </TabsTrigger>
+            <TabsTrigger value="deactivated" className="gap-2">
+              <Shield className="h-4 w-4" /> Deactivated ({deactivatedMembers.length})
             </TabsTrigger>
           </TabsList>
 
@@ -602,6 +625,61 @@ export default function Teams() {
                     onEdit={() => { setEditingMember(member); setIsMemberDialogOpen(true); }}
                     onDelete={() => deleteMemberMutation.mutate(member.id)}
                   />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Deactivated Tab */}
+          <TabsContent value="deactivated" className="mt-6">
+            {deactivatedMembers.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Deactivated Members</h3>
+                  <p className="text-muted-foreground">All team members are currently active</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {deactivatedMembers.map(member => (
+                  <Card key={member.id} className="opacity-75">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle className="text-base">{member.first_name} {member.last_name}</CardTitle>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs capitalize">{member.role}</Badge>
+                            <Badge className={memberTypeColors[member.member_type] || ''} variant="secondary">
+                              {member.member_type?.replace('_', ' ')}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0 space-y-2 text-sm text-muted-foreground">
+                      {member.email && (
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-3.5 w-3.5" /> {member.email}
+                        </div>
+                      )}
+                      {member.phone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-3.5 w-3.5" /> {member.phone}
+                        </div>
+                      )}
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => reactivateMemberMutation.mutate(member.id)}
+                          disabled={reactivateMemberMutation.isPending}
+                        >
+                          Reactivate
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             )}
