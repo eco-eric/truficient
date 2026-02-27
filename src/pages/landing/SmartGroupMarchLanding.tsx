@@ -80,6 +80,7 @@ export default function SmartGroupMarchLanding() {
     try {
       // Insert into landing_page_submissions
       await supabase.from("landing_page_submissions").insert({
+        form_id: "b07901ea-0e4b-4d2d-a189-a415067bc68e",
         first_name: firstName,
         last_name: lastName,
         email,
