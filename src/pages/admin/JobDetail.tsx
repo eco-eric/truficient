@@ -41,7 +41,7 @@ export default function JobDetail() {
   const [cloneDialogOpen, setCloneDialogOpen] = useState(false);
   const [cloneWithAppointments, setCloneWithAppointments] = useState(true);
   const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
-  const { isSuperAdmin } = useUserRole();
+  const { isSuperAdmin, isAdmin } = useUserRole();
 
   const { data: job, isLoading } = useQuery({
     queryKey: ['crm_job', id],
@@ -450,7 +450,7 @@ export default function JobDetail() {
               <Pencil className="h-4 w-4 mr-2" />
               Edit Job
             </Button>
-            {isSuperAdmin && (
+            {isAdmin && (
               <Button variant="destructive" size="sm" onClick={() => setDeleteStep(1)}>
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete
