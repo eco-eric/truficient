@@ -599,8 +599,8 @@
 .gb-gb-foot { background: var(--gb-gray-lt); border-top: 1px solid var(--gb-border); padding: 13px 24px; font-size: 0.7rem; color: var(--gb-gray-txt); line-height: 1.6; }
 
 /* ─── REFERRAL ─── */
-.gb-referral-section { background: #E6F9ED; }
-.gb-referral-section .gb-section-tag { color: #00B140; }
+.gb-referral-section { background: #ECEEE4; }
+.gb-referral-section .gb-section-tag { color: #A5A983; }
 .gb-ref-card {
   background: #fff;
   border-radius: var(--gb-radius);
