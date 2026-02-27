@@ -243,7 +243,7 @@ export default function SmartGroupMarchLanding() {
             </div>
             <div className="gb-owner-content">
               <blockquote>"I started Truficient because I believe every DFW homeowner deserves a comfortable home that doesn't cost a fortune to run. The Group Buy is my way of making that more accessible — when we install in bulk, I can pass real savings back to you."</blockquote>
-              <p>I personally oversee every install to make sure it's done right. Over 1,000 systems installed across DFW, and I'm still on the job site making sure each one exceeds expectations. This isn't just about selling equipment — it's about engineering a system that genuinely improves your daily life and your monthly budget.</p>
+              <p>Our team oversees every install to make sure it's done right. We've completed over 1,000 systems across DFW, and every project is engineered, designed, and checked by Truficient so it actually performs the way a high‑efficiency system should — improving your comfort and helping control your monthly bills.</p>
               <p>The Goodman SD side-discharge units we're featuring this month are solid, variable-speed machines that run at exactly the capacity your home needs — quieter, more consistent temps, and dramatically lower energy usage than the single-speed equipment most DFW homes still have.</p>
               <div className="gb-owner-creds">
                 {["Mitsubishi Diamond Contractor", "HERS Certified", "1,000+ Installs", "Richardson, TX Based"].map((c) => (
