@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
-import { Plus, Pencil, Trash2, FileText, Loader2, Eye, Copy, Globe, ExternalLink, StickyNote, Save } from 'lucide-react';
+import { Plus, Pencil, Trash2, FileText, Loader2, Eye, Copy, Globe, ExternalLink, StickyNote, Save, RefreshCw } from 'lucide-react';
 
 interface LandingPageForm {
   id: string;
@@ -56,7 +56,7 @@ export default function LandingPageForms() {
   const [showCampaignDialog, setShowCampaignDialog] = useState(false);
   const [campaignForm, setCampaignForm] = useState({ name: '', slug: '', url: '', platform: 'facebook', notes: '' });
 
-  const { data: forms, isLoading } = useQuery({
+  const { data: forms, isLoading, error: formsError, refetch: refetchForms } = useQuery({
     queryKey: ['landing-page-forms'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -328,14 +328,25 @@ export default function LandingPageForms() {
 
         {/* Forms Table */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
               Lead Capture Forms
             </CardTitle>
+            <Button variant="ghost" size="icon" onClick={() => refetchForms()} title="Refresh forms">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {formsError ? (
+              <div className="text-center py-8 text-destructive">
+                <p className="font-medium">Failed to load forms</p>
+                <p className="text-sm text-muted-foreground mt-1">{formsError.message}</p>
+                <Button variant="outline" size="sm" className="mt-3" onClick={() => refetchForms()}>
+                  <RefreshCw className="h-4 w-4 mr-1" /> Retry
+                </Button>
+              </div>
+            ) : isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
