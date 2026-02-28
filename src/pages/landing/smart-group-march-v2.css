@@ -5,11 +5,13 @@
   --v2-navy: #003366;
   --v2-navy-dk: #002244;
   --v2-navy-lt: #0a4a8c;
-  --v2-orange: #E8600A;
-  --v2-orange-lt: #F47420;
-  --v2-orange-bg: #FFF3EB;
+  --v2-orange: #FFB547;
+  --v2-orange-lt: #FFC96B;
+  --v2-orange-bg: #FFF8ED;
   --v2-green: #2e7d32;
   --v2-green-bg: #e8f5e9;
+  --v2-brand-green: #A5A983;
+  --v2-brand-green-bg: #ECEEE4;
   --v2-white: #ffffff;
   --v2-gray-lt: #f5f7fa;
   --v2-gray-mid: #e8ecf0;
@@ -40,7 +42,7 @@
 .v2-mobile-sticky a {
   display: block;
   background: var(--v2-orange);
-  color: #fff;
+  color: var(--v2-navy-dk);
   text-align: center;
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
@@ -172,7 +174,7 @@
 
 .v2-hero-btns { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
 .v2-btn-orange {
-  display: block; background: var(--v2-orange); color: #fff;
+  display: block; background: var(--v2-orange); color: var(--v2-navy-dk);
   font-family: 'Montserrat', sans-serif; font-weight: 700;
   font-size: 1rem; padding: 16px 24px; border-radius: var(--v2-r);
   text-decoration: none; text-align: center; transition: background 0.2s;
@@ -332,7 +334,7 @@
 .v2-owner-title { font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-top: 2px; }
 .v2-owner-badge-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .v2-owner-badge {
-  background: var(--v2-orange); color: #fff;
+  background: var(--v2-orange); color: var(--v2-navy-dk);
   font-family: 'Montserrat', sans-serif; font-size: 0.65rem; font-weight: 700;
   padding: 3px 10px; border-radius: 999px;
   letter-spacing: 0.05em; text-transform: uppercase;
@@ -391,7 +393,7 @@
 .v2-gb-head { background: var(--v2-navy); padding: 22px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
 .v2-gb-head h3 { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 1.1rem; color: #fff; margin-bottom: 3px; }
 .v2-gb-head p { color: rgba(255,255,255,0.52); font-size: 0.77rem; }
-.v2-pct-badge { background: var(--v2-orange); color: #fff; font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 1.5rem; padding: 10px 20px; border-radius: 6px; text-align: center; white-space: nowrap; }
+.v2-pct-badge { background: var(--v2-orange); color: var(--v2-navy-dk); font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 1.5rem; padding: 10px 20px; border-radius: 6px; text-align: center; white-space: nowrap; }
 .v2-pct-badge small { display: block; font-size: 0.54rem; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.82; margin-top: 3px; font-weight: 600; }
 .v2-gb-body { padding: 22px; }
 .v2-conditions { display: flex; flex-direction: column; margin-bottom: 20px; }
@@ -418,43 +420,43 @@
 .v2-gb-foot { background: var(--v2-gray-lt); border-top: 1px solid var(--v2-border); padding: 12px 22px; font-size: 0.69rem; color: var(--v2-gray-txt); line-height: 1.6; }
 
 /* ─── REFERRAL ─── */
-.v2-referral-section { background: linear-gradient(135deg, var(--v2-navy-dk) 0%, var(--v2-navy) 100%); padding: 0; }
+.v2-referral-section { background: var(--v2-brand-green-bg); padding: 0; }
 .v2-ref-inner { padding: 48px 20px; }
 .v2-ref-eyebrow {
   display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(232,96,10,0.18); border: 1px solid rgba(232,96,10,0.4);
+  background: rgba(165,169,131,0.2); border: 1px solid rgba(165,169,131,0.5);
   border-radius: 4px; padding: 4px 12px; margin-bottom: 14px;
   font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
-  text-transform: uppercase; color: #ffb57e;
+  text-transform: uppercase; color: var(--v2-brand-green);
 }
 .v2-ref-headline {
   font-family: 'Montserrat', sans-serif; font-weight: 800;
   font-size: clamp(1.6rem, 6vw, 2.4rem);
-  color: #fff; line-height: 1.15; margin-bottom: 8px;
+  color: var(--v2-navy); line-height: 1.15; margin-bottom: 8px;
 }
-.v2-ref-headline span { color: var(--v2-orange-lt); }
-.v2-ref-deck { font-size: 0.9rem; color: rgba(255,255,255,0.65); line-height: 1.75; margin-bottom: 24px; max-width: 560px; }
+.v2-ref-headline span { color: var(--v2-brand-green); }
+.v2-ref-deck { font-size: 0.9rem; color: var(--v2-gray-txt); line-height: 1.75; margin-bottom: 24px; max-width: 560px; }
 .v2-ref-card-grid { display: flex; flex-direction: column; gap: 14px; }
 .v2-ref-card {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.14);
+  background: #fff;
+  border: 1px solid var(--v2-border);
   border-radius: var(--v2-r); padding: 18px 20px;
   display: flex; align-items: flex-start; gap: 14px;
 }
 .v2-ref-card-icon { font-size: 1.5rem; flex-shrink: 0; }
-.v2-ref-card h4 { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.88rem; color: #fff; margin-bottom: 4px; }
-.v2-ref-card p { font-size: 0.82rem; color: rgba(255,255,255,0.6); line-height: 1.55; }
-.v2-ref-card p strong { color: rgba(255,255,255,0.88); }
+.v2-ref-card h4 { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.88rem; color: var(--v2-navy); margin-bottom: 4px; }
+.v2-ref-card p { font-size: 0.82rem; color: var(--v2-gray-txt); line-height: 1.55; }
+.v2-ref-card p strong { color: var(--v2-text); }
 .v2-ref-amount-box {
-  background: var(--v2-orange);
+  background: var(--v2-brand-green);
   border-radius: var(--v2-r);
   padding: 28px 20px;
   text-align: center;
   margin-top: 24px;
 }
 .v2-ref-amount-box .v2-amt { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 3.8rem; color: #fff; line-height: 1; }
-.v2-ref-amount-box .v2-amt-sub { font-size: 0.8rem; color: rgba(255,255,255,0.78); margin-top: 6px; line-height: 1.5; }
-.v2-ref-amount-box .v2-amt-note { font-size: 0.7rem; color: rgba(255,255,255,0.55); margin-top: 8px; font-style: italic; line-height: 1.4; }
+.v2-ref-amount-box .v2-amt-sub { font-size: 0.8rem; color: rgba(255,255,255,0.85); margin-top: 6px; line-height: 1.5; }
+.v2-ref-amount-box .v2-amt-note { font-size: 0.7rem; color: rgba(255,255,255,0.65); margin-top: 8px; font-style: italic; line-height: 1.4; }
 .v2-ref-cta { margin-top: 28px; }
 
 /* ─── LEAD FORM ─── */
@@ -463,11 +465,11 @@
 .v2-form-sidebar { margin-bottom: 0; }
 .v2-checklist { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 0; }
 .v2-checklist li { display: flex; align-items: flex-start; gap: 10px; font-size: 0.86rem; color: var(--v2-text); line-height: 1.5; }
-.v2-checklist li::before { content: '✓'; background: var(--v2-orange); color: #fff; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.v2-checklist li::before { content: '✓'; background: var(--v2-orange); color: var(--v2-navy-dk); width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
 .v2-estimator-box { background: var(--v2-navy); border-radius: var(--v2-r); padding: 18px 20px; }
 .v2-estimator-box p { font-size: 0.82rem; color: rgba(255,255,255,0.68); line-height: 1.55; margin-bottom: 12px; }
 .v2-estimator-box p strong { color: #fff; display: block; margin-bottom: 2px; }
-.v2-btn-sm { display: block; background: var(--v2-orange); color: #fff; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.85rem; padding: 12px 18px; border-radius: 4px; text-decoration: none; text-align: center; }
+.v2-btn-sm { display: block; background: var(--v2-orange); color: var(--v2-navy-dk); font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.85rem; padding: 12px 18px; border-radius: 4px; text-decoration: none; text-align: center; }
 .v2-btn-sm:hover { background: var(--v2-orange-lt); }
 
 .v2-form-card { background: #fff; border-radius: var(--v2-r); box-shadow: 0 4px 24px rgba(0,0,0,0.08); overflow: hidden; }
@@ -487,7 +489,7 @@
 .v2-fg input::placeholder { color: #bbb; }
 .v2-fg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .v2-form-btn {
-  width: 100%; background: var(--v2-orange); color: #fff;
+  width: 100%; background: var(--v2-orange); color: var(--v2-navy-dk);
   font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1rem;
   padding: 16px; border-radius: 6px; border: none; cursor: pointer;
   letter-spacing: 0.02em; transition: background 0.2s; margin-top: 4px;
