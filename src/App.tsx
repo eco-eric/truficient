@@ -16,6 +16,7 @@ import CostEstimator from "./pages/estimators/CostEstimator";
 import SavingsCalculator from "./pages/estimators/SavingsCalculator";
 import DuctlessEstimator from "./pages/estimators/ductless/DuctlessEstimator";
 import DuctedEstimator from "./pages/estimators/ducted/DuctedEstimator";
+import SmartGroupEntry from "./pages/estimators/SmartGroupEntry";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -152,6 +153,7 @@ const router = createBrowserRouter([
       { path: "/estimators/savings", element: <SavingsCalculator /> },
       { path: "/estimate/ductless", element: <DuctlessEstimator /> },
       { path: "/estimate/ducted", element: <DuctedEstimator /> },
+      { path: "/estimate/smart-group-march", element: <SmartGroupEntry /> },
       { path: "/careers", element: <Careers /> },
       { path: "/financing", element: <Financing /> },
       { path: "/privacy-policy", element: <PrivacyPolicy /> },
