@@ -518,7 +518,7 @@ export default function SmartGroupMarchV2Landing() {
               </ul>
               <div className="v2-estimator-box">
                 <p><strong>Ready to see your price right now?</strong> Go straight to our estimator and note "Smart Group Buy" in the comments.</p>
-                <Link to="/estimate/ducted" className="v2-btn-sm" onClick={() => trackButtonClick({ buttonName: "Open Estimator CTA V2", buttonLocation: "form-sidebar-v2", destinationUrl: "/estimate/ducted" })}>Open Estimator →</Link>
+                <Link to="/estimate/smart-group-march" className="v2-btn-sm" onClick={() => trackButtonClick({ buttonName: "Open Estimator CTA V2", buttonLocation: "form-sidebar-v2", destinationUrl: "/estimate/smart-group-march" })}>Get My Estimate →</Link>
               </div>
             </div>
 
