@@ -108,10 +108,15 @@ export const TrackingScripts = () => {
   // Initialize/Remove GHL Chat Widget based on settings (hide on admin pages)
   useEffect(() => {
     const isAdminPage = location.pathname.startsWith('/admin');
+    const isLandingPage = location.pathname.startsWith('/go/') || 
+                          location.pathname.startsWith('/landing/') ||
+                          location.pathname.startsWith('/estimate/smart-group') ||
+                          location.pathname.startsWith('/smart-group');
     const shouldLoad = ghlChatWidget?.is_enabled && 
                        ghlChatWidget.setting_value && 
                        cookieConsent?.marketing &&
-                       !isAdminPage;
+                       !isAdminPage &&
+                       !isLandingPage;
 
     if (shouldLoad && !initializedRef.current.ghl) {
       // Load the widget
