@@ -1,33 +1,28 @@
 
-Goal: Make the March landing page lead form reliably appear in Admin → Landing Pages → Lead Capture Forms (and keep it linked going forward).
 
-Implementation steps:
-1. Harden the Lead Capture Forms data flow in `src/pages/admin/LandingPageForms.tsx`.
-   - Add explicit query error handling for `landing_page_forms` (show error state, not “No forms created yet”).
-   - Add a manual “Refresh” action on the Lead Capture Forms card so newly created backend records appear immediately without waiting for cache staleness.
+## Plan: Gallery Overlay on Landing Page
 
-2. Make the campaign/form link durable in backend data.
-   - Add an idempotent migration that upserts the March form by slug (`smart-group-march-F-26`) into `landing_page_forms` with active status and correct `fields_config`.
-   - Keep this as source-controlled migration so the record is not “manual-only” and survives environment changes.
+### Approach
+Add a "View Full Gallery" button below the existing 6 static photos in the gallery section. Clicking it opens a full-screen overlay/drawer that fetches all active images from the `gallery_images` database table — the same data source used by the main `/gallery` page. The overlay stays on the landing page (no navigation away), keeping visitors in the conversion funnel.
 
-3. Fix submission payload alignment in `src/pages/landing/SmartGroupMarchLanding.tsx`.
-   - Replace non-existent insert fields (`form_type`, `source`, `form_data`) with valid columns (`service_type`, `message`, `custom_fields`).
-   - Keep `form_id` attached to this form record.
-   - Stop swallowing insert failures silently; only show success after confirmed insert.
+### Implementation Steps
 
-4. Verify admin visibility and linkage.
-   - Confirm Lead Capture Forms section shows “March Group Buy Lead Capture.”
-   - Confirm form row shows submission count updates after a test submit.
-   - Confirm submissions in admin resolve `form:landing_page_forms(name, slug)` correctly for this campaign.
+1. **Create a `GalleryOverlay` component** (`src/components/landing/GalleryOverlay.tsx`)
+   - Full-screen fixed overlay with dark backdrop, close button, and scrollable grid of images
+   - Uses `useQuery` to fetch from `gallery_images` where `is_active = true`, ordered by `sort_order`
+   - Includes a loading spinner while fetching
+   - Clicking a thumbnail opens the existing `MediaLightbox` component for full-size view
+   - Styled with the landing page navy/orange branding (inline styles or scoped CSS)
+   - Animates in/out with framer-motion
 
-Technical details:
-- Files to update:
-  - `src/pages/admin/LandingPageForms.tsx` (error/loading/refresh behavior for forms query)
-  - `src/pages/landing/SmartGroupMarchLanding.tsx` (valid insert schema + stricter success handling)
-  - `supabase/migrations/<new_timestamp>_upsert_march_group_buy_form.sql` (idempotent upsert seed)
-- Data contract to enforce:
-  - `landing_page_forms.slug = 'smart-group-march-F-26'`
-  - `landing_page_submissions.form_id` references that form ID
-  - custom campaign data stored under `landing_page_submissions.custom_fields`
-- Security/RLS:
-  - No new public exposure needed; reuse existing policies on `landing_page_forms` and `landing_page_submissions`.
+2. **Add "View Full Gallery" button to the gallery section** of `SmartGroupMarchGoogleLanding.tsx`
+   - Placed below the existing 6-photo grid
+   - Opens the overlay on click
+   - Styled as a secondary/outline button matching the landing page design
+
+### Technical Details
+- Query: `supabase.from('gallery_images').select('id, title, image_url, thumbnail_url, media_type, alt_text').eq('is_active', true).order('sort_order').order('created_at', { ascending: false })`
+- Data only loads when overlay opens (lazy fetch via `enabled` flag)
+- Reuses the existing `MediaLightbox` for individual image/video viewing
+- No new database tables or migrations needed
+
