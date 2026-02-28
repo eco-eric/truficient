@@ -48,13 +48,13 @@ export default function SmartGroupMarchV2Landing() {
   const [timeline, setTimeline] = useState("");
   const [referral, setReferral] = useState("");
 
-  usePageSEO({
-    title: "Smart Group Upgrade Event — March 2026 V2 | Truficient Energy Solutions",
-    description: "Join the March Smart Group and save up to 20% on a 16–17 SEER2 Goodman variable-speed system — plus save on energy bills every month.",
-    ogTitle: "Save Twice on a High-Efficiency HVAC System | Truficient DFW",
-    ogDescription: "Smart Group event: up to 20% off a Goodman variable-speed system + lower energy bills every month. DFW homeowners only. March 2026.",
-    canonicalUrl: "https://truficient.com/smart-group-march-F-26v2",
-  });
+  usePageSEO("/smart-group-march-F-26v2");
+
+  useEffect(() => {
+    document.title = "Smart Group Upgrade Event — March 2026 V2 | Truficient Energy Solutions";
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.setAttribute('content', 'Join the March Smart Group and save up to 20% on a 16–17 SEER2 Goodman variable-speed system — plus save on energy bills every month.');
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined" && (window as any).fbq) {
