@@ -252,17 +252,18 @@ export default function SmartGroupMarchGoogleLanding() {
                 onClick={() => { setGalleryOpen(true); trackButtonClick({ buttonName: "View Full Gallery", buttonLocation: "smart-group-march-G-26-v1", destinationUrl: "#gallery" }); }}
                 style={{
                   background: "transparent",
-                  border: "2px solid rgba(255,255,255,0.3)",
-                  color: "#fff",
+                  border: "2px solid var(--sg-navy)",
+                  color: "var(--sg-navy)",
                   padding: "10px 28px",
                   borderRadius: 8,
                   fontSize: "0.9rem",
-                  fontWeight: 600,
+                  fontFamily: "'Montserrat', sans-serif",
+                  fontWeight: 700,
                   cursor: "pointer",
                   transition: "all 0.2s",
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#FFB547"; e.currentTarget.style.color = "#FFB547"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"; e.currentTarget.style.color = "#fff"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--sg-orange)"; e.currentTarget.style.color = "var(--sg-orange)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--sg-navy)"; e.currentTarget.style.color = "var(--sg-navy)"; }}
               >
                 View Full Gallery →
               </button>
