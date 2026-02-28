@@ -170,17 +170,17 @@ export default function SmartGroupMarchGoogleLanding() {
             <h2>Real Numbers. No Surprises.</h2>
             <p style={{ color: "var(--sg-gray-txt)", fontSize: "0.9rem", maxWidth: 540 }}>Here's what a typical 2,000 sq ft home looks like with the Smart Group discount. Use our estimator for your exact price.</p>
             <div className="sg-g-price-example">
-              <div className="sg-g-price-header">Example: 2,000 Sq Ft Home · 3-Ton Goodman SD System</div>
+              <div className="sg-g-price-header">Example Pricing · Goodman SD Variable-Speed System</div>
               <div className="sg-g-price-rows">
                 <div className="sg-g-price-row strikethrough">
-                  <span className="sg-label">Regular Install Price</span>
-                  <span className="sg-amt">$8,950</span>
+                  <span className="sg-label">Standard Install Price</span>
+                  <span className="sg-amt">$15,000</span>
                 </div>
                 <div className="sg-g-price-row">
                   <span className="sg-label">Smart Group Discount (20%)</span>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span className="sg-g-discount-badge">20% OFF</span>
-                    <span className="sg-amt" style={{ color: "var(--sg-green)", fontWeight: 700 }}>−$1,790</span>
+                    <span className="sg-amt" style={{ color: "var(--sg-green)", fontWeight: 700 }}>−$3,000</span>
                   </div>
                 </div>
                 <div className="sg-g-price-row">
@@ -189,10 +189,10 @@ export default function SmartGroupMarchGoogleLanding() {
                 </div>
                 <div className="sg-g-price-row total">
                   <span className="sg-label">Your Smart Group Price</span>
-                  <span className="sg-amt">$7,160</span>
+                  <span className="sg-amt">$12,000</span>
                 </div>
               </div>
-              <p className="sg-g-price-note">* Financing available from $89/mo. Price varies by home size — use the estimator for your exact quote.</p>
+              <p className="sg-g-price-note">* Financing available — $150/mo until paid in full at 9.99% APR. Price varies by home — use the estimator for your exact quote.</p>
             </div>
             <div style={{ textAlign: "center", marginTop: 28 }}>
               <button className="sg-g-btn-primary" onClick={() => handleCTA("Pricing CTA")} style={{ display: "inline-flex" }}>
