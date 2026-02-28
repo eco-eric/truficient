@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useButtonTracking } from "@/hooks/useButtonTracking";
 import { usePageSEO } from "@/hooks/usePageSEO";
+import GalleryOverlay from "@/components/landing/GalleryOverlay";
 import galleryAttic from "@/assets/gallery/attic-install.jpg";
 import galleryOutdoorSide from "@/assets/gallery/outdoor-units-side.jpg";
 import galleryClosetFurnace from "@/assets/gallery/closet-furnace.jpg";
@@ -23,6 +24,7 @@ export default function SmartGroupMarchGoogleLanding() {
   const { trackButtonClick } = useButtonTracking();
   const navigate = useNavigate();
   const [showSticky, setShowSticky] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   usePageSEO("/smart-group-march-G-26.v1");
 
@@ -244,9 +246,32 @@ export default function SmartGroupMarchGoogleLanding() {
                 </div>
               ))}
             </div>
+            <div style={{ textAlign: "center", marginTop: 20 }}>
+              <button
+                className="sg-g-btn-secondary"
+                onClick={() => { setGalleryOpen(true); trackButtonClick({ buttonName: "View Full Gallery", buttonLocation: "smart-group-march-G-26-v1", destinationUrl: "#gallery" }); }}
+                style={{
+                  background: "transparent",
+                  border: "2px solid rgba(255,255,255,0.3)",
+                  color: "#fff",
+                  padding: "10px 28px",
+                  borderRadius: 8,
+                  fontSize: "0.9rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#FFB547"; e.currentTarget.style.color = "#FFB547"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"; e.currentTarget.style.color = "#fff"; }}
+              >
+                View Full Gallery →
+              </button>
+            </div>
           </div>
         </section>
       </div>
+
+      <GalleryOverlay open={galleryOpen} onClose={() => setGalleryOpen(false)} />
 
       {/* REVIEWS */}
       <div className="sg-g-proof">
