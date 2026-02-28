@@ -40,7 +40,7 @@ export default function GalleryOverlay({ open, onClose }: GalleryOverlayProps) {
             style={{
               position: "fixed",
               inset: 0,
-              zIndex: 9999,
+              zIndex: 40,
               background: "rgba(0,10,30,0.92)",
               overflowY: "auto",
               WebkitOverflowScrolling: "touch",
