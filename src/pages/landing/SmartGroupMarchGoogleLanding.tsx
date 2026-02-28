@@ -262,7 +262,7 @@ export default function SmartGroupMarchGoogleLanding() {
                   cursor: "pointer",
                   transition: "all 0.2s",
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--sg-orange)"; e.currentTarget.style.color = "var(--sg-orange)"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--sg-gold)"; e.currentTarget.style.color = "var(--sg-gold-dk)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--sg-navy)"; e.currentTarget.style.color = "var(--sg-navy)"; }}
               >
                 View Full Gallery →
