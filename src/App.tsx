@@ -33,6 +33,7 @@ import FreeHvacAgeCheckerFB from "./pages/landing/FreeHvacAgeCheckerFB";
 import CampaignLandingPage from "./pages/landing/CampaignLandingPage";
 import SmartGroupMarchLanding from "./pages/landing/SmartGroupMarchLanding";
 import SmartGroupMarchV2Landing from "./pages/landing/SmartGroupMarchV2Landing";
+import SmartGroupMarchGoogleLanding from "./pages/landing/SmartGroupMarchGoogleLanding";
 
 // Admin imports
 import { AdminRouteLayout } from "./components/admin/AdminRouteLayout";
@@ -170,6 +171,7 @@ const router = createBrowserRouter([
       { path: "/free-hvac-age-checker-fb-feb-2026", element: <FreeHvacAgeCheckerFB /> },
       { path: "/smart-group-march-F-26", element: <SmartGroupMarchLanding /> },
       { path: "/smart-group-march-F-26v2", element: <SmartGroupMarchV2Landing /> },
+      { path: "/smart-group-march-G-26.v1", element: <SmartGroupMarchGoogleLanding /> },
       
       // Campaign landing pages (go.truficient.com subdomain)
       { path: "/smart-group-march", element: <CampaignLandingPage /> },
