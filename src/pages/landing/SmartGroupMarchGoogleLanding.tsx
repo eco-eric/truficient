@@ -168,7 +168,7 @@ export default function SmartGroupMarchGoogleLanding() {
           <div className="sg-g-container">
             <p className="sg-g-section-label">Transparent Pricing</p>
             <h2>Real Numbers. No Surprises.</h2>
-            <p style={{ color: "var(--sg-gray-txt)", fontSize: "0.9rem", maxWidth: 540 }}>Here's what a typical 2,000 sq ft home looks like with the Smart Group discount. Use our estimator for your exact price.</p>
+            <p style={{ color: "var(--sg-gray-txt)", fontSize: "0.9rem", maxWidth: 540 }}>Here's an example what it looks like with the Smart Group discount. Use our estimator for your exact price.</p>
             <div className="sg-g-price-example">
               <div className="sg-g-price-header">Example Pricing · Goodman SD Variable-Speed System</div>
               <div className="sg-g-price-rows">
