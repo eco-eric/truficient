@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { isDfwZipCode } from "@/pages/scanner/types";
 import type {
   DuctedEstimatorState,
   CustomerInfo,
@@ -131,6 +133,20 @@ const EstimatorContext = createContext<EstimatorContextValue | null>(null);
 
 export const EstimatorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<DuctedEstimatorState>(INITIAL_STATE);
+  const [searchParams] = useSearchParams();
+
+  // Auto-skip Step 0 if zip is provided via URL params (e.g. from SmartGroupEntry)
+  useEffect(() => {
+    const urlZip = searchParams.get("zip");
+    if (urlZip && urlZip.length === 5 && isDfwZipCode(urlZip) && state.currentStep === 0) {
+      setState((prev) => ({
+        ...prev,
+        zipCode: urlZip,
+        isInServiceArea: true,
+        currentStep: 1,
+      }));
+    }
+  }, [searchParams]);
 
   // Navigation
   const goToStep = useCallback((step: number) => {
