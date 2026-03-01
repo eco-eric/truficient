@@ -21,6 +21,9 @@ export const Step10QuoteResults = () => {
   const { state, nextStep, prevStep, goToStep, setTotals, setRecommendedTonnage, setSelectedEquipmentId } = useEstimator();
   const { pricing, isLoading, matchingEquipment } = useDuctedPricing(state);
   const { data: dynamicTags } = useFormSourceTags('ducted');
+
+  // Goodman 20% discount
+  const GOODMAN_DISCOUNT = 0.20;
   
   // Local state for equipment selection and submission
   const [localSelectedId, setLocalSelectedId] = useState<string | null>(state.selectedEquipmentId);
@@ -319,9 +322,13 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
   
   // Get selected equipment for pricing display (tax already included in pricing)
   const selectedEq = matchingEquipment.find((eq) => eq.id === localSelectedId) || matchingEquipment[0];
-  const selectedPrice = selectedEq 
+  const rawSelectedPrice = selectedEq 
     ? (selectedEq.equipment_cost + selectedEq.installation_labor)
     : pricing.finalTotal;
+  const isGoodmanSelected = selectedEq?.brand === 'Goodman';
+  const selectedPrice = isGoodmanSelected
+    ? Math.round(rawSelectedPrice * (1 - GOODMAN_DISCOUNT))
+    : rawSelectedPrice;
 
   return (
     <StepContainer className="px-4 py-6">
@@ -359,6 +366,14 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
           {/* Price display */}
           <div className="text-center">
             <p className="text-white/70 text-sm mb-1">Your Investment</p>
+            {isGoodmanSelected && (
+              <>
+                <p className="text-lg text-white/50 line-through">{formatMoney(rawSelectedPrice)}</p>
+                <div className="inline-flex items-center gap-1 bg-green-400/20 text-green-300 text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full mb-1">
+                  March Group Buy · 20% Off
+                </div>
+              </>
+            )}
             <p className="text-4xl font-bold">{formatMoney(selectedPrice)}</p>
           </div>
         </div>
@@ -372,7 +387,11 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
           {matchingEquipment.length > 0 ? (
             <div className="space-y-3">
               {matchingEquipment.map((eq) => {
-                const totalPrice = eq.equipment_cost + eq.installation_labor;
+                const rawTotalPrice = eq.equipment_cost + eq.installation_labor;
+                const isGoodman = eq.brand === 'Goodman';
+                const totalPrice = isGoodman
+                  ? Math.round(rawTotalPrice * (1 - GOODMAN_DISCOUNT))
+                  : rawTotalPrice;
                 const isSelected = localSelectedId === eq.id;
                 
                 return (
@@ -399,7 +418,20 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
                         <p className="text-sm text-muted-foreground">{eq.brand} • {eq.tonnage} Ton</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-lg text-[#1e3a5f]">
+                        {isGoodman && (
+                          <>
+                            <p className="text-sm text-muted-foreground line-through">
+                              {formatMoney(rawTotalPrice)}
+                            </p>
+                            <span className="inline-flex items-center bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full">
+                              20% Off
+                            </span>
+                          </>
+                        )}
+                        <p className={cn(
+                          "font-bold text-lg",
+                          isGoodman ? "text-green-700" : "text-[#1e3a5f]"
+                        )}>
                           {formatMoney(totalPrice)}
                         </p>
                         <p className="text-xs text-muted-foreground">
