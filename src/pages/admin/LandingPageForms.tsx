@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -8,6 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -25,7 +33,12 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
-import { Plus, Pencil, Trash2, FileText, Loader2, Eye, Copy, Globe, ExternalLink, StickyNote, Save, RefreshCw } from 'lucide-react';
+import {
+  Plus, Pencil, Trash2, FileText, Loader2, Eye, Copy, Globe,
+  ExternalLink, StickyNote, Save, RefreshCw, Archive, ArchiveRestore,
+  ArrowUpDown, CalendarDays, CircleDot,
+} from 'lucide-react';
+import { format } from 'date-fns';
 
 interface LandingPageForm {
   id: string;
@@ -35,6 +48,7 @@ interface LandingPageForm {
   form_type: string;
   is_active: boolean;
   created_at: string;
+  archived_at: string | null;
 }
 
 interface CampaignPage {
@@ -47,7 +61,11 @@ interface CampaignPage {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  archived_at: string | null;
 }
+
+type SortField = 'created_at' | 'name';
+type SortDir = 'asc' | 'desc';
 
 export default function LandingPageForms() {
   const { toast } = useToast();
@@ -55,6 +73,12 @@ export default function LandingPageForms() {
   const [editingCampaign, setEditingCampaign] = useState<CampaignPage | null>(null);
   const [showCampaignDialog, setShowCampaignDialog] = useState(false);
   const [campaignForm, setCampaignForm] = useState({ name: '', slug: '', url: '', platform: 'facebook', notes: '' });
+
+  // Filters & sorting
+  const [activeTab, setActiveTab] = useState('active');
+  const [platformFilter, setPlatformFilter] = useState<string>('all');
+  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const { data: forms, isLoading, error: formsError, refetch: refetchForms } = useQuery({
     queryKey: ['landing-page-forms'],
@@ -87,12 +111,9 @@ export default function LandingPageForms() {
         .from('landing_page_submissions')
         .select('form_id');
       if (error) throw error;
-      
       const counts: Record<string, number> = {};
       data.forEach((sub) => {
-        if (sub.form_id) {
-          counts[sub.form_id] = (counts[sub.form_id] || 0) + 1;
-        }
+        if (sub.form_id) counts[sub.form_id] = (counts[sub.form_id] || 0) + 1;
       });
       return counts;
     },
@@ -105,7 +126,6 @@ export default function LandingPageForms() {
         .from('landing_page_form_tags')
         .select('form_id');
       if (error) throw error;
-      
       const counts: Record<string, number> = {};
       data.forEach((tag) => {
         counts[tag.form_id] = (counts[tag.form_id] || 0) + 1;
@@ -114,20 +134,49 @@ export default function LandingPageForms() {
     },
   });
 
+  // Filtered & sorted campaign pages
+  const filteredCampaignPages = useMemo(() => {
+    if (!campaignPages) return [];
+    const isArchived = activeTab === 'archived';
+    let filtered = campaignPages.filter(p =>
+      isArchived ? p.archived_at != null : p.archived_at == null
+    );
+    if (platformFilter !== 'all') {
+      filtered = filtered.filter(p => p.platform === platformFilter);
+    }
+    filtered.sort((a, b) => {
+      const aVal = sortField === 'name' ? a.name.toLowerCase() : a.created_at;
+      const bVal = sortField === 'name' ? b.name.toLowerCase() : b.created_at;
+      if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return filtered;
+  }, [campaignPages, activeTab, platformFilter, sortField, sortDir]);
+
+  // Filtered forms
+  const filteredForms = useMemo(() => {
+    if (!forms) return [];
+    const isArchived = activeTab === 'archived';
+    return forms.filter(f =>
+      isArchived ? f.archived_at != null : f.archived_at == null
+    );
+  }, [forms, activeTab]);
+
+  const archivedCount = useMemo(() => {
+    const campaignArchived = campaignPages?.filter(p => p.archived_at != null).length || 0;
+    const formArchived = forms?.filter(f => f.archived_at != null).length || 0;
+    return campaignArchived + formArchived;
+  }, [campaignPages, forms]);
+
+  // Mutations
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase
-        .from('landing_page_forms')
-        .update({ is_active })
-        .eq('id', id);
+      const { error } = await supabase.from('landing_page_forms').update({ is_active }).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['landing-page-forms'] });
-    },
-    onError: (error: Error) => {
-      toast({ title: 'Error updating form', description: error.message, variant: 'destructive' });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['landing-page-forms'] }),
+    onError: (error: Error) => toast({ title: 'Error updating form', description: error.message, variant: 'destructive' }),
   });
 
   const deleteMutation = useMutation({
@@ -139,9 +188,7 @@ export default function LandingPageForms() {
       queryClient.invalidateQueries({ queryKey: ['landing-page-forms'] });
       toast({ title: 'Form deleted successfully' });
     },
-    onError: (error: Error) => {
-      toast({ title: 'Error deleting form', description: error.message, variant: 'destructive' });
-    },
+    onError: (error: Error) => toast({ title: 'Error deleting form', description: error.message, variant: 'destructive' }),
   });
 
   const saveCampaignMutation = useMutation({
@@ -164,9 +211,7 @@ export default function LandingPageForms() {
       setEditingCampaign(null);
       toast({ title: editingCampaign ? 'Campaign page updated' : 'Campaign page added' });
     },
-    onError: (error: Error) => {
-      toast({ title: 'Error saving campaign page', description: error.message, variant: 'destructive' });
-    },
+    onError: (error: Error) => toast({ title: 'Error saving campaign page', description: error.message, variant: 'destructive' }),
   });
 
   const deleteCampaignMutation = useMutation({
@@ -178,20 +223,55 @@ export default function LandingPageForms() {
       queryClient.invalidateQueries({ queryKey: ['campaign-landing-pages'] });
       toast({ title: 'Campaign page removed' });
     },
-    onError: (error: Error) => {
-      toast({ title: 'Error deleting', description: error.message, variant: 'destructive' });
-    },
+    onError: (error: Error) => toast({ title: 'Error deleting', description: error.message, variant: 'destructive' }),
   });
 
-  const copySlug = (slug: string) => {
-    navigator.clipboard.writeText(slug);
-    toast({ title: 'Slug copied to clipboard' });
-  };
+  const archiveCampaignMutation = useMutation({
+    mutationFn: async ({ id, archive }: { id: string; archive: boolean }) => {
+      const { error } = await supabase.from('campaign_landing_pages')
+        .update({ archived_at: archive ? new Date().toISOString() : null, is_active: archive ? false : true })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, { archive }) => {
+      queryClient.invalidateQueries({ queryKey: ['campaign-landing-pages'] });
+      toast({ title: archive ? 'Campaign page archived' : 'Campaign page restored' });
+    },
+    onError: (error: Error) => toast({ title: 'Error', description: error.message, variant: 'destructive' }),
+  });
+
+  const archiveFormMutation = useMutation({
+    mutationFn: async ({ id, archive }: { id: string; archive: boolean }) => {
+      const { error } = await supabase.from('landing_page_forms')
+        .update({ archived_at: archive ? new Date().toISOString() : null, is_active: archive ? false : true })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, { archive }) => {
+      queryClient.invalidateQueries({ queryKey: ['landing-page-forms'] });
+      toast({ title: archive ? 'Form archived' : 'Form restored' });
+    },
+    onError: (error: Error) => toast({ title: 'Error', description: error.message, variant: 'destructive' }),
+  });
+
+  const toggleCampaignActiveMutation = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.from('campaign_landing_pages').update({ is_active }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['campaign-landing-pages'] }),
+    onError: (error: Error) => toast({ title: 'Error', description: error.message, variant: 'destructive' }),
+  });
 
   const copyFullUrl = (url: string) => {
     const full = url.startsWith('http') ? url : `https://go.truficient.com${url}`;
     navigator.clipboard.writeText(full);
     toast({ title: 'URL copied to clipboard' });
+  };
+
+  const copySlug = (slug: string) => {
+    navigator.clipboard.writeText(slug);
+    toast({ title: 'Slug copied to clipboard' });
   };
 
   const openCampaignDialog = (campaign?: CampaignPage) => {
@@ -205,229 +285,153 @@ export default function LandingPageForms() {
     setShowCampaignDialog(true);
   };
 
-  const getFormTypeColor = (type: string) => {
-    switch (type) {
-      case 'contact':
-        return 'bg-blue-500';
-      case 'estimate':
-        return 'bg-green-500';
-      case 'callback':
-        return 'bg-purple-500';
-      default:
-        return 'bg-gray-500';
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir('desc');
     }
   };
 
   const getPlatformBadge = (platform: string) => {
     switch (platform) {
       case 'facebook':
-        return <Badge variant="outline" className="border-blue-500 text-blue-600">Facebook</Badge>;
+        return <Badge variant="outline" className="border-blue-500 text-blue-600 text-xs">Facebook</Badge>;
       case 'google':
-        return <Badge variant="outline" className="border-green-500 text-green-600">Google</Badge>;
+        return <Badge variant="outline" className="border-green-500 text-green-600 text-xs">Google</Badge>;
       default:
-        return <Badge variant="outline">Other</Badge>;
+        return <Badge variant="outline" className="text-xs">Other</Badge>;
+    }
+  };
+
+  const getFormTypeColor = (type: string) => {
+    switch (type) {
+      case 'contact': return 'bg-blue-500';
+      case 'estimate': return 'bg-green-500';
+      case 'callback': return 'bg-purple-500';
+      default: return 'bg-muted-foreground';
     }
   };
 
   return (
     <AdminLayout title="Landing Page Forms">
       <div className="space-y-6">
+        {/* Header */}
         <div className="space-y-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Landing Pages</h1>
-            <p className="text-muted-foreground">
-              Manage campaign landing pages and lead capture forms
-            </p>
+            <p className="text-muted-foreground">Manage campaign landing pages and lead capture forms</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" asChild>
               <Link to="/admin/landing-pages/submissions">
-                <Eye className="h-4 w-4 mr-2" />
-                View Submissions
+                <Eye className="h-4 w-4 mr-2" />View Submissions
               </Link>
             </Button>
             <Button asChild>
               <Link to="/admin/landing-pages/new">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Form
+                <Plus className="h-4 w-4 mr-2" />Create Form
               </Link>
             </Button>
           </div>
         </div>
 
-        {/* Campaign Landing Pages Section */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5" />
-              Campaign Landing Pages
-            </CardTitle>
-            <Button size="sm" onClick={() => openCampaignDialog()}>
-              <Plus className="h-4 w-4 mr-1" />
-              Add Page
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {campaignLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : campaignPages && campaignPages.length > 0 ? (
-              <div className="grid gap-4">
-                {campaignPages.map((page) => (
-                  <div key={page.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold text-foreground">{page.name}</h3>
-                          {getPlatformBadge(page.platform)}
-                          {!page.is_active && <Badge variant="secondary">Inactive</Badge>}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1.5">
-                          <code className="text-sm bg-muted px-2 py-0.5 rounded text-muted-foreground truncate">
-                            go.truficient.com{page.url}
-                          </code>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyFullUrl(page.url)}>
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                          <a href={page.url} target="_blank" rel="noopener noreferrer" className="shrink-0">
-                            <Button variant="ghost" size="icon" className="h-6 w-6">
-                              <ExternalLink className="h-3 w-3" />
-                            </Button>
-                          </a>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openCampaignDialog(page)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
-                          if (confirm('Remove this campaign page?')) deleteCampaignMutation.mutate(page.id);
-                        }}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                    {page.notes && (
-                      <div className="flex items-start gap-2 bg-muted/50 rounded-md p-3">
-                        <StickyNote className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{page.notes}</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-muted-foreground">
-                <Globe className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                <p>No campaign pages tracked yet</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Tabs: Active / Archived */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <TabsList>
+              <TabsTrigger value="active">Active</TabsTrigger>
+              <TabsTrigger value="archived" className="gap-1.5">
+                <Archive className="h-3.5 w-3.5" />
+                Archived
+                {archivedCount > 0 && (
+                  <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{archivedCount}</Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
 
-        {/* Forms Table */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Lead Capture Forms
-            </CardTitle>
-            <Button variant="ghost" size="icon" onClick={() => refetchForms()} title="Refresh forms">
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {formsError ? (
-              <div className="text-center py-8 text-destructive">
-                <p className="font-medium">Failed to load forms</p>
-                <p className="text-sm text-muted-foreground mt-1">{formsError.message}</p>
-                <Button variant="outline" size="sm" className="mt-3" onClick={() => refetchForms()}>
-                  <RefreshCw className="h-4 w-4 mr-1" /> Retry
-                </Button>
-              </div>
-            ) : isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : forms && forms.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Slug</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Tags</TableHead>
-                    <TableHead>Submissions</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {forms.map((form) => (
-                    <TableRow key={form.id}>
-                      <TableCell className="font-medium">{form.name}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <code className="text-sm bg-muted px-2 py-1 rounded">{form.slug}</code>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => copySlug(form.slug)}
-                          >
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={`${getFormTypeColor(form.form_type)} text-white`}>
-                          {form.form_type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{tagCounts?.[form.id] || 0}</TableCell>
-                      <TableCell>{submissionCounts?.[form.id] || 0}</TableCell>
-                      <TableCell>
-                        <Switch
-                          checked={form.is_active}
-                          onCheckedChange={(checked) =>
-                            toggleActiveMutation.mutate({ id: form.id, is_active: checked })
-                          }
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" size="icon" asChild>
-                            <Link to={`/admin/landing-pages/${form.id}`}>
-                              <Pencil className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              if (confirm('Are you sure you want to delete this form?')) {
-                                deleteMutation.mutate(form.id);
-                              }
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No forms created yet</p>
-                <p className="text-sm">Create your first landing page form to get started</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            {/* Filters & Sort */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <Select value={platformFilter} onValueChange={setPlatformFilter}>
+                <SelectTrigger className="w-[130px] h-9 text-sm">
+                  <SelectValue placeholder="Platform" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Platforms</SelectItem>
+                  <SelectItem value="facebook">Facebook</SelectItem>
+                  <SelectItem value="google">Google</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => toggleSort('created_at')}>
+                <CalendarDays className="h-3.5 w-3.5" />
+                Date {sortField === 'created_at' && (sortDir === 'asc' ? '↑' : '↓')}
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => toggleSort('name')}>
+                <ArrowUpDown className="h-3.5 w-3.5" />
+                Name {sortField === 'name' && (sortDir === 'asc' ? '↑' : '↓')}
+              </Button>
+            </div>
+          </div>
+
+          <TabsContent value="active" className="space-y-6 mt-4">
+            <CampaignSection
+              pages={filteredCampaignPages}
+              loading={campaignLoading}
+              onAdd={() => openCampaignDialog()}
+              onEdit={openCampaignDialog}
+              onDelete={(id) => { if (confirm('Remove this campaign page?')) deleteCampaignMutation.mutate(id); }}
+              onArchive={(id) => archiveCampaignMutation.mutate({ id, archive: true })}
+              onToggleActive={(id, active) => toggleCampaignActiveMutation.mutate({ id, is_active: active })}
+              copyUrl={copyFullUrl}
+              getPlatformBadge={getPlatformBadge}
+              isArchiveView={false}
+            />
+            <FormsSection
+              forms={filteredForms}
+              loading={isLoading}
+              error={formsError}
+              refetch={refetchForms}
+              submissionCounts={submissionCounts}
+              tagCounts={tagCounts}
+              onToggleActive={(id, active) => toggleActiveMutation.mutate({ id, is_active: active })}
+              onDelete={(id) => { if (confirm('Delete this form?')) deleteMutation.mutate(id); }}
+              onArchive={(id) => archiveFormMutation.mutate({ id, archive: true })}
+              copySlug={copySlug}
+              getFormTypeColor={getFormTypeColor}
+              isArchiveView={false}
+            />
+          </TabsContent>
+
+          <TabsContent value="archived" className="space-y-6 mt-4">
+            <CampaignSection
+              pages={filteredCampaignPages}
+              loading={campaignLoading}
+              onAdd={() => {}}
+              onEdit={openCampaignDialog}
+              onDelete={(id) => { if (confirm('Permanently delete?')) deleteCampaignMutation.mutate(id); }}
+              onRestore={(id) => archiveCampaignMutation.mutate({ id, archive: false })}
+              copyUrl={copyFullUrl}
+              getPlatformBadge={getPlatformBadge}
+              isArchiveView={true}
+            />
+            <FormsSection
+              forms={filteredForms}
+              loading={isLoading}
+              error={formsError}
+              refetch={refetchForms}
+              submissionCounts={submissionCounts}
+              tagCounts={tagCounts}
+              onToggleActive={(id, active) => toggleActiveMutation.mutate({ id, is_active: active })}
+              onDelete={(id) => { if (confirm('Permanently delete?')) deleteMutation.mutate(id); }}
+              onRestore={(id) => archiveFormMutation.mutate({ id, archive: false })}
+              copySlug={copySlug}
+              getFormTypeColor={getFormTypeColor}
+              isArchiveView={true}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Add/Edit Campaign Page Dialog */}
@@ -448,15 +452,16 @@ export default function LandingPageForms() {
             </div>
             <div>
               <label className="text-sm font-medium">Platform</label>
-              <select
-                className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={campaignForm.platform}
-                onChange={(e) => setCampaignForm(f => ({ ...f, platform: e.target.value }))}
-              >
-                <option value="facebook">Facebook</option>
-                <option value="google">Google</option>
-                <option value="other">Other</option>
-              </select>
+              <Select value={campaignForm.platform} onValueChange={(v) => setCampaignForm(f => ({ ...f, platform: v }))}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="facebook">Facebook</SelectItem>
+                  <SelectItem value="google">Google</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className="text-sm font-medium">Notes</label>
@@ -481,5 +486,249 @@ export default function LandingPageForms() {
         </DialogContent>
       </Dialog>
     </AdminLayout>
+  );
+}
+
+/* ─── Campaign Section ─── */
+function CampaignSection({
+  pages, loading, onAdd, onEdit, onDelete, onArchive, onRestore, onToggleActive,
+  copyUrl, getPlatformBadge, isArchiveView,
+}: {
+  pages: CampaignPage[];
+  loading: boolean;
+  onAdd: () => void;
+  onEdit: (p: CampaignPage) => void;
+  onDelete: (id: string) => void;
+  onArchive?: (id: string) => void;
+  onRestore?: (id: string) => void;
+  onToggleActive?: (id: string, active: boolean) => void;
+  copyUrl: (url: string) => void;
+  getPlatformBadge: (p: string) => JSX.Element;
+  isArchiveView: boolean;
+}) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2">
+          <Globe className="h-5 w-5" />
+          Campaign Landing Pages
+        </CardTitle>
+        {!isArchiveView && (
+          <Button size="sm" onClick={onAdd}>
+            <Plus className="h-4 w-4 mr-1" />Add Page
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : pages.length > 0 ? (
+          <div className="grid gap-4">
+            {pages.map((page) => (
+              <div key={page.id} className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Live status dot */}
+                      <CircleDot className={`h-4 w-4 shrink-0 ${page.is_active ? 'text-green-500' : 'text-muted-foreground'}`} />
+                      <h3 className="font-semibold text-foreground">{page.name}</h3>
+                      {getPlatformBadge(page.platform)}
+                      {page.is_active
+                        ? <Badge className="bg-green-500/10 text-green-600 border-green-500/30 text-xs">Live</Badge>
+                        : <Badge variant="secondary" className="text-xs">Inactive</Badge>
+                      }
+                    </div>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <code className="text-sm bg-muted px-2 py-0.5 rounded text-muted-foreground truncate">
+                        go.truficient.com{page.url}
+                      </code>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyUrl(page.url)}>
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                      <a href={page.url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                          <ExternalLink className="h-3 w-3" />
+                        </Button>
+                      </a>
+                    </div>
+                    {/* Date created */}
+                    <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
+                      <CalendarDays className="h-3 w-3" />
+                      Created {format(new Date(page.created_at), 'MMM d, yyyy')}
+                      {page.archived_at && (
+                        <span className="ml-2">• Archived {format(new Date(page.archived_at), 'MMM d, yyyy')}</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {!isArchiveView && onToggleActive && (
+                      <Switch
+                        checked={page.is_active}
+                        onCheckedChange={(checked) => onToggleActive(page.id, checked)}
+                        className="mr-1"
+                      />
+                    )}
+                    {isArchiveView && onRestore && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onRestore(page.id)} title="Restore">
+                        <ArchiveRestore className="h-4 w-4 text-primary" />
+                      </Button>
+                    )}
+                    {!isArchiveView && onArchive && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onArchive(page.id)} title="Archive">
+                        <Archive className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(page)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onDelete(page.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+                {page.notes && (
+                  <div className="flex items-start gap-2 bg-muted/50 rounded-md p-3">
+                    <StickyNote className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{page.notes}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-6 text-muted-foreground">
+            <Globe className="h-10 w-10 mx-auto mb-3 opacity-50" />
+            <p>{isArchiveView ? 'No archived campaign pages' : 'No campaign pages tracked yet'}</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ─── Forms Section ─── */
+function FormsSection({
+  forms, loading, error, refetch, submissionCounts, tagCounts,
+  onToggleActive, onDelete, onArchive, onRestore, copySlug, getFormTypeColor, isArchiveView,
+}: {
+  forms: LandingPageForm[];
+  loading: boolean;
+  error: Error | null;
+  refetch: () => void;
+  submissionCounts?: Record<string, number>;
+  tagCounts?: Record<string, number>;
+  onToggleActive: (id: string, active: boolean) => void;
+  onDelete: (id: string) => void;
+  onArchive?: (id: string) => void;
+  onRestore?: (id: string) => void;
+  copySlug: (slug: string) => void;
+  getFormTypeColor: (type: string) => string;
+  isArchiveView: boolean;
+}) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2">
+          <FileText className="h-5 w-5" />Lead Capture Forms
+        </CardTitle>
+        <Button variant="ghost" size="icon" onClick={refetch} title="Refresh forms">
+          <RefreshCw className="h-4 w-4" />
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {error ? (
+          <div className="text-center py-8 text-destructive">
+            <p className="font-medium">Failed to load forms</p>
+            <p className="text-sm text-muted-foreground mt-1">{error.message}</p>
+            <Button variant="outline" size="sm" className="mt-3" onClick={refetch}>
+              <RefreshCw className="h-4 w-4 mr-1" /> Retry
+            </Button>
+          </div>
+        ) : loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : forms.length > 0 ? (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Slug</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Tags</TableHead>
+                <TableHead>Submissions</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {forms.map((form) => (
+                <TableRow key={form.id}>
+                  <TableCell className="font-medium">{form.name}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <code className="text-sm bg-muted px-2 py-1 rounded">{form.slug}</code>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copySlug(form.slug)}>
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={`${getFormTypeColor(form.form_type)} text-white`}>{form.form_type}</Badge>
+                  </TableCell>
+                  <TableCell>{tagCounts?.[form.id] || 0}</TableCell>
+                  <TableCell>{submissionCounts?.[form.id] || 0}</TableCell>
+                  <TableCell>
+                    <span className="text-xs text-muted-foreground">
+                      {format(new Date(form.created_at), 'MMM d, yyyy')}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    {!isArchiveView ? (
+                      <Switch
+                        checked={form.is_active}
+                        onCheckedChange={(checked) => onToggleActive(form.id, checked)}
+                      />
+                    ) : (
+                      <Badge variant="secondary" className="text-xs">Archived</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      {isArchiveView && onRestore && (
+                        <Button variant="ghost" size="icon" onClick={() => onRestore(form.id)} title="Restore">
+                          <ArchiveRestore className="h-4 w-4 text-primary" />
+                        </Button>
+                      )}
+                      {!isArchiveView && onArchive && (
+                        <Button variant="ghost" size="icon" onClick={() => onArchive(form.id)} title="Archive">
+                          <Archive className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="icon" asChild>
+                        <Link to={`/admin/landing-pages/${form.id}`}>
+                          <Pencil className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => onDelete(form.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>{isArchiveView ? 'No archived forms' : 'No forms created yet'}</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

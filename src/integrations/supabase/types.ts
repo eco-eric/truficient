@@ -737,6 +737,7 @@ export type Database = {
       }
       campaign_landing_pages: {
         Row: {
+          archived_at: string | null
           created_at: string
           id: string
           is_active: boolean | null
@@ -748,6 +749,7 @@ export type Database = {
           url: string
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
           id?: string
           is_active?: boolean | null
@@ -759,6 +761,7 @@ export type Database = {
           url: string
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           id?: string
           is_active?: boolean | null
@@ -3755,6 +3758,7 @@ export type Database = {
       }
       landing_page_forms: {
         Row: {
+          archived_at: string | null
           created_at: string
           description: string | null
           fields_config: Json
@@ -3768,6 +3772,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
           description?: string | null
           fields_config?: Json
@@ -3781,6 +3786,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           description?: string | null
           fields_config?: Json
