@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useButtonTracking } from "@/hooks/useButtonTracking";
 import { usePageSEO } from "@/hooks/usePageSEO";
+import GalleryOverlay from "@/components/landing/GalleryOverlay";
 import ownerPhoto from "@/assets/owner-eric.jpg";
 import galleryAttic from "@/assets/gallery/attic-install.jpg";
 import galleryOutdoorSide from "@/assets/gallery/outdoor-units-side.jpg";
@@ -38,6 +39,7 @@ export default function SmartGroupMarchV2Landing() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showSticky, setShowSticky] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
   const formSectionRef = useRef<HTMLElement>(null);
 
   const [firstName, setFirstName] = useState("");
@@ -379,8 +381,19 @@ export default function SmartGroupMarchV2Landing() {
               </div>
             ))}
           </div>
+          <div style={{ textAlign: "center", marginTop: 24 }}>
+            <button
+              className="v2-cta-btn"
+              style={{ background: "transparent", border: "2px solid #FFB547", color: "#FFB547", padding: "12px 32px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: "0.95rem" }}
+              onClick={() => { setGalleryOpen(true); trackButtonClick({ buttonName: "View Full Gallery", buttonLocation: "gallery-section-fb-v2", destinationUrl: "" }); }}
+            >
+              View Full Gallery →
+            </button>
+          </div>
         </div>
       </section>
+
+      <GalleryOverlay open={galleryOpen} onClose={() => setGalleryOpen(false)} />
 
       {/* ENERGY SAVINGS */}
       <section className="v2-savings-section">
