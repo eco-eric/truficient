@@ -11,15 +11,27 @@ const getIcon = (name: string | null) => {
   return IconComp || Icons.Plus;
 };
 
+const AIRZONE_ID = "b1eca69a-d346-4ccf-a664-e81f3e95f44b";
+const EWC_ID = "37fe15e5-6bdf-43c7-b2d6-163235a3baa6";
+
 export const Step8AddOns = () => {
   const { state, toggleAddon, nextStep, prevStep } = useEstimator();
 
-  const { addons, isLoading } = useDuctedPricing(state);
+  const { addons, isLoading, matchingEquipment } = useDuctedPricing(state);
+
+  // Filter add-ons based on selected equipment brand
+  const selectedEq = matchingEquipment.find((eq) => eq.id === state.selectedEquipmentId) || matchingEquipment[0];
+  const brand = selectedEq?.brand;
+  const filteredAddons = addons.filter((addon) => {
+    if (brand === "Mitsubishi" && addon.id === EWC_ID) return false;
+    if (["Goodman", "Trane", "Bosch"].includes(brand || "") && addon.id === AIRZONE_ID) return false;
+    return true;
+  });
 
   const selectedCount = state.selectedAddonIds.length;
 
   // Calculate selected add-ons total
-  const selectedAddonsTotal = addons
+  const selectedAddonsTotal = filteredAddons
     .filter((a) => state.selectedAddonIds.includes(a.id))
     .reduce((sum, a) => sum + a.price, 0);
 
@@ -41,13 +53,13 @@ export const Step8AddOns = () => {
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
-        ) : addons.length === 0 ? (
+        ) : filteredAddons.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <p>No add-ons available at this time.</p>
           </div>
         ) : (
           <div className="space-y-3 mb-6">
-            {addons.map((addon) => {
+            {filteredAddons.map((addon) => {
               const isSelected = state.selectedAddonIds.includes(addon.id);
               const IconComp = getIcon(addon.icon_name);
 
