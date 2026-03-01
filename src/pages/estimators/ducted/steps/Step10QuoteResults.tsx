@@ -5,8 +5,10 @@ import { useEstimator } from "../context/EstimatorContext";
 import { useDuctedPricing, formatMoney } from "../hooks/useDuctedPricing";
 import { 
   Loader2, CheckCircle2, Award, Zap, Shield, Snowflake, Flame,
-  ThermometerSun, Wind, Wrench, Box, User, Mail, Phone, MapPin, Pencil
+  ThermometerSun, Wind, Wrench, Box, User, Mail, Phone, MapPin, Pencil,
+  Check, Plus
 } from "lucide-react";
+import * as Icons from "lucide-react";
 import { HOME_TYPE_OPTIONS, HOME_LAYOUT_OPTIONS, SQUARE_FOOTAGE_OPTIONS } from "../types";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -17,9 +19,15 @@ import { toast } from "sonner";
 import { useFormSourceTags } from "@/hooks/useFormSourceTags";
 import { addDays, format } from "date-fns";
 
+const getIcon = (name: string | null) => {
+  if (!name) return Plus;
+  const IconComp = (Icons as any)[name];
+  return IconComp || Plus;
+};
+
 export const Step10QuoteResults = () => {
-  const { state, nextStep, prevStep, goToStep, setTotals, setRecommendedTonnage, setSelectedEquipmentId } = useEstimator();
-  const { pricing, isLoading, matchingEquipment } = useDuctedPricing(state);
+  const { state, nextStep, prevStep, goToStep, setTotals, setRecommendedTonnage, setSelectedEquipmentId, toggleAddon } = useEstimator();
+  const { pricing, isLoading, matchingEquipment, addons } = useDuctedPricing(state);
   const { data: dynamicTags } = useFormSourceTags('ducted');
 
   // Goodman 20% discount
@@ -549,7 +557,71 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
           )}
         </div>
 
-        {/* Home Summary */}
+        {/* Add-ons Section */}
+        {addons.length > 0 && (
+          <div className="mb-6">
+            <h4 className="font-semibold text-[#1e3a5f] mb-2">Enhance Your System</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              Optional upgrades to maximize comfort and convenience.
+            </p>
+            <div className="space-y-2">
+              {addons.map((addon) => {
+                const isSelected = state.selectedAddonIds.includes(addon.id);
+                const IconComp = getIcon(addon.icon_name);
+
+                return (
+                  <button
+                    key={addon.id}
+                    type="button"
+                    onClick={() => toggleAddon(addon.id)}
+                    className={cn(
+                      "w-full flex items-center gap-3 rounded-xl border-2 p-3 text-left transition-all",
+                      isSelected
+                        ? "border-[#d4a84b] bg-[#d4a84b]/10"
+                        : "border-border bg-card hover:border-primary/50"
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+                        isSelected ? "bg-[#d4a84b] text-white" : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {isSelected ? <Check className="h-4 w-4" /> : <IconComp className="h-4 w-4" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm text-foreground">{addon.name}</span>
+                        {addon.is_popular && (
+                          <span className="text-[10px] bg-[#d4a84b]/20 text-[#d4a84b] px-1.5 py-0.5 rounded-full font-medium">
+                            Popular
+                          </span>
+                        )}
+                      </div>
+                      {addon.description && (
+                        <p className="text-xs text-muted-foreground">{addon.description}</p>
+                      )}
+                    </div>
+                    <span className="font-semibold text-sm text-[#1e3a5f] shrink-0">{formatMoney(addon.price)}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {state.selectedAddonIds.length > 0 && (
+              <div className="rounded-xl bg-[#1e3a5f]/5 border border-[#1e3a5f]/20 p-3 mt-3">
+                <div className="flex justify-between items-center">
+                  <p className="text-sm font-semibold text-[#1e3a5f]">
+                    {state.selectedAddonIds.length} upgrade{state.selectedAddonIds.length !== 1 ? "s" : ""} selected
+                  </p>
+                  <p className="text-sm font-bold text-[#1e3a5f]">
+                    +{formatMoney(pricing.addonsCost)}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="bg-muted/30 rounded-xl p-4 mb-6">
           <h4 className="font-medium text-[#1e3a5f] mb-3">Your Home Details</h4>
           <div className="grid grid-cols-2 gap-3 text-sm">
