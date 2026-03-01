@@ -355,34 +355,18 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
           </p>
         </div>
 
-        {/* System Summary */}
-        <div className="bg-gradient-to-br from-[#1e3a5f] to-[#2a4a6f] rounded-2xl p-6 text-white mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            {state.heatingType === "gas_system" ? (
-              <Flame className="h-6 w-6 text-orange-300" />
-            ) : (
-              <Snowflake className="h-6 w-6 text-cyan-300" />
-            )}
-            <div>
-              <h3 className="font-semibold text-lg">{systemTypeLabel}</h3>
-              <p className="text-white/70 text-sm">
-                {pricing.effectiveTonnage} Ton • {pricing.selectedTier?.display_name || "Standard"} Tier
-              </p>
-            </div>
-          </div>
-
-          {/* Price display */}
-          <div className="text-center">
-            <p className="text-white/70 text-sm mb-1">Your Investment</p>
-            {isGoodmanSelected && (
-              <>
-                <p className="text-lg text-white/50 line-through">{formatMoney(rawSelectedPrice)}</p>
-                <div className="inline-flex items-center gap-1 bg-green-400/20 text-green-300 text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full mb-1">
-                  March Group Buy · 20% Off
-                </div>
-              </>
-            )}
-            <p className="text-4xl font-bold">{formatMoney(selectedPrice)}</p>
+        {/* System Type Header */}
+        <div className="flex items-center gap-3 mb-6 p-4 bg-muted/30 rounded-xl">
+          {state.heatingType === "gas_system" ? (
+            <Flame className="h-6 w-6 text-orange-500" />
+          ) : (
+            <Snowflake className="h-6 w-6 text-cyan-500" />
+          )}
+          <div>
+            <h3 className="font-semibold text-lg text-[#1e3a5f]">{systemTypeLabel}</h3>
+            <p className="text-muted-foreground text-sm">
+              {pricing.effectiveTonnage} Ton • {pricing.selectedTier?.display_name || "Standard"} Tier
+            </p>
           </div>
         </div>
 
@@ -632,6 +616,41 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
           );
         })()}
 
+        {/* Total Investment Summary */}
+        <div className="bg-gradient-to-br from-[#1e3a5f] to-[#2a4a6f] rounded-2xl p-6 text-white mb-6">
+          <p className="text-white/70 text-sm mb-3 text-center">Investment Breakdown</p>
+          <div className="space-y-2 mb-4">
+            <div className="flex justify-between text-sm">
+              <span className="text-white/80">Equipment & Installation</span>
+              <span className="font-medium">
+                {isGoodmanSelected && (
+                  <span className="text-white/50 line-through mr-2">{formatMoney(rawSelectedPrice)}</span>
+                )}
+                {formatMoney(selectedPrice)}
+              </span>
+            </div>
+            {pricing.addonsCost > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-white/80">System Add-ons</span>
+                <span className="font-medium">{formatMoney(pricing.addonsCost)}</span>
+              </div>
+            )}
+            <div className="border-t border-white/20 pt-2 mt-2">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">Total Investment</span>
+                <span className="text-3xl font-bold">{formatMoney(selectedPrice + pricing.addonsCost)}</span>
+              </div>
+            </div>
+          </div>
+          {isGoodmanSelected && (
+            <div className="text-center">
+              <div className="inline-flex items-center gap-1 bg-green-400/20 text-green-300 text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full">
+                March Group Buy · 20% Off
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="bg-muted/30 rounded-xl p-4 mb-6">
           <h4 className="font-medium text-[#1e3a5f] mb-3">Your Home Details</h4>
           <div className="grid grid-cols-2 gap-3 text-sm">
@@ -695,7 +714,7 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
         {/* Financing Options Section */}
         <FinancingOptionsSection 
           estimatorType="ducted" 
-          finalTotal={selectedPrice} 
+          finalTotal={selectedPrice + pricing.addonsCost} 
         />
 
         {/* Trust signals */}
