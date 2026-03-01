@@ -313,12 +313,8 @@ export const Step11ThankYou = () => {
               <h4 className="text-sm font-medium text-muted-foreground mb-2">Investment Breakdown</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span>Equipment Package</span>
-                  <span className="font-medium">{formatMoney(pricing.equipmentCost)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Professional Installation</span>
-                  <span className="font-medium">{formatMoney(pricing.installationCost)}</span>
+                  <span>Equipment + Install</span>
+                  <span className="font-medium">{formatMoney(pricing.equipmentCost + pricing.installationCost)}</span>
                 </div>
                 {pricing.addonsBreakdown.map((addon) => (
                   <div key={addon.id} className="flex justify-between">
