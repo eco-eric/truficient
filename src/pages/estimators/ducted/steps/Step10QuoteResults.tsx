@@ -621,7 +621,7 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
           <p className="text-white/70 text-sm mb-3 text-center">Investment Breakdown</p>
           <div className="space-y-2 mb-4">
             <div className="flex justify-between text-sm">
-              <span className="text-white/80">Equipment & Installation</span>
+              <span className="text-white/80">Equipment – Labor, Installation & Tax</span>
               <span className="font-medium">
                 {isGoodmanSelected && (
                   <span className="text-white/50 line-through mr-2">{formatMoney(rawSelectedPrice)}</span>
