@@ -134,6 +134,9 @@ export const Step9EfficiencyTier = () => {
     return closest;
   })();
 
+  // Goodman discount percentage
+  const GOODMAN_DISCOUNT = 0.20;
+
   // Calculate price RANGE for a tier based on real equipment data
   const getPriceRangeForTier = (tier: DuctedEfficiencyTier) => {
     if (!equipment || equipment.length === 0) {
@@ -142,18 +145,13 @@ export const Step9EfficiencyTier = () => {
 
     // Filter equipment using efficiency_tier_id with variable speed rounding
     const matchingEquipment = equipment.filter((eq) => {
-      // Match system type based on heating type selection
       const typeMatch = eq.system_type === state.heatingType;
       if (!typeMatch) return false;
       
-      // Use tier ID matching
       const tierMatch = eq.efficiency_tier_id === tier.id;
       if (!tierMatch) return false;
       
-      // Match effective tonnage with variable speed rounding
       if (effectiveTonnage) {
-        // Variable speed brands (Trane, Bosch) only have whole-ton units
-        // They can modulate down, so round UP to next whole ton for matching
         const isVariableSpeed = ['Trane', 'Bosch'].includes(eq.brand || '');
         const targetTonnage = isVariableSpeed 
           ? Math.ceil(effectiveTonnage) 
@@ -170,15 +168,30 @@ export const Step9EfficiencyTier = () => {
       return null;
     }
 
-    // Calculate prices (equipment + installation)
-    const prices = matchingEquipment.map((eq) => 
+    // Check if any Goodman units exist in this tier
+    const hasGoodman = matchingEquipment.some((eq) => eq.brand === 'Goodman');
+
+    // Calculate prices (equipment + installation), applying Goodman discount
+    const prices = matchingEquipment.map((eq) => {
+      const basePrice = (eq.equipment_cost || 0) + (eq.installation_labor || 0);
+      if (eq.brand === 'Goodman') {
+        return Math.round(basePrice * (1 - GOODMAN_DISCOUNT));
+      }
+      return basePrice;
+    });
+
+    // Also calculate original (non-discounted) prices for strikethrough display
+    const originalPrices = matchingEquipment.map((eq) => 
       (eq.equipment_cost || 0) + (eq.installation_labor || 0)
     );
     
     return {
       min: Math.min(...prices),
       max: Math.max(...prices),
+      originalMin: Math.min(...originalPrices),
+      originalMax: Math.max(...originalPrices),
       count: matchingEquipment.length,
+      hasGoodman,
     };
   };
 
@@ -244,8 +257,25 @@ export const Step9EfficiencyTier = () => {
                         <div className="text-xs text-muted-foreground">Loading...</div>
                       ) : priceRange ? (
                         <>
-                          <div className="text-xs text-muted-foreground">Price Range</div>
-                          <div className="text-lg font-bold text-[#1e3a5f]">
+                          {/* Show strikethrough original price if Goodman discount applies */}
+                          {priceRange.hasGoodman && (
+                            <div className="text-sm text-muted-foreground line-through">
+                              {priceRange.originalMin === priceRange.originalMax 
+                                ? formatMoney(priceRange.originalMin)
+                                : `${formatMoney(priceRange.originalMin)} - ${formatMoney(priceRange.originalMax)}`
+                              }
+                            </div>
+                          )}
+                          {/* Discount badge */}
+                          {priceRange.hasGoodman && (
+                            <div className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full mb-0.5">
+                              March Group Buy · 20% Off
+                            </div>
+                          )}
+                          <div className={cn(
+                            "text-lg font-bold",
+                            priceRange.hasGoodman ? "text-green-700" : "text-[#1e3a5f]"
+                          )}>
                             {priceRange.min === priceRange.max 
                               ? formatMoney(priceRange.min)
                               : `${formatMoney(priceRange.min)} - ${formatMoney(priceRange.max)}`
