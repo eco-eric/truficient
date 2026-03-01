@@ -435,7 +435,7 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
                           {formatMoney(totalPrice)}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          incl. installation
+                          incl. Tax
                         </p>
                       </div>
                     </div>
