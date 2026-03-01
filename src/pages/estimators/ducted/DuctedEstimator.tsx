@@ -35,10 +35,10 @@ const STEP_LABELS = [
   "Comfort",         // 4
   "Heating Type",    // 5
   "System Size",     // 6
-  "What's Included", // 7
-  "Add-ons",         // 8 - NEW
-  "Contact Info",    // 9
-  "Efficiency",      // 10
+  "Add-ons",         // 7
+  "Contact Info",    // 8
+  "Efficiency",      // 9
+  "What's Included", // 10
   "Your Quote",      // 11
   "Thank You",       // 12
 ];
@@ -64,13 +64,13 @@ const EstimatorContent = () => {
       case 6:
         return <Step6SystemSize />;
       case 7:
-        return <Step7WhatsIncluded />;
-      case 8:
         return <Step8AddOns />;
-      case 9:
+      case 8:
         return <Step8CustomerInfo />;
-      case 10:
+      case 9:
         return <Step9EfficiencyTier />;
+      case 10:
+        return <Step7WhatsIncluded />;
       case 11:
         return <Step10QuoteResults />;
       case 12:
