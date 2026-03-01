@@ -1,28 +1,32 @@
 
 
-## Plan: Gallery Overlay on Landing Page
+## Investigation Results
 
-### Approach
-Add a "View Full Gallery" button below the existing 6 static photos in the gallery section. Clicking it opens a full-screen overlay/drawer that fetches all active images from the `gallery_images` database table — the same data source used by the main `/gallery` page. The overlay stays on the landing page (no navigation away), keeping visitors in the conversion funnel.
+The ducted estimator's add-on infrastructure is fully intact:
+- **Context** (`EstimatorContext.tsx`): `selectedAddonIds`, `toggleAddon`, `setSelectedAddonIds` all present
+- **Pricing hook** (`useDuctedPricing.ts`): Fetches from `ducted_addons` table, calculates `addonsCost`, `addonsBreakdown`
+- **Quote display** (`Step10QuoteResults.tsx`): Renders add-on line items and includes them in submission
+- **Thank you** (`Step11ThankYou.tsx`): Shows add-on breakdown in the PDF/summary
 
-### Implementation Steps
+**The problem**: There is no add-on selection step component in the ducted flow. The step sequence goes directly from Step 7 (What's Included) → Step 8 (Customer Info), skipping any add-on picker. Users never get a chance to select add-ons.
 
-1. **Create a `GalleryOverlay` component** (`src/components/landing/GalleryOverlay.tsx`)
-   - Full-screen fixed overlay with dark backdrop, close button, and scrollable grid of images
-   - Uses `useQuery` to fetch from `gallery_images` where `is_active = true`, ordered by `sort_order`
-   - Includes a loading spinner while fetching
-   - Clicking a thumbnail opens the existing `MediaLightbox` component for full-size view
-   - Styled with the landing page navy/orange branding (inline styles or scoped CSS)
-   - Animates in/out with framer-motion
+## Plan
 
-2. **Add "View Full Gallery" button to the gallery section** of `SmartGroupMarchGoogleLanding.tsx`
-   - Placed below the existing 6-photo grid
-   - Opens the overlay on click
-   - Styled as a secondary/outline button matching the landing page design
+### 1. Create a new `Step8AddOns.tsx` component
+- Model it after the ductless `AddOnsSelector.tsx`, adapted for the ducted context
+- Use `useEstimator()` for state and `useDuctedPricing()` for fetching `ducted_addons`
+- Display add-on cards with icon, name, description, price, and popular badge
+- Include a "Skip Add-ons" option when none are selected
+- Match the existing ducted estimator styling (navy `#1e3a5f`, gold `#d4a84b`)
 
-### Technical Details
-- Query: `supabase.from('gallery_images').select('id, title, image_url, thumbnail_url, media_type, alt_text').eq('is_active', true).order('sort_order').order('created_at', { ascending: false })`
-- Data only loads when overlay opens (lazy fetch via `enabled` flag)
-- Reuses the existing `MediaLightbox` for individual image/video viewing
-- No new database tables or migrations needed
+### 2. Renumber steps 8-11 → 9-12 in `DuctedEstimator.tsx`
+- Rename existing imports: `Step8CustomerInfo` → rendered at step 9, `Step9EfficiencyTier` → step 10, `Step10QuoteResults` → step 11, `Step11ThankYou` → step 12
+- Insert `Step8AddOns` at case 8 in the switch
+- Update `STEP_LABELS` array to include "Add-ons" at index 8
+- Update progress indicator `totalSteps` from 10 to 11
+- Update header/footer visibility conditions (thank you is now step 12)
+
+### 3. Update step labels and progress
+- New labels: Location, Home Type, Home Details, Insulation, Comfort, Heating Type, System Size, What's Included, **Add-ons**, Contact Info, Efficiency, Your Quote, Thank You
+- Adjust `showProgress`, `showCompactHeader`, `showStandardFooter` boundaries to account for the new 13-step flow (0-12)
 
