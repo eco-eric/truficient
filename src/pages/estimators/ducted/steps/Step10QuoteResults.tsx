@@ -558,14 +558,23 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
         </div>
 
         {/* Add-ons Section */}
-        {addons.length > 0 && (
+        {addons.length > 0 && (() => {
+          const AIRZONE_ID = "b1eca69a-d346-4ccf-a664-e81f3e95f44b";
+          const EWC_ID = "37fe15e5-6bdf-43c7-b2d6-163235a3baa6";
+          const brand = selectedEq?.brand;
+          const filteredAddons = addons.filter((addon) => {
+            if (brand === "Mitsubishi" && addon.id === EWC_ID) return false;
+            if (["Goodman", "Trane", "Bosch"].includes(brand || "") && addon.id === AIRZONE_ID) return false;
+            return true;
+          });
+          return filteredAddons.length > 0 && (
           <div className="mb-6">
             <h4 className="font-semibold text-[#1e3a5f] mb-2">Enhance Your System</h4>
             <p className="text-sm text-muted-foreground mb-4">
               Optional upgrades to maximize comfort and convenience.
             </p>
             <div className="space-y-2">
-              {addons.map((addon) => {
+              {filteredAddons.map((addon) => {
                 const isSelected = state.selectedAddonIds.includes(addon.id);
                 const IconComp = getIcon(addon.icon_name);
 
@@ -620,7 +629,8 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
               </div>
             )}
           </div>
-        )}
+          );
+        })()}
 
         <div className="bg-muted/30 rounded-xl p-4 mb-6">
           <h4 className="font-medium text-[#1e3a5f] mb-3">Your Home Details</h4>
