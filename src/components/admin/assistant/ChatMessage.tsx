@@ -111,7 +111,7 @@ export const ChatMessage = ({ message, isLatestAssistant, onConfirm, onCancel, o
                   <Sparkles className="w-3 h-3" />
                   <span>Daily Briefing</span>
                   <span className="text-gray-400">
-                    {new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}
+                    {message.timestamp.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "America/Chicago" })}
                   </span>
                 </div>
               )}
