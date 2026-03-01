@@ -75,7 +75,7 @@ const INITIAL_STATE: DuctedEstimatorState = {
   selectedEquipmentId: null,
   recommendedTonnage: null,
   // Add-ons
-  selectedAddonIds: [],
+  selectedAddonIds: ["71f71009-344b-4676-84bc-a2f4931a6a25"],
   // Customer
   customerInfo: INITIAL_CUSTOMER_INFO,
   // Totals
