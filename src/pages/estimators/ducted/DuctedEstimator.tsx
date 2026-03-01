@@ -9,6 +9,7 @@ import { Step4UsagePatterns } from "./steps/Step4UsagePatterns";
 import { Step5HeatingType } from "./steps/Step5HeatingType";
 import { Step6SystemSize } from "./steps/Step6SystemSize";
 import { Step7WhatsIncluded } from "./steps/Step7WhatsIncluded";
+import { Step8AddOns } from "./steps/Step8AddOns";
 import { Step8CustomerInfo } from "./steps/Step8CustomerInfo";
 import { Step9EfficiencyTier } from "./steps/Step9EfficiencyTier";
 import { Step10QuoteResults } from "./steps/Step10QuoteResults";
@@ -34,11 +35,12 @@ const STEP_LABELS = [
   "Comfort",         // 4
   "Heating Type",    // 5
   "System Size",     // 6
-  "What's Included", // 7 - NEW
-  "Contact Info",    // 8
-  "Efficiency",      // 9
-  "Your Quote",      // 10
-  "Thank You",       // 11
+  "What's Included", // 7
+  "Add-ons",         // 8 - NEW
+  "Contact Info",    // 9
+  "Efficiency",      // 10
+  "Your Quote",      // 11
+  "Thank You",       // 12
 ];
 
 const EstimatorContent = () => {
@@ -64,29 +66,31 @@ const EstimatorContent = () => {
       case 7:
         return <Step7WhatsIncluded />;
       case 8:
-        return <Step8CustomerInfo />;
+        return <Step8AddOns />;
       case 9:
-        return <Step9EfficiencyTier />;
+        return <Step8CustomerInfo />;
       case 10:
-        return <Step10QuoteResults />;
+        return <Step9EfficiencyTier />;
       case 11:
+        return <Step10QuoteResults />;
+      case 12:
         return <Step11ThankYou />;
       default:
         return <Step0ZipCodeGate />;
     }
   };
 
-  // Show progress on steps 1-10 (after zip gate, before thank you)
-  const showProgress = currentStep > 0 && currentStep < 11;
+  // Show progress on steps 1-11 (after zip gate, before thank you)
+  const showProgress = currentStep > 0 && currentStep < 12;
 
-  // Show compact custom header on steps 1-10 (middle steps)
-  const showCompactHeader = currentStep > 0 && currentStep < 11;
+  // Show compact custom header on steps 1-11 (middle steps)
+  const showCompactHeader = currentStep > 0 && currentStep < 12;
 
   // Show standard website header on step 0 (welcome)
   const showStandardHeader = currentStep === 0;
 
-  // Show standard website footer on step 0 and step 11 (welcome and thank you)
-  const showStandardFooter = currentStep === 0 || currentStep === 11;
+  // Show standard website footer on step 0 and step 12 (welcome and thank you)
+  const showStandardFooter = currentStep === 0 || currentStep === 12;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -118,8 +122,8 @@ const EstimatorContent = () => {
       {showProgress && (
         <ProgressIndicator
           currentStep={currentStep - 1}
-          totalSteps={10}
-          labels={STEP_LABELS.slice(1, 11)}
+          totalSteps={11}
+          labels={STEP_LABELS.slice(1, 12)}
         />
       )}
 
