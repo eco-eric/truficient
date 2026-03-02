@@ -148,15 +148,20 @@ export default function CalendarView({ events, currentDate, viewMode, onDateChan
 function EventBlock({ event, style, onEventClick }: { event: CalendarEvent; style: React.CSSProperties; onEventClick?: (event: CalendarEvent) => void }) {
   return (
     <div
-      className="absolute left-1 right-1 rounded px-1.5 py-0.5 text-white text-xs overflow-hidden cursor-pointer hover:opacity-90 transition-opacity shadow-sm"
-      style={style}
+      className="absolute left-1 right-1 rounded-md px-2 py-1 text-xs overflow-hidden cursor-pointer hover:brightness-95 transition-all shadow-sm border-l-[3px]"
+      style={{
+        ...style,
+        backgroundColor: `${event.color}18`,
+        borderLeftColor: event.color,
+        color: event.color,
+      }}
       onClick={(e) => {
         e.stopPropagation();
         onEventClick?.(event);
       }}
     >
-      <div className="font-medium truncate">{event.title}</div>
-      <div className="text-white/80 truncate">
+      <div className="font-semibold truncate" style={{ color: event.color }}>{event.title}</div>
+      <div className="truncate opacity-75" style={{ color: event.color }}>
         {formatTimeCSTDisplay(event.start)} - {formatTimeCSTDisplay(event.end)}
       </div>
     </div>
@@ -230,8 +235,8 @@ function MonthView({ events, currentDate, onDateChange, onEventClick }: {
                   {dayEvents.slice(0, 3).map(event => (
                     <div
                       key={event.id}
-                      className="text-xs px-1 py-0.5 rounded truncate text-white cursor-pointer hover:opacity-80"
-                      style={{ backgroundColor: event.color }}
+                      className="text-xs px-1.5 py-0.5 rounded truncate cursor-pointer hover:brightness-95 border-l-2 font-medium"
+                      style={{ backgroundColor: `${event.color}18`, borderLeftColor: event.color, color: event.color }}
                       onClick={(e) => {
                         e.stopPropagation();
                         onEventClick?.(event);
