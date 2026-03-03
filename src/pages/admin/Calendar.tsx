@@ -70,7 +70,8 @@ export default function Calendar() {
           *,
           job:crm_jobs(id, job_number, title, customer:crm_customers(first_name, last_name)),
           team:crm_teams(id, name, color),
-          calendar:google_calendars(id, name, color, calendar_id)
+          calendar:google_calendars(id, name, color, calendar_id),
+          synced_calendars:crm_job_appointment_calendars(google_calendar_event_id)
         `)
         .gte("start_datetime", start.toISOString())
         .lte("start_datetime", end.toISOString())
@@ -223,15 +224,21 @@ export default function Calendar() {
       });
     }
 
+    // Build set of synced Google event IDs to avoid duplicates
+    const syncedEventIds = new Set<string>();
+    appointments?.forEach((a: any) => {
+      if (a.google_calendar_event_id) syncedEventIds.add(a.google_calendar_event_id);
+      a.synced_calendars?.forEach((sc: any) => {
+        if (sc.google_calendar_event_id) syncedEventIds.add(sc.google_calendar_event_id);
+      });
+    });
+
     // Add Google events only from visible calendars
     googleEvents?.forEach((event: CalendarEvent) => {
       const eventStart = event.start.dateTime || event.start.date;
       const eventEnd = event.end.dateTime || event.end.date;
       if (eventStart) {
-        const isSyncedAppointment = appointments?.some(
-          (a: any) => a.google_calendar_event_id === event.id
-        );
-        if (!isSyncedAppointment) {
+        if (!syncedEventIds.has(event.id)) {
           const calendar = calendars?.find((c) => c.calendar_id === event.calendarId);
           // Only include if calendar is in visible set
           if (calendar && visibleCalendarIds.has(calendar.id)) {
