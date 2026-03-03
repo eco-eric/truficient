@@ -71,7 +71,7 @@ export default function Calendar() {
           job:crm_jobs(id, job_number, title, customer:crm_customers(first_name, last_name)),
           team:crm_teams(id, name, color),
           calendar:google_calendars(id, name, color, calendar_id),
-          synced_calendars:crm_job_appointment_calendars(google_calendar_event_id)
+          synced_calendars:crm_job_appointment_calendars(google_calendar_event_id, google_calendar_db_id, synced_calendar:google_calendars(id, name, color))
         `)
         .gte("start_datetime", start.toISOString())
         .lte("start_datetime", end.toISOString())
@@ -211,15 +211,36 @@ export default function Calendar() {
           const label = customerName || apt.job?.job_number || "Job";
           const title = apt.title || apt.job?.title || "Appointment";
 
-          events.push({
-            id: apt.id,
-            title: `${label} - ${title}`,
-            start,
-            end,
-            type: "job",
-            color: apt.team?.color || apt.calendar?.color || "#3b82f6",
-            data: apt,
-          });
+          // Create one event per synced calendar so the appointment shows on each person's calendar
+          const syncedCals = apt.synced_calendars?.filter((sc: any) => sc.synced_calendar) || [];
+          
+          if (syncedCals.length > 0) {
+            syncedCals.forEach((sc: any) => {
+              const cal = sc.synced_calendar;
+              if (visibleCalendarIds.has(cal.id)) {
+                events.push({
+                  id: `${apt.id}-${cal.id}`,
+                  title: `${label} - ${title}`,
+                  start,
+                  end,
+                  type: "job",
+                  color: cal.color || apt.team?.color || "#3b82f6",
+                  data: apt,
+                });
+              }
+            });
+          } else {
+            // Fallback: no synced calendars, show with primary calendar color
+            events.push({
+              id: apt.id,
+              title: `${label} - ${title}`,
+              start,
+              end,
+              type: "job",
+              color: apt.team?.color || apt.calendar?.color || "#3b82f6",
+              data: apt,
+            });
+          }
         }
       });
     }
