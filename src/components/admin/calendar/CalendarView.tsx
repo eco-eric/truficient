@@ -57,18 +57,58 @@ export default function CalendarView({ events, currentDate, viewMode, onDateChan
     return events.filter(event => isSameDay(event.start, date));
   };
 
-  const getEventStyle = (event: CalendarEvent) => {
+  const getEventMinutes = (event: CalendarEvent) => {
     const startCST = getCSTHoursMinutes(event.start);
     const endCST = getCSTHoursMinutes(event.end);
     const startMinutes = startCST.hours * 60 + startCST.minutes;
     const endMinutes = endCST.hours * 60 + endCST.minutes;
-    const duration = Math.max(endMinutes - startMinutes, 30); // minimum 30 min
-    
-    return {
-      top: `${(startMinutes / 60) * HOUR_HEIGHT}px`,
-      height: `${(duration / 60) * HOUR_HEIGHT}px`,
-      backgroundColor: event.color,
-    };
+    const duration = Math.max(endMinutes - startMinutes, 30);
+    return { startMinutes, endMinutes: startMinutes + duration };
+  };
+
+  // Assign columns to overlapping events so they render side-by-side
+  const layoutEvents = (dayEvents: CalendarEvent[]) => {
+    if (!dayEvents.length) return [];
+
+    const items = dayEvents
+      .map(ev => ({ event: ev, ...getEventMinutes(ev) }))
+      .sort((a, b) => a.startMinutes - b.startMinutes || a.endMinutes - b.endMinutes);
+
+    const columns: { endMinutes: number; startMinutes: number; event: CalendarEvent }[][] = [];
+
+    for (const item of items) {
+      let placed = false;
+      for (let col = 0; col < columns.length; col++) {
+        const lastInCol = columns[col][columns[col].length - 1];
+        if (item.startMinutes >= lastInCol.endMinutes) {
+          columns[col].push(item);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) columns.push([item]);
+    }
+
+    const totalCols = columns.length;
+    const result: { event: CalendarEvent; style: React.CSSProperties }[] = [];
+
+    columns.forEach((col, colIndex) => {
+      for (const item of col) {
+        const widthPct = 100 / totalCols;
+        const leftPct = colIndex * widthPct;
+        result.push({
+          event: item.event,
+          style: {
+            top: `${(item.startMinutes / 60) * HOUR_HEIGHT}px`,
+            height: `${((item.endMinutes - item.startMinutes) / 60) * HOUR_HEIGHT}px`,
+            left: `${leftPct}%`,
+            width: `${widthPct}%`,
+          },
+        });
+      }
+    });
+
+    return result;
   };
 
   if (viewMode === "month") {
@@ -132,9 +172,9 @@ export default function CalendarView({ events, currentDate, viewMode, onDateChan
               ))}
 
               {/* Events */}
-              <div className="absolute inset-0 px-1">
-                {getEventsForDay(day).map(event => (
-                  <EventBlock key={event.id} event={event} style={getEventStyle(event)} onEventClick={onEventClick} />
+              <div className="absolute inset-0">
+                {layoutEvents(getEventsForDay(day)).map(({ event, style }) => (
+                  <EventBlock key={event.id} event={event} style={style} onEventClick={onEventClick} />
                 ))}
               </div>
             </div>
@@ -148,9 +188,13 @@ export default function CalendarView({ events, currentDate, viewMode, onDateChan
 function EventBlock({ event, style, onEventClick }: { event: CalendarEvent; style: React.CSSProperties; onEventClick?: (event: CalendarEvent) => void }) {
   return (
     <div
-      className="absolute left-1 right-1 rounded-md px-2 py-1 text-xs overflow-hidden cursor-pointer hover:brightness-95 transition-all shadow-sm border-l-[3px]"
+      className="absolute rounded-md px-2 py-1 text-xs overflow-hidden cursor-pointer hover:brightness-95 transition-all shadow-sm border-l-[3px]"
       style={{
         ...style,
+        // Add small padding inside the column
+        paddingLeft: '6px',
+        marginLeft: '1px',
+        marginRight: '1px',
         backgroundColor: `${event.color}18`,
         borderLeftColor: event.color,
         color: event.color,
