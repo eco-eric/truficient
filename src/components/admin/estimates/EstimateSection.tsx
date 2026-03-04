@@ -191,12 +191,12 @@ const SortableRow = ({ item, actualIndex, onUpdateItem, onRemoveItem }: Sortable
         </button>
       </TableCell>
       <TableCell>{getItemIcon(item.item_type)}</TableCell>
-      <TableCell>
+      <TableCell className="min-w-[120px]">
         {item.item_type === 'custom' ? (
           <Input
             value={item.name}
             onChange={(e) => onUpdateItem(actualIndex, 'name', e.target.value)}
-            className="h-8"
+            className="h-8 min-w-[100px]"
           />
         ) : (
           <div>
@@ -207,18 +207,18 @@ const SortableRow = ({ item, actualIndex, onUpdateItem, onRemoveItem }: Sortable
           </div>
         )}
       </TableCell>
-      <TableCell>
+      <TableCell className="w-16">
         <Input
           type="number"
           min="0"
           step="0.01"
           value={item.quantity}
           onChange={(e) => onUpdateItem(actualIndex, 'quantity', parseFloat(e.target.value) || 0)}
-          className="h-8 w-24"
+          className="h-8 w-16"
         />
       </TableCell>
-      <TableCell className="text-muted-foreground">{item.unit}</TableCell>
-      <TableCell className="text-right">
+      <TableCell className="text-muted-foreground w-12">{item.unit}</TableCell>
+      <TableCell className="text-right w-20">
         {item.item_type === 'custom' || item.item_type === 'admin_cost' || item.item_type === 'equipment' ? (
           <Input
             type="number"
@@ -226,7 +226,7 @@ const SortableRow = ({ item, actualIndex, onUpdateItem, onRemoveItem }: Sortable
             step="0.01"
             value={item.unit_cost}
             onChange={(e) => onUpdateItem(actualIndex, 'unit_cost', parseFloat(e.target.value) || 0)}
-            className="h-8 w-24 text-right"
+            className="h-8 w-20 text-right"
           />
         ) : (
           <span className="font-mono">{formatCurrency(item.unit_cost)}</span>
@@ -339,13 +339,13 @@ export const EstimateSectionComponent = ({
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-8"></TableHead>
-                    <TableHead className="w-8">Type</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="w-28">Qty</TableHead>
-                    <TableHead className="w-20">Unit</TableHead>
-                    <TableHead className="w-28 text-right">Unit Cost</TableHead>
-                    <TableHead className="w-28 text-right">Total</TableHead>
-                    <TableHead className="w-10"></TableHead>
+                     <TableHead className="w-8">Type</TableHead>
+                     <TableHead className="min-w-[120px]">Description</TableHead>
+                     <TableHead className="w-16">Qty</TableHead>
+                     <TableHead className="w-12">Unit</TableHead>
+                     <TableHead className="w-20 text-right">Unit Cost</TableHead>
+                     <TableHead className="w-24 text-right">Total</TableHead>
+                     <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
