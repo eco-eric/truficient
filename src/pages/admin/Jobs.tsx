@@ -13,7 +13,7 @@ import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { Plus, Search, LayoutGrid, List, MoreHorizontal, Eye, Pencil, Trash2, Calendar, DollarSign, User, Wrench, HardHat, Building2 } from 'lucide-react';
+import { Plus, Search, LayoutGrid, List, MoreHorizontal, Eye, Pencil, Trash2, Calendar, DollarSign, User, Wrench, HardHat } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import JobFormDialog from '@/components/admin/jobs/JobFormDialog';
@@ -75,10 +75,9 @@ interface JobStage {
   sort_order: number;
 }
 
-const BOARD_TYPES = [
-  { slug: 'residential-service-call', label: 'Service Calls', icon: Wrench },
-  { slug: 'residential-installation', label: 'Installs', icon: HardHat },
-  { slug: 'commercial-service-call', label: 'Commercial', icon: Building2 },
+const BOARD_CATEGORIES = [
+  { key: 'service', label: 'Service', icon: Wrench, slugPattern: 'service-call' },
+  { key: 'install', label: 'Install', icon: HardHat, slugPattern: 'installation' },
 ] as const;
 
 export default function Jobs() {
@@ -110,34 +109,45 @@ export default function Jobs() {
     if (!over) return;
 
     const jobId = active.id as string;
-    const targetStageId = over.id as string;
+    const targetColumnId = over.id as string;
 
     // Check if dropped on a stage column
-    const isStage = boardStages.some(s => s.id === targetStageId);
-    if (!isStage) return;
+    const targetColumn = boardStages.find(s => s.id === targetColumnId);
+    if (!targetColumn) return;
 
     const job = filteredJobs.find(j => j.id === jobId);
-    if (!job || job.current_stage?.id === targetStageId) return;
+    if (!job) return;
+    
+    // Already in this column?
+    if (targetColumn.stageIds.includes(job.current_stage?.id || '')) return;
 
-    moveJobMutation.mutate({ jobId, stageId: targetStageId });
+    // Find the correct stage ID for this job's job type
+    const jobTypeId = job.job_type?.id;
+    const matchingStageId = allStages.find(
+      s => s.name === targetColumn.name && s.job_type_id === jobTypeId
+    )?.id;
+    
+    if (matchingStageId) {
+      moveJobMutation.mutate({ jobId, stageId: matchingStageId });
+    }
   };
 
   // Board type from URL or default
-  const [activeBoardSlug, setActiveBoardSlug] = useState<string>(
-    searchParams.get('type') || BOARD_TYPES[0].slug
+  const [activeBoardKey, setActiveBoardKey] = useState<string>(
+    searchParams.get('type') || BOARD_CATEGORIES[0].key
   );
 
   // Sync URL param
   useEffect(() => {
     const urlType = searchParams.get('type');
-    if (urlType && BOARD_TYPES.some(b => b.slug === urlType)) {
-      setActiveBoardSlug(urlType);
+    if (urlType && BOARD_CATEGORIES.some(b => b.key === urlType)) {
+      setActiveBoardKey(urlType);
     }
   }, [searchParams]);
 
-  const handleBoardChange = (slug: string) => {
-    setActiveBoardSlug(slug);
-    setSearchParams({ type: slug });
+  const handleBoardChange = (key: string) => {
+    setActiveBoardKey(key);
+    setSearchParams({ type: key });
     setActiveMobileStage('');
   };
 
@@ -221,16 +231,38 @@ export default function Jobs() {
     }
   });
 
-  // Get the active board's job type
-  const activeBoardJobType = jobTypes.find(jt => jt.slug === activeBoardSlug);
+  // Get the active board category
+  const activeCategory = BOARD_CATEGORIES.find(c => c.key === activeBoardKey);
 
-  // Get stages for the active board type (exclude cancelled)
+  // Get all job types matching this category
+  const activeBoardJobTypes = useMemo(() => {
+    if (!activeCategory) return [];
+    return jobTypes.filter(jt => jt.slug.includes(activeCategory.slugPattern));
+  }, [jobTypes, activeCategory]);
+
+  const activeBoardJobTypeIds = useMemo(() => new Set(activeBoardJobTypes.map(jt => jt.id)), [activeBoardJobTypes]);
+
+  // Get stages for the active board, merging by name across job types
   const boardStages = useMemo(() => {
-    if (!activeBoardJobType) return [];
-    return allStages
-      .filter(s => s.job_type_id === activeBoardJobType.id && s.stage_type !== 'cancelled' && s.stage_type !== 'closed_won')
-      .sort((a, b) => a.sort_order - b.sort_order);
-  }, [allStages, activeBoardJobType]);
+    if (activeBoardJobTypes.length === 0) return [];
+    const typeIds = new Set(activeBoardJobTypes.map(jt => jt.id));
+    const relevantStages = allStages
+      .filter(s => typeIds.has(s.job_type_id) && s.stage_type !== 'cancelled' && s.stage_type !== 'closed_won');
+    
+    // Merge stages with the same name - keep the first occurrence for display, track all IDs
+    const merged: (JobStage & { stageIds: string[] })[] = [];
+    const seen = new Map<string, number>();
+    for (const s of relevantStages) {
+      const idx = seen.get(s.name);
+      if (idx !== undefined) {
+        merged[idx].stageIds.push(s.id);
+      } else {
+        seen.set(s.name, merged.length);
+        merged.push({ ...s, stageIds: [s.id] });
+      }
+    }
+    return merged.sort((a, b) => a.sort_order - b.sort_order);
+  }, [allStages, activeBoardJobTypes]);
 
   // Set default mobile stage when board changes
   useEffect(() => {
@@ -254,18 +286,18 @@ export default function Jobs() {
         const matchesType = filterJobType === 'all' || job.job_type?.id === filterJobType;
         return matchesSearch && matchesType && matchesPriority;
       } else {
-        // Kanban: filter to active board's job type
-        const matchesBoard = activeBoardJobType ? job.job_type?.id === activeBoardJobType.id : true;
+        // Kanban: filter to active board's job types
+        const matchesBoard = activeBoardJobTypeIds.size > 0 ? activeBoardJobTypeIds.has(job.job_type?.id) : true;
         return matchesSearch && matchesBoard && matchesPriority;
       }
     });
-  }, [jobs, searchQuery, filterJobType, filterPriority, viewMode, activeBoardJobType]);
+  }, [jobs, searchQuery, filterJobType, filterPriority, viewMode, activeBoardJobTypeIds]);
 
   // Kanban columns based on actual stages
   const kanbanColumns = useMemo(() => {
     return boardStages.map(stage => ({
       stage,
-      jobs: filteredJobs.filter(job => job.current_stage?.id === stage.id)
+      jobs: filteredJobs.filter(job => job.current_stage && stage.stageIds.includes(job.current_stage.id))
     }));
   }, [filteredJobs, boardStages]);
 
@@ -310,15 +342,15 @@ export default function Jobs() {
         {/* Board Type Toggle (kanban mode only) */}
         {viewMode === 'kanban' && (
           <div className="flex items-center gap-1 border rounded-lg p-1 w-fit bg-muted/30">
-            {BOARD_TYPES.map(bt => {
+            {BOARD_CATEGORIES.map(bt => {
               const Icon = bt.icon;
-              const isActive = activeBoardSlug === bt.slug;
+              const isActive = activeBoardKey === bt.key;
               return (
                 <Button
-                  key={bt.slug}
+                  key={bt.key}
                   variant={isActive ? 'default' : 'ghost'}
                   size="sm"
-                  onClick={() => handleBoardChange(bt.slug)}
+                  onClick={() => handleBoardChange(bt.key)}
                   className="gap-1.5"
                 >
                   <Icon className="h-4 w-4" />
@@ -393,15 +425,15 @@ export default function Jobs() {
           <div className="space-y-3">
             {/* Board type toggle for mobile */}
             <div className="flex items-center gap-1 border rounded-lg p-1 bg-muted/30">
-              {BOARD_TYPES.map(bt => {
+              {BOARD_CATEGORIES.map(bt => {
                 const Icon = bt.icon;
-                const isActive = activeBoardSlug === bt.slug;
+                const isActive = activeBoardKey === bt.key;
                 return (
                   <Button
-                    key={bt.slug}
+                    key={bt.key}
                     variant={isActive ? 'default' : 'ghost'}
                     size="sm"
-                    onClick={() => handleBoardChange(bt.slug)}
+                    onClick={() => handleBoardChange(bt.key)}
                     className="gap-1.5 flex-1"
                   >
                     <Icon className="h-4 w-4" />
