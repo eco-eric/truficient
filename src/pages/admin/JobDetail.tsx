@@ -30,6 +30,7 @@ import JobAppointmentsCard from '@/components/admin/jobs/JobAppointmentsCard';
 import JobFormDialog from '@/components/admin/jobs/JobFormDialog';
 import { AIAssistantWidget } from '@/components/admin/ai/AIAssistantWidget';
 import { useUserRole } from '@/hooks/useUserRole';
+import JobTasksCard from '@/components/admin/jobs/JobTasksCard';
 
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>();
@@ -793,6 +794,9 @@ export default function JobDetail() {
                 </Select>
               </CardContent>
             </Card>
+
+            {/* Job Tasks */}
+            <JobTasksCard jobId={job.id} />
 
             {/* Quick Info */}
             <Card>
