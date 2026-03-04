@@ -328,15 +328,16 @@ Monthly Payment Option: ${formatMoney(pricing.monthlyFinancing)}/mo with financi
   const sqftLabel = SQUARE_FOOTAGE_OPTIONS.find((o) => o.value === state.squareFootage)?.label || "N/A";
   const systemTypeLabel = state.heatingType === "gas_system" ? "Gas Furnace + AC" : "Heat Pump System";
   
-  // Get selected equipment for pricing display (tax already included in pricing)
+  
+  // Get selected equipment for display purposes
   const selectedEq = matchingEquipment.find((eq) => eq.id === localSelectedId) || matchingEquipment[0];
+  const isGoodmanSelected = selectedEq?.brand === 'Goodman';
+  // Raw price from DB (before discount) for strikethrough display
   const rawSelectedPrice = selectedEq 
     ? (selectedEq.equipment_cost + selectedEq.installation_labor)
-    : pricing.finalTotal;
-  const isGoodmanSelected = selectedEq?.brand === 'Goodman';
-  const selectedPrice = isGoodmanSelected
-    ? Math.round(rawSelectedPrice * (1 - GOODMAN_DISCOUNT))
-    : rawSelectedPrice;
+    : 0;
+  // Discounted price comes from pricing engine
+  const selectedPrice = pricing.equipmentCost + pricing.installationCost;
 
   return (
     <StepContainer className="px-4 py-6">
