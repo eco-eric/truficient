@@ -3230,8 +3230,10 @@ export type Database = {
           status: Database["public"]["Enums"]["estimate_status"]
           subtotal_charge: number
           subtotal_cost: number
+          tags: string[] | null
           tax_amount: number
           tax_rate: number
+          title: string | null
           updated_at: string
           valid_until: string | null
         }
@@ -3254,8 +3256,10 @@ export type Database = {
           status?: Database["public"]["Enums"]["estimate_status"]
           subtotal_charge?: number
           subtotal_cost?: number
+          tags?: string[] | null
           tax_amount?: number
           tax_rate?: number
+          title?: string | null
           updated_at?: string
           valid_until?: string | null
         }
@@ -3278,8 +3282,10 @@ export type Database = {
           status?: Database["public"]["Enums"]["estimate_status"]
           subtotal_charge?: number
           subtotal_cost?: number
+          tags?: string[] | null
           tax_amount?: number
           tax_rate?: number
+          title?: string | null
           updated_at?: string
           valid_until?: string | null
         }

@@ -71,6 +71,8 @@ type EstimateStatus = 'draft' | 'sent' | 'accepted' | 'declined' | 'expired';
 type LineItemType = 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom';
 
 interface EstimateData {
+  title: string;
+  tags: string[];
   customer_name: string;
   customer_email: string;
   customer_phone: string;
@@ -115,6 +117,8 @@ const EstimateBuilder = () => {
   const savedEstimateIdRef = useRef<string | null>(null);
 
   const [formData, setFormData] = useState<EstimateData>({
+    title: '',
+    tags: [],
     customer_name: '',
     customer_email: '',
     customer_phone: '',
@@ -126,6 +130,7 @@ const EstimateBuilder = () => {
     profit_margin: 1.60,
     tax_rate: 0.0825,
   });
+  const [tagInput, setTagInput] = useState('');
 
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -287,7 +292,9 @@ const EstimateBuilder = () => {
   // Set form data when estimate loads
   useEffect(() => {
     if (estimate) {
-      const loadedFormData = {
+      const loadedFormData: EstimateData = {
+        title: (estimate as any).title || '',
+        tags: (estimate as any).tags || [],
         customer_name: estimate.customer_name || '',
         customer_email: estimate.customer_email || '',
         customer_phone: estimate.customer_phone || '',
@@ -436,6 +443,8 @@ const EstimateBuilder = () => {
           .from('estimates')
           .insert({
             estimate_number: '', // Auto-generated
+            title: formData.title || null,
+            tags: formData.tags.length > 0 ? formData.tags : null,
             customer_name: formData.customer_name,
             customer_email: formData.customer_email || null,
             customer_phone: formData.customer_phone || null,
@@ -461,6 +470,8 @@ const EstimateBuilder = () => {
         const { error: updateError } = await supabase
           .from('estimates')
           .update({
+            title: formData.title || null,
+            tags: formData.tags.length > 0 ? formData.tags : null,
             customer_name: formData.customer_name,
             customer_email: formData.customer_email || null,
             customer_phone: formData.customer_phone || null,
@@ -1038,6 +1049,57 @@ const EstimateBuilder = () => {
             </Button>
           </div>
         </div>
+
+        {/* Title & Tags */}
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <div className="space-y-2">
+              <Label>Estimate Title / Subject</Label>
+              <Input
+                placeholder="e.g. Smith Residence – Full System Replacement"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Tags</Label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {formData.tags.map((tag, i) => (
+                  <span key={i} className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                    {tag}
+                    <button type="button" onClick={() => setFormData({ ...formData, tags: formData.tags.filter((_, idx) => idx !== i) })} className="hover:text-destructive">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add a tag and press Enter"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && tagInput.trim()) {
+                      e.preventDefault();
+                      if (!formData.tags.includes(tagInput.trim())) {
+                        setFormData({ ...formData, tags: [...formData.tags, tagInput.trim()] });
+                      }
+                      setTagInput('');
+                    }
+                  }}
+                />
+                <Button type="button" variant="outline" size="sm" onClick={() => {
+                  if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
+                    setFormData({ ...formData, tags: [...formData.tags, tagInput.trim()] });
+                  }
+                  setTagInput('');
+                }}>
+                  Add
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
@@ -1635,6 +1697,8 @@ const EstimateBuilder = () => {
           onRestoreVersion={(versionData) => {
             // Restore form data from version
             setFormData({
+              title: formData.title,
+              tags: formData.tags,
               customer_name: versionData.customer_name || '',
               customer_email: versionData.customer_email || '',
               customer_phone: versionData.customer_phone || '',

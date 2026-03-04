@@ -20,7 +20,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Eye, Pencil, Copy, Trash2, FileText, Search } from 'lucide-react';
+import { Plus, Eye, Pencil, Copy, Trash2, FileText, Search, Tag, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -29,6 +30,8 @@ type EstimateStatus = 'draft' | 'sent' | 'accepted' | 'declined' | 'expired';
 interface Estimate {
   id: string;
   estimate_number: string;
+  title: string | null;
+  tags: string[] | null;
   customer_name: string;
   customer_email: string | null;
   customer_phone: string | null;
@@ -70,6 +73,7 @@ const Estimates = () => {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<EstimateStatus | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
 
   // Fetch estimates
   const { data: estimates = [], isLoading } = useQuery({
@@ -190,12 +194,18 @@ const Estimates = () => {
     }
   };
 
-  // Filter by search
-  const filteredEstimates = estimates.filter(estimate => 
-    estimate.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    estimate.estimate_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (estimate.customer_email && estimate.customer_email.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  // Collect all unique tags for filter
+  const allTags = Array.from(new Set(estimates.flatMap(e => e.tags || []))).sort();
+
+  // Filter by search and tag
+  const filteredEstimates = estimates.filter(estimate => {
+    const matchesSearch = estimate.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      estimate.estimate_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (estimate.customer_email && estimate.customer_email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (estimate.title && estimate.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesTag = !tagFilter || (estimate.tags && estimate.tags.includes(tagFilter));
+    return matchesSearch && matchesTag;
+  });
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -234,7 +244,7 @@ const Estimates = () => {
               className="pl-10"
             />
           </div>
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as EstimateStatus | 'all')}>
+           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as EstimateStatus | 'all')}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
@@ -246,6 +256,20 @@ const Estimates = () => {
               ))}
             </SelectContent>
           </Select>
+          {allTags.length > 0 && (
+            <Select value={tagFilter || 'all'} onValueChange={(v) => setTagFilter(v === 'all' ? null : v)}>
+              <SelectTrigger className="w-[180px]">
+                <Tag className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Filter by tag" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Tags</SelectItem>
+                {allTags.map((tag) => (
+                  <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {/* Table */}
@@ -267,6 +291,7 @@ const Estimates = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Estimate #</TableHead>
+                  <TableHead>Title</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Job Type</TableHead>
                   <TableHead>Status</TableHead>
@@ -278,8 +303,22 @@ const Estimates = () => {
               <TableBody>
                 {filteredEstimates.map((estimate) => (
                   <TableRow key={estimate.id}>
-                    <TableCell className="font-mono font-medium">
+                    <TableCell className="font-mono font-medium text-sm">
                       {estimate.estimate_number}
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{estimate.title || <span className="text-muted-foreground italic">Untitled</span>}</div>
+                        {estimate.tags && estimate.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {estimate.tags.map((tag, i) => (
+                              <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 cursor-pointer" onClick={() => setTagFilter(tag)}>
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div>
