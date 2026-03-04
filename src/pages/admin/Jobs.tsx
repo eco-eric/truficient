@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,6 +19,7 @@ import { cn } from '@/lib/utils';
 import JobFormDialog from '@/components/admin/jobs/JobFormDialog';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { DroppableStageColumn } from '@/components/admin/jobs/DroppableStageColumn';
 
 interface Job {
   id: string;
@@ -92,6 +94,33 @@ export default function Jobs() {
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [activeMobileStage, setActiveMobileStage] = useState<string>('');
   const { isAdmin } = useUserRole();
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveJobId(event.active.id as string);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveJobId(null);
+    const { active, over } = event;
+    if (!over) return;
+
+    const jobId = active.id as string;
+    const targetStageId = over.id as string;
+
+    // Check if dropped on a stage column
+    const isStage = boardStages.some(s => s.id === targetStageId);
+    if (!isStage) return;
+
+    const job = filteredJobs.find(j => j.id === jobId);
+    if (!job || job.current_stage?.id === targetStageId) return;
+
+    moveJobMutation.mutate({ jobId, stageId: targetStageId });
+  };
 
   // Board type from URL or default
   const [activeBoardSlug, setActiveBoardSlug] = useState<string>(
@@ -451,62 +480,20 @@ export default function Jobs() {
             </div>
           </div>
         ) : viewMode === 'kanban' ? (
-          /* ===== DESKTOP: Kanban View with stage-based columns ===== */
-          <div className="overflow-x-auto">
-            <div className="flex gap-4 min-h-[600px]" style={{ minWidth: `${kanbanColumns.length * 260}px` }}>
-              {kanbanColumns.map(column => (
-                <div key={column.stage.id} className="flex flex-col flex-1 min-w-[240px]">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: column.stage.color || '#6B7280' }}
-                      />
-                      <h3 className="font-semibold text-sm">{column.stage.name}</h3>
-                    </div>
-                    <Badge variant="secondary">{column.jobs.length}</Badge>
-                  </div>
-                  <div className="flex-1 space-y-3 p-2 bg-muted/30 rounded-lg min-h-[500px]">
-                    {column.jobs.map(job => (
-                      <Card
-                        key={job.id}
-                        className="cursor-pointer hover:shadow-md transition-shadow"
-                        onClick={() => navigate(`/admin/jobs/${job.id}`)}
-                      >
-                        <CardContent className="p-3 space-y-2">
-                          <div className="flex items-start justify-between">
-                            <span className="text-xs text-muted-foreground">{job.job_number}</span>
-                            <Badge className={priorityColors[job.priority]}>{job.priority}</Badge>
-                          </div>
-                          <h4 className="font-medium text-sm line-clamp-2">{job.title}</h4>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <User className="h-3 w-3" />
-                            {getCustomerName(job)}
-                          </div>
-                          {job.scheduled_start && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Calendar className="h-3 w-3" />
-                              {format(new Date(job.scheduled_start), 'MMM d, yyyy')}
-                            </div>
-                          )}
-                          {job.quoted_amount && (
-                            <div className="flex items-center gap-1 text-xs font-medium">
-                              <DollarSign className="h-3 w-3" />
-                              ${job.quoted_amount.toLocaleString()}
-                            </div>
-                          )}
-                          <div
-                            className="w-full h-1 rounded-full mt-2"
-                            style={{ backgroundColor: job.job_type?.color || '#3B82F6' }}
-                          />
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ))}
+          /* ===== DESKTOP: Kanban View with drag-and-drop ===== */
+          <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+            <div className="overflow-x-auto">
+              <div className="flex gap-4 min-h-[600px]" style={{ minWidth: `${kanbanColumns.length * 260}px` }}>
+                {kanbanColumns.map(column => (
+                  <DroppableStageColumn
+                    key={column.stage.id}
+                    stage={column.stage}
+                    jobs={column.jobs}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          </DndContext>
         ) : (
           /* ===== List View - shows ALL job types ===== */
           <Card>
