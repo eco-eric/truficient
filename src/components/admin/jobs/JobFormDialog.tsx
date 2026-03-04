@@ -80,7 +80,7 @@ export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose
   });
 
   const { data: locations = [] } = useQuery({
-    queryKey: ['crm_locations_for_customer', formData.customer_id],
+    queryKey: ['crm_locations', formData.customer_id],
     queryFn: async () => {
       if (!formData.customer_id) return [];
       const { data, error } = await supabase
