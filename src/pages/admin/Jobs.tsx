@@ -13,13 +13,14 @@ import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { Plus, Search, LayoutGrid, List, MoreHorizontal, Eye, Pencil, Trash2, Calendar, DollarSign, User, Wrench, HardHat } from 'lucide-react';
+import { Plus, Search, LayoutGrid, List, MoreHorizontal, Eye, Pencil, Trash2, Calendar, DollarSign, User, Wrench, HardHat, Home, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import JobFormDialog from '@/components/admin/jobs/JobFormDialog';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { DroppableStageColumn } from '@/components/admin/jobs/DroppableStageColumn';
+import { JobsBoardStats } from '@/components/admin/jobs/JobsBoardStats';
 
 interface Job {
   id: string;
@@ -89,6 +90,7 @@ export default function Jobs() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterJobType, setFilterJobType] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
+  const [filterCategoryType, setFilterCategoryType] = useState<'all' | 'residential' | 'commercial'>('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [activeMobileStage, setActiveMobileStage] = useState<string>('');
@@ -237,8 +239,12 @@ export default function Jobs() {
   // Get all job types matching this category
   const activeBoardJobTypes = useMemo(() => {
     if (!activeCategory) return [];
-    return jobTypes.filter(jt => jt.slug.includes(activeCategory.slugPattern));
-  }, [jobTypes, activeCategory]);
+    let types = jobTypes.filter(jt => jt.slug.includes(activeCategory.slugPattern));
+    if (filterCategoryType !== 'all') {
+      types = types.filter(jt => jt.category === filterCategoryType);
+    }
+    return types;
+  }, [jobTypes, activeCategory, filterCategoryType]);
 
   const activeBoardJobTypeIds = useMemo(() => new Set(activeBoardJobTypes.map(jt => jt.id)), [activeBoardJobTypes]);
 
@@ -339,25 +345,51 @@ export default function Jobs() {
           </Dialog>
         </div>
 
-        {/* Board Type Toggle (kanban mode only) */}
+        {/* Stats Dashboard - always visible */}
+        <JobsBoardStats jobs={jobs} />
+
+        {/* Board Type Toggle + Category Filter (kanban mode only) */}
         {viewMode === 'kanban' && (
-          <div className="flex items-center gap-1 border rounded-lg p-1 w-fit bg-muted/30">
-            {BOARD_CATEGORIES.map(bt => {
-              const Icon = bt.icon;
-              const isActive = activeBoardKey === bt.key;
-              return (
-                <Button
-                  key={bt.key}
-                  variant={isActive ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => handleBoardChange(bt.key)}
-                  className="gap-1.5"
-                >
-                  <Icon className="h-4 w-4" />
-                  {bt.label}
-                </Button>
-              );
-            })}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-1 border rounded-lg p-1 bg-muted/30">
+              {BOARD_CATEGORIES.map(bt => {
+                const Icon = bt.icon;
+                const isActive = activeBoardKey === bt.key;
+                return (
+                  <Button
+                    key={bt.key}
+                    variant={isActive ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => handleBoardChange(bt.key)}
+                    className="gap-1.5"
+                  >
+                    <Icon className="h-4 w-4" />
+                    {bt.label}
+                  </Button>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-1 border rounded-lg p-1 bg-muted/30">
+              {[
+                { key: 'all' as const, label: 'All', icon: null },
+                { key: 'residential' as const, label: 'Residential', icon: Home },
+                { key: 'commercial' as const, label: 'Commercial', icon: Building2 },
+              ].map(opt => {
+                const isActive = filterCategoryType === opt.key;
+                return (
+                  <Button
+                    key={opt.key}
+                    variant={isActive ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setFilterCategoryType(opt.key)}
+                    className="gap-1.5"
+                  >
+                    {opt.icon && <opt.icon className="h-3.5 w-3.5" />}
+                    {opt.label}
+                  </Button>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -441,6 +473,25 @@ export default function Jobs() {
                   </Button>
                 );
               })}
+            </div>
+
+            {/* Category filter for mobile */}
+            <div className="flex items-center gap-1 border rounded-lg p-1 bg-muted/30">
+              {[
+                { key: 'all' as const, label: 'All' },
+                { key: 'residential' as const, label: 'Res' },
+                { key: 'commercial' as const, label: 'Com' },
+              ].map(opt => (
+                <Button
+                  key={opt.key}
+                  variant={filterCategoryType === opt.key ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setFilterCategoryType(opt.key)}
+                  className="flex-1"
+                >
+                  {opt.label}
+                </Button>
+              ))}
             </div>
 
             {/* Stage pill tabs */}
