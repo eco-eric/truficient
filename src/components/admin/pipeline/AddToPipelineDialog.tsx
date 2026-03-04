@@ -135,7 +135,8 @@ export const AddToPipelineDialog = ({
     },
   });
 
-  const getCustomerName = (customer: typeof customers[0]) => {
+  const getCustomerName = (customer: typeof customers[0] | undefined) => {
+    if (!customer) return 'Unknown';
     return customer.company_name || 
       `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 
       'Unknown';
