@@ -353,8 +353,14 @@ export function useDuctedPricing(state: DuctedEstimatorState): {
 
   // Calculate pricing breakdown
   const pricing = useMemo<PricingBreakdown>(() => {
-    const equipmentCost = selectedEquipment?.equipment_cost || 0;
-    const installationCost = selectedEquipment?.installation_labor || 0;
+    const rawEquipmentCost = selectedEquipment?.equipment_cost || 0;
+    const rawInstallationCost = selectedEquipment?.installation_labor || 0;
+
+    // Apply Goodman 20% "March Group Buy" discount to combined cost
+    const isGoodman = selectedEquipment?.brand === 'Goodman';
+    const discountRate = isGoodman ? 0.20 : 0;
+    const equipmentCost = Math.round(rawEquipmentCost * (1 - discountRate));
+    const installationCost = Math.round(rawInstallationCost * (1 - discountRate));
 
     // Calculate add-ons
     const addonsBreakdown = selectedAddons.map((addon) => ({

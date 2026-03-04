@@ -651,12 +651,8 @@ export async function generateDuctedQuotePDF(data: DuctedQuotePDFData): Promise<
           </thead>
           <tbody>
             <tr>
-              <td>Equipment Package</td>
-              <td class="amount">${formatCurrency(data.pricing.equipmentCost)}</td>
-            </tr>
-            <tr>
-              <td>Professional Installation</td>
-              <td class="amount">${formatCurrency(data.pricing.installationCost)}</td>
+              <td>Equipment + Install${data.equipment?.brand === 'Goodman' ? ' <span style="color: #16a34a; font-size: 10px; font-weight: 600;">(March Group Buy · 20% Off)</span>' : ''}</td>
+              <td class="amount">${formatCurrency(data.pricing.equipmentCost + data.pricing.installationCost)}</td>
             </tr>
             ${data.addonsBreakdown.map(addon => `
             <tr>
@@ -664,14 +660,6 @@ export async function generateDuctedQuotePDF(data: DuctedQuotePDFData): Promise<
               <td class="amount">${formatCurrency(addon.price)}</td>
             </tr>
             `).join("")}
-            <tr class="subtotal-row">
-              <td>Subtotal</td>
-              <td class="amount">${formatCurrency(data.pricing.equipmentCost + data.pricing.installationCost + data.pricing.addonsCost)}</td>
-            </tr>
-            <tr class="tax-row">
-              <td>Sales Tax (8.25%)</td>
-              <td class="amount">${formatCurrency(data.pricing.finalTotal - (data.pricing.equipmentCost + data.pricing.installationCost + data.pricing.addonsCost))}</td>
-            </tr>
             <tr class="total-row">
               <td>TOTAL INVESTMENT</td>
               <td class="amount">${formatCurrency(data.pricing.finalTotal)}</td>
