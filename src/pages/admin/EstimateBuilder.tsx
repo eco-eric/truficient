@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useBlocker } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -112,6 +112,7 @@ const EstimateBuilder = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isNew = id === 'new';
+  const savedEstimateIdRef = useRef<string | null>(null);
 
   const [formData, setFormData] = useState<EstimateData>({
     customer_name: '',
@@ -425,9 +426,11 @@ const EstimateBuilder = () => {
   // Save mutation
   const saveMutation = useMutation({
     mutationFn: async () => {
-      let estimateId = id;
+      // Use the ref if we already created this estimate (prevents duplicates)
+      const existingId = savedEstimateIdRef.current || (isNew ? null : id);
+      let estimateId = existingId;
 
-      if (isNew) {
+      if (!existingId) {
         // Create new estimate
         const { data: newEstimate, error: createError } = await supabase
           .from('estimates')
@@ -451,6 +454,8 @@ const EstimateBuilder = () => {
 
         if (createError) throw createError;
         estimateId = newEstimate.id;
+        // Immediately store the ID so subsequent saves update instead of creating
+        savedEstimateIdRef.current = estimateId;
       } else {
         // Update existing estimate
         const { error: updateError } = await supabase
@@ -469,7 +474,7 @@ const EstimateBuilder = () => {
             customer_id: selectedCustomerId || null,
             location_id: selectedLocationId || null,
           } as any)
-          .eq('id', id);
+          .eq('id', existingId);
 
         if (updateError) throw updateError;
       }
@@ -549,8 +554,8 @@ const EstimateBuilder = () => {
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
       queryClient.invalidateQueries({ queryKey: ['estimate', estimateId] });
       toast.success(isNew ? 'Estimate created successfully' : 'Estimate saved successfully');
-      if (isNew) {
-        navigate(`/admin/estimates/${estimateId}`);
+      if (isNew && !window.location.pathname.includes(estimateId!)) {
+        navigate(`/admin/estimates/${estimateId}`, { replace: true });
       }
     },
     onError: (error) => {
