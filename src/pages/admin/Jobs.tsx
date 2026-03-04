@@ -345,8 +345,8 @@ export default function Jobs() {
           </Dialog>
         </div>
 
-        {/* Stats Dashboard - always visible */}
-        <JobsBoardStats jobs={jobs} />
+        {/* Stats Dashboard - always visible, only open/active jobs */}
+        <JobsBoardStats jobs={jobs.filter(j => j.current_stage?.stage_type !== 'cancelled' && j.current_stage?.stage_type !== 'closed_won')} />
 
         {/* Board Type Toggle + Category Filter (kanban mode only) */}
         {viewMode === 'kanban' && (
