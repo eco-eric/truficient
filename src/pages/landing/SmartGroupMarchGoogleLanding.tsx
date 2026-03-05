@@ -26,7 +26,7 @@ export default function SmartGroupMarchGoogleLanding() {
   const [showSticky, setShowSticky] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
 
-  usePageSEO("/smart-group-march-G-26.v1");
+  usePageSEO("/smart-group-march-G-26_v1");
 
   useEffect(() => {
     document.title = "20% Off Variable-Speed HVAC — March Smart Group | Truficient Energy Solutions";
