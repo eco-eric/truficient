@@ -4292,7 +4292,69 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      equipment_scans_public: {
+        Row: {
+          brand: string | null
+          breaker_size: string | null
+          city: string | null
+          compressor_info: string | null
+          created_at: string | null
+          equipment_type: string | null
+          factory_charge: string | null
+          fan_motor_info: string | null
+          id: string | null
+          is_dfw: boolean | null
+          manufactured_year: number | null
+          model_number: string | null
+          refrigerant: string | null
+          seer_rating: number | null
+          state: string | null
+          tonnage: string | null
+          voltage_info: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          brand?: string | null
+          breaker_size?: string | null
+          city?: string | null
+          compressor_info?: string | null
+          created_at?: string | null
+          equipment_type?: string | null
+          factory_charge?: string | null
+          fan_motor_info?: string | null
+          id?: string | null
+          is_dfw?: boolean | null
+          manufactured_year?: number | null
+          model_number?: string | null
+          refrigerant?: string | null
+          seer_rating?: number | null
+          state?: string | null
+          tonnage?: string | null
+          voltage_info?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          brand?: string | null
+          breaker_size?: string | null
+          city?: string | null
+          compressor_info?: string | null
+          created_at?: string | null
+          equipment_type?: string | null
+          factory_charge?: string | null
+          fan_motor_info?: string | null
+          id?: string | null
+          is_dfw?: boolean | null
+          manufactured_year?: number | null
+          model_number?: string | null
+          refrigerant?: string | null
+          seer_rating?: number | null
+          state?: string | null
+          tonnage?: string | null
+          voltage_info?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       generate_estimate_number: { Args: never; Returns: string }

@@ -15,7 +15,7 @@ interface ScanData {
   id: string;
   brand: string | null;
   model_number: string;
-  serial_number: string | null;
+  serial_number?: string | null;
   manufactured_year: number | null;
   tonnage: string | null;
   refrigerant: string | null;
@@ -26,10 +26,6 @@ interface ScanData {
   fan_motor_info: string | null;
   compressor_info: string | null;
   factory_charge: string | null;
-  customer_name: string | null;
-  customer_phone: string | null;
-  customer_address: string | null;
-  email: string | null;
   created_at: string | null;
 }
 
@@ -52,10 +48,10 @@ export default function EquipmentReport() {
 
       try {
         const { data, error: fetchError } = await supabase
-          .from('equipment_scans')
+          .from('equipment_scans_public' as any)
           .select('*')
           .in('id', scanIds)
-          .order('created_at', { ascending: true });
+          .order('created_at', { ascending: true }) as { data: ScanData[] | null; error: any };
 
         if (fetchError) throw fetchError;
 
@@ -77,12 +73,16 @@ export default function EquipmentReport() {
     fetchScans();
   }, [scanIds.join(',')]);
 
-  const customerInfo = scans[0] ? {
-    name: scans[0].customer_name || undefined,
-    email: scans[0].email || emailParam || undefined,
-    phone: scans[0].customer_phone || undefined,
-    address: scans[0].customer_address || undefined,
-  } : { email: emailParam || undefined };
+  // Customer info comes from URL params only (not from DB for security)
+  const nameParam = searchParams.get('name');
+  const phoneParam = searchParams.get('phone');
+  const addressParam = searchParams.get('address');
+  const customerInfo = {
+    name: nameParam || undefined,
+    email: emailParam || undefined,
+    phone: phoneParam || undefined,
+    address: addressParam || undefined,
+  };
 
   const handleDownloadPDF = () => {
     const formattedScans: AccumulatedScan[] = scans.map(scan => ({
