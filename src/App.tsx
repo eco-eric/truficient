@@ -171,7 +171,7 @@ const router = createBrowserRouter([
       { path: "/free-hvac-age-checker-fb-feb-2026", element: <FreeHvacAgeCheckerFB /> },
       { path: "/smart-group-march-F-26", element: <SmartGroupMarchLanding /> },
       { path: "/smart-group-march-F-26v2", element: <SmartGroupMarchV2Landing /> },
-      { path: "/smart-group-march-G-26_v1", element: <SmartGroupMarchGoogleLanding /> },
+      { path: "/smart-group-march-G-26", element: <SmartGroupMarchGoogleLanding /> },
       
       // Campaign landing pages (go.truficient.com subdomain)
       { path: "/smart-group-march", element: <CampaignLandingPage /> },

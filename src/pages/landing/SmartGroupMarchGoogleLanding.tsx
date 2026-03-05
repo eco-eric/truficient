@@ -26,7 +26,7 @@ export default function SmartGroupMarchGoogleLanding() {
   const [showSticky, setShowSticky] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
 
-  usePageSEO("/smart-group-march-G-26_v1");
+  usePageSEO("/smart-group-march-G-26");
 
   useEffect(() => {
     document.title = "20% Off Variable-Speed HVAC — March Smart Group | Truficient Energy Solutions";
@@ -56,7 +56,7 @@ export default function SmartGroupMarchGoogleLanding() {
   const ctaUrl = "/estimate/smart-group-march";
 
   const handleCTA = (label: string) => {
-    trackButtonClick({ buttonName: label, buttonLocation: "smart-group-march-G-26-v1", destinationUrl: ctaUrl });
+    trackButtonClick({ buttonName: label, buttonLocation: "smart-group-march-G-26", destinationUrl: ctaUrl });
     navigate(ctaUrl);
   };
 
@@ -66,7 +66,7 @@ export default function SmartGroupMarchGoogleLanding() {
       {showSticky && (
         <div className="sg-g-sticky-mobile">
           <p>March Smart Group<br /><span>20% Off</span> Goodman SD</p>
-          <Link to={ctaUrl} onClick={() => trackButtonClick({ buttonName: "Sticky CTA", buttonLocation: "smart-group-march-G-26-v1", destinationUrl: ctaUrl })}>Get My Price →</Link>
+          <Link to={ctaUrl} onClick={() => trackButtonClick({ buttonName: "Sticky CTA", buttonLocation: "smart-group-march-G-26", destinationUrl: ctaUrl })}>Get My Price →</Link>
         </div>
       )}
 
@@ -249,7 +249,7 @@ export default function SmartGroupMarchGoogleLanding() {
             <div style={{ textAlign: "center", marginTop: 20 }}>
               <button
                 className="sg-g-btn-secondary"
-                onClick={() => { setGalleryOpen(true); trackButtonClick({ buttonName: "View Full Gallery", buttonLocation: "smart-group-march-G-26-v1", destinationUrl: "#gallery" }); }}
+                onClick={() => { setGalleryOpen(true); trackButtonClick({ buttonName: "View Full Gallery", buttonLocation: "smart-group-march-G-26", destinationUrl: "#gallery" }); }}
                 style={{
                   background: "transparent",
                   border: "2px solid var(--sg-navy)",
