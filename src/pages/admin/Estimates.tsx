@@ -128,6 +128,8 @@ const Estimates = () => {
           status: 'draft',
           profit_margin: estimate.profit_margin,
           tax_rate: estimate.tax_rate,
+          title: estimate.title ? estimate.title + ' (Copy)' : null,
+          tags: estimate.tags,
         })
         .select()
         .single();
@@ -149,6 +151,7 @@ const Estimates = () => {
           unit: item.unit,
           unit_cost: item.unit_cost,
           sort_order: item.sort_order,
+          section: item.section,
         }));
 
         const { error: insertError } = await supabase
