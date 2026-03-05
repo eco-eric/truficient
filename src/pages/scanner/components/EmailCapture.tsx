@@ -155,9 +155,16 @@ export function EmailCapture() {
 
       dispatch({ type: 'SET_EMAIL', payload: email });
       
-      // Build the report URL for GHL
+      // Build the report URL for GHL (include customer info as URL params since DB view excludes PII)
       const scanIdsParam = scanIds.join(',');
-      const reportUrl = `${window.location.origin}/scanner/report?scans=${scanIdsParam}&email=${encodeURIComponent(email)}`;
+      const reportParams = new URLSearchParams({
+        scans: scanIdsParam,
+        email: email,
+      });
+      if (name) reportParams.set('name', name);
+      if (phone) reportParams.set('phone', phone);
+      if (streetAddress) reportParams.set('address', streetAddress);
+      const reportUrl = `${window.location.origin}/scanner/report?${reportParams.toString()}`;
       
       // Sync contact to GHL for email automation
       const nameParts = name?.trim().split(' ') || [];
