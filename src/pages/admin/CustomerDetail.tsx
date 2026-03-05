@@ -23,9 +23,8 @@ import {
   Loader2,
   Building2
 } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
-import { useMutation } from '@tanstack/react-query';
 import { Textarea } from '@/components/ui/textarea';
 import { Link } from 'react-router-dom';
 import { CustomerFormDialog } from '@/components/admin/customers/CustomerFormDialog';
