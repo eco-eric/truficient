@@ -23,8 +23,10 @@ import {
   Loader2,
   Building2
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { toast } from 'sonner';
+import { useMutation } from '@tanstack/react-query';
+import { Textarea } from '@/components/ui/textarea';
 import { Link } from 'react-router-dom';
 import { CustomerFormDialog } from '@/components/admin/customers/CustomerFormDialog';
 import { InteractionLog } from '@/components/admin/customers/InteractionLog';
@@ -48,7 +50,27 @@ const CustomerDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [editOpen, setEditOpen] = useState(false);
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [notesValue, setNotesValue] = useState('');
   const queryClient = useQueryClient();
+
+  const notesMutation = useMutation({
+    mutationFn: async (notes: string) => {
+      const { error } = await supabase
+        .from('crm_customers')
+        .update({ notes: notes || null })
+        .eq('id', id!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_customer', id] });
+      toast.success('Notes saved');
+      setIsEditingNotes(false);
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to save notes: ${error.message}`);
+    },
+  });
 
   const syncCustomerMutation = useMutation({
     mutationFn: async (customerId: string) => {
@@ -305,12 +327,52 @@ const CustomerDetail = () => {
                 </div>
               )}
 
-              {customer.notes && (
-                <div className="pt-4 border-t">
-                  <p className="text-sm font-medium mb-1">Notes</p>
-                  <p className="text-sm text-muted-foreground">{customer.notes}</p>
+              <div className="pt-4 border-t">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-sm font-medium">Notes</p>
+                  {!isEditingNotes && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => {
+                        setNotesValue(customer.notes || '');
+                        setIsEditingNotes(true);
+                      }}
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      {customer.notes ? 'Edit' : 'Add'}
+                    </Button>
+                  )}
                 </div>
-              )}
+                {isEditingNotes ? (
+                  <div className="space-y-2">
+                    <Textarea
+                      value={notesValue}
+                      onChange={(e) => setNotesValue(e.target.value)}
+                      placeholder="Add notes about this customer..."
+                      rows={3}
+                      autoFocus
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => setIsEditingNotes(false)}>
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => notesMutation.mutate(notesValue)}
+                        disabled={notesMutation.isPending}
+                      >
+                        {notesMutation.isPending ? 'Saving...' : 'Save'}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {customer.notes || 'No notes yet'}
+                  </p>
+                )}
+              </div>
 
               {customer.tags && customer.tags.length > 0 && (
                 <div className="pt-4 border-t">
