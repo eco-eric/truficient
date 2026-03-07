@@ -88,6 +88,7 @@ const TOOL_PERMISSIONS: Record<string, string> = {
   create_customer: "can_use_write_tools",
   create_pipeline_entry: "can_use_write_tools",
   intake_lead: "can_use_write_tools",
+  review_submissions: "can_use_write_tools",
   schedule_appointment: "can_use_write_tools",
   reschedule_appointment: "can_use_write_tools",
   cancel_appointment: "can_use_write_tools",
@@ -465,6 +466,22 @@ const tools = [
           confirmed: { type: "boolean", description: "Set true ONLY after user confirms. First call: always false." },
         },
         required: ["first_name", "last_name", "confirmed"],
+      },
+    },
+  },
+  // === SUBMISSION REVIEW TOOL ===
+  {
+    type: "function" as const,
+    function: {
+      name: "review_submissions",
+      description: "Scan all recent unreviewed submissions across all sources, classify each as real/junk/unsure using signal-based scoring, and return a structured report. Can also archive junk or intake real leads when instructed. Use when the user says 'review submissions', 'check new leads', or similar.",
+      parameters: {
+        type: "object",
+        properties: {
+          lookback_hours: { type: "number", description: "How far back to scan (default 48 hours)" },
+          confirmed_archive: { type: "array", items: { type: "string" }, description: "Array of submission IDs to archive (set after user confirms archive)" },
+          confirmed_intake: { type: "array", items: { type: "string" }, description: "Array of submission IDs to run through intake_lead (set after user confirms intake)" },
+        },
       },
     },
   },
@@ -1472,6 +1489,299 @@ async function executeIntakeLead(supabase: any, userId: string, input: any) {
   };
 }
 
+// ============================================================
+// SUBMISSION REVIEW TOOL
+// ============================================================
+
+const DFW_ZIPS = new Set([
+  "75001","75002","75006","75007","75009","75010","75013","75019","75023","75024","75025",
+  "75028","75032","75034","75035","75038","75039","75040","75041","75042","75043","75044",
+  "75048","75050","75051","75052","75054","75056","75057","75060","75061","75062","75063",
+  "75065","75067","75068","75069","75070","75071","75074","75075","75076","75077","75078",
+  "75080","75081","75082","75083","75085","75086","75087","75088","75089","75093","75094",
+  "75098","75099","75104","75115","75116","75134","75137","75141","75146","75149","75150",
+  "75154","75159","75166","75180","75181","75182","75201","75202","75203","75204","75205",
+  "75206","75207","75208","75209","75210","75211","75212","75214","75215","75216","75217",
+  "75218","75219","75220","75221","75222","75223","75224","75225","75226","75227","75228",
+  "75229","75230","75231","75232","75233","75234","75235","75236","75237","75238","75240",
+  "75241","75242","75243","75244","75245","75246","75247","75248","75249","75250","75251",
+  "75252","75253","75254","75260","75261","75262","75263","75264","75265","75266","75267",
+  "75270","75275","75277","75283","75284","75285","75287","75301","75303","75312","75313",
+  "75315","75320","75326","75336","75339","75342","75354","75355","75356","75357","75359",
+  "75360","75367","75368","75370","75371","75372","75373","75374","75376","75378","75379",
+  "75380","75381","75382","75386","75387","75388","75389","75390","75391","75392","75393",
+  "75394","75395","75396","75397","75398","75401","76001","76002","76003","76004","76005",
+  "76006","76010","76011","76012","76013","76014","76015","76016","76017","76018","76019",
+  "76020","76021","76022","76028","76034","76036","76039","76040","76044","76051","76052",
+  "76053","76054","76058","76059","76060","76063","76064","76065","76071","76078","76082",
+  "76092","76094","76095","76096","76097","76098","76099","76101","76102","76103","76104",
+  "76105","76106","76107","76108","76109","76110","76111","76112","76113","76114","76115",
+  "76116","76117","76118","76119","76120","76121","76122","76123","76124","76126","76127",
+  "76129","76130","76131","76132","76133","76134","76135","76136","76137","76140","76148",
+  "76150","76155","76161","76162","76163","76164","76177","76179","76180","76181","76182",
+  "76185","76191","76192","76193","76195","76196","76197","76198","76199","76201","76205",
+  "76207","76208","76209","76210","76226","76227","76244","76247","76248","76249","76258",
+  "76259","76262","76266",
+]);
+
+const HVAC_KEYWORDS = /\b(hvac|ac\b|a\/c|heat|cool|heating|cooling|mini.?split|ductless|furnace|install|replace|repair|estimate|quote|air.?condition|compressor|condenser|thermostat|refrigerant|tonnage|seer|heat.?pump)\b/i;
+const JUNK_KEYWORDS = /\b(seo|marketing|leads|ranking|website|agency|partnership|collaboration|web.?design|social.?media|digital.?marketing|link.?building|backlink|ppc|content.?marketing)\b/i;
+const SPAM_DOMAINS = /(marketing\.|promo\.|leads\.|seo\.|agency\.|digital\.|webdesign\.|info@|noreply@|sales@.*agency)/i;
+const GENERIC_NAMES = new Set(["test user", "john smith", "jane doe", "admin", "test", "asdf", "qwerty"]);
+
+interface ScoredSubmission {
+  id: string;
+  source_table: string;
+  source_label: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  zip: string | null;
+  message: string | null;
+  details: string;
+  score: "real" | "junk" | "unsure";
+  reasons: string[];
+  intake_params: any;
+}
+
+function scoreSubmission(sub: ScoredSubmission): void {
+  const realSignals: string[] = [];
+  const junkSignals: string[] = [];
+
+  // DFW zip
+  if (sub.zip && DFW_ZIPS.has(sub.zip)) realSignals.push("DFW zip code");
+  if (sub.zip && !DFW_ZIPS.has(sub.zip) && sub.zip.length === 5) junkSignals.push("out-of-service-area zip");
+
+  // HVAC keywords in message
+  if (sub.message && HVAC_KEYWORDS.test(sub.message)) realSignals.push("HVAC keywords in message");
+
+  // Estimator submissions always real
+  if (sub.source_table === "ducted_estimate_submissions" || sub.source_table === "ductless_estimate_submissions") {
+    realSignals.push("completed multi-step estimator");
+  }
+
+  // Phone present and valid
+  if (sub.phone && sub.phone.replace(/\D/g, "").length >= 10) realSignals.push("valid phone number");
+
+  // Junk checks
+  if (sub.message && JUNK_KEYWORDS.test(sub.message)) junkSignals.push("spam/marketing message");
+  if (sub.email && SPAM_DOMAINS.test(sub.email)) junkSignals.push("known spam email domain");
+  if (GENERIC_NAMES.has(sub.name.toLowerCase().trim())) junkSignals.push("generic/test name");
+  if (!sub.phone && !sub.zip && (!sub.message || sub.message.length < 20)) junkSignals.push("no phone, no address, vague message");
+
+  // Equipment scanner specific
+  if (sub.source_table === "equipment_scans" && !sub.email) junkSignals.push("scanner with no email");
+
+  sub.reasons = [...realSignals, ...junkSignals];
+
+  if (junkSignals.length > 0 && realSignals.length === 0) {
+    sub.score = "junk";
+  } else if (realSignals.length > 0 && junkSignals.length === 0) {
+    sub.score = "real";
+  } else if (realSignals.length > 0 && junkSignals.length > 0) {
+    sub.score = "unsure";
+  } else {
+    sub.score = "unsure";
+  }
+}
+
+const SOURCE_LABEL_MAP: Record<string, string> = {
+  contact_submissions: "Website Contact Form",
+  ductless_estimate_submissions: "Ductless Estimator",
+  ducted_estimate_submissions: "Ducted Estimator",
+  equipment_scans: "Equipment Scanner",
+  landing_page_submissions: "Landing Page",
+};
+
+async function executeReviewSubmissions(supabase: any, userId: string, input: any) {
+  const lookbackHours = input.lookback_hours || 48;
+  const cutoff = new Date(Date.now() - lookbackHours * 3600000).toISOString();
+
+  // === HANDLE ARCHIVE ===
+  if (input.confirmed_archive && input.confirmed_archive.length > 0) {
+    const archiveResults: string[] = [];
+    for (const id of input.confirmed_archive) {
+      // Try updating status in each table until one succeeds
+      for (const table of ["contact_submissions", "ducted_estimate_submissions", "ductless_estimate_submissions", "equipment_scans", "landing_page_submissions"]) {
+        const { error, count } = await supabase.from(table).update({ status: "archived" }).eq("id", id).select("id");
+        if (!error && count > 0) {
+          archiveResults.push(id);
+          break;
+        }
+      }
+    }
+    return { success: true, archived_count: archiveResults.length, message: `Archived ${archiveResults.length} submission(s).` };
+  }
+
+  // === HANDLE INTAKE ===
+  if (input.confirmed_intake && input.confirmed_intake.length > 0) {
+    const intakeResults: any[] = [];
+    // We need to fetch the submissions to get their data for intake
+    // The AI should have the scored data from a previous call, but we re-fetch to be safe
+    for (const id of input.confirmed_intake) {
+      let found = false;
+      // Try each table
+      for (const tableInfo of [
+        { table: "contact_submissions", fields: "id, first_name, last_name, email, phone, service_type, message, status" },
+        { table: "ducted_estimate_submissions", fields: "id, first_name, last_name, email, phone, address, city, state, zip_code, heating_type, recommended_tonnage, final_total, status" },
+        { table: "ductless_estimate_submissions", fields: "id, customer_name, customer_email, customer_phone, customer_address, customer_city, customer_state, customer_zip, zone_count, final_total, selected_tier, status" },
+        { table: "equipment_scans", fields: "id, email, zip_code, brand, equipment_type, estimated_age, status" },
+        { table: "landing_page_submissions", fields: "id, first_name, last_name, email, phone, message, status" },
+      ]) {
+        const { data } = await supabase.from(tableInfo.table).select(tableInfo.fields).eq("id", id).single();
+        if (data) {
+          found = true;
+          // Build intake params from submission
+          const params = buildIntakeParams(data, tableInfo.table);
+          // Run intake_lead directly
+          const result = await executeIntakeLead(supabase, userId, { ...params, confirmed: true });
+          intakeResults.push({ id, source: tableInfo.table, result });
+          // Mark submission as converted
+          if (result.success) {
+            await supabase.from(tableInfo.table).update({ status: "converted" }).eq("id", id);
+          }
+          break;
+        }
+      }
+      if (!found) intakeResults.push({ id, error: "Submission not found" });
+    }
+    return {
+      success: true,
+      intake_count: intakeResults.filter(r => r.result?.success).length,
+      results: intakeResults.map(r => ({
+        id: r.id,
+        source: r.source,
+        success: r.result?.success || false,
+        customer_id: r.result?.customer_id,
+        ghl_sync: r.result?.ghl_sync,
+        error: r.result?.error || r.error,
+      })),
+    };
+  }
+
+  // === STEP 1: FETCH UNREVIEWED SUBMISSIONS ===
+  const submissions: ScoredSubmission[] = [];
+
+  const [contacts, ducted, ductless, scans, landing] = await Promise.all([
+    supabase.from("contact_submissions").select("id, first_name, last_name, email, phone, service_type, message, status, created_at").or("status.is.null,status.eq.new").gte("created_at", cutoff),
+    supabase.from("ducted_estimate_submissions").select("id, first_name, last_name, email, phone, address, city, state, zip_code, heating_type, recommended_tonnage, final_total, status, created_at").or("status.is.null,status.eq.new").gte("created_at", cutoff),
+    supabase.from("ductless_estimate_submissions").select("id, customer_name, customer_email, customer_phone, customer_address, customer_city, customer_state, customer_zip, zone_count, final_total, selected_tier, status, created_at").or("status.is.null,status.eq.new").gte("created_at", cutoff),
+    supabase.from("equipment_scans").select("id, email, zip_code, brand, equipment_type, estimated_age, status, created_at").or("status.is.null,status.eq.new").gte("created_at", cutoff).not("email", "is", null),
+    supabase.from("landing_page_submissions").select("id, first_name, last_name, email, phone, message, status, created_at").or("status.is.null,status.eq.new").gte("created_at", cutoff),
+  ]);
+
+  // Map contact submissions
+  (contacts.data || []).forEach((s: any) => {
+    submissions.push({
+      id: s.id, source_table: "contact_submissions", source_label: "Contact Form",
+      name: `${s.first_name || ""} ${s.last_name || ""}`.trim() || "Unknown",
+      email: s.email, phone: s.phone, zip: null,
+      message: s.message || s.service_type,
+      details: s.service_type || s.message?.substring(0, 80) || "No details",
+      score: "unsure", reasons: [],
+      intake_params: { first_name: s.first_name, last_name: s.last_name, email: s.email, phone: s.phone, lead_source: "Website Contact Form", notes: s.message?.substring(0, 200) },
+    });
+  });
+
+  // Map ducted submissions
+  (ducted.data || []).forEach((s: any) => {
+    submissions.push({
+      id: s.id, source_table: "ducted_estimate_submissions", source_label: "Ducted Estimator",
+      name: `${s.first_name || ""} ${s.last_name || ""}`.trim() || "Unknown",
+      email: s.email, phone: s.phone, zip: s.zip_code,
+      message: null,
+      details: `${s.heating_type || "HVAC"} — ${s.recommended_tonnage}T — $${s.final_total || "N/A"}`,
+      score: "unsure", reasons: [],
+      intake_params: { first_name: s.first_name, last_name: s.last_name, email: s.email, phone: s.phone, address_line1: s.address, city: s.city, state: s.state || "TX", zip_code: s.zip_code, lead_source: "Ducted Estimator", notes: `${s.heating_type || "HVAC"} ${s.recommended_tonnage}T, est $${s.final_total || "N/A"}` },
+    });
+  });
+
+  // Map ductless submissions
+  (ductless.data || []).forEach((s: any) => {
+    const nameParts = (s.customer_name || "Unknown").split(" ");
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+    submissions.push({
+      id: s.id, source_table: "ductless_estimate_submissions", source_label: "Ductless Estimator",
+      name: s.customer_name || "Unknown",
+      email: s.customer_email, phone: s.customer_phone, zip: s.customer_zip,
+      message: null,
+      details: `${s.zone_count} zones — ${s.selected_tier || "Standard"} — $${s.final_total || "N/A"}`,
+      score: "unsure", reasons: [],
+      intake_params: { first_name: firstName, last_name: lastName, email: s.customer_email, phone: s.customer_phone, address_line1: s.customer_address, city: s.customer_city, state: s.customer_state || "TX", zip_code: s.customer_zip, lead_source: "Ductless Estimator", notes: `${s.zone_count} zones, ${s.selected_tier || "Standard"} tier, est $${s.final_total || "N/A"}` },
+    });
+  });
+
+  // Map scanner submissions
+  (scans.data || []).forEach((s: any) => {
+    submissions.push({
+      id: s.id, source_table: "equipment_scans", source_label: "Equipment Scanner",
+      name: s.email?.split("@")[0] || "Scanner User",
+      email: s.email, phone: null, zip: s.zip_code,
+      message: null,
+      details: `${s.brand || "Unknown"} ${s.equipment_type || ""} — ${s.estimated_age ? s.estimated_age + " yrs" : "age unknown"}`,
+      score: "unsure", reasons: [],
+      intake_params: { first_name: s.email?.split("@")[0] || "Scanner", last_name: "User", email: s.email, zip_code: s.zip_code, lead_source: "Equipment Scanner", notes: `Scanned ${s.brand || "unknown"} ${s.equipment_type || ""}, est age ${s.estimated_age || "unknown"} yrs` },
+    });
+    // Scanner age 12+ is a real signal
+    if (s.estimated_age && s.estimated_age >= 12) {
+      submissions[submissions.length - 1].reasons.push("equipment age 12+ years");
+    }
+  });
+
+  // Map landing page submissions
+  (landing.data || []).forEach((s: any) => {
+    submissions.push({
+      id: s.id, source_table: "landing_page_submissions", source_label: "Landing Page",
+      name: `${s.first_name || ""} ${s.last_name || ""}`.trim() || "Unknown",
+      email: s.email, phone: s.phone, zip: null,
+      message: s.message,
+      details: s.message?.substring(0, 80) || "Landing page submission",
+      score: "unsure", reasons: [],
+      intake_params: { first_name: s.first_name, last_name: s.last_name, email: s.email, phone: s.phone, lead_source: "Landing Page", notes: s.message?.substring(0, 200) },
+    });
+  });
+
+  // === STEP 2: SCORE ===
+  submissions.forEach(scoreSubmission);
+
+  const real = submissions.filter(s => s.score === "real");
+  const junk = submissions.filter(s => s.score === "junk");
+  const unsure = submissions.filter(s => s.score === "unsure");
+
+  return {
+    lookback_hours: lookbackHours,
+    total_scanned: submissions.length,
+    real_count: real.length,
+    junk_count: junk.length,
+    unsure_count: unsure.length,
+    real: real.map((s, i) => ({ index: i + 1, id: s.id, name: s.name, source: s.source_label, details: s.details, reasons: s.reasons, zip: s.zip })),
+    junk: junk.map((s, i) => ({ index: real.length + unsure.length + i + 1, id: s.id, name: s.name, source: s.source_label, details: s.details, reasons: s.reasons })),
+    unsure: unsure.map((s, i) => ({ index: real.length + i + 1, id: s.id, name: s.name, source: s.source_label, details: s.details, reasons: s.reasons })),
+    instructions: 'Present this as a formatted report. For real leads, offer "intake all real" or "intake [number]". For junk, offer "archive junk". For unsure, let user decide "intake [number]" or "skip [number]".',
+  };
+}
+
+function buildIntakeParams(data: any, table: string): any {
+  const source = SOURCE_LABEL_MAP[table] || "Unknown";
+  switch (table) {
+    case "contact_submissions":
+      return { first_name: data.first_name, last_name: data.last_name, email: data.email, phone: data.phone, lead_source: source, notes: data.message?.substring(0, 200) };
+    case "ducted_estimate_submissions":
+      return { first_name: data.first_name, last_name: data.last_name, email: data.email, phone: data.phone, address_line1: data.address, city: data.city, state: data.state || "TX", zip_code: data.zip_code, lead_source: source, notes: `${data.heating_type || "HVAC"} ${data.recommended_tonnage}T, est $${data.final_total || "N/A"}` };
+    case "ductless_estimate_submissions": {
+      const parts = (data.customer_name || "").split(" ");
+      return { first_name: parts[0] || "", last_name: parts.slice(1).join(" ") || "", email: data.customer_email, phone: data.customer_phone, address_line1: data.customer_address, city: data.customer_city, state: data.customer_state || "TX", zip_code: data.customer_zip, lead_source: source, notes: `${data.zone_count} zones, ${data.selected_tier || "Standard"}, est $${data.final_total || "N/A"}` };
+    }
+    case "equipment_scans":
+      return { first_name: data.email?.split("@")[0] || "Scanner", last_name: "User", email: data.email, zip_code: data.zip_code, lead_source: source, notes: `Scanned ${data.brand || "unknown"} ${data.equipment_type || ""}, est age ${data.estimated_age || "unknown"} yrs` };
+    case "landing_page_submissions":
+      return { first_name: data.first_name, last_name: data.last_name, email: data.email, phone: data.phone, lead_source: source, notes: data.message?.substring(0, 200) };
+    default:
+      return {};
+  }
+}
+
 //
 // TOOL ROUTER
 // ============================================================
@@ -1534,6 +1844,7 @@ Read operations:
 
 Write operations (ALWAYS confirm first):
 - Intake new leads from any source using the intake_lead tool, which automatically creates the customer, adds them to the pipeline at the correct stage based on lead source, logs the interaction, and syncs to GoHighLevel
+- Review and filter all incoming submissions using review_submissions — classifies each as real, junk, or unsure using signal-based scoring, automatically runs intake_lead on confirmed real leads, and asks for confirmation before archiving junk
 - Create new customers (with optional address that becomes their primary location)
 - Create new jobs for existing customers
 - Move jobs between workflow stages
