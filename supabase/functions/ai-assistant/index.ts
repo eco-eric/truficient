@@ -79,7 +79,7 @@ const TOOL_PERMISSIONS: Record<string, string> = {
   get_submission_stats: "can_access_assistant",
   get_recent_submissions: "can_access_assistant",
   get_pipeline_overview: "can_access_assistant",
-  lookup_property_data: "can_access_assistant",
+  get_property_data: "can_access_assistant",
   get_team_info: "can_access_assistant",
   create_job: "can_use_write_tools",
   update_job_stage: "can_use_write_tools",
@@ -555,6 +555,25 @@ const tools = [
           confirmed: { type: "boolean", description: "Set true ONLY after user confirms. First call: always false." },
         },
         required: ["update_type", "price_data", "confirmed"],
+      },
+    },
+  },
+  // === PROPERTY DATA TOOL ===
+  {
+    type: "function" as const,
+    function: {
+      name: "get_property_data",
+      description: "Look up property data (square footage, year built, stories, bedrooms, bathrooms, lot size) for any address using RentCast. Optionally saves results back to an existing CRM location record. No confirmation needed.",
+      parameters: {
+        type: "object",
+        properties: {
+          address: { type: "string", description: "Full street address (e.g., '456 Oak Ave')" },
+          city: { type: "string", description: "City (optional, improves accuracy)" },
+          state: { type: "string", description: "State abbreviation (default TX)" },
+          zip_code: { type: "string", description: "ZIP code (optional, improves accuracy)" },
+          location_id: { type: "string", description: "Optional CRM location UUID — if provided, saves property data back to this location record" },
+        },
+        required: ["address"],
       },
     },
   },
@@ -1384,16 +1403,30 @@ async function executeCreateCustomer(supabase: any, userId: string, input: any) 
 
   if (custError) throw new Error(`Failed to create customer: ${custError.message}`);
 
-  // Create primary location if address provided
+  // Create primary location if address provided + auto property lookup
+  let propertyInfo = "";
   if (hasAddress) {
-    await supabase.from("crm_locations").insert({
+    const { data: locData } = await supabase.from("crm_locations").insert({
       customer_id: customer.id,
       address_line1: input.address_line1,
       city: input.city,
       state: input.state || "TX",
       zip_code: input.zip_code,
       is_primary: true,
-    });
+    }).select("id").single();
+
+    // Auto property lookup (non-blocking)
+    if (locData) {
+      try {
+        const propResult = await lookupPropertyAndSave(supabase, input.address_line1, input.city, input.state || "TX", input.zip_code, locData.id);
+        if (propResult.found) {
+          const d = propResult.data;
+          propertyInfo = ` (${d.squareFootage ? d.squareFootage.toLocaleString() + " sqft" : ""}${d.yearBuilt ? ", built " + d.yearBuilt : ""})`.replace(" (, ", " (").replace("( ,", "(");
+        }
+      } catch (e) {
+        console.error("Auto property lookup in create_customer failed:", e);
+      }
+    }
   }
 
   // Log system interaction
@@ -1407,7 +1440,7 @@ async function executeCreateCustomer(supabase: any, userId: string, input: any) 
   return {
     success: true,
     customer_id: customer.id,
-    message: `Created customer **${customerName}**${hasAddress ? ` with address at ${input.city}` : ""}`,
+    message: `Created customer **${customerName}**${hasAddress ? ` with address at ${input.city}${propertyInfo}` : ""}`,
   };
 }
 
@@ -1488,18 +1521,32 @@ async function executeIntakeLead(supabase: any, userId: string, input: any) {
   if (custError) return { error: `Failed to create customer: ${custError.message}` };
   results.customer = `✓ Customer created: ${customer.id}`;
 
-  // Step 2: Create Location (if address provided)
+  // Step 2: Create Location (if address provided) + auto property lookup
   if (hasAddress) {
-    const { error: locError } = await supabase.from("crm_locations").insert({
+    const { data: locData, error: locError } = await supabase.from("crm_locations").insert({
       customer_id: customer.id,
       address_line1: input.address_line1,
       city: input.city,
       state: input.state || "TX",
       zip_code: input.zip_code,
       is_primary: true,
-    });
+    }).select("id").single();
     if (locError) return { error: `Customer created but location failed: ${locError.message}`, customer_id: customer.id };
     results.location = "✓ Location added";
+
+    // Auto property lookup (non-blocking)
+    try {
+      const propResult = await lookupPropertyAndSave(supabase, input.address_line1, input.city, input.state || "TX", input.zip_code, locData.id);
+      if (propResult.found) {
+        const d = propResult.data;
+        results.property = `✓ Property data: ${d.squareFootage ? d.squareFootage.toLocaleString() + " sqft" : ""}${d.yearBuilt ? ", built " + d.yearBuilt : ""}${d.stories ? ", " + d.stories + " story" : ""}`.replace(/^✓ Property data: ,\s*/, "✓ Property data: ");
+      } else {
+        results.property = "— Property lookup: no data found";
+      }
+    } catch (propErr: any) {
+      console.error("Auto property lookup failed:", propErr);
+      results.property = "— Property lookup: failed silently";
+    }
   } else {
     results.location = "— Skipped (no address)";
   }
@@ -1558,7 +1605,7 @@ async function executeIntakeLead(supabase: any, userId: string, input: any) {
     success: true,
     customer_id: customer.id,
     ghl_sync: ghlStatus,
-    message: `Lead intake complete:\n${results.customer}\n${results.location}\n${results.pipeline}\n${results.interaction}\n${results.ghl}`,
+    message: `Lead intake complete:\n${results.customer}\n${results.location}\n${results.property || ""}\n${results.pipeline}\n${results.interaction}\n${results.ghl}`.replace(/\n\n/g, "\n"),
   };
 }
 
@@ -2577,7 +2624,86 @@ async function executeUpdatePrices(supabase: any, userId: string, input: any) {
   };
 }
 
-//
+// ============================================================
+// PROPERTY DATA LOOKUP TOOL
+// ============================================================
+
+async function lookupPropertyAndSave(supabase: any, address: string, city: string, state: string, zipCode: string, locationId?: string): Promise<any> {
+  try {
+    const { data, error } = await supabase.functions.invoke("lookup-property-data", {
+      body: { address, city, state, zipCode },
+    });
+
+    if (error || !data?.data) {
+      return { found: false, error: data?.error || error?.message || "No property data found" };
+    }
+
+    const propData = data.data;
+
+    // Save to location if ID provided
+    if (locationId && propData) {
+      const updatePayload: Record<string, any> = {
+        property_data_source: propData.source || "rentcast",
+        property_data_updated_at: new Date().toISOString(),
+        property_data_auto_populated: true,
+      };
+      if (propData.squareFootage) updatePayload.square_footage = propData.squareFootage;
+      if (propData.yearBuilt) updatePayload.year_built = propData.yearBuilt;
+      if (propData.stories) updatePayload.stories = propData.stories;
+      if (propData.lotSizeSqft) updatePayload.lot_size_sqft = propData.lotSizeSqft;
+      if (propData.bedrooms) updatePayload.bedrooms = propData.bedrooms;
+      if (propData.bathrooms) updatePayload.bathrooms = propData.bathrooms;
+
+      await supabase.from("crm_locations").update(updatePayload).eq("id", locationId);
+    }
+
+    return { found: true, data: propData, saved: !!locationId };
+  } catch (err: any) {
+    console.error("Property lookup failed:", err);
+    return { found: false, error: err.message || "Property lookup failed" };
+  }
+}
+
+async function executeGetPropertyData(supabase: any, input: any) {
+  const address = input.address;
+  const city = input.city || "";
+  const state = input.state || "TX";
+  const zipCode = input.zip_code || "";
+
+  const result = await lookupPropertyAndSave(supabase, address, city, state, zipCode, input.location_id);
+
+  if (!result.found) {
+    return {
+      found: false,
+      message: `No property data found for this address. ${result.error || "Address may be too new or outside coverage area."}`,
+    };
+  }
+
+  const d = result.data;
+  const currentYear = new Date().getFullYear();
+  const age = d.yearBuilt ? `${currentYear - d.yearBuilt} years old` : null;
+
+  return {
+    found: true,
+    property: {
+      square_footage: d.squareFootage || null,
+      year_built: d.yearBuilt || null,
+      age: age,
+      stories: d.stories || null,
+      bedrooms: d.bedrooms || null,
+      bathrooms: d.bathrooms || null,
+      lot_size_sqft: d.lotSizeSqft || null,
+      lot_size_acres: d.lotSizeSqft ? (d.lotSizeSqft / 43560).toFixed(2) : null,
+      property_class: d.propertyClass || null,
+      source: d.source || "rentcast",
+    },
+    saved_to_location: result.saved,
+    message: result.saved
+      ? "✓ Property data found and saved to location record."
+      : "Property data found. Provide a location_id to save it.",
+  };
+}
+
 // TOOL ROUTER
 // ============================================================
 
@@ -2608,6 +2734,7 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "scan_watch_list": return executeScanWatchList(supabase, userId, toolInput);
     case "draft_estimate": return executeDraftEstimate(supabase, userId, toolInput);
     case "update_prices": return executeUpdatePrices(supabase, userId, toolInput);
+    case "get_property_data": return executeGetPropertyData(supabase, toolInput);
     case "get_google_calendar": return executeGetGoogleCalendar(supabase, toolInput);
     case "get_job_types": return executeGetJobTypes(supabase);
     case "get_pipeline_stages": return executeGetPipelineStages(supabase);
@@ -2656,6 +2783,11 @@ Write operations (ALWAYS confirm first):
 - Cancel appointments (removes CRM appointment and deletes Google Calendar event)
 - Draft project estimates using draft_estimate — pulls from existing templates, system pricing, and materials already in the database. Always links to an existing CRM customer. Saves as draft only — never sends to the customer. Eric reviews all estimates at /admin/estimates before sending.
 - Update system pricing using update_prices — when a user pastes a price list or spreadsheet data in any format (CSV, tab-separated, plain text table, or conversational), automatically parse it into price_data format and show a before/after diff. Always require explicit confirmation before applying changes. Never update prices silently. Supported tables: equipment systems, materials catalog, labor rates, ductless addons, ductless unit sizes, and financing options.
+
+PROPERTY DATA:
+- Whenever you create a new job location (via intake_lead or create_customer with an address), property data is automatically looked up in the background and saved to the location record.
+- You can also look up property data on demand using get_property_data for any address. Property data helps with sizing estimates and customer context.
+- If a location_id is provided, results are saved directly to the CRM location record.
 
 WORKEDGE SYNC:
 Each morning the WorkEdge sync runs at 1AM CST. Report on last night's sync by querying workedge_daily_sync_log data in the briefing. If status is 'failed' flag it immediately at the top of the morning briefing with urgency.
