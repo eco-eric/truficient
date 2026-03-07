@@ -145,6 +145,7 @@ const EstimateBuilder = () => {
   // CRM customer/location picker state
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const [workedgeProjectId, setWorkedgeProjectId] = useState<string>('');
   const [customerComboOpen, setCustomerComboOpen] = useState(false);
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
 
@@ -310,6 +311,7 @@ const EstimateBuilder = () => {
       // Restore CRM links
       setSelectedCustomerId((estimate as any).customer_id || null);
       setSelectedLocationId((estimate as any).location_id || null);
+      setWorkedgeProjectId((estimate as any).workedge_project_id || '');
       // Store initial state for change detection
       setLastSavedState(prev => prev ? { ...prev, formData: loadedFormData } : { formData: loadedFormData, lineItems: [] });
     }
@@ -457,6 +459,7 @@ const EstimateBuilder = () => {
             tax_rate: formData.tax_rate,
             customer_id: selectedCustomerId || null,
             location_id: selectedLocationId || null,
+            workedge_project_id: workedgeProjectId || null,
           } as any)
           .select()
           .single();
@@ -484,6 +487,7 @@ const EstimateBuilder = () => {
             tax_rate: formData.tax_rate,
             customer_id: selectedCustomerId || null,
             location_id: selectedLocationId || null,
+            workedge_project_id: workedgeProjectId || null,
           } as any)
           .eq('id', existingId);
 
@@ -1286,6 +1290,35 @@ const EstimateBuilder = () => {
                     )}
                   </div>
                 )}
+
+                {/* WorkEdge Project Link */}
+                <div className="space-y-2">
+                  <Label htmlFor="workedge_project_id" className="flex items-center gap-1.5">
+                    <Wrench className="h-3.5 w-3.5" />
+                    WorkEdge Project ID
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="workedge_project_id"
+                      value={workedgeProjectId}
+                      onChange={(e) => setWorkedgeProjectId(e.target.value)}
+                      placeholder="Enter WorkEdge project ID..."
+                      className="flex-1"
+                    />
+                    {workedgeProjectId && (
+                      <Button variant="outline" size="sm" asChild>
+                        <a
+                          href={`https://workedge.pro/projects/${workedgeProjectId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Open
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="job_type">Job Type</Label>
