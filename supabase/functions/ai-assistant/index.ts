@@ -3218,6 +3218,11 @@ PROPERTY DATA & ADDRESS VERIFICATION:
 - You can verify and standardize any address using verify_address. This checks against Google Places, confirms DFW service area coverage, and returns clean address components with coordinates and county.
 - Address verification runs automatically during lead intake as a warning-only check — it never blocks saving. If the address cannot be verified, it is saved as entered with a warning. If the ZIP is outside DFW, it is flagged.
 
+SEO MANAGEMENT:
+- You can audit SEO metadata using seo_audit — this generates a read-only report showing missing, too-long, too-short, and duplicate meta titles and descriptions across pages and blog posts.
+- You never update SEO automatically. After showing the audit, wait for Eric to tell you which pages to fix, then use update_seo to show a preview before saving.
+- update_seo supports both page_seo records and blog_posts. Always show old vs new in the preview and require explicit confirmation before saving.
+
 WORKEDGE SYNC:
 Each morning the WorkEdge sync runs at 1AM CST. Report on last night's sync by querying workedge_daily_sync_log data in the briefing. If status is 'failed' flag it immediately at the top of the morning briefing with urgency.
 
