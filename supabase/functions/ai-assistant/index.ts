@@ -505,6 +505,28 @@ const tools = [
       },
     },
   },
+  // === ESTIMATE DRAFTING TOOL ===
+  {
+    type: "function" as const,
+    function: {
+      name: "draft_estimate",
+      description: "Draft a project estimate for an existing CRM customer using existing templates, system pricing, and materials. Saves as draft only — never sends to customer. ALWAYS confirm first. If job_type or customer is ambiguous, ask clarifying questions before proceeding.",
+      parameters: {
+        type: "object",
+        properties: {
+          customer_id: { type: "string", description: "UUID of the CRM customer. If unknown, use customer_name to search." },
+          customer_name: { type: "string", description: "Customer name to search if customer_id is not known. Will resolve to customer_id." },
+          job_type: { type: "string", enum: ["residential_replacement", "residential_new", "commercial_replacement", "commercial_new", "maintenance", "repair"], description: "Job type for the estimate." },
+          heating_type: { type: "string", enum: ["gas", "electric", "heat_pump", "dual_fuel"], description: "Heating type (default heat_pump)" },
+          template_id: { type: "string", description: "Optional template UUID to override auto-selection" },
+          title: { type: "string", description: "Optional custom title for the estimate" },
+          notes: { type: "string", description: "Optional job notes" },
+          confirmed: { type: "boolean", description: "Set true ONLY after user confirms the draft preview. First call: always false." },
+        },
+        required: ["job_type", "confirmed"],
+      },
+    },
+  },
   // === PHASE 4: BRIEFING TOOL ===
   {
     type: "function" as const,
