@@ -82,6 +82,15 @@ export const navSections: NavSection[] = [
     ],
   },
   {
+    title: 'Invoicing & Payments',
+    items: [
+      { label: 'Mission Control', href: '/admin/invoicing', icon: LayoutDashboard, permissionKey: 'nav.invoicing' },
+      { label: 'Invoices', href: '/admin/invoices', icon: Receipt, permissionKey: 'nav.invoices' },
+      { label: 'Payments', href: '/admin/payments', icon: CreditCard, permissionKey: 'nav.payments' },
+      { label: 'Invoice Customers', href: '/admin/invoice-customers', icon: UserCircle, permissionKey: 'nav.invoice-customers' },
+    ],
+  },
+  {
     title: 'Content',
     items: [
       { label: 'Blog', href: '/admin/blog', icon: PenSquare, permissionKey: 'nav.blog' },
