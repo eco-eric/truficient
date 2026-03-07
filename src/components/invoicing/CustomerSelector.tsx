@@ -1,107 +1,132 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { ottopay } from '@/integrations/ottopay/client';
 import { useOttoCustomers, useCreateOttoCustomer } from '@/hooks/useOttoPay';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { ChevronsUpDown, Plus, Check } from 'lucide-react';
+import { ChevronsUpDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+
+const OTTO_BUSINESS_ID = import.meta.env.VITE_OTTOPAY_BUSINESS_ID;
 
 interface CustomerSelectorProps {
   value: string | null;
   onChange: (customerId: string) => void;
 }
 
+// Fetches CRM customers from the main database
+function useCrmCustomers() {
+  return useQuery({
+    queryKey: ['crm-customers-for-invoicing'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_customers')
+        .select('id, first_name, last_name, company_name, email, phone, billing_address, billing_city, billing_state, billing_zip')
+        .is('deleted_at', null)
+        .order('first_name');
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function CustomerSelector({ value, onChange }: CustomerSelectorProps) {
-  const { data: customers } = useOttoCustomers();
-  const createCustomer = useCreateOttoCustomer();
+  const { data: crmCustomers } = useCrmCustomers();
+  const { data: ottoCustomers } = useOttoCustomers();
+  const createOttoCustomer = useCreateOttoCustomer();
   const [open, setOpen] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newEmail, setNewEmail] = useState('');
-  const [newPhone, setNewPhone] = useState('');
+  const [syncing, setSyncing] = useState(false);
 
-  const selected = (customers || []).find((c: any) => c.id === value);
+  // Build display list from CRM customers
+  const customerList = useMemo(() => {
+    return (crmCustomers || []).map(c => {
+      const name = [c.first_name, c.last_name].filter(Boolean).join(' ') || c.company_name || 'Unnamed';
+      return { crmId: c.id, name, email: c.email, phone: c.phone, raw: c };
+    }).sort((a, b) => a.name.localeCompare(b.name));
+  }, [crmCustomers]);
 
-  const handleCreate = async () => {
-    if (!newName.trim()) { toast.error('Name is required'); return; }
+  // Find currently selected customer's display name from Otto Pay customers
+  const selectedOtto = (ottoCustomers || []).find((c: any) => c.id === value);
+
+  // When a CRM customer is selected, find or create matching Otto Pay customer
+  const handleSelect = async (crmId: string) => {
+    setOpen(false);
+    const crm = customerList.find(c => c.crmId === crmId);
+    if (!crm) return;
+
+    setSyncing(true);
     try {
-      const customer = await createCustomer.mutateAsync({
-        name: newName.trim(),
-        email: newEmail.trim() || null,
-        phone: newPhone.trim() || null,
-      } as any);
-      onChange(customer.id);
-      setCreateOpen(false);
-      setNewName('');
-      setNewEmail('');
-      setNewPhone('');
-      toast.success('Customer created');
+      // Check if an Otto Pay customer already exists with matching name+email
+      const existing = (ottoCustomers || []).find((oc: any) =>
+        oc.name === crm.name && (oc.email === crm.email || (!oc.email && !crm.email))
+      );
+
+      if (existing) {
+        onChange(existing.id);
+      } else {
+        // Create new Otto Pay customer from CRM data
+        const raw = crm.raw;
+        const address = [raw.billing_address, raw.billing_city, raw.billing_state, raw.billing_zip]
+          .filter(Boolean).join(', ') || null;
+
+        const newCustomer = await createOttoCustomer.mutateAsync({
+          name: crm.name,
+          email: crm.email || null,
+          phone: crm.phone || null,
+          address,
+          city: raw.billing_city || null,
+          state: raw.billing_state || null,
+          zip: raw.billing_zip || null,
+        } as any);
+        onChange(newCustomer.id);
+        toast.success(`Synced "${crm.name}" to invoicing`);
+      }
     } catch (e: any) {
-      toast.error(e.message || 'Failed to create customer');
+      toast.error(e.message || 'Failed to sync customer');
+    } finally {
+      setSyncing(false);
     }
   };
 
   return (
-    <>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
-            {selected ? selected.name : 'Select customer…'}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[320px] p-0" align="start">
-          <Command>
-            <CommandInput placeholder="Search customers…" />
-            <CommandList>
-              <CommandEmpty>No customers found.</CommandEmpty>
-              <CommandGroup>
-                {(customers || []).map((c: any) => (
-                  <CommandItem
-                    key={c.id}
-                    value={c.name}
-                    onSelect={() => { onChange(c.id); setOpen(false); }}
-                  >
-                    <Check className={cn('mr-2 h-4 w-4', value === c.id ? 'opacity-100' : 'opacity-0')} />
-                    <div>
-                      <p className="text-sm font-medium">{c.name}</p>
-                      {c.email && <p className="text-xs text-muted-foreground">{c.email}</p>}
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-              <CommandSeparator />
-              <CommandGroup>
-                <CommandItem onSelect={() => { setOpen(false); setCreateOpen(true); }}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create new customer
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          className="w-full justify-between font-normal"
+          disabled={syncing}
+        >
+          {syncing ? 'Syncing…' : selectedOtto ? selectedOtto.name : 'Select customer…'}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[320px] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Search CRM customers…" />
+          <CommandList>
+            <CommandEmpty>No customers found in CRM.</CommandEmpty>
+            <CommandGroup heading="CRM Customers">
+              {customerList.map(c => (
+                <CommandItem
+                  key={c.crmId}
+                  value={c.name}
+                  onSelect={() => handleSelect(c.crmId)}
+                >
+                  <Check className={cn('mr-2 h-4 w-4', 'opacity-0')} />
+                  <div>
+                    <p className="text-sm font-medium">{c.name}</p>
+                    {c.email && <p className="text-xs text-muted-foreground">{c.email}</p>}
+                  </div>
                 </CommandItem>
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>New Customer</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div><Label>Name *</Label><Input value={newName} onChange={e => setNewName(e.target.value)} /></div>
-            <div><Label>Email</Label><Input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} /></div>
-            <div><Label>Phone</Label><Input value={newPhone} onChange={e => setNewPhone(e.target.value)} /></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreate} disabled={createCustomer.isPending}>Create</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
