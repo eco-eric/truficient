@@ -23,12 +23,287 @@ function extractItems(response: any): any[] {
 }
 
 interface WorkEdgeSyncRequest {
-  action: 'create-project' | 'sync-customer' | 'get-project-media' | 'get-equipment' | 'create-service-record' | 'list-projects' | 'link-project' | 'unlink-project' | 'create-property';
+  action: 'create-project' | 'sync-customer' | 'get-project-media' | 'get-equipment' | 'create-service-record' | 'list-projects' | 'link-project' | 'unlink-project' | 'create-property' | 'daily-sync';
   jobId?: string;
   customerId?: string;
   locationId?: string;
   workedgeProjectId?: string;
   searchQuery?: string;
+}
+
+// WorkEdge → CRM stage name mapping
+const WE_STATUS_TO_STAGE: Record<string, string> = {
+  scheduled: 'Estimate Scheduled',
+  in_progress: 'In Progress',
+  completed: 'Completed',
+  invoiced: 'Invoiced',
+  cancelled: 'Cancelled',
+};
+
+// === Daily Sync Logic ===
+async function executeDailySync(supabase: any, apiUrl: string, apiKey: string): Promise<any> {
+  const startTime = Date.now();
+  const errors: any[] = [];
+  let jobsCreated = 0;
+  let jobsUpdated = 0;
+  let attachmentsSynced = 0;
+
+  // Yesterday boundaries (UTC for API query)
+  const yesterday = new Date(Date.now() - 86400000);
+  const yesterdayStart = yesterday.toISOString().split('T')[0] + 'T00:00:00Z';
+
+  try {
+    // --- 1) Fetch projects from WorkEdge updated since yesterday ---
+    let weProjects: any[] = [];
+    try {
+      const res = await fetch(`${apiUrl}/api-projects?updated_after=${encodeURIComponent(yesterdayStart)}`, {
+        headers: { 'x-api-key': apiKey },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        weProjects = extractItems(data);
+        console.log(`WorkEdge daily sync: ${weProjects.length} projects updated since ${yesterdayStart}`);
+      } else {
+        const errText = await res.text();
+        errors.push({ step: 'fetch_projects', status: res.status, message: errText });
+        console.error(`WorkEdge fetch projects failed: ${res.status}`);
+      }
+    } catch (e: any) {
+      errors.push({ step: 'fetch_projects', message: e.message });
+    }
+
+    // --- 2) Get default job type for imported jobs ---
+    const { data: defaultJobType } = await supabase
+      .from('crm_job_types')
+      .select('id')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .limit(1)
+      .single();
+
+    const defaultJobTypeId = defaultJobType?.id;
+
+    // --- 3) Process each project ---
+    for (const proj of weProjects) {
+      const weId = String(proj.id || proj.project_id || '');
+      if (!weId) continue;
+
+      try {
+        // Check if this project already exists in CRM
+        const { data: existingJob } = await supabase
+          .from('crm_jobs')
+          .select('id, current_stage_id, crm_job_stages!crm_jobs_current_stage_id_fkey(name)')
+          .eq('workedge_project_id', weId)
+          .is('deleted_at', null)
+          .maybeSingle();
+
+        const weStatus = (proj.status || '').toLowerCase();
+        const targetStageName = WE_STATUS_TO_STAGE[weStatus];
+
+        if (existingJob) {
+          // --- Job exists: check for status update ---
+          if (targetStageName) {
+            const currentStageName = existingJob.crm_job_stages?.name;
+            if (currentStageName !== targetStageName) {
+              // Look up the target stage ID
+              const { data: targetStage } = await supabase
+                .from('crm_job_stages')
+                .select('id')
+                .eq('name', targetStageName)
+                .eq('is_active', true)
+                .limit(1)
+                .maybeSingle();
+
+              if (targetStage) {
+                await supabase
+                  .from('crm_jobs')
+                  .update({
+                    current_stage_id: targetStage.id,
+                    workedge_last_sync: new Date().toISOString(),
+                  })
+                  .eq('id', existingJob.id);
+
+                // Log stage history
+                await supabase
+                  .from('crm_job_stage_history')
+                  .insert({
+                    job_id: existingJob.id,
+                    from_stage_id: existingJob.current_stage_id,
+                    to_stage_id: targetStage.id,
+                    notes: `Auto-synced from WorkEdge (status: ${weStatus})`,
+                  });
+
+                jobsUpdated++;
+              }
+            }
+          }
+        } else {
+          // --- New project: create CRM job ---
+          // Try to find linked customer by matching name or WorkEdge customer ref
+          let customerId: string | null = null;
+          const clientName = proj.client_name || proj.customer_name || '';
+          if (clientName) {
+            const nameParts = clientName.trim().split(/\s+/);
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            const { data: matchedCustomer } = await supabase
+              .from('crm_customers')
+              .select('id')
+              .or(`first_name.ilike.${firstName},last_name.ilike.${lastName}`)
+              .is('deleted_at', null)
+              .limit(1)
+              .maybeSingle();
+
+            customerId = matchedCustomer?.id || null;
+          }
+
+          if (!customerId || !defaultJobTypeId) {
+            // Can't create a job without a customer and job type — log and skip
+            errors.push({
+              step: 'create_job',
+              workedge_id: weId,
+              message: !customerId ? 'No matching customer found' : 'No default job type',
+              project_name: proj.name,
+            });
+            continue;
+          }
+
+          // Look up initial stage
+          let initialStageId: string | null = null;
+          if (targetStageName) {
+            const { data: stage } = await supabase
+              .from('crm_job_stages')
+              .select('id')
+              .eq('name', targetStageName)
+              .eq('is_active', true)
+              .limit(1)
+              .maybeSingle();
+            initialStageId = stage?.id || null;
+          }
+
+          const { data: newJob, error: jobErr } = await supabase
+            .from('crm_jobs')
+            .insert({
+              title: proj.name || `WorkEdge Import - ${weId}`,
+              customer_id: customerId,
+              job_type_id: defaultJobTypeId,
+              current_stage_id: initialStageId,
+              workedge_project_id: weId,
+              workedge_last_sync: new Date().toISOString(),
+              internal_notes: `Imported from WorkEdge daily sync. Original status: ${weStatus || 'unknown'}`,
+            })
+            .select('id, job_number')
+            .single();
+
+          if (jobErr) {
+            errors.push({ step: 'create_job', workedge_id: weId, message: jobErr.message });
+          } else {
+            jobsCreated++;
+
+            // Log system interaction on the customer
+            await supabase
+              .from('crm_interactions')
+              .insert({
+                customer_id: customerId,
+                interaction_type: 'system_workedge_import',
+                direction: null,
+                subject: `WorkEdge project imported as ${newJob.job_number}`,
+                content: `Project "${proj.name}" (WorkEdge ID: ${weId}) automatically imported during daily sync.`,
+              });
+
+            // Log initial stage history
+            if (initialStageId) {
+              await supabase.from('crm_job_stage_history').insert({
+                job_id: newJob.id,
+                to_stage_id: initialStageId,
+                notes: 'Initial stage from WorkEdge import',
+              });
+            }
+          }
+        }
+
+        // --- 4) Sync attachments for this project ---
+        try {
+          const jobId = existingJob?.id;
+          if (jobId) {
+            const attRes = await fetch(`${apiUrl}/api-projects/${weId}/media`, {
+              headers: { 'x-api-key': apiKey },
+            });
+            if (attRes.ok) {
+              const attData = await attRes.json();
+              const attachments = extractItems(attData);
+
+              for (const att of attachments) {
+                const attUrl = att.url || att.media_url || att.file_url || att.src || '';
+                const attTitle = att.title || att.name || att.filename || '';
+                const attDesc = att.description || att.caption || att.content || att.notes || '';
+
+                if (!attUrl && !attDesc) continue;
+
+                // Check for duplicate by URL in interaction content
+                if (attUrl) {
+                  const { data: existing } = await supabase
+                    .from('crm_interactions')
+                    .select('id')
+                    .eq('customer_id', (await supabase.from('crm_jobs').select('customer_id').eq('id', jobId).single()).data?.customer_id || '')
+                    .ilike('content', `%${attUrl}%`)
+                    .limit(1)
+                    .maybeSingle();
+
+                  if (existing) continue;
+                }
+
+                const { data: job } = await supabase
+                  .from('crm_jobs')
+                  .select('customer_id, job_number')
+                  .eq('id', jobId)
+                  .single();
+
+                if (job?.customer_id) {
+                  await supabase.from('crm_interactions').insert({
+                    customer_id: job.customer_id,
+                    interaction_type: 'note',
+                    direction: null,
+                    subject: `WorkEdge attachment: ${attTitle || 'Media'}`,
+                    content: [attDesc, attUrl ? `URL: ${attUrl}` : ''].filter(Boolean).join('\n'),
+                  });
+                  attachmentsSynced++;
+                }
+              }
+            }
+          }
+        } catch (attErr: any) {
+          errors.push({ step: 'sync_attachments', workedge_id: weId, message: attErr.message });
+        }
+      } catch (projErr: any) {
+        errors.push({ step: 'process_project', workedge_id: weId, message: projErr.message });
+      }
+    }
+  } catch (topErr: any) {
+    errors.push({ step: 'top_level', message: topErr.message });
+  }
+
+  const durationMs = Date.now() - startTime;
+  const status = errors.length === 0 ? 'success' : (jobsCreated + jobsUpdated + attachmentsSynced > 0 ? 'partial' : 'failed');
+
+  // Write to daily sync log
+  await supabase.from('workedge_daily_sync_log').insert({
+    jobs_created: jobsCreated,
+    jobs_updated: jobsUpdated,
+    attachments_synced: attachmentsSynced,
+    errors: errors.length > 0 ? errors : null,
+    duration_ms: durationMs,
+    status,
+  });
+
+  // Also update integration config last sync
+  await supabase
+    .from('integration_configs')
+    .update({ last_sync_at: new Date().toISOString() })
+    .eq('integration_name', 'workedge');
+
+  return { success: true, status, jobs_created: jobsCreated, jobs_updated: jobsUpdated, attachments_synced: attachmentsSynced, errors: errors.length, duration_ms: durationMs };
 }
 
 Deno.serve(async (req) => {
