@@ -62,8 +62,7 @@ export const useDeleteOttoExpense = () => {
 
 export const uploadExpenseReceipt = async (file: File): Promise<string> => {
   const ext = file.name.split('.').pop();
-  const businessId = import.meta.env.VITE_OTTOPAY_BUSINESS_ID;
-  const path = `${businessId}/${crypto.randomUUID()}.${ext}`;
+  const path = `receipts/${crypto.randomUUID()}.${ext}`;
 
   const { data, error } = await ottoUpload('expense-receipts', path, file);
   if (error) throw new Error(error.message);
