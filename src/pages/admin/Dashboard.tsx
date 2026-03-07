@@ -8,6 +8,7 @@ import { SubmissionsChart } from '@/components/admin/dashboard/SubmissionsChart'
 import { QuickActions } from '@/components/admin/dashboard/QuickActions';
 import { ActivityFeed } from '@/components/admin/dashboard/ActivityFeed';
 import { LeadMetrics } from '@/components/admin/dashboard/LeadMetrics';
+import { InvoicingSnapshot } from '@/components/admin/dashboard/InvoicingSnapshot';
 import { EngagementStats } from '@/components/admin/dashboard/EngagementStats';
 import { RevenueSummary } from '@/components/admin/dashboard/RevenueSummary';
 import { PipelineStatus } from '@/components/admin/dashboard/PipelineStatus';
@@ -215,10 +216,11 @@ const Dashboard = () => {
           <DuctlessMetricsCard />
         </div>
         
-        {/* Quick Actions + Lead Metrics Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Quick Actions + Lead Metrics + Invoicing Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <QuickActions />
           <LeadMetrics />
+          <InvoicingSnapshot />
         </div>
         
         {/* Charts Row */}
