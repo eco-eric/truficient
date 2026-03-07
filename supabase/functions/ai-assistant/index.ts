@@ -2102,6 +2102,278 @@ async function executeScanWatchList(supabase: any, userId: string, input: any) {
   };
 }
 
+// ============================================================
+// ESTIMATE DRAFTING TOOL
+// ============================================================
+
+const JOB_TYPE_LABELS: Record<string, string> = {
+  residential_replacement: "Residential - Replacement",
+  residential_new: "Residential - New",
+  commercial_replacement: "Commercial - Replacement",
+  commercial_new: "Commercial - New",
+  maintenance: "Service/Repair",
+  repair: "Service/Repair",
+};
+
+async function executeDraftEstimate(supabase: any, userId: string, input: any) {
+  // === STEP 1: Resolve customer ===
+  let customerId = input.customer_id;
+  let customerData: any = null;
+
+  if (!customerId && input.customer_name) {
+    const searchTerm = input.customer_name.trim();
+    const { data: matches } = await supabase
+      .from("crm_customers")
+      .select("id, first_name, last_name, email, phone, crm_locations(id, address_line1, city, state, zip_code, is_primary)")
+      .is("deleted_at", null)
+      .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`)
+      .limit(5);
+
+    if (!matches || matches.length === 0) {
+      return { error: `No customer found matching "${input.customer_name}". Try a different name or provide a customer_id.` };
+    }
+    if (matches.length > 1) {
+      return {
+        error: "Multiple customers found. Please specify which one:",
+        matches: matches.map((c: any) => ({
+          id: c.id,
+          name: `${c.first_name || ""} ${c.last_name || ""}`.trim(),
+          email: c.email,
+          phone: c.phone,
+        })),
+      };
+    }
+    customerId = matches[0].id;
+    customerData = matches[0];
+  }
+
+  if (!customerId) {
+    return { error: "Either customer_id or customer_name is required." };
+  }
+
+  if (!customerData) {
+    const { data: cust, error: custErr } = await supabase
+      .from("crm_customers")
+      .select("id, first_name, last_name, email, phone, crm_locations(id, address_line1, city, state, zip_code, is_primary)")
+      .eq("id", customerId)
+      .single();
+    if (custErr || !cust) return { error: "Customer not found." };
+    customerData = cust;
+  }
+
+  const customerName = `${customerData.first_name || ""} ${customerData.last_name || ""}`.trim();
+  const primaryLocation = customerData.crm_locations?.find((l: any) => l.is_primary) || customerData.crm_locations?.[0];
+  const customerAddress = primaryLocation
+    ? `${primaryLocation.address_line1}, ${primaryLocation.city}, ${primaryLocation.state} ${primaryLocation.zip_code}`
+    : null;
+
+  const heatingType = input.heating_type || "heat_pump";
+  const jobType = input.job_type;
+
+  // === STEP 2: Resolve template ===
+  let template: any = null;
+  let templateItems: any[] = [];
+
+  if (input.template_id) {
+    const { data: t } = await supabase
+      .from("estimate_templates")
+      .select("*")
+      .eq("id", input.template_id)
+      .eq("is_active", true)
+      .single();
+    template = t;
+  } else {
+    const { data: templates } = await supabase
+      .from("estimate_templates")
+      .select("*")
+      .eq("is_active", true)
+      .eq("job_type", jobType)
+      .order("sort_order");
+
+    if (templates && templates.length > 0) {
+      template = templates.find((t: any) => t.heating_type === heatingType) || templates[0];
+    }
+  }
+
+  if (template) {
+    const { data: items } = await supabase
+      .from("estimate_template_items")
+      .select("*, materials_catalog(name, unit_cost, unit), labor_rates(name, hourly_rate, rate_type), admin_costs(name, amount, cost_type), equipment_systems(system_name, system_price)")
+      .eq("template_id", template.id)
+      .order("sort_order");
+    templateItems = items || [];
+  }
+
+  // === STEP 3: Build line items ===
+  const lineItems = templateItems.map((item: any, idx: number) => {
+    let name = item.name;
+    let unitCost = item.unit_cost;
+    let unit = item.unit;
+    let quantity = item.quantity;
+
+    if (item.material_id && item.materials_catalog) {
+      name = name || item.materials_catalog.name;
+      unitCost = unitCost || item.materials_catalog.unit_cost;
+      unit = unit || item.materials_catalog.unit;
+    }
+    if (item.labor_rate_id && item.labor_rates) {
+      name = name || item.labor_rates.name;
+      unitCost = unitCost || item.labor_rates.hourly_rate;
+    }
+    if (item.admin_cost_id && item.admin_costs) {
+      name = name || item.admin_costs.name;
+      unitCost = unitCost || item.admin_costs.amount;
+    }
+    if (item.equipment_system_id && item.equipment_systems) {
+      name = name || item.equipment_systems.system_name;
+      unitCost = unitCost || item.equipment_systems.system_price;
+    }
+
+    const lineTotal = (quantity || 1) * (unitCost || 0);
+
+    return {
+      item_type: item.item_type,
+      section: item.section,
+      name: name || "Unnamed Item",
+      description: item.description || null,
+      quantity: quantity || 1,
+      unit: unit || "ea",
+      unit_cost: unitCost || 0,
+      line_total: lineTotal,
+      sort_order: item.sort_order || idx,
+      material_id: item.material_id || null,
+      labor_rate_id: item.labor_rate_id || null,
+      admin_cost_id: item.admin_cost_id || null,
+      equipment_system_id: item.equipment_system_id || null,
+    };
+  });
+
+  const profitMargin = template?.profit_margin || 1.35;
+  const taxRate = 0.0825;
+  const subtotalCost = lineItems.reduce((sum: number, li: any) => sum + li.line_total, 0);
+  const subtotalCharge = subtotalCost * profitMargin;
+  const taxAmount = subtotalCharge * taxRate;
+  const grandTotal = subtotalCharge + taxAmount;
+
+  // Financing preview
+  const { data: financingOptions } = await supabase
+    .from("financing_options")
+    .select("plan_name, payment_factor, interest_rate, months_to_payoff")
+    .eq("is_active", true)
+    .order("sort_order")
+    .limit(3);
+
+  const lowestPayment = financingOptions && financingOptions.length > 0
+    ? Math.round(grandTotal * Math.min(...financingOptions.map((f: any) => f.payment_factor)))
+    : null;
+
+  // === STEP 4: Preview ===
+  if (!input.confirmed) {
+    return {
+      needs_confirmation: true,
+      action: "draft_estimate",
+      summary: {
+        customer: customerName,
+        customer_id: customerId,
+        address: customerAddress || "No address on file",
+        job_type: JOB_TYPE_LABELS[jobType] || jobType,
+        heating_type: heatingType,
+        template: template ? template.name : "Blank (no matching template)",
+        title: input.title || `${JOB_TYPE_LABELS[jobType] || jobType} — ${customerName}`,
+        line_items: lineItems.map((li: any) => ({
+          name: li.name,
+          section: li.section,
+          qty: li.quantity,
+          unit: li.unit,
+          unit_cost: `$${li.unit_cost.toFixed(2)}`,
+          line_total: `$${li.line_total.toFixed(2)}`,
+        })),
+        profit_margin: `${Math.round((profitMargin - 1) * 100)}%`,
+        subtotal_cost: `$${subtotalCost.toFixed(2)}`,
+        subtotal_charge: `$${subtotalCharge.toFixed(2)}`,
+        tax: `$${taxAmount.toFixed(2)} (8.25%)`,
+        grand_total: `$${grandTotal.toFixed(2)}`,
+        financing: lowestPayment ? `From ~$${lowestPayment}/mo` : "No financing options available",
+        notes: input.notes || "None",
+      },
+      confirmation_prompt: `📋 **Estimate Draft Preview**\n\n👤 **${customerName}**\n📍 ${customerAddress || "No address"}\n🔧 ${JOB_TYPE_LABELS[jobType] || jobType} (${heatingType})\n📄 Template: ${template ? template.name : "Blank"}\n\n${lineItems.length > 0 ? lineItems.map((li: any) => `• ${li.name} — ${li.quantity} ${li.unit} × $${li.unit_cost.toFixed(2)} = $${li.line_total.toFixed(2)}`).join("\n") : "⚠️ No line items — blank estimate"}\n\n💰 Subtotal: $${subtotalCharge.toFixed(2)}\n🧾 Tax (8.25%): $${taxAmount.toFixed(2)}\n**Total: $${grandTotal.toFixed(2)}**${lowestPayment ? `\n💳 Financing from ~$${lowestPayment}/mo` : ""}\n\nReply **"confirm"** to save as draft, **"change [item]"** to adjust, or **"use [template name]"** to switch templates.`,
+    };
+  }
+
+  // === STEP 5: Save Draft ===
+  const { data: estNumResult } = await supabase.rpc("generate_estimate_number");
+  const estimateNumber = estNumResult || `TRU-${new Date().getFullYear()}-DRAFT`;
+
+  const { data: estimate, error: estError } = await supabase
+    .from("estimates")
+    .insert({
+      estimate_number: estimateNumber,
+      customer_id: customerId,
+      customer_name: customerName,
+      customer_email: customerData.email || null,
+      customer_phone: customerData.phone || null,
+      customer_address: customerAddress || null,
+      location_id: primaryLocation?.id || null,
+      job_type: jobType,
+      heating_type: heatingType,
+      title: input.title || `${JOB_TYPE_LABELS[jobType] || jobType} — ${customerName}`,
+      job_notes: input.notes || null,
+      status: "draft",
+      profit_margin: profitMargin,
+      tax_rate: taxRate,
+      subtotal_cost: subtotalCost,
+      subtotal_charge: subtotalCharge,
+      tax_amount: taxAmount,
+      grand_total: grandTotal,
+      created_by: userId,
+    })
+    .select("id, estimate_number")
+    .single();
+
+  if (estError) throw new Error(`Failed to create estimate: ${estError.message}`);
+
+  if (lineItems.length > 0) {
+    const lineItemInserts = lineItems.map((li: any) => ({
+      estimate_id: estimate.id,
+      item_type: li.item_type,
+      section: li.section,
+      name: li.name,
+      description: li.description,
+      quantity: li.quantity,
+      unit: li.unit,
+      unit_cost: li.unit_cost,
+      line_total: li.line_total,
+      sort_order: li.sort_order,
+      material_id: li.material_id,
+      labor_rate_id: li.labor_rate_id,
+      admin_cost_id: li.admin_cost_id,
+      equipment_system_id: li.equipment_system_id,
+    }));
+
+    const { error: liError } = await supabase.from("estimate_line_items").insert(lineItemInserts);
+    if (liError) console.error("Failed to insert line items:", liError);
+  }
+
+  // Log interaction
+  await supabase.from("crm_interactions").insert({
+    customer_id: customerId,
+    interaction_type: "note",
+    direction: null,
+    content: `Estimate draft ${estimate.estimate_number} created by Bach using ${template ? `template "${template.name}"` : "blank template"}. Total: $${grandTotal.toFixed(2)}. Awaiting review.`,
+    logged_by: userId,
+  });
+
+  return {
+    success: true,
+    estimate_id: estimate.id,
+    estimate_number: estimate.estimate_number,
+    grand_total: grandTotal,
+    line_item_count: lineItems.length,
+    template_used: template?.name || "Blank",
+    message: `✓ Estimate **${estimate.estimate_number}** saved as draft.\n💰 Total: $${grandTotal.toFixed(2)} (${lineItems.length} line items)\n📄 Template: ${template?.name || "Blank"}\n🔗 Review at /admin/estimates\n\n⚠️ Draft only — not sent to customer.`,
+  };
+}
+
 //
 // TOOL ROUTER
 // ============================================================
@@ -2131,6 +2403,7 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "intake_lead": return executeIntakeLead(supabase, userId, toolInput);
     case "review_submissions": return executeReviewSubmissions(supabase, userId, toolInput);
     case "scan_watch_list": return executeScanWatchList(supabase, userId, toolInput);
+    case "draft_estimate": return executeDraftEstimate(supabase, userId, toolInput);
     case "get_google_calendar": return executeGetGoogleCalendar(supabase, toolInput);
     case "get_job_types": return executeGetJobTypes(supabase);
     case "get_pipeline_stages": return executeGetPipelineStages(supabase);
