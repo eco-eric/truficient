@@ -16,6 +16,7 @@ const VALID_ENTITIES = new Set([
   "expenses",
   "catalog",
   "business",
+  "upload",
 ]);
 
 Deno.serve(async (req) => {
