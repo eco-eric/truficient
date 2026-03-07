@@ -124,7 +124,9 @@ Deno.serve(async (req) => {
     } else {
       // POST, PATCH, PUT
       const payload: any = { entity };
-      if (id) payload.id = id;
+      // Resolve 'current' id to actual business ID for business entity
+      const resolvedId = (entity === "business" && id === "current") ? BUSINESS_ID : id;
+      if (resolvedId) payload.id = resolvedId;
       if (params) payload.data = params;
       ottoRes = await fetch(API_URL, {
         method: upperMethod,
