@@ -767,6 +767,11 @@ Deno.serve(async (req) => {
           break;
         }
 
+        case 'daily-sync': {
+          result = await executeDailySync(supabase, apiUrl, WORKEDGE_API_KEY);
+          break;
+        }
+
         default:
           throw new Error(`Unknown action: ${action}`);
       }
