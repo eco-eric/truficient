@@ -111,6 +111,7 @@ serve(async (req) => {
       expiringCerts,
       recentPipelineWins,
       overdueJobs,
+      workedgeSyncResult,
     ] = await Promise.all([
       // Today's appointments
       supabase
@@ -187,6 +188,14 @@ serve(async (req) => {
         .is("deleted_at", null)
         .order("scheduled_date", { ascending: true })
         .limit(10),
+
+      // WorkEdge daily sync — most recent log entry
+      supabase
+        .from("workedge_daily_sync_log")
+        .select("*")
+        .order("sync_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
     // Process uncontacted leads — filter to those with no interactions or last > 3 days
