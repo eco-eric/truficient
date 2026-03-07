@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { useOttoMetrics, useOttoInvoices, useOttoPayments } from '@/hooks/useOttoPay';
 import { InvoiceDetailSheet } from '@/components/invoicing/InvoiceDetailSheet';
+import { BusinessSnapshotCard } from '@/components/invoicing/BusinessSnapshotCard';
 import { DollarSign, Clock, AlertCircle, FileText } from 'lucide-react';
 import { Line, LineChart, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
@@ -80,8 +81,15 @@ const InvoicingMissionControl = () => {
         ))}
       </div>
 
+      {/* AI Business Snapshot */}
+      <BusinessSnapshotCard
+        metrics={metrics}
+        recentPaymentsCount={payments?.length || 0}
+        metricsLoading={metricsLoading}
+      />
+
       {/* Revenue chart */}
-      <Card className="mb-6">
+      <Card className="mt-6 mb-6">
         <CardHeader><CardTitle className="text-base">Revenue Trend (Last 6 Months)</CardTitle></CardHeader>
         <CardContent>
           {metricsLoading ? (
