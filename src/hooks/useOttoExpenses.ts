@@ -1,7 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ottopay } from '@/integrations/ottopay/client';
-
-const OTTO_BUSINESS_ID = import.meta.env.VITE_OTTOPAY_BUSINESS_ID;
+import { ottoGet, ottoPost, ottoDelete, ottoUpload } from '@/integrations/ottopay/client';
 
 export interface OttoExpense {
   id: string;
@@ -20,13 +18,11 @@ export const useOttoExpenses = () =>
   useQuery({
     queryKey: ['otto-expenses'],
     queryFn: async () => {
-      const { data, error } = await ottopay
-        .from('expenses')
-        .select('*')
-        .eq('business_id', OTTO_BUSINESS_ID)
-        .order('expense_date', { ascending: false });
-      if (error) throw error;
-      return data as OttoExpense[];
+      const { data, error } = await ottoGet<OttoExpense[]>('expenses', {
+        order: 'expense_date:desc',
+      });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as OttoExpense[];
     },
   });
 
@@ -41,15 +37,8 @@ export const useCreateOttoExpense = () => {
       notes?: string;
       receipt_url?: string;
     }) => {
-      const { data, error } = await ottopay
-        .from('expenses')
-        .insert({
-          ...payload,
-          business_id: OTTO_BUSINESS_ID,
-        })
-        .select()
-        .single();
-      if (error) throw error;
+      const { data, error } = await ottoPost('expenses', payload);
+      if (error) throw new Error(error.message);
       return data;
     },
     onSuccess: () => {
@@ -62,11 +51,8 @@ export const useDeleteOttoExpense = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await ottopay
-        .from('expenses')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
+      const { error } = await ottoDelete('expenses', id);
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['otto-expenses'] });
@@ -76,13 +62,10 @@ export const useDeleteOttoExpense = () => {
 
 export const uploadExpenseReceipt = async (file: File): Promise<string> => {
   const ext = file.name.split('.').pop();
-  const path = `${OTTO_BUSINESS_ID}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await ottopay.storage
-    .from('expense-receipts')
-    .upload(path, file, { contentType: file.type });
-  if (error) throw error;
-  const { data } = ottopay.storage
-    .from('expense-receipts')
-    .getPublicUrl(path);
-  return data.publicUrl;
+  const businessId = import.meta.env.VITE_OTTOPAY_BUSINESS_ID;
+  const path = `${businessId}/${crypto.randomUUID()}.${ext}`;
+
+  const { data, error } = await ottoUpload('expense-receipts', path, file);
+  if (error) throw new Error(error.message);
+  return data!.publicUrl;
 };
