@@ -145,6 +145,7 @@ const EstimateBuilder = () => {
   // CRM customer/location picker state
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const [workedgeProjectId, setWorkedgeProjectId] = useState<string>('');
   const [customerComboOpen, setCustomerComboOpen] = useState(false);
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
 
@@ -310,6 +311,7 @@ const EstimateBuilder = () => {
       // Restore CRM links
       setSelectedCustomerId((estimate as any).customer_id || null);
       setSelectedLocationId((estimate as any).location_id || null);
+      setWorkedgeProjectId((estimate as any).workedge_project_id || '');
       // Store initial state for change detection
       setLastSavedState(prev => prev ? { ...prev, formData: loadedFormData } : { formData: loadedFormData, lineItems: [] });
     }
@@ -457,6 +459,7 @@ const EstimateBuilder = () => {
             tax_rate: formData.tax_rate,
             customer_id: selectedCustomerId || null,
             location_id: selectedLocationId || null,
+            workedge_project_id: workedgeProjectId || null,
           } as any)
           .select()
           .single();
@@ -484,6 +487,7 @@ const EstimateBuilder = () => {
             tax_rate: formData.tax_rate,
             customer_id: selectedCustomerId || null,
             location_id: selectedLocationId || null,
+            workedge_project_id: workedgeProjectId || null,
           } as any)
           .eq('id', existingId);
 
