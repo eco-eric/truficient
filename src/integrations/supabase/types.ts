@@ -4201,6 +4201,39 @@ export type Database = {
         }
         Relationships: []
       }
+      workedge_daily_sync_log: {
+        Row: {
+          attachments_synced: number | null
+          duration_ms: number | null
+          errors: Json | null
+          id: string
+          jobs_created: number | null
+          jobs_updated: number | null
+          status: string | null
+          sync_at: string | null
+        }
+        Insert: {
+          attachments_synced?: number | null
+          duration_ms?: number | null
+          errors?: Json | null
+          id?: string
+          jobs_created?: number | null
+          jobs_updated?: number | null
+          status?: string | null
+          sync_at?: string | null
+        }
+        Update: {
+          attachments_synced?: number | null
+          duration_ms?: number | null
+          errors?: Json | null
+          id?: string
+          jobs_created?: number | null
+          jobs_updated?: number | null
+          status?: string | null
+          sync_at?: string | null
+        }
+        Relationships: []
+      }
       workedge_project_media: {
         Row: {
           captured_at: string | null
