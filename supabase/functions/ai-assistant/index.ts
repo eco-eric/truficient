@@ -485,7 +485,6 @@ const tools = [
         },
       },
     },
-    },
   },
   // === WATCH LIST TOOL ===
   {
@@ -504,6 +503,7 @@ const tools = [
         required: ["confirmed"],
       },
     },
+  },
   // === PHASE 4: BRIEFING TOOL ===
   {
     type: "function" as const,
