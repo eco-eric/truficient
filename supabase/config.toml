@@ -48,3 +48,6 @@ verify_jwt = false
 
 [functions.create-invoice-payment]
 verify_jwt = false
+
+[functions.otto-ai]
+verify_jwt = false
