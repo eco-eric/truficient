@@ -258,7 +258,7 @@ const router = createBrowserRouter([
           { path: "/admin/invoice-expenses", element: <ProtectedRoute><InvoiceExpenses /></ProtectedRoute> },
           { path: "/admin/invoice-reports", element: <ProtectedRoute><InvoiceReports /></ProtectedRoute> },
           { path: "/admin/invoice-settings", element: <ProtectedRoute><InvoiceSettings /></ProtectedRoute> },
-          { path: "/admin/invoice-customers", element: <ProtectedRoute><InvoiceClients /></ProtectedRoute> },
+          { path: "/admin/invoice-customers", element: <Navigate to="/admin/invoice-clients" replace /> },
         ],
       },
       
