@@ -9,12 +9,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { ottopay } from '@/integrations/ottopay/client';
+import { ottoPost, ottoDelete } from '@/integrations/ottopay/client';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { Plus, Trash2, Package, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
-
-const OTTO_BUSINESS_ID = import.meta.env.VITE_OTTOPAY_BUSINESS_ID;
 const fmt = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
 
 const InvoiceCatalog = () => {
