@@ -85,6 +85,7 @@ const TOOL_PERMISSIONS: Record<string, string> = {
   update_job_stage: "can_use_write_tools",
   log_interaction: "can_use_write_tools",
   update_customer_status: "can_use_write_tools",
+  create_customer: "can_use_write_tools",
   create_pipeline_entry: "can_use_write_tools",
   schedule_appointment: "can_use_write_tools",
   reschedule_appointment: "can_use_write_tools",
@@ -220,6 +221,31 @@ const tools = [
   },
 
   // === PHASE 2: WRITE TOOLS ===
+  {
+    type: "function" as const,
+    function: {
+      name: "create_customer",
+      description: "Create a new customer in the CRM. Optionally adds a primary location. ALWAYS confirm with the user before executing.",
+      parameters: {
+        type: "object",
+        properties: {
+          first_name: { type: "string", description: "Customer's first name" },
+          last_name: { type: "string", description: "Customer's last name" },
+          email: { type: "string", description: "Email address (optional)" },
+          phone: { type: "string", description: "Phone number (optional)" },
+          address_line1: { type: "string", description: "Street address (optional — if provided, creates a primary location)" },
+          city: { type: "string", description: "City (required if address provided)" },
+          state: { type: "string", description: "State abbreviation (required if address provided, default TX)" },
+          zip_code: { type: "string", description: "ZIP code (required if address provided)" },
+          lead_source: { type: "string", description: "How the customer was acquired (optional)" },
+          customer_type: { type: "string", enum: ["residential", "commercial"], description: "Customer type (default residential)" },
+          tags: { type: "array", items: { type: "string" }, description: "Optional tags" },
+          confirmed: { type: "boolean", description: "Set true ONLY after user confirms. First call: always false." },
+        },
+        required: ["first_name", "last_name", "confirmed"],
+      },
+    },
+  },
   {
     type: "function" as const,
     function: {
@@ -1202,6 +1228,71 @@ async function executeGetPipelineStages(supabase: any) {
   return { stages: data || [] };
 }
 
+async function executeCreateCustomer(supabase: any, userId: string, input: any) {
+  const customerName = `${input.first_name} ${input.last_name}`;
+  const hasAddress = input.address_line1 && input.city && input.zip_code;
+
+  if (!input.confirmed) {
+    return {
+      needs_confirmation: true,
+      action: "create_customer",
+      summary: {
+        name: customerName,
+        email: input.email || "Not provided",
+        phone: input.phone || "Not provided",
+        address: hasAddress ? `${input.address_line1}, ${input.city}, ${input.state || "TX"} ${input.zip_code}` : "No address",
+        type: input.customer_type || "residential",
+        lead_source: input.lead_source || "Not set",
+        tags: input.tags?.length ? input.tags.join(", ") : "None",
+      },
+      confirmation_prompt: `Create new customer **${customerName}**?\n📧 ${input.email || "No email"}\n📱 ${input.phone || "No phone"}${hasAddress ? `\n📍 ${input.address_line1}, ${input.city}, ${input.state || "TX"} ${input.zip_code}` : ""}${input.lead_source ? `\n🔗 Source: ${input.lead_source}` : ""}`,
+    };
+  }
+
+  const { data: customer, error: custError } = await supabase
+    .from("crm_customers")
+    .insert({
+      first_name: input.first_name,
+      last_name: input.last_name,
+      email: input.email || null,
+      phone: input.phone || null,
+      customer_type: input.customer_type || "residential",
+      customer_status: "lead",
+      lead_source: input.lead_source || null,
+      tags: input.tags || null,
+    })
+    .select("id")
+    .single();
+
+  if (custError) throw new Error(`Failed to create customer: ${custError.message}`);
+
+  // Create primary location if address provided
+  if (hasAddress) {
+    await supabase.from("crm_locations").insert({
+      customer_id: customer.id,
+      address_line1: input.address_line1,
+      city: input.city,
+      state: input.state || "TX",
+      zip_code: input.zip_code,
+      is_primary: true,
+    });
+  }
+
+  // Log system interaction
+  await supabase.from("crm_interactions").insert({
+    customer_id: customer.id,
+    interaction_type: "note",
+    content: `Customer created via AI Assistant${input.lead_source ? ` — Source: ${input.lead_source}` : ""}`,
+    logged_by: userId,
+  });
+
+  return {
+    success: true,
+    customer_id: customer.id,
+    message: `Created customer **${customerName}**${hasAddress ? ` with address at ${input.city}` : ""}`,
+  };
+}
+
 // ============================================================
 // TOOL ROUTER
 // ============================================================
@@ -1218,6 +1309,7 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "get_pipeline_overview": return executeGetPipelineOverview(supabase, toolInput);
     case "get_team_info": return executeGetTeamInfo(supabase, toolInput);
     // Write tools
+    case "create_customer": return executeCreateCustomer(supabase, userId, toolInput);
     case "create_job": return executeCreateJob(supabase, userId, toolInput);
     case "update_job_stage": return executeUpdateJobStage(supabase, userId, toolInput);
     case "log_interaction": return executeLogInteraction(supabase, userId, toolInput);
@@ -1261,6 +1353,7 @@ Read operations:
 - View team/crew information and assignments
 
 Write operations (ALWAYS confirm first):
+- Create new customers (with optional address that becomes their primary location)
 - Create new jobs for existing customers
 - Move jobs between workflow stages
 - Log interactions (calls, emails, notes, meetings, texts, tasks)
