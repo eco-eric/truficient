@@ -82,6 +82,7 @@ const TOOL_PERMISSIONS: Record<string, string> = {
   get_property_data: "can_access_assistant",
   verify_address: "can_access_assistant",
   get_team_info: "can_access_assistant",
+  seo_audit: "can_access_assistant",
   create_job: "can_use_write_tools",
   update_job_stage: "can_use_write_tools",
   log_interaction: "can_use_write_tools",
@@ -93,6 +94,7 @@ const TOOL_PERMISSIONS: Record<string, string> = {
   scan_watch_list: "can_use_write_tools",
   draft_estimate: "can_use_write_tools",
   update_prices: "can_use_write_tools",
+  update_seo: "can_use_write_tools",
   schedule_appointment: "can_use_write_tools",
   reschedule_appointment: "can_use_write_tools",
   cancel_appointment: "can_use_write_tools",
@@ -594,6 +596,41 @@ const tools = [
           save_to_location_id: { type: "string", description: "Optional CRM location UUID — if provided, updates the location with verified address components and coordinates" },
         },
         required: ["address"],
+      },
+    },
+  },
+  // === SEO AUDIT TOOL ===
+  {
+    type: "function" as const,
+    function: {
+      name: "seo_audit",
+      description: "Audit SEO metadata across all pages and blog posts. Returns a read-only report showing missing, too-long, too-short, and duplicate meta titles and descriptions. Never makes changes — use update_seo to fix issues after review.",
+      parameters: {
+        type: "object",
+        properties: {
+          scope: { type: "string", enum: ["all", "pages", "blog"], description: "Which content to audit (default: all)" },
+          issue_filter: { type: "string", enum: ["all", "missing", "too_long", "too_short", "duplicate"], description: "Filter by issue type (default: all)" },
+          limit: { type: "number", description: "Max items to return (default 50)" },
+        },
+      },
+    },
+  },
+  // === SEO UPDATE TOOL ===
+  {
+    type: "function" as const,
+    function: {
+      name: "update_seo",
+      description: "Update SEO metadata (meta title and/or meta description) for a specific page or blog post. Shows a preview of old vs new before saving. ALWAYS confirm first.",
+      parameters: {
+        type: "object",
+        properties: {
+          page_id: { type: "string", description: "UUID of the page_seo record or blog_posts record to update" },
+          source: { type: "string", enum: ["page", "blog"], description: "Whether this is a page_seo or blog_posts record (default: page)" },
+          meta_title: { type: "string", description: "New meta title (optional)" },
+          meta_description: { type: "string", description: "New meta description (optional)" },
+          confirmed: { type: "boolean", description: "Set true ONLY after user confirms. First call: always false." },
+        },
+        required: ["page_id", "confirmed"],
       },
     },
   },
@@ -2874,6 +2911,227 @@ async function executeVerifyAddress(supabase: any, input: any) {
   };
 }
 
+// ============================================================
+// SEO AUDIT TOOL
+// ============================================================
+
+interface SEOItem {
+  id: string;
+  source: "page" | "blog";
+  name: string;
+  path: string;
+  meta_title: string | null;
+  meta_description: string | null;
+  updated_at: string | null;
+  issues: string[];
+  status: "good" | "attention" | "critical";
+}
+
+function evaluateSEO(item: SEOItem, allItems: SEOItem[]): void {
+  const issues: string[] = [];
+  const title = item.meta_title;
+  const desc = item.meta_description;
+
+  // Title checks
+  if (!title || title.trim().length === 0) {
+    issues.push("🔴 Missing meta title");
+  } else if (title.length < 30) {
+    issues.push(`🟡 Title too short (${title.length} chars)`);
+  } else if (title.length > 60) {
+    issues.push(`🟡 Title too long (${title.length} chars)`);
+  }
+
+  // Description checks
+  if (!desc || desc.trim().length === 0) {
+    issues.push("🔴 Missing meta description");
+  } else if (desc.length < 70) {
+    issues.push(`🟡 Description too short (${desc.length} chars)`);
+  } else if (desc.length > 160) {
+    issues.push(`🟡 Description too long (${desc.length} chars)`);
+  }
+
+  // Duplicate checks
+  if (title && title.trim().length > 0) {
+    const dupes = allItems.filter(other => other.id !== item.id && other.meta_title && other.meta_title.toLowerCase() === title.toLowerCase());
+    if (dupes.length > 0) {
+      issues.push(`🔴 Duplicate title (matches ${dupes.map(d => d.path).join(", ")})`);
+    }
+  }
+  if (desc && desc.trim().length > 0) {
+    const dupes = allItems.filter(other => other.id !== item.id && other.meta_description && other.meta_description.toLowerCase() === desc.toLowerCase());
+    if (dupes.length > 0) {
+      issues.push(`🔴 Duplicate description (matches ${dupes.map(d => d.path).join(", ")})`);
+    }
+  }
+
+  item.issues = issues;
+  const hasCritical = issues.some(i => i.includes("🔴"));
+  const hasAttention = issues.some(i => i.includes("🟡"));
+  item.status = issues.length === 0 ? "good" : hasCritical ? "critical" : "attention";
+}
+
+async function executeSEOAudit(supabase: any, input: any) {
+  const scope = input.scope || "all";
+  const issueFilter = input.issue_filter || "all";
+  const limit = Math.min(input.limit || 50, 100);
+
+  const allItems: SEOItem[] = [];
+
+  // Fetch pages
+  if (scope === "all" || scope === "pages") {
+    const { data: pages } = await supabase
+      .from("page_seo")
+      .select("id, page_name, page_path, meta_title, meta_description, updated_at")
+      .order("page_name");
+
+    (pages || []).forEach((p: any) => {
+      allItems.push({
+        id: p.id, source: "page", name: p.page_name, path: p.page_path,
+        meta_title: p.meta_title, meta_description: p.meta_description,
+        updated_at: p.updated_at, issues: [], status: "good",
+      });
+    });
+  }
+
+  // Fetch blog posts
+  if (scope === "all" || scope === "blog") {
+    const { data: posts } = await supabase
+      .from("blog_posts")
+      .select("id, title, slug, meta_title, meta_description, updated_at, status")
+      .eq("status", "published")
+      .order("title");
+
+    (posts || []).forEach((p: any) => {
+      allItems.push({
+        id: p.id, source: "blog", name: p.title, path: `/blog/${p.slug}`,
+        meta_title: p.meta_title, meta_description: p.meta_description,
+        updated_at: p.updated_at, issues: [], status: "good",
+      });
+    });
+  }
+
+  // Evaluate all items
+  allItems.forEach(item => evaluateSEO(item, allItems));
+
+  // Apply issue filter
+  let filtered = allItems;
+  if (issueFilter !== "all") {
+    filtered = allItems.filter(item => {
+      switch (issueFilter) {
+        case "missing": return item.issues.some(i => i.includes("Missing"));
+        case "too_long": return item.issues.some(i => i.includes("too long"));
+        case "too_short": return item.issues.some(i => i.includes("too short"));
+        case "duplicate": return item.issues.some(i => i.includes("Duplicate"));
+        default: return true;
+      }
+    });
+  }
+
+  const critical = filtered.filter(i => i.status === "critical");
+  const attention = filtered.filter(i => i.status === "attention");
+  const good = filtered.filter(i => i.status === "good");
+
+  const today = new Date().toLocaleDateString("en-US", { timeZone: TZ, month: "long", day: "numeric", year: "numeric" });
+
+  return {
+    audit_date: today,
+    scope,
+    total_scanned: allItems.length,
+    fully_optimized: good.length,
+    needs_attention: attention.length,
+    critical_issues: critical.length,
+    critical: critical.slice(0, limit).map((item, i) => ({
+      index: i + 1, id: item.id, source: item.source, name: item.name, path: item.path,
+      issues: item.issues, meta_title: item.meta_title, meta_description: item.meta_description,
+      title_length: item.meta_title?.length || 0, desc_length: item.meta_description?.length || 0,
+    })),
+    attention: attention.slice(0, limit).map((item, i) => ({
+      index: critical.length + i + 1, id: item.id, source: item.source, name: item.name, path: item.path,
+      issues: item.issues, meta_title: item.meta_title, meta_description: item.meta_description,
+      title_length: item.meta_title?.length || 0, desc_length: item.meta_description?.length || 0,
+    })),
+    optimized: good.map(item => item.name),
+    instructions: 'Present as a formatted SEO audit report. Show critical issues first, then attention items. List optimized pages briefly. End with: "Tell me which page to update and I\'ll show you a preview of the change before saving."',
+  };
+}
+
+// ============================================================
+// SEO UPDATE TOOL
+// ============================================================
+
+async function executeUpdateSEO(supabase: any, userId: string, input: any) {
+  const source = input.source || "page";
+  const table = source === "blog" ? "blog_posts" : "page_seo";
+  const nameCol = source === "blog" ? "title" : "page_name";
+  const pathCol = source === "blog" ? "slug" : "page_path";
+
+  // Fetch current record
+  const { data: record, error: fetchErr } = await supabase
+    .from(table)
+    .select("*")
+    .eq("id", input.page_id)
+    .single();
+
+  if (fetchErr || !record) return { error: `Record not found in ${table}.` };
+
+  const pageName = record[nameCol] || "Unknown";
+  const pagePath = source === "blog" ? `/blog/${record[pathCol]}` : record[pathCol];
+
+  if (!input.meta_title && !input.meta_description) {
+    return { error: "Provide at least one of meta_title or meta_description to update." };
+  }
+
+  // Preview mode
+  if (!input.confirmed) {
+    const preview: any = { needs_confirmation: true, action: "update_seo", summary: { page_name: pageName, page_path: pagePath, source } };
+    const lines: string[] = [`📝 **SEO Update Preview — ${pageName}**\n`];
+
+    if (input.meta_title) {
+      lines.push("**Meta Title:**");
+      lines.push('Old: "' + (record.meta_title || "(empty)") + '"');
+      const titleLen = input.meta_title.length;
+      const titleNote = titleLen > 60 ? " ⚠️ over 60" : titleLen < 30 ? " ⚠️ under 30" : " ✅";
+      lines.push('New: "' + input.meta_title + '" (' + titleLen + " chars" + titleNote + ")");
+      preview.summary.old_title = record.meta_title || null;
+      preview.summary.new_title = input.meta_title;
+    }
+    if (input.meta_description) {
+      lines.push("\n**Meta Description:**");
+      lines.push('Old: "' + (record.meta_description || "(empty)") + '"');
+      const descLen = input.meta_description.length;
+      const descNote = descLen > 160 ? " ⚠️ over 160" : descLen < 70 ? " ⚠️ under 70" : " ✅";
+      lines.push('New: "' + input.meta_description + '" (' + descLen + " chars" + descNote + ")");
+      preview.summary.old_description = record.meta_description || null;
+      preview.summary.new_description = input.meta_description;
+    }
+
+    lines.push(`\nReply **"confirm"** to save or suggest changes.`);
+    preview.confirmation_prompt = lines.join("\n");
+    return preview;
+  }
+
+  // Apply update
+  const updatePayload: Record<string, any> = { updated_at: new Date().toISOString() };
+  if (input.meta_title) updatePayload.meta_title = input.meta_title;
+  if (input.meta_description) updatePayload.meta_description = input.meta_description;
+
+  const { error: updateErr } = await supabase.from(table).update(updatePayload).eq("id", input.page_id);
+  if (updateErr) throw new Error(`Failed to update SEO: ${updateErr.message}`);
+
+  // Log to assistant_logs
+  supabase.from("assistant_logs").insert({
+    user_id: userId,
+    user_message: `[SYSTEM] update_seo — ${pageName}`,
+    assistant_response: `SEO updated for ${pageName} (${pagePath}). ${input.meta_title ? "Title updated." : ""} ${input.meta_description ? "Description updated." : ""}`.trim(),
+    tools_used: [{ tool: "update_seo", input: { page_id: input.page_id, source } }],
+  }).then(() => {}).catch(() => {});
+
+  return {
+    success: true,
+    message: "✓ SEO updated for **" + pageName + "** (" + pagePath + ")." + (input.meta_title ? '\n• Title: "' + input.meta_title + '"' : "") + (input.meta_description ? '\n• Description: "' + input.meta_description + '"' : "") + "\n\nChanges will reflect on next site build/deploy.",
+  };
+}
+
 // TOOL ROUTER
 // ============================================================
 
@@ -2888,6 +3146,7 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "get_recent_submissions": return executeGetRecentSubmissions(supabase, toolInput);
     case "get_pipeline_overview": return executeGetPipelineOverview(supabase, toolInput);
     case "get_team_info": return executeGetTeamInfo(supabase, toolInput);
+    case "seo_audit": return executeSEOAudit(supabase, toolInput);
     // Write tools
     case "create_customer": return executeCreateCustomer(supabase, userId, toolInput);
     case "create_job": return executeCreateJob(supabase, userId, toolInput);
@@ -2904,6 +3163,7 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "scan_watch_list": return executeScanWatchList(supabase, userId, toolInput);
     case "draft_estimate": return executeDraftEstimate(supabase, userId, toolInput);
     case "update_prices": return executeUpdatePrices(supabase, userId, toolInput);
+    case "update_seo": return executeUpdateSEO(supabase, userId, toolInput);
     case "get_property_data": return executeGetPropertyData(supabase, toolInput);
     case "verify_address": return executeVerifyAddress(supabase, toolInput);
     case "get_google_calendar": return executeGetGoogleCalendar(supabase, toolInput);
@@ -2961,6 +3221,11 @@ PROPERTY DATA & ADDRESS VERIFICATION:
 - If a location_id is provided, results are saved directly to the CRM location record.
 - You can verify and standardize any address using verify_address. This checks against Google Places, confirms DFW service area coverage, and returns clean address components with coordinates and county.
 - Address verification runs automatically during lead intake as a warning-only check — it never blocks saving. If the address cannot be verified, it is saved as entered with a warning. If the ZIP is outside DFW, it is flagged.
+
+SEO MANAGEMENT:
+- You can audit SEO metadata using seo_audit — this generates a read-only report showing missing, too-long, too-short, and duplicate meta titles and descriptions across pages and blog posts.
+- You never update SEO automatically. After showing the audit, wait for Eric to tell you which pages to fix, then use update_seo to show a preview before saving.
+- update_seo supports both page_seo records and blog_posts. Always show old vs new in the preview and require explicit confirmation before saving.
 
 WORKEDGE SYNC:
 Each morning the WorkEdge sync runs at 1AM CST. Report on last night's sync by querying workedge_daily_sync_log data in the briefing. If status is 'failed' flag it immediately at the top of the morning briefing with urgency.
