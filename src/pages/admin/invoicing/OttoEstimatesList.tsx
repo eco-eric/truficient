@@ -19,7 +19,7 @@ import { Search, Download, MoreHorizontal, Eye, FileText, Plus, ArrowRightCircle
 import { format, subDays, startOfMonth, subMonths, isAfter, isBefore } from 'date-fns';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
-import { ottopay } from '@/integrations/ottopay/client';
+import { ottoPatch } from '@/integrations/ottopay/client';
 import type { LineItemDraft } from '@/integrations/ottopay/types';
 
 const fmt = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
@@ -94,7 +94,8 @@ const OttoEstimatesList = () => {
 
   const handleStatusUpdate = async (est: any, newStatus: string) => {
     try {
-      await ottopay.from('estimates').update({ status: newStatus }).eq('id', est.id);
+      const { error } = await ottoPatch('estimates', est.id, { status: newStatus });
+      if (error) throw new Error(error.message);
       qc.invalidateQueries({ queryKey: ['otto-estimates'] });
       toast.success(`Estimate marked as ${newStatus}`);
     } catch (e: any) { toast.error(e.message); }

@@ -9,12 +9,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { ottopay } from '@/integrations/ottopay/client';
+import { ottoPost, ottoDelete } from '@/integrations/ottopay/client';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { Plus, Trash2, Package, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
-
-const OTTO_BUSINESS_ID = import.meta.env.VITE_OTTOPAY_BUSINESS_ID;
 const fmt = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
 
 const InvoiceCatalog = () => {
@@ -26,8 +24,8 @@ const InvoiceCatalog = () => {
 
   const createMaterial = useMutation({
     mutationFn: async () => {
-      const { error } = await ottopay.from('materials').insert({ business_id: OTTO_BUSINESS_ID, name: form.name, description: form.description || null, unit_price: parseFloat(form.unit_price) || 0, unit: form.unit || null, category: form.category || null });
-      if (error) throw error;
+      const { error } = await ottoPost('catalog', { type: 'materials', name: form.name, description: form.description || null, unit_price: parseFloat(form.unit_price) || 0, unit: form.unit || null, category: form.category || null });
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['otto-materials'] }); toast.success('Material added'); setCreateType(null); },
     onError: (e: any) => toast.error(e.message),
@@ -35,20 +33,20 @@ const InvoiceCatalog = () => {
 
   const createEquip = useMutation({
     mutationFn: async () => {
-      const { error } = await ottopay.from('equipment_catalog').insert({ business_id: OTTO_BUSINESS_ID, name: form.name, description: form.description || null, unit_price: parseFloat(form.unit_price) || 0, model_number: form.model_number || null, brand: form.brand || null, category: form.category || null });
-      if (error) throw error;
+      const { error } = await ottoPost('catalog', { type: 'equipment', name: form.name, description: form.description || null, unit_price: parseFloat(form.unit_price) || 0, model_number: form.model_number || null, brand: form.brand || null, category: form.category || null });
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['otto-equipment-catalog'] }); toast.success('Equipment added'); setCreateType(null); },
     onError: (e: any) => toast.error(e.message),
   });
 
   const deleteMat = useMutation({
-    mutationFn: async (id: string) => { await ottopay.from('materials').delete().eq('id', id); },
+    mutationFn: async (id: string) => { const { error } = await ottoDelete('catalog', id); if (error) throw new Error(error.message); },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['otto-materials'] }); toast.success('Deleted'); },
   });
 
   const deleteEquip = useMutation({
-    mutationFn: async (id: string) => { await ottopay.from('equipment_catalog').delete().eq('id', id); },
+    mutationFn: async (id: string) => { const { error } = await ottoDelete('catalog', id); if (error) throw new Error(error.message); },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['otto-equipment-catalog'] }); toast.success('Deleted'); },
   });
 

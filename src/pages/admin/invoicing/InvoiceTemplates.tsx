@@ -9,15 +9,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { ottopay } from '@/integrations/ottopay/client';
+import { ottoPost, ottoDelete } from '@/integrations/ottopay/client';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { LineItemEditor } from '@/components/invoicing/LineItemEditor';
 import { Plus, FileText, Trash2, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import type { LineItemDraft } from '@/integrations/ottopay/types';
-
-const OTTO_BUSINESS_ID = import.meta.env.VITE_OTTOPAY_BUSINESS_ID;
 const fmt = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
 
 const InvoiceTemplates = () => {
@@ -32,13 +30,8 @@ const InvoiceTemplates = () => {
 
   const createTemplate = useMutation({
     mutationFn: async () => {
-      const { data, error } = await ottopay.from('service_templates').insert({ business_id: OTTO_BUSINESS_ID, name, description: description || null }).select().single();
-      if (error) throw error;
-      if (lineItems.length > 0) {
-        await ottopay.from('template_line_items').insert(lineItems.map((li, i) => ({
-          template_id: data.id, description: li.description, quantity: li.quantity, unit_price: li.unit_price, sort_order: i,
-        })));
-      }
+      const { data, error } = await ottoPost('catalog', { type: 'templates', name, description: description || null, line_items: lineItems.map((li, i) => ({ description: li.description, quantity: li.quantity, unit_price: li.unit_price, sort_order: i })) });
+      if (error) throw new Error(error.message);
       return data;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['otto-templates'] }); toast.success('Template created'); setCreateOpen(false); setName(''); setDescription(''); setLineItems([]); },
@@ -47,9 +40,8 @@ const InvoiceTemplates = () => {
 
   const deleteTemplate = useMutation({
     mutationFn: async (id: string) => {
-      await ottopay.from('template_line_items').delete().eq('template_id', id);
-      const { error } = await ottopay.from('service_templates').delete().eq('id', id);
-      if (error) throw error;
+      const { error } = await ottoDelete('catalog', id);
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['otto-templates'] }); toast.success('Template deleted'); setSelected(null); },
   });
