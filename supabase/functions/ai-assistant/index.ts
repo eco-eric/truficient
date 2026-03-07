@@ -3159,6 +3159,7 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "scan_watch_list": return executeScanWatchList(supabase, userId, toolInput);
     case "draft_estimate": return executeDraftEstimate(supabase, userId, toolInput);
     case "update_prices": return executeUpdatePrices(supabase, userId, toolInput);
+    case "update_seo": return executeUpdateSEO(supabase, userId, toolInput);
     case "get_property_data": return executeGetPropertyData(supabase, toolInput);
     case "verify_address": return executeVerifyAddress(supabase, toolInput);
     case "get_google_calendar": return executeGetGoogleCalendar(supabase, toolInput);
