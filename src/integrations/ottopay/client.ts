@@ -42,7 +42,7 @@ export async function ottoGet<T = any>(
   }
 
   const url = new URL(API_URL);
-  url.searchParams.set('resource', resource);
+  url.searchParams.set('entity', resource);
   if (params?.id) url.searchParams.set('id', params.id);
   if (params?.select) url.searchParams.set('select', params.select);
   if (params?.order) url.searchParams.set('order', params.order);
@@ -75,7 +75,7 @@ export async function ottoPost<T = any>(
   const res = await fetch(API_URL, {
     method: 'POST',
     headers: headers(),
-    body: JSON.stringify({ resource, data }),
+    body: JSON.stringify({ entity: resource, data }),
   });
   if (!res.ok) {
     const body = await res.text();
@@ -99,7 +99,7 @@ export async function ottoPatch<T = any>(
   const res = await fetch(API_URL, {
     method: 'PATCH',
     headers: headers(),
-    body: JSON.stringify({ resource, id, data }),
+    body: JSON.stringify({ entity: resource, id, data }),
   });
   if (!res.ok) {
     const body = await res.text();
@@ -120,7 +120,7 @@ export async function ottoDelete(
   }
 
   const url = new URL(API_URL);
-  url.searchParams.set('resource', resource);
+  url.searchParams.set('entity', resource);
   url.searchParams.set('id', id);
 
   const res = await fetch(url.toString(), {
