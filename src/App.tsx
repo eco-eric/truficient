@@ -92,6 +92,10 @@ import AdminRolePermissions from "./pages/admin/RolePermissions";
 import AdminCompanies from "./pages/admin/Companies";
 import AdminCompanyDetail from "./pages/admin/CompanyDetail";
 import AdminTasks from "./pages/admin/Tasks";
+import InvoicingMissionControl from "./pages/admin/invoicing/InvoicingMissionControl";
+import InvoicesList from "./pages/admin/invoicing/InvoicesList";
+import PaymentsList from "./pages/admin/invoicing/PaymentsList";
+import InvoiceCustomers from "./pages/admin/invoicing/InvoiceCustomers";
 import { Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
@@ -238,6 +242,10 @@ const router = createBrowserRouter([
           { path: "/admin/automations", element: <ProtectedRoute><AdminAutomations /></ProtectedRoute> },
           { path: "/admin/permissions", element: <ProtectedRoute><AdminRolePermissions /></ProtectedRoute> },
           { path: "/admin/tasks", element: <ProtectedRoute><AdminTasks /></ProtectedRoute> },
+          { path: "/admin/invoicing", element: <ProtectedRoute><InvoicingMissionControl /></ProtectedRoute> },
+          { path: "/admin/invoices", element: <ProtectedRoute><InvoicesList /></ProtectedRoute> },
+          { path: "/admin/payments", element: <ProtectedRoute><PaymentsList /></ProtectedRoute> },
+          { path: "/admin/invoice-customers", element: <ProtectedRoute><InvoiceCustomers /></ProtectedRoute> },
         ],
       },
       
