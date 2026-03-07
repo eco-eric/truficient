@@ -1440,7 +1440,7 @@ async function executeCreateCustomer(supabase: any, userId: string, input: any) 
   return {
     success: true,
     customer_id: customer.id,
-    message: `Created customer **${customerName}**${hasAddress ? ` with address at ${input.city}` : ""}`,
+    message: `Created customer **${customerName}**${hasAddress ? ` with address at ${input.city}${propertyInfo}` : ""}`,
   };
 }
 
