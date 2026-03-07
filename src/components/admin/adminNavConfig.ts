@@ -107,7 +107,7 @@ export const navSections: NavSection[] = [
   {
     title: 'Estimators',
     items: [
-      { label: 'Estimates', href: '/admin/estimates', icon: FileText, permissionKey: 'nav.estimates' },
+      { label: 'Job Estimates', href: '/admin/estimates', icon: FileText, permissionKey: 'nav.estimates' },
       { label: 'Templates', href: '/admin/estimate-templates', icon: LayoutTemplate, permissionKey: 'nav.estimate-templates' },
       { label: 'System Pricing', href: '/admin/system-pricing', icon: DollarSign, permissionKey: 'nav.system-pricing' },
       { label: 'Customer Equipment', href: '/admin/customer-equipment', icon: Package, permissionKey: 'nav.customer-equipment' },
