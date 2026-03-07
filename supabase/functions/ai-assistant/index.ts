@@ -90,6 +90,7 @@ const TOOL_PERMISSIONS: Record<string, string> = {
   intake_lead: "can_use_write_tools",
   review_submissions: "can_use_write_tools",
   scan_watch_list: "can_use_write_tools",
+  draft_estimate: "can_use_write_tools",
   schedule_appointment: "can_use_write_tools",
   reschedule_appointment: "can_use_write_tools",
   cancel_appointment: "can_use_write_tools",
