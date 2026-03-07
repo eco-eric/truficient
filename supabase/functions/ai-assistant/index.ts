@@ -82,6 +82,7 @@ const TOOL_PERMISSIONS: Record<string, string> = {
   get_property_data: "can_access_assistant",
   verify_address: "can_access_assistant",
   get_team_info: "can_access_assistant",
+  seo_audit: "can_access_assistant",
   create_job: "can_use_write_tools",
   update_job_stage: "can_use_write_tools",
   log_interaction: "can_use_write_tools",
@@ -93,6 +94,7 @@ const TOOL_PERMISSIONS: Record<string, string> = {
   scan_watch_list: "can_use_write_tools",
   draft_estimate: "can_use_write_tools",
   update_prices: "can_use_write_tools",
+  update_seo: "can_use_write_tools",
   schedule_appointment: "can_use_write_tools",
   reschedule_appointment: "can_use_write_tools",
   cancel_appointment: "can_use_write_tools",
@@ -594,6 +596,41 @@ const tools = [
           save_to_location_id: { type: "string", description: "Optional CRM location UUID — if provided, updates the location with verified address components and coordinates" },
         },
         required: ["address"],
+      },
+    },
+  },
+  // === SEO AUDIT TOOL ===
+  {
+    type: "function" as const,
+    function: {
+      name: "seo_audit",
+      description: "Audit SEO metadata across all pages and blog posts. Returns a read-only report showing missing, too-long, too-short, and duplicate meta titles and descriptions. Never makes changes — use update_seo to fix issues after review.",
+      parameters: {
+        type: "object",
+        properties: {
+          scope: { type: "string", enum: ["all", "pages", "blog"], description: "Which content to audit (default: all)" },
+          issue_filter: { type: "string", enum: ["all", "missing", "too_long", "too_short", "duplicate"], description: "Filter by issue type (default: all)" },
+          limit: { type: "number", description: "Max items to return (default 50)" },
+        },
+      },
+    },
+  },
+  // === SEO UPDATE TOOL ===
+  {
+    type: "function" as const,
+    function: {
+      name: "update_seo",
+      description: "Update SEO metadata (meta title and/or meta description) for a specific page or blog post. Shows a preview of old vs new before saving. ALWAYS confirm first.",
+      parameters: {
+        type: "object",
+        properties: {
+          page_id: { type: "string", description: "UUID of the page_seo record or blog_posts record to update" },
+          source: { type: "string", enum: ["page", "blog"], description: "Whether this is a page_seo or blog_posts record (default: page)" },
+          meta_title: { type: "string", description: "New meta title (optional)" },
+          meta_description: { type: "string", description: "New meta description (optional)" },
+          confirmed: { type: "boolean", description: "Set true ONLY after user confirms. First call: always false." },
+        },
+        required: ["page_id", "confirmed"],
       },
     },
   },
