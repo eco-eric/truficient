@@ -3236,6 +3236,7 @@ export type Database = {
           title: string | null
           updated_at: string
           valid_until: string | null
+          workedge_project_id: string | null
         }
         Insert: {
           created_at?: string
@@ -3262,6 +3263,7 @@ export type Database = {
           title?: string | null
           updated_at?: string
           valid_until?: string | null
+          workedge_project_id?: string | null
         }
         Update: {
           created_at?: string
@@ -3288,6 +3290,7 @@ export type Database = {
           title?: string | null
           updated_at?: string
           valid_until?: string | null
+          workedge_project_id?: string | null
         }
         Relationships: [
           {
