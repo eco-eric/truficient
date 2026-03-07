@@ -3128,7 +3128,7 @@ async function executeUpdateSEO(supabase: any, userId: string, input: any) {
 
   return {
     success: true,
-    message: `✓ SEO updated for **${pageName}** (${pagePath}).${input.meta_title ? `\n• Title: "${input.meta_title}"` : ""}${input.meta_description ? `\n• Description: "${input.meta_description}"` : ""}\n\nChanges will reflect on next site build/deploy.`,
+    message: "✓ SEO updated for **" + pageName + "** (" + pagePath + ")." + (input.meta_title ? '\n• Title: "' + input.meta_title + '"' : "") + (input.meta_description ? '\n• Description: "' + input.meta_description + '"' : "") + "\n\nChanges will reflect on next site build/deploy.",
   };
 }
 
