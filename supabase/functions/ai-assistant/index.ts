@@ -2450,6 +2450,7 @@ Write operations (ALWAYS confirm first):
 - Schedule job appointments (automatically creates Google Calendar events with job details, customer info, and address)
 - Reschedule appointments (updates both CRM record and Google Calendar event)
 - Cancel appointments (removes CRM appointment and deletes Google Calendar event)
+- Draft project estimates using draft_estimate — pulls from existing templates, system pricing, and materials already in the database. Always links to an existing CRM customer. Saves as draft only — never sends to the customer. Eric reviews all estimates at /admin/estimates before sending.
 
 WORKEDGE SYNC:
 Each morning the WorkEdge sync runs at 1AM CST. Report on last night's sync by querying workedge_daily_sync_log data in the briefing. If status is 'failed' flag it immediately at the top of the morning briefing with urgency.
