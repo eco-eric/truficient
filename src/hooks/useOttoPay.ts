@@ -74,3 +74,35 @@ export const useOttoMetrics = () =>
       return { totalRevenue, outstanding, overdueCount, thisMonth, invoices };
     },
   });
+
+export const useOttoLineItems = (invoiceId: string | null) =>
+  useQuery({
+    queryKey: ['otto-line-items', invoiceId],
+    queryFn: async () => {
+      if (!invoiceId) return [];
+      const { data, error } = await ottopay
+        .from('invoice_line_items')
+        .select('*')
+        .eq('invoice_id', invoiceId)
+        .order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!invoiceId,
+  });
+
+export const useOttoInvoicePayments = (invoiceId: string | null) =>
+  useQuery({
+    queryKey: ['otto-invoice-payments', invoiceId],
+    queryFn: async () => {
+      if (!invoiceId) return [];
+      const { data, error } = await ottopay
+        .from('payment_history')
+        .select('*')
+        .eq('invoice_id', invoiceId)
+        .order('payment_date', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!invoiceId,
+  });
