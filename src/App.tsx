@@ -94,8 +94,14 @@ import AdminCompanyDetail from "./pages/admin/CompanyDetail";
 import AdminTasks from "./pages/admin/Tasks";
 import InvoicingMissionControl from "./pages/admin/invoicing/InvoicingMissionControl";
 import InvoicesList from "./pages/admin/invoicing/InvoicesList";
+import OttoEstimatesList from "./pages/admin/invoicing/OttoEstimatesList";
+import InvoiceClients from "./pages/admin/invoicing/InvoiceClients";
 import PaymentsList from "./pages/admin/invoicing/PaymentsList";
-import InvoiceCustomers from "./pages/admin/invoicing/InvoiceCustomers";
+import InvoiceTemplates from "./pages/admin/invoicing/InvoiceTemplates";
+import InvoiceCatalog from "./pages/admin/invoicing/InvoiceCatalog";
+import InvoiceExpenses from "./pages/admin/invoicing/InvoiceExpenses";
+import InvoiceReports from "./pages/admin/invoicing/InvoiceReports";
+import InvoiceSettings from "./pages/admin/invoicing/InvoiceSettings";
 import { Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
@@ -244,8 +250,15 @@ const router = createBrowserRouter([
           { path: "/admin/tasks", element: <ProtectedRoute><AdminTasks /></ProtectedRoute> },
           { path: "/admin/invoicing", element: <ProtectedRoute><InvoicingMissionControl /></ProtectedRoute> },
           { path: "/admin/invoices", element: <ProtectedRoute><InvoicesList /></ProtectedRoute> },
+          { path: "/admin/otto-estimates", element: <ProtectedRoute><OttoEstimatesList /></ProtectedRoute> },
+          { path: "/admin/invoice-clients", element: <ProtectedRoute><InvoiceClients /></ProtectedRoute> },
           { path: "/admin/payments", element: <ProtectedRoute><PaymentsList /></ProtectedRoute> },
-          { path: "/admin/invoice-customers", element: <ProtectedRoute><InvoiceCustomers /></ProtectedRoute> },
+          { path: "/admin/invoice-templates", element: <ProtectedRoute><InvoiceTemplates /></ProtectedRoute> },
+          { path: "/admin/invoice-catalog", element: <ProtectedRoute><InvoiceCatalog /></ProtectedRoute> },
+          { path: "/admin/invoice-expenses", element: <ProtectedRoute><InvoiceExpenses /></ProtectedRoute> },
+          { path: "/admin/invoice-reports", element: <ProtectedRoute><InvoiceReports /></ProtectedRoute> },
+          { path: "/admin/invoice-settings", element: <ProtectedRoute><InvoiceSettings /></ProtectedRoute> },
+          { path: "/admin/invoice-customers", element: <ProtectedRoute><InvoiceClients /></ProtectedRoute> },
         ],
       },
       
