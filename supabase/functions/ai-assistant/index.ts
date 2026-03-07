@@ -80,6 +80,7 @@ const TOOL_PERMISSIONS: Record<string, string> = {
   get_recent_submissions: "can_access_assistant",
   get_pipeline_overview: "can_access_assistant",
   get_property_data: "can_access_assistant",
+  verify_address: "can_access_assistant",
   get_team_info: "can_access_assistant",
   create_job: "can_use_write_tools",
   update_job_stage: "can_use_write_tools",
@@ -572,6 +573,25 @@ const tools = [
           state: { type: "string", description: "State abbreviation (default TX)" },
           zip_code: { type: "string", description: "ZIP code (optional, improves accuracy)" },
           location_id: { type: "string", description: "Optional CRM location UUID — if provided, saves property data back to this location record" },
+        },
+        required: ["address"],
+      },
+    },
+  },
+  // === ADDRESS VERIFICATION TOOL ===
+  {
+    type: "function" as const,
+    function: {
+      name: "verify_address",
+      description: "Verify and standardize an address using Google Geocoding. Returns clean components, coordinates, county, and DFW service area check. Optionally saves verified address back to a CRM location record. No confirmation needed.",
+      parameters: {
+        type: "object",
+        properties: {
+          address: { type: "string", description: "Raw address input (e.g., '456 oak ave plano tx')" },
+          city: { type: "string", description: "City (optional, helps accuracy)" },
+          state: { type: "string", description: "State (optional, default TX)" },
+          zip_code: { type: "string", description: "ZIP code (optional)" },
+          save_to_location_id: { type: "string", description: "Optional CRM location UUID — if provided, updates the location with verified address components and coordinates" },
         },
         required: ["address"],
       },
@@ -1534,6 +1554,35 @@ async function executeIntakeLead(supabase: any, userId: string, input: any) {
     if (locError) return { error: `Customer created but location failed: ${locError.message}`, customer_id: customer.id };
     results.location = "✓ Location added";
 
+    // Auto address verification (non-blocking, warning only)
+    try {
+      const verifyResult = await verifyAddressViaGoogle(input.address_line1, input.city, input.state || "TX", input.zip_code);
+      if (verifyResult.verified) {
+        // Save verified components + coordinates to location
+        const verifiedUpdate: Record<string, any> = {
+          county: verifyResult.components.county || null,
+          google_place_id: verifyResult.place_id || null,
+          latitude: verifyResult.coordinates.lat || null,
+          longitude: verifyResult.coordinates.lng || null,
+        };
+        // Only overwrite address fields if google returned a cleaner version
+        if (verifyResult.components.street) verifiedUpdate.address_line1 = verifyResult.components.street;
+        if (verifyResult.components.city) verifiedUpdate.city = verifyResult.components.city;
+        if (verifyResult.components.state) verifiedUpdate.state = verifyResult.components.state;
+        if (verifyResult.components.zip_code) verifiedUpdate.zip_code = verifyResult.components.zip_code;
+
+        await supabase.from("crm_locations").update(verifiedUpdate).eq("id", locData.id);
+        results.address_verify = verifyResult.is_dfw
+          ? "✓ Address verified — in DFW service area"
+          : `⚠️ Address verified — ZIP ${verifyResult.components.zip_code} is outside DFW service area`;
+      } else {
+        results.address_verify = "⚠️ Address could not be verified via Google — saved as entered";
+      }
+    } catch (verifyErr: any) {
+      console.error("Auto address verification failed:", verifyErr);
+      results.address_verify = "— Address verification: skipped (error)";
+    }
+
     // Auto property lookup (non-blocking)
     try {
       const propResult = await lookupPropertyAndSave(supabase, input.address_line1, input.city, input.state || "TX", input.zip_code, locData.id);
@@ -1605,7 +1654,7 @@ async function executeIntakeLead(supabase: any, userId: string, input: any) {
     success: true,
     customer_id: customer.id,
     ghl_sync: ghlStatus,
-    message: `Lead intake complete:\n${results.customer}\n${results.location}\n${results.property || ""}\n${results.pipeline}\n${results.interaction}\n${results.ghl}`.replace(/\n\n/g, "\n"),
+    message: `Lead intake complete:\n${results.customer}\n${results.location}\n${results.address_verify || ""}\n${results.property || ""}\n${results.pipeline}\n${results.interaction}\n${results.ghl}`.replace(/\n\n+/g, "\n"),
   };
 }
 
@@ -2704,6 +2753,127 @@ async function executeGetPropertyData(supabase: any, input: any) {
   };
 }
 
+// ============================================================
+// ADDRESS VERIFICATION TOOL
+// ============================================================
+
+async function verifyAddressViaGoogle(address: string, city: string, state: string, zipCode: string): Promise<any> {
+  const apiKey = Deno.env.get("GOOGLE_PLACES_API_KEY");
+  if (!apiKey) {
+    return { verified: false, error: "Google Places API key not configured." };
+  }
+
+  const fullAddress = [address, city, state, zipCode].filter(Boolean).join(", ");
+  const params = new URLSearchParams({ address: fullAddress, key: apiKey });
+
+  try {
+    const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?${params}`, {
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!response.ok) {
+      return { verified: false, error: `Google Geocoding returned HTTP ${response.status}` };
+    }
+
+    const data = await response.json();
+
+    if (data.status !== "OK" || !data.results || data.results.length === 0) {
+      return { verified: false, error: `Address not found. Google status: ${data.status}` };
+    }
+
+    const result = data.results[0];
+    const components = result.address_components || [];
+
+    const getComponent = (type: string, useShort = false): string | null => {
+      const comp = components.find((c: any) => c.types.includes(type));
+      return comp ? (useShort ? comp.short_name : comp.long_name) : null;
+    };
+
+    const streetNumber = getComponent("street_number") || "";
+    const route = getComponent("route") || "";
+    const streetAddress = `${streetNumber} ${route}`.trim();
+    const verifiedCity = getComponent("locality") || getComponent("sublocality") || "";
+    const county = getComponent("administrative_area_level_2") || "";
+    const verifiedState = getComponent("administrative_area_level_1", true) || "";
+    const verifiedZip = getComponent("postal_code") || "";
+    const placeId = result.place_id || null;
+    const lat = result.geometry?.location?.lat || null;
+    const lng = result.geometry?.location?.lng || null;
+
+    const isDfw = verifiedZip ? DFW_ZIPS.has(verifiedZip) : false;
+
+    return {
+      verified: true,
+      formatted_address: result.formatted_address,
+      components: {
+        street: streetAddress,
+        city: verifiedCity,
+        county: county,
+        state: verifiedState,
+        zip_code: verifiedZip,
+      },
+      coordinates: { lat, lng },
+      place_id: placeId,
+      is_dfw: isDfw,
+    };
+  } catch (err: any) {
+    console.error("Google Geocoding error:", err);
+    return { verified: false, error: err.message || "Geocoding request failed" };
+  }
+}
+
+async function executeVerifyAddress(supabase: any, input: any) {
+  const result = await verifyAddressViaGoogle(
+    input.address,
+    input.city || "",
+    input.state || "TX",
+    input.zip_code || ""
+  );
+
+  if (!result.verified) {
+    return {
+      verified: false,
+      input_address: input.address,
+      message: `⚠️ Address not verified\nCould not confirm "${input.address}" via Google Places.\nSuggestions:\n• Check street number and name spelling\n• Verify ZIP code\n• Try without apartment/unit number first`,
+      error: result.error,
+    };
+  }
+
+  // Save to location if requested
+  let saved = false;
+  if (input.save_to_location_id) {
+    const updatePayload: Record<string, any> = {
+      address_line1: result.components.street,
+      city: result.components.city,
+      state: result.components.state,
+      zip_code: result.components.zip_code,
+      county: result.components.county,
+      google_place_id: result.place_id,
+      latitude: result.coordinates.lat,
+      longitude: result.coordinates.lng,
+    };
+
+    const { error: updateErr } = await supabase
+      .from("crm_locations")
+      .update(updatePayload)
+      .eq("id", input.save_to_location_id);
+
+    if (!updateErr) saved = true;
+  }
+
+  return {
+    verified: true,
+    input_address: input.address,
+    formatted_address: result.formatted_address,
+    components: result.components,
+    coordinates: result.coordinates,
+    place_id: result.place_id,
+    is_dfw: result.is_dfw,
+    saved_to_location: saved,
+    message: `✅ Address Verified\n\nInput:     "${input.address}"\nVerified:  ${result.formatted_address}\n\nStreet:    ${result.components.street}\nCity:      ${result.components.city}\nCounty:    ${result.components.county}\nState:     ${result.components.state}\nZIP:       ${result.components.zip_code}\nDFW Area:  ${result.is_dfw ? "✅ Yes — in service area" : "⚠️ No — outside service area"}\nLat/Lng:   ${result.coordinates.lat}° N, ${Math.abs(result.coordinates.lng)}° W\n\nGoogle Place ID: ${result.place_id}${saved ? "\n\n✓ Verified address saved to location record." : ""}`,
+  };
+}
+
 // TOOL ROUTER
 // ============================================================
 
@@ -2735,6 +2905,7 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "draft_estimate": return executeDraftEstimate(supabase, userId, toolInput);
     case "update_prices": return executeUpdatePrices(supabase, userId, toolInput);
     case "get_property_data": return executeGetPropertyData(supabase, toolInput);
+    case "verify_address": return executeVerifyAddress(supabase, toolInput);
     case "get_google_calendar": return executeGetGoogleCalendar(supabase, toolInput);
     case "get_job_types": return executeGetJobTypes(supabase);
     case "get_pipeline_stages": return executeGetPipelineStages(supabase);
@@ -2784,10 +2955,12 @@ Write operations (ALWAYS confirm first):
 - Draft project estimates using draft_estimate — pulls from existing templates, system pricing, and materials already in the database. Always links to an existing CRM customer. Saves as draft only — never sends to the customer. Eric reviews all estimates at /admin/estimates before sending.
 - Update system pricing using update_prices — when a user pastes a price list or spreadsheet data in any format (CSV, tab-separated, plain text table, or conversational), automatically parse it into price_data format and show a before/after diff. Always require explicit confirmation before applying changes. Never update prices silently. Supported tables: equipment systems, materials catalog, labor rates, ductless addons, ductless unit sizes, and financing options.
 
-PROPERTY DATA:
+PROPERTY DATA & ADDRESS VERIFICATION:
 - Whenever you create a new job location (via intake_lead or create_customer with an address), property data is automatically looked up in the background and saved to the location record.
 - You can also look up property data on demand using get_property_data for any address. Property data helps with sizing estimates and customer context.
 - If a location_id is provided, results are saved directly to the CRM location record.
+- You can verify and standardize any address using verify_address. This checks against Google Places, confirms DFW service area coverage, and returns clean address components with coordinates and county.
+- Address verification runs automatically during lead intake as a warning-only check — it never blocks saving. If the address cannot be verified, it is saved as entered with a warning. If the ZIP is outside DFW, it is flagged.
 
 WORKEDGE SYNC:
 Each morning the WorkEdge sync runs at 1AM CST. Report on last night's sync by querying workedge_daily_sync_log data in the briefing. If status is 'failed' flag it immediately at the top of the morning briefing with urgency.
