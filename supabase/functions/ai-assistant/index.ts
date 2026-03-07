@@ -3087,16 +3087,20 @@ async function executeUpdateSEO(supabase: any, userId: string, input: any) {
     const lines: string[] = [`📝 **SEO Update Preview — ${pageName}**\n`];
 
     if (input.meta_title) {
-      lines.push(`**Meta Title:**`);
-      lines.push(`Old: "${record.meta_title || "(empty)}"`);
-      lines.push(`New: "${input.meta_title}" (${input.meta_title.length} chars${input.meta_title.length > 60 ? " ⚠️ over 60" : input.meta_title.length < 30 ? " ⚠️ under 30" : " ✅"})`);
+      lines.push("**Meta Title:**");
+      lines.push('Old: "' + (record.meta_title || "(empty)") + '"');
+      const titleLen = input.meta_title.length;
+      const titleNote = titleLen > 60 ? " ⚠️ over 60" : titleLen < 30 ? " ⚠️ under 30" : " ✅";
+      lines.push('New: "' + input.meta_title + '" (' + titleLen + " chars" + titleNote + ")");
       preview.summary.old_title = record.meta_title || null;
       preview.summary.new_title = input.meta_title;
     }
     if (input.meta_description) {
-      lines.push(`\n**Meta Description:**`);
-      lines.push(`Old: "${record.meta_description || "(empty)}"`);
-      lines.push(`New: "${input.meta_description}" (${input.meta_description.length} chars${input.meta_description.length > 160 ? " ⚠️ over 160" : input.meta_description.length < 70 ? " ⚠️ under 70" : " ✅"})`);
+      lines.push("\n**Meta Description:**");
+      lines.push('Old: "' + (record.meta_description || "(empty)") + '"');
+      const descLen = input.meta_description.length;
+      const descNote = descLen > 160 ? " ⚠️ over 160" : descLen < 70 ? " ⚠️ under 70" : " ✅";
+      lines.push('New: "' + input.meta_description + '" (' + descLen + " chars" + descNote + ")");
       preview.summary.old_description = record.meta_description || null;
       preview.summary.new_description = input.meta_description;
     }
