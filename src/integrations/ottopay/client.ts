@@ -1,23 +1,10 @@
 /**
  * Otto Pay API Client
- * Routes all requests through the api-sync edge function instead of direct DB access.
+ * Routes all requests through the ottopay-proxy edge function.
+ * No API keys or credentials touch the browser.
  */
 
-const API_BASE = import.meta.env.VITE_OTTOPAY_SUPABASE_URL || 'https://kbblxzvgeavksikjrcdi.supabase.co';
-const SYNC_KEY = import.meta.env.VITE_OTTOPAY_SYNC_KEY || '';
-const BUSINESS_ID = import.meta.env.VITE_OTTOPAY_BUSINESS_ID || '';
-
-const API_URL = `${API_BASE}/functions/v1/api-sync`;
-
-const isConfigured = !!(SYNC_KEY && BUSINESS_ID);
-
-function headers(): Record<string, string> {
-  return {
-    'Content-Type': 'application/json',
-    'x-api-key': SYNC_KEY || '',
-    'x-business-id': BUSINESS_ID || '',
-  };
-}
+import { supabase } from '@/integrations/supabase/client';
 
 export interface OttoApiResponse<T = any> {
   data: T | null;
@@ -37,28 +24,24 @@ export async function ottoGet<T = any>(
     filters?: Record<string, string>;
   }
 ): Promise<OttoApiResponse<T>> {
-  if (!isConfigured) {
-    return { data: null, error: { message: 'Otto Pay not configured' } };
-  }
+  const { data, error } = await supabase.functions.invoke('ottopay-proxy', {
+    body: {
+      entity: resource,
+      method: 'GET',
+      id: params?.id,
+      params: {
+        select: params?.select,
+        order: params?.order,
+        limit: params?.limit,
+        filters: params?.filters,
+      },
+    },
+  });
 
-  const url = new URL(API_URL);
-  url.searchParams.set('entity', resource);
-  if (params?.id) url.searchParams.set('id', params.id);
-  if (params?.select) url.searchParams.set('select', params.select);
-  if (params?.order) url.searchParams.set('order', params.order);
-  if (params?.limit) url.searchParams.set('limit', String(params.limit));
-  if (params?.filters) {
-    for (const [key, value] of Object.entries(params.filters)) {
-      url.searchParams.set(`filter.${key}`, value);
-    }
+  if (error) {
+    return { data: null, error: { message: error.message || 'Proxy request failed' } };
   }
-
-  const res = await fetch(url.toString(), { headers: headers() });
-  if (!res.ok) {
-    const body = await res.text();
-    return { data: null, error: { message: `API error ${res.status}: ${body}` } };
-  }
-  return res.json();
+  return data as OttoApiResponse<T>;
 }
 
 /**
@@ -66,22 +49,20 @@ export async function ottoGet<T = any>(
  */
 export async function ottoPost<T = any>(
   resource: string,
-  data: Record<string, any>
+  payload: Record<string, any>
 ): Promise<OttoApiResponse<T>> {
-  if (!isConfigured) {
-    return { data: null, error: { message: 'Otto Pay not configured' } };
-  }
-
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: headers(),
-    body: JSON.stringify({ entity: resource, data }),
+  const { data, error } = await supabase.functions.invoke('ottopay-proxy', {
+    body: {
+      entity: resource,
+      method: 'POST',
+      params: payload,
+    },
   });
-  if (!res.ok) {
-    const body = await res.text();
-    return { data: null, error: { message: `API error ${res.status}: ${body}` } };
+
+  if (error) {
+    return { data: null, error: { message: error.message || 'Proxy request failed' } };
   }
-  return res.json();
+  return data as OttoApiResponse<T>;
 }
 
 /**
@@ -90,22 +71,21 @@ export async function ottoPost<T = any>(
 export async function ottoPatch<T = any>(
   resource: string,
   id: string,
-  data: Record<string, any>
+  payload: Record<string, any>
 ): Promise<OttoApiResponse<T>> {
-  if (!isConfigured) {
-    return { data: null, error: { message: 'Otto Pay not configured' } };
-  }
-
-  const res = await fetch(API_URL, {
-    method: 'PATCH',
-    headers: headers(),
-    body: JSON.stringify({ entity: resource, id, data }),
+  const { data, error } = await supabase.functions.invoke('ottopay-proxy', {
+    body: {
+      entity: resource,
+      method: 'PATCH',
+      id,
+      params: payload,
+    },
   });
-  if (!res.ok) {
-    const body = await res.text();
-    return { data: null, error: { message: `API error ${res.status}: ${body}` } };
+
+  if (error) {
+    return { data: null, error: { message: error.message || 'Proxy request failed' } };
   }
-  return res.json();
+  return data as OttoApiResponse<T>;
 }
 
 /**
@@ -115,60 +95,41 @@ export async function ottoDelete(
   resource: string,
   id: string
 ): Promise<OttoApiResponse<null>> {
-  if (!isConfigured) {
-    return { data: null, error: { message: 'Otto Pay not configured' } };
-  }
-
-  const url = new URL(API_URL);
-  url.searchParams.set('entity', resource);
-  url.searchParams.set('id', id);
-
-  const res = await fetch(url.toString(), {
-    method: 'DELETE',
-    headers: headers(),
+  const { data, error } = await supabase.functions.invoke('ottopay-proxy', {
+    body: {
+      entity: resource,
+      method: 'DELETE',
+      id,
+    },
   });
-  if (!res.ok) {
-    const body = await res.text();
-    return { data: null, error: { message: `API error ${res.status}: ${body}` } };
+
+  if (error) {
+    return { data: null, error: { message: error.message || 'Proxy request failed' } };
   }
-  return res.json();
+  return data as OttoApiResponse<null>;
 }
 
 /**
- * Upload a file (still uses the Supabase storage directly if needed,
- * but can be routed through api-sync if the endpoint supports it)
+ * Upload a file via the proxy
  */
 export async function ottoUpload(
   bucket: string,
   path: string,
   file: File
 ): Promise<OttoApiResponse<{ publicUrl: string }>> {
-  if (!isConfigured) {
-    return { data: null, error: { message: 'Otto Pay not configured' } };
-  }
-
-  // For file uploads, we POST multipart to a dedicated upload resource
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('bucket', bucket);
-  formData.append('path', path);
-
-  const res = await fetch(`${API_URL}?resource=upload`, {
-    method: 'POST',
-    headers: {
-      'x-api-key': SYNC_KEY || '',
-      'x-business-id': BUSINESS_ID || '',
-      // Don't set Content-Type — browser sets multipart boundary
+  const { data, error } = await supabase.functions.invoke('ottopay-proxy', {
+    body: {
+      entity: 'upload',
+      method: 'POST',
+      params: { bucket, path, fileName: file.name, fileType: file.type, fileSize: file.size },
     },
-    body: formData,
   });
 
-  if (!res.ok) {
-    const body = await res.text();
-    return { data: null, error: { message: `Upload error ${res.status}: ${body}` } };
+  if (error) {
+    return { data: null, error: { message: error.message || 'Upload failed' } };
   }
-  return res.json();
+  return data as OttoApiResponse<{ publicUrl: string }>;
 }
 
-// Re-export for backward compatibility checks
-export const isOttoPayConfigured = isConfigured;
+// Re-export — always true now since proxy handles config check server-side
+export const isOttoPayConfigured = true;
