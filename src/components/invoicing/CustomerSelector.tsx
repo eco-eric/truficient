@@ -1,11 +1,13 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useOttoCustomers, useCreateOttoCustomer } from '@/hooks/useOttoPay';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Button } from '@/components/ui/button';
 import { ChevronsUpDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface CustomerSelectorProps {
   value: string | null;
@@ -31,7 +33,10 @@ function useCrmCustomers() {
 export function CustomerSelector({ value, onChange }: CustomerSelectorProps) {
   const queryClient = useQueryClient();
   const { data: crmCustomers } = useCrmCustomers();
+  const { data: ottoCustomers } = useOttoCustomers();
+  const createOttoCustomer = useCreateOttoCustomer();
   const [open, setOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   // Subscribe to realtime CRM customer changes
   useEffect(() => {
@@ -48,16 +53,64 @@ export function CustomerSelector({ value, onChange }: CustomerSelectorProps) {
   const customerList = useMemo(() => {
     return (crmCustomers || []).map(c => {
       const name = [c.first_name, c.last_name].filter(Boolean).join(' ') || c.company_name || 'Unnamed';
-      return { id: c.id, name, email: c.email };
+      return { crmId: c.id, name, email: c.email, phone: c.phone, raw: c };
     }).sort((a, b) => a.name.localeCompare(b.name));
   }, [crmCustomers]);
 
-  // Find selected customer display name
-  const selected = customerList.find(c => c.id === value);
+  // Find selected customer display name — check both Otto customers and CRM list
+  const selectedName = useMemo(() => {
+    if (!value) return null;
+    const otto = (ottoCustomers || []).find((c: any) => c.id === value);
+    if (otto) return otto.name;
+    const crm = customerList.find(c => c.crmId === value);
+    if (crm) return crm.name;
+    return null;
+  }, [value, ottoCustomers, customerList]);
 
-  const handleSelect = (id: string) => {
+  // When a CRM customer is selected, find or create matching Otto Pay customer
+  const handleSelect = async (crmId: string) => {
     setOpen(false);
-    onChange(id);
+    const crm = customerList.find(c => c.crmId === crmId);
+    if (!crm) return;
+
+    setSyncing(true);
+    try {
+      // Check if an Otto Pay customer already exists with matching name+email
+      const existing = (ottoCustomers || []).find((oc: any) =>
+        oc.name === crm.name && (oc.email === crm.email || (!oc.email && !crm.email))
+      );
+
+      if (existing) {
+        onChange(existing.id);
+      } else {
+        // Create new Otto Pay customer from CRM data
+        const raw = crm.raw;
+        const address = [raw.billing_address, raw.billing_city, raw.billing_state, raw.billing_zip]
+          .filter(Boolean).join(', ') || null;
+
+        const newCustomer = await createOttoCustomer.mutateAsync({
+          name: crm.name,
+          email: crm.email || null,
+          phone: crm.phone || null,
+          address,
+          city: raw.billing_city || null,
+          state: raw.billing_state || null,
+          zip: raw.billing_zip || null,
+        } as any);
+
+        if (newCustomer?.id) {
+          onChange(newCustomer.id);
+          toast.success(`Synced "${crm.name}" to invoicing`);
+        } else {
+          throw new Error('Failed to create customer — no ID returned');
+        }
+      }
+    } catch (e: any) {
+      console.error('Customer sync error:', e);
+      toast.error(e.message || 'Failed to sync customer');
+    } finally {
+      setSyncing(false);
+    }
   };
 
   return (
@@ -67,8 +120,9 @@ export function CustomerSelector({ value, onChange }: CustomerSelectorProps) {
           variant="outline"
           role="combobox"
           className="w-full justify-between font-normal"
+          disabled={syncing}
         >
-          {selected ? selected.name : 'Select customer…'}
+          {syncing ? 'Syncing…' : selectedName ? selectedName : 'Select customer…'}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -77,14 +131,14 @@ export function CustomerSelector({ value, onChange }: CustomerSelectorProps) {
           <CommandInput placeholder="Search customers…" />
           <CommandList>
             <CommandEmpty>No customers found.</CommandEmpty>
-            <CommandGroup heading="Customers">
+            <CommandGroup heading="CRM Customers">
               {customerList.map(c => (
                 <CommandItem
-                  key={c.id}
+                  key={c.crmId}
                   value={c.name}
-                  onSelect={() => handleSelect(c.id)}
+                  onSelect={() => handleSelect(c.crmId)}
                 >
-                  <Check className={cn('mr-2 h-4 w-4', value === c.id ? 'opacity-100' : 'opacity-0')} />
+                  <Check className={cn('mr-2 h-4 w-4', 'opacity-0')} />
                   <div>
                     <p className="text-sm font-medium">{c.name}</p>
                     {c.email && <p className="text-xs text-muted-foreground">{c.email}</p>}
