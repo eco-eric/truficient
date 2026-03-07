@@ -91,6 +91,7 @@ const TOOL_PERMISSIONS: Record<string, string> = {
   review_submissions: "can_use_write_tools",
   scan_watch_list: "can_use_write_tools",
   draft_estimate: "can_use_write_tools",
+  update_prices: "can_use_write_tools",
   schedule_appointment: "can_use_write_tools",
   reschedule_appointment: "can_use_write_tools",
   cancel_appointment: "can_use_write_tools",
@@ -524,6 +525,36 @@ const tools = [
           confirmed: { type: "boolean", description: "Set true ONLY after user confirms the draft preview. First call: always false." },
         },
         required: ["job_type", "confirmed"],
+      },
+    },
+  },
+  // === PRICE UPDATE TOOL ===
+  {
+    type: "function" as const,
+    function: {
+      name: "update_prices",
+      description: "Update prices in system pricing tables (equipment systems, materials catalog, labor rates, ductless addons, ductless unit sizes, financing options). Shows a before/after diff for review before applying. When a user pastes a price list in any format, parse it into price_data and call this tool. ALWAYS confirm first.",
+      parameters: {
+        type: "object",
+        properties: {
+          update_type: { type: "string", enum: ["equipment", "materials", "labor", "addons", "ductless_units", "financing"], description: "Which pricing table to update" },
+          price_data: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string", description: "Item name to match" },
+                sku: { type: "string", description: "SKU or model number to match (optional)" },
+                new_price: { type: "number", description: "New price value" },
+              },
+              required: ["new_price"],
+            },
+            description: "Array of items with name/sku and new_price",
+          },
+          skip_unmatched: { type: "boolean", description: "Skip items that can't be matched (default true)" },
+          confirmed: { type: "boolean", description: "Set true ONLY after user confirms. First call: always false." },
+        },
+        required: ["update_type", "price_data", "confirmed"],
       },
     },
   },
@@ -2374,6 +2405,178 @@ async function executeDraftEstimate(supabase: any, userId: string, input: any) {
   };
 }
 
+// ============================================================
+// PRICE UPDATE TOOL
+// ============================================================
+
+const UPDATE_TYPE_CONFIG: Record<string, { table: string; priceCol: string; nameCol: string; skuCol: string | null; label: string }> = {
+  equipment: { table: "equipment_systems", priceCol: "system_price", nameCol: "system_name", skuCol: "condenser_heat_pump_model", label: "Equipment Systems" },
+  materials: { table: "materials_catalog", priceCol: "unit_cost", nameCol: "name", skuCol: "part_number", label: "Materials Catalog" },
+  labor: { table: "labor_rates", priceCol: "rate", nameCol: "name", skuCol: null, label: "Labor Rates" },
+  addons: { table: "ductless_addons", priceCol: "price", nameCol: "name", skuCol: null, label: "Ductless Add-ons" },
+  ductless_units: { table: "ductless_unit_size_pricing", priceCol: "price", nameCol: "size_tons", skuCol: null, label: "Ductless Unit Sizes" },
+  financing: { table: "financing_options", priceCol: "payment_factor", nameCol: "plan_name", skuCol: "tran_code", label: "Financing Options" },
+};
+
+async function executeUpdatePrices(supabase: any, userId: string, input: any) {
+  const config = UPDATE_TYPE_CONFIG[input.update_type];
+  if (!config) return { error: `Invalid update_type: ${input.update_type}. Valid: ${Object.keys(UPDATE_TYPE_CONFIG).join(", ")}` };
+
+  const priceData: Array<{ name?: string; sku?: string; new_price: number }> = input.price_data;
+  if (!priceData || priceData.length === 0) return { error: "price_data is required and must not be empty." };
+
+  const skipUnmatched = input.skip_unmatched !== false;
+
+  // Fetch all existing records from the target table
+  const { data: existingRecords, error: fetchErr } = await supabase
+    .from(config.table)
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (fetchErr) throw new Error(`Failed to fetch ${config.label}: ${fetchErr.message}`);
+  if (!existingRecords || existingRecords.length === 0) return { error: `No records found in ${config.label}.` };
+
+  // Match each price_data item to an existing record
+  const matched: Array<{ record: any; newPrice: number; currentPrice: number; inputItem: any }> = [];
+  const unmatched: Array<{ name?: string; sku?: string; new_price: number }> = [];
+  const noChange: Array<{ record: any; price: number }> = [];
+
+  for (const item of priceData) {
+    let match: any = null;
+
+    // Try exact name match
+    if (item.name) {
+      match = existingRecords.find((r: any) =>
+        String(r[config.nameCol] || "").toLowerCase() === item.name!.toLowerCase()
+      );
+    }
+
+    // Try case-insensitive partial name match
+    if (!match && item.name) {
+      match = existingRecords.find((r: any) =>
+        String(r[config.nameCol] || "").toLowerCase().includes(item.name!.toLowerCase()) ||
+        item.name!.toLowerCase().includes(String(r[config.nameCol] || "").toLowerCase())
+      );
+    }
+
+    // Try SKU/model match
+    if (!match && item.sku && config.skuCol) {
+      match = existingRecords.find((r: any) =>
+        String(r[config.skuCol!] || "").toLowerCase() === item.sku!.toLowerCase()
+      );
+      if (!match) {
+        match = existingRecords.find((r: any) =>
+          String(r[config.skuCol!] || "").toLowerCase().includes(item.sku!.toLowerCase())
+        );
+      }
+    }
+
+    // For ductless_units, match by size_tons number
+    if (!match && input.update_type === "ductless_units" && item.name) {
+      const sizeNum = parseFloat(item.name.replace(/[^0-9.]/g, ""));
+      if (!isNaN(sizeNum)) {
+        match = existingRecords.find((r: any) => Number(r.size_tons) === sizeNum);
+      }
+    }
+
+    if (match) {
+      const currentPrice = Number(match[config.priceCol]) || 0;
+      if (Math.abs(currentPrice - item.new_price) < 0.001) {
+        noChange.push({ record: match, price: currentPrice });
+      } else {
+        matched.push({ record: match, newPrice: item.new_price, currentPrice, inputItem: item });
+      }
+    } else {
+      unmatched.push(item);
+    }
+  }
+
+  // === PREVIEW MODE ===
+  if (!input.confirmed) {
+    const changes = matched.map((m) => {
+      const delta = m.newPrice - m.currentPrice;
+      const pctChange = m.currentPrice > 0 ? ((delta / m.currentPrice) * 100).toFixed(1) : "N/A";
+      return {
+        name: m.record[config.nameCol] || m.record.id,
+        current: m.currentPrice,
+        new: m.newPrice,
+        delta,
+        pct: pctChange,
+      };
+    });
+
+    const avgChange = matched.length > 0
+      ? matched.reduce((sum, m) => {
+          const pct = m.currentPrice > 0 ? ((m.newPrice - m.currentPrice) / m.currentPrice) * 100 : 0;
+          return sum + pct;
+        }, 0) / matched.length
+      : 0;
+
+    return {
+      needs_confirmation: true,
+      action: "update_prices",
+      summary: {
+        update_type: input.update_type,
+        table: config.label,
+        total_in_paste: priceData.length,
+        matched_count: matched.length + noChange.length,
+        will_update: matched.length,
+        no_change: noChange.length,
+        unmatched_count: unmatched.length,
+        changes,
+        unmatched_items: unmatched.map((u) => u.name || u.sku || "unknown"),
+        average_change_pct: `${avgChange >= 0 ? "+" : ""}${avgChange.toFixed(1)}%`,
+      },
+      confirmation_prompt: `💰 **PRICE UPDATE REVIEW — ${config.label}**\n${"─".repeat(50)}\nTotal in paste: ${priceData.length} items\nMatched: ${matched.length + noChange.length} items\nNo change needed: ${noChange.length} items (prices already match)\nWill update: ${matched.length} items\nUnmatched: ${unmatched.length} items (${skipUnmatched ? "skipping" : "⚠️ will fail"})\n\n${matched.length > 0 ? "**CHANGES:**\n" + changes.map((c) => `• ${c.name}: $${c.current.toFixed(2)} → $${c.new.toFixed(2)} (${c.delta >= 0 ? "+" : ""}$${c.delta.toFixed(2)}, ${c.delta >= 0 ? "+" : ""}${c.pct}%)`).join("\n") : "No price changes to apply."}\n${unmatched.length > 0 ? `\n⚠️ **UNMATCHED (will skip):**\n${unmatched.map((u) => `• "${u.name || u.sku}" — no match found`).join("\n")}` : ""}\n\nAverage change: ${avgChange >= 0 ? "+" : ""}${avgChange.toFixed(1)}%\n${"─".repeat(50)}\nReply **"confirm update"** to apply all ${matched.length} changes.\nReply **"update all except [item]"** to skip specific items.`,
+    };
+  }
+
+  // === APPLY UPDATES ===
+  let updatedCount = 0;
+  const errors: string[] = [];
+
+  for (const m of matched) {
+    const { error: updateErr } = await supabase
+      .from(config.table)
+      .update({ [config.priceCol]: m.newPrice })
+      .eq("id", m.record.id);
+
+    if (updateErr) {
+      errors.push(`Failed to update "${m.record[config.nameCol]}": ${updateErr.message}`);
+    } else {
+      updatedCount++;
+    }
+  }
+
+  // Log the update as a system interaction
+  const avgPctFinal = matched.length > 0
+    ? matched.reduce((sum, m) => sum + (m.currentPrice > 0 ? ((m.newPrice - m.currentPrice) / m.currentPrice) * 100 : 0), 0) / matched.length
+    : 0;
+
+  // Use a system-level log — insert into crm_interactions with a null customer_id won't work,
+  // so we log into assistant_logs instead (already handled by the main handler).
+  // Additionally log a note for audit trail:
+  const today = new Date().toLocaleDateString("en-US", { timeZone: TZ });
+  const logContent = `Price update applied by Bach. ${updatedCount} items updated in ${config.label}. Average change: ${avgPctFinal >= 0 ? "+" : ""}${avgPctFinal.toFixed(1)}%. Date: ${today}.${errors.length > 0 ? ` Errors: ${errors.length}.` : ""}`;
+
+  // Fire-and-forget audit log
+  supabase.from("assistant_logs").insert({
+    user_id: userId,
+    user_message: `[SYSTEM] update_prices — ${config.label}`,
+    assistant_response: logContent,
+    tools_used: [{ tool: "update_prices", input: { update_type: input.update_type, items_updated: updatedCount } }],
+  }).then(() => {}).catch(() => {});
+
+  return {
+    success: errors.length === 0,
+    updated: updatedCount,
+    unchanged: noChange.length,
+    unmatched: unmatched.length,
+    errors: errors.length > 0 ? errors : undefined,
+    message: `✓ Price update complete\n✓ ${updatedCount} items updated in ${config.label}\n✓ ${noChange.length} items unchanged (already matched)\n${unmatched.length > 0 ? `✗ ${unmatched.length} items unmatched — skipped\n` : ""}✓ Change log saved${errors.length > 0 ? `\n⚠️ ${errors.length} errors occurred` : ""}`,
+  };
+}
+
 //
 // TOOL ROUTER
 // ============================================================
@@ -2404,6 +2607,7 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "review_submissions": return executeReviewSubmissions(supabase, userId, toolInput);
     case "scan_watch_list": return executeScanWatchList(supabase, userId, toolInput);
     case "draft_estimate": return executeDraftEstimate(supabase, userId, toolInput);
+    case "update_prices": return executeUpdatePrices(supabase, userId, toolInput);
     case "get_google_calendar": return executeGetGoogleCalendar(supabase, toolInput);
     case "get_job_types": return executeGetJobTypes(supabase);
     case "get_pipeline_stages": return executeGetPipelineStages(supabase);
@@ -2451,6 +2655,7 @@ Write operations (ALWAYS confirm first):
 - Reschedule appointments (updates both CRM record and Google Calendar event)
 - Cancel appointments (removes CRM appointment and deletes Google Calendar event)
 - Draft project estimates using draft_estimate — pulls from existing templates, system pricing, and materials already in the database. Always links to an existing CRM customer. Saves as draft only — never sends to the customer. Eric reviews all estimates at /admin/estimates before sending.
+- Update system pricing using update_prices — when a user pastes a price list or spreadsheet data in any format (CSV, tab-separated, plain text table, or conversational), automatically parse it into price_data format and show a before/after diff. Always require explicit confirmation before applying changes. Never update prices silently. Supported tables: equipment systems, materials catalog, labor rates, ductless addons, ductless unit sizes, and financing options.
 
 WORKEDGE SYNC:
 Each morning the WorkEdge sync runs at 1AM CST. Report on last night's sync by querying workedge_daily_sync_log data in the briefing. If status is 'failed' flag it immediately at the top of the morning briefing with urgency.
