@@ -333,6 +333,15 @@ serve(async (req) => {
       recent_wins_total: winsList.reduce(
         (sum: number, w: any) => sum + (Number(w.estimated_value) || 0), 0
       ),
+      workedge_sync: workedgeSyncResult.data ? {
+        sync_at: workedgeSyncResult.data.sync_at,
+        jobs_created: workedgeSyncResult.data.jobs_created,
+        jobs_updated: workedgeSyncResult.data.jobs_updated,
+        attachments_synced: workedgeSyncResult.data.attachments_synced,
+        status: workedgeSyncResult.data.status,
+        duration_ms: workedgeSyncResult.data.duration_ms,
+        has_errors: !!workedgeSyncResult.data.errors,
+      } : null,
       alerts,
       alerts_by_severity: {
         urgent: alerts.filter(a => a.severity === "urgent").length,
