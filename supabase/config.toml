@@ -45,3 +45,6 @@ verify_jwt = false
 
 [functions.text-to-speech]
 verify_jwt = false
+
+[functions.create-invoice-payment]
+verify_jwt = false
