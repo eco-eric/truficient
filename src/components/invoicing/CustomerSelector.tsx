@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useMemo, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ottopay } from '@/integrations/ottopay/client';
 import { useOttoCustomers, useCreateOttoCustomer } from '@/hooks/useOttoPay';
@@ -34,11 +34,23 @@ function useCrmCustomers() {
 }
 
 export function CustomerSelector({ value, onChange }: CustomerSelectorProps) {
+  const queryClient = useQueryClient();
   const { data: crmCustomers } = useCrmCustomers();
   const { data: ottoCustomers } = useOttoCustomers();
   const createOttoCustomer = useCreateOttoCustomer();
   const [open, setOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
+
+  // Subscribe to realtime CRM customer changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('crm-customers-invoicing')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_customers' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['crm-customers-for-invoicing'] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
 
   // Build display list from CRM customers
   const customerList = useMemo(() => {
