@@ -3,13 +3,13 @@
  * Routes all requests through the api-sync edge function instead of direct DB access.
  */
 
-const API_BASE = import.meta.env.VITE_OTTOPAY_SUPABASE_URL;
-const SYNC_KEY = import.meta.env.VITE_OTTOPAY_SYNC_KEY;
-const BUSINESS_ID = import.meta.env.VITE_OTTOPAY_BUSINESS_ID;
+const API_BASE = import.meta.env.VITE_OTTOPAY_SUPABASE_URL || 'https://kbblxzvgeavksikjrcdi.supabase.co';
+const SYNC_KEY = import.meta.env.VITE_OTTOPAY_SYNC_KEY || '';
+const BUSINESS_ID = import.meta.env.VITE_OTTOPAY_BUSINESS_ID || '';
 
-const API_URL = API_BASE ? `${API_BASE}/functions/v1/api-sync` : '';
+const API_URL = `${API_BASE}/functions/v1/api-sync`;
 
-const isConfigured = !!(API_BASE && SYNC_KEY && BUSINESS_ID);
+const isConfigured = !!(SYNC_KEY && BUSINESS_ID);
 
 function headers(): Record<string, string> {
   return {
