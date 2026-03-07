@@ -87,6 +87,7 @@ const TOOL_PERMISSIONS: Record<string, string> = {
   update_customer_status: "can_use_write_tools",
   create_customer: "can_use_write_tools",
   create_pipeline_entry: "can_use_write_tools",
+  intake_lead: "can_use_write_tools",
   schedule_appointment: "can_use_write_tools",
   reschedule_appointment: "can_use_write_tools",
   cancel_appointment: "can_use_write_tools",
@@ -438,6 +439,33 @@ const tools = [
       name: "get_pipeline_stages",
       description: "Get all pipeline stage definitions. Read-only, no confirmation needed.",
       parameters: { type: "object", properties: {} },
+    },
+  },
+  // === CHAINED WRITE TOOLS ===
+  {
+    type: "function" as const,
+    function: {
+      name: "intake_lead",
+      description: "Full lead intake: creates customer, adds location, adds to pipeline at the correct stage based on lead source, logs interaction, and syncs to GoHighLevel — all in one confirmed action. Use this instead of calling create_customer + add_to_pipeline separately when intake is the goal. ALWAYS confirm first.",
+      parameters: {
+        type: "object",
+        properties: {
+          first_name: { type: "string", description: "Lead's first name" },
+          last_name: { type: "string", description: "Lead's last name" },
+          email: { type: "string", description: "Email address (optional)" },
+          phone: { type: "string", description: "Phone number (optional)" },
+          address_line1: { type: "string", description: "Street address (optional)" },
+          city: { type: "string", description: "City (optional)" },
+          state: { type: "string", description: "State abbreviation (optional, default TX)" },
+          zip_code: { type: "string", description: "ZIP code (optional)" },
+          lead_source: { type: "string", description: "How the lead arrived — e.g. 'Mitsubishi Partner Program', 'Google Ads', 'Referral', 'Scanner', 'Estimator'" },
+          customer_type: { type: "string", enum: ["residential", "commercial"], description: "Customer type (default residential)" },
+          tags: { type: "array", items: { type: "string" }, description: "Optional tags" },
+          notes: { type: "string", description: "Any additional context about the lead" },
+          confirmed: { type: "boolean", description: "Set true ONLY after user confirms. First call: always false." },
+        },
+        required: ["first_name", "last_name", "confirmed"],
+      },
     },
   },
   // === PHASE 4: BRIEFING TOOL ===
@@ -1294,6 +1322,157 @@ async function executeCreateCustomer(supabase: any, userId: string, input: any) 
 }
 
 // ============================================================
+// CHAINED WRITE TOOL: INTAKE LEAD
+// ============================================================
+
+function resolveIntakePipelineStage(leadSource: string | undefined): string {
+  if (!leadSource) return "New Lead";
+  const src = leadSource.toLowerCase();
+  if (src.includes("mitsubishi") || src.includes("partner") || src.includes("referral")) return "Contacted";
+  if (src.includes("google") || src.includes("facebook") || src.includes("scanner") || src.includes("estimator")) return "New Lead";
+  return "New Lead";
+}
+
+async function executeIntakeLead(supabase: any, userId: string, input: any) {
+  const customerName = `${input.first_name} ${input.last_name}`;
+  const hasAddress = !!(input.address_line1 && input.city && input.zip_code);
+  const resolvedStageName = resolveIntakePipelineStage(input.lead_source);
+
+  // Look up the actual pipeline stage
+  const { data: stage } = await supabase
+    .from("crm_pipeline_stages")
+    .select("id, display_name")
+    .ilike("display_name", `%${resolvedStageName}%`)
+    .order("sort_order")
+    .limit(1)
+    .single();
+
+  if (!stage) {
+    const { data: stages } = await supabase.from("crm_pipeline_stages").select("display_name").order("sort_order");
+    return { error: `Pipeline stage "${resolvedStageName}" not found.`, available_stages: stages?.map((s: any) => s.display_name) };
+  }
+
+  // === CONFIRMATION PREVIEW ===
+  if (!input.confirmed) {
+    const addressDisplay = hasAddress
+      ? `${input.address_line1}, ${input.city}, ${input.state || "TX"} ${input.zip_code}`
+      : "not provided";
+
+    return {
+      needs_confirmation: true,
+      action: "intake_lead",
+      summary: {
+        name: customerName,
+        email: input.email || "not provided",
+        phone: input.phone || "not provided",
+        address: addressDisplay,
+        lead_source: input.lead_source || "not provided",
+        pipeline_stage: stage.display_name,
+        ghl_sync: "Yes",
+        tags: input.tags?.length ? input.tags.join(", ") : "none",
+        notes: input.notes || "none",
+      },
+      confirmation_prompt: `Ready to intake lead:\n\n👤 **${customerName}**\n📧 ${input.email || "—"} / 📱 ${input.phone || "—"}\n📍 ${addressDisplay}\n🏷️ Source: ${input.lead_source || "—"}\n📊 Pipeline: **${stage.display_name}**\n🔄 GHL Sync: Yes\n🏷️ Tags: ${input.tags?.length ? input.tags.join(", ") : "none"}\n📝 Notes: ${input.notes || "none"}\n\nReply "yes" to confirm or provide corrections.`,
+    };
+  }
+
+  // === EXECUTE CHAIN ===
+  const results: Record<string, string> = {};
+
+  // Step 1: Create Customer
+  const { data: customer, error: custError } = await supabase
+    .from("crm_customers")
+    .insert({
+      first_name: input.first_name,
+      last_name: input.last_name,
+      email: input.email || null,
+      phone: input.phone || null,
+      customer_type: input.customer_type || "residential",
+      customer_status: "lead",
+      lead_source: input.lead_source || null,
+      tags: input.tags || null,
+    })
+    .select("id")
+    .single();
+
+  if (custError) return { error: `Failed to create customer: ${custError.message}` };
+  results.customer = `✓ Customer created: ${customer.id}`;
+
+  // Step 2: Create Location (if address provided)
+  if (hasAddress) {
+    const { error: locError } = await supabase.from("crm_locations").insert({
+      customer_id: customer.id,
+      address_line1: input.address_line1,
+      city: input.city,
+      state: input.state || "TX",
+      zip_code: input.zip_code,
+      is_primary: true,
+    });
+    if (locError) return { error: `Customer created but location failed: ${locError.message}`, customer_id: customer.id };
+    results.location = "✓ Location added";
+  } else {
+    results.location = "— Skipped (no address)";
+  }
+
+  // Step 3: Add to Pipeline
+  const { error: pipeError } = await supabase.from("crm_pipeline_entries").insert({
+    customer_id: customer.id,
+    stage_id: stage.id,
+  });
+  if (pipeError) return { error: `Customer created but pipeline add failed: ${pipeError.message}`, customer_id: customer.id };
+  results.pipeline = `✓ Added to pipeline: ${stage.display_name}`;
+
+  // Step 4: Log Interaction
+  const interactionContent = `Lead intake via Bach Assistant. Source: ${input.lead_source || "unknown"}.${input.notes ? ` Notes: ${input.notes}` : ""}`;
+  await supabase.from("crm_interactions").insert({
+    customer_id: customer.id,
+    interaction_type: "system_intake",
+    direction: null,
+    content: interactionContent,
+    logged_by: userId,
+  });
+  results.interaction = "✓ Interaction logged";
+
+  // Step 5: GHL Sync (non-blocking — failure doesn't abort)
+  let ghlStatus = "failed";
+  try {
+    const ghlPayload = {
+      firstName: input.first_name,
+      lastName: input.last_name,
+      email: input.email || undefined,
+      phone: input.phone || undefined,
+      address: hasAddress ? `${input.address_line1}, ${input.city}, ${input.state || "TX"} ${input.zip_code}` : undefined,
+      source: input.lead_source || "Bach Intake",
+      tags: ["Bach Intake", ...(input.tags || [])],
+    };
+
+    const { data: ghlResult, error: ghlError } = await supabase.functions.invoke("sync-ghl-contact", {
+      body: ghlPayload,
+    });
+
+    if (ghlError) {
+      console.error("GHL sync failed:", ghlError);
+    } else if (ghlResult?.contactId) {
+      // Step 6: Write GHL contact ID back to customer
+      await supabase.from("crm_customers").update({ ghl_contact_id: ghlResult.contactId }).eq("id", customer.id);
+      ghlStatus = "success";
+    } else {
+      ghlStatus = "success"; // call succeeded even if no contactId returned
+    }
+  } catch (ghlErr: any) {
+    console.error("GHL sync error:", ghlErr);
+  }
+  results.ghl = `${ghlStatus === "success" ? "✓" : "⚠️"} GHL sync: ${ghlStatus}`;
+
+  return {
+    success: true,
+    customer_id: customer.id,
+    ghl_sync: ghlStatus,
+    message: `Lead intake complete:\n${results.customer}\n${results.location}\n${results.pipeline}\n${results.interaction}\n${results.ghl}`,
+  };
+}
+
+//
 // TOOL ROUTER
 // ============================================================
 
@@ -1319,6 +1498,7 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "schedule_appointment": return executeScheduleAppointment(supabase, userId, toolInput);
     case "reschedule_appointment": return executeRescheduleAppointment(supabase, userId, toolInput);
     case "cancel_appointment": return executeCancelAppointment(supabase, userId, toolInput);
+    case "intake_lead": return executeIntakeLead(supabase, userId, toolInput);
     case "get_google_calendar": return executeGetGoogleCalendar(supabase, toolInput);
     case "get_job_types": return executeGetJobTypes(supabase);
     case "get_pipeline_stages": return executeGetPipelineStages(supabase);
@@ -1353,6 +1533,7 @@ Read operations:
 - View team/crew information and assignments
 
 Write operations (ALWAYS confirm first):
+- Intake new leads from any source using the intake_lead tool, which automatically creates the customer, adds them to the pipeline at the correct stage based on lead source, logs the interaction, and syncs to GoHighLevel
 - Create new customers (with optional address that becomes their primary location)
 - Create new jobs for existing customers
 - Move jobs between workflow stages
