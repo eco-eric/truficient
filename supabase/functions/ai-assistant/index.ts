@@ -1403,16 +1403,30 @@ async function executeCreateCustomer(supabase: any, userId: string, input: any) 
 
   if (custError) throw new Error(`Failed to create customer: ${custError.message}`);
 
-  // Create primary location if address provided
+  // Create primary location if address provided + auto property lookup
+  let propertyInfo = "";
   if (hasAddress) {
-    await supabase.from("crm_locations").insert({
+    const { data: locData } = await supabase.from("crm_locations").insert({
       customer_id: customer.id,
       address_line1: input.address_line1,
       city: input.city,
       state: input.state || "TX",
       zip_code: input.zip_code,
       is_primary: true,
-    });
+    }).select("id").single();
+
+    // Auto property lookup (non-blocking)
+    if (locData) {
+      try {
+        const propResult = await lookupPropertyAndSave(supabase, input.address_line1, input.city, input.state || "TX", input.zip_code, locData.id);
+        if (propResult.found) {
+          const d = propResult.data;
+          propertyInfo = ` (${d.squareFootage ? d.squareFootage.toLocaleString() + " sqft" : ""}${d.yearBuilt ? ", built " + d.yearBuilt : ""})`.replace(" (, ", " (").replace("( ,", "(");
+        }
+      } catch (e) {
+        console.error("Auto property lookup in create_customer failed:", e);
+      }
+    }
   }
 
   // Log system interaction
