@@ -3,13 +3,13 @@
  * Routes all requests through the api-sync edge function instead of direct DB access.
  */
 
-const API_BASE = import.meta.env.VITE_OTTOPAY_SUPABASE_URL;
-const SYNC_KEY = import.meta.env.VITE_OTTOPAY_SYNC_KEY;
-const BUSINESS_ID = import.meta.env.VITE_OTTOPAY_BUSINESS_ID;
+const API_BASE = import.meta.env.VITE_OTTOPAY_SUPABASE_URL || 'https://kbblxzvgeavksikjrcdi.supabase.co';
+const SYNC_KEY = import.meta.env.VITE_OTTOPAY_SYNC_KEY || '';
+const BUSINESS_ID = import.meta.env.VITE_OTTOPAY_BUSINESS_ID || '';
 
-const API_URL = API_BASE ? `${API_BASE}/functions/v1/api-sync` : '';
+const API_URL = `${API_BASE}/functions/v1/api-sync`;
 
-const isConfigured = !!(API_BASE && SYNC_KEY && BUSINESS_ID);
+const isConfigured = !!(SYNC_KEY && BUSINESS_ID);
 
 function headers(): Record<string, string> {
   return {
@@ -42,7 +42,7 @@ export async function ottoGet<T = any>(
   }
 
   const url = new URL(API_URL);
-  url.searchParams.set('resource', resource);
+  url.searchParams.set('entity', resource);
   if (params?.id) url.searchParams.set('id', params.id);
   if (params?.select) url.searchParams.set('select', params.select);
   if (params?.order) url.searchParams.set('order', params.order);
@@ -75,7 +75,7 @@ export async function ottoPost<T = any>(
   const res = await fetch(API_URL, {
     method: 'POST',
     headers: headers(),
-    body: JSON.stringify({ resource, data }),
+    body: JSON.stringify({ entity: resource, data }),
   });
   if (!res.ok) {
     const body = await res.text();
@@ -99,7 +99,7 @@ export async function ottoPatch<T = any>(
   const res = await fetch(API_URL, {
     method: 'PATCH',
     headers: headers(),
-    body: JSON.stringify({ resource, id, data }),
+    body: JSON.stringify({ entity: resource, id, data }),
   });
   if (!res.ok) {
     const body = await res.text();
@@ -120,7 +120,7 @@ export async function ottoDelete(
   }
 
   const url = new URL(API_URL);
-  url.searchParams.set('resource', resource);
+  url.searchParams.set('entity', resource);
   url.searchParams.set('id', id);
 
   const res = await fetch(url.toString(), {
