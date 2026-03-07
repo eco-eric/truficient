@@ -1654,7 +1654,7 @@ async function executeIntakeLead(supabase: any, userId: string, input: any) {
     success: true,
     customer_id: customer.id,
     ghl_sync: ghlStatus,
-    message: `Lead intake complete:\n${results.customer}\n${results.location}\n${results.property || ""}\n${results.pipeline}\n${results.interaction}\n${results.ghl}`.replace(/\n\n/g, "\n"),
+    message: `Lead intake complete:\n${results.customer}\n${results.location}\n${results.address_verify || ""}\n${results.property || ""}\n${results.pipeline}\n${results.interaction}\n${results.ghl}`.replace(/\n\n+/g, "\n"),
   };
 }
 
@@ -2955,10 +2955,12 @@ Write operations (ALWAYS confirm first):
 - Draft project estimates using draft_estimate — pulls from existing templates, system pricing, and materials already in the database. Always links to an existing CRM customer. Saves as draft only — never sends to the customer. Eric reviews all estimates at /admin/estimates before sending.
 - Update system pricing using update_prices — when a user pastes a price list or spreadsheet data in any format (CSV, tab-separated, plain text table, or conversational), automatically parse it into price_data format and show a before/after diff. Always require explicit confirmation before applying changes. Never update prices silently. Supported tables: equipment systems, materials catalog, labor rates, ductless addons, ductless unit sizes, and financing options.
 
-PROPERTY DATA:
+PROPERTY DATA & ADDRESS VERIFICATION:
 - Whenever you create a new job location (via intake_lead or create_customer with an address), property data is automatically looked up in the background and saved to the location record.
 - You can also look up property data on demand using get_property_data for any address. Property data helps with sizing estimates and customer context.
 - If a location_id is provided, results are saved directly to the CRM location record.
+- You can verify and standardize any address using verify_address. This checks against Google Places, confirms DFW service area coverage, and returns clean address components with coordinates and county.
+- Address verification runs automatically during lead intake as a warning-only check — it never blocks saving. If the address cannot be verified, it is saved as entered with a warning. If the ZIP is outside DFW, it is flagged.
 
 WORKEDGE SYNC:
 Each morning the WorkEdge sync runs at 1AM CST. Report on last night's sync by querying workedge_daily_sync_log data in the briefing. If status is 'failed' flag it immediately at the top of the morning briefing with urgency.
