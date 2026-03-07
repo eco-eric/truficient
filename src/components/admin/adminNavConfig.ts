@@ -86,8 +86,14 @@ export const navSections: NavSection[] = [
     items: [
       { label: 'Mission Control', href: '/admin/invoicing', icon: LayoutDashboard, permissionKey: 'nav.invoicing' },
       { label: 'Invoices', href: '/admin/invoices', icon: Receipt, permissionKey: 'nav.invoices' },
+      { label: 'Estimates', href: '/admin/otto-estimates', icon: FileText, permissionKey: 'nav.otto-estimates' },
+      { label: 'Clients', href: '/admin/invoice-clients', icon: UserCircle, permissionKey: 'nav.invoice-clients' },
       { label: 'Payments', href: '/admin/payments', icon: CreditCard, permissionKey: 'nav.payments' },
-      { label: 'Invoice Customers', href: '/admin/invoice-customers', icon: UserCircle, permissionKey: 'nav.invoice-customers' },
+      { label: 'Templates', href: '/admin/invoice-templates', icon: LayoutTemplate, permissionKey: 'nav.invoice-templates' },
+      { label: 'Catalog', href: '/admin/invoice-catalog', icon: Package, permissionKey: 'nav.invoice-catalog' },
+      { label: 'Expenses', href: '/admin/invoice-expenses', icon: Receipt, permissionKey: 'nav.invoice-expenses' },
+      { label: 'Reports', href: '/admin/invoice-reports', icon: BarChart3, permissionKey: 'nav.invoice-reports' },
+      { label: 'Settings', href: '/admin/invoice-settings', icon: Settings, permissionKey: 'nav.invoice-settings' },
     ],
   },
   {
