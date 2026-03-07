@@ -3274,7 +3274,16 @@ CONTEXT:
 - Pipeline stages: New Lead → Contacted → Estimate Scheduled → Proposal Sent → Negotiating → Won/Lost
 - Timezone: Central Time (CST/CDT)
 - When scheduling, always use the Central timezone offset (-06:00 for CST, -05:00 for CDT)
-- When a user says "tomorrow", "next week", etc., calculate the actual dates`;
+- When a user says "tomorrow", "next week", etc., calculate the actual dates
+
+INVOICING & PAYMENTS (Otto Pay):
+You have access to Otto Pay invoicing data for Truficient. You can answer questions about:
+- Outstanding invoices and balances
+- Payment history and revenue
+- Customer invoice history
+- Overdue invoices
+When otto_context is provided in the request, use it to answer financial questions. Format currency as USD with commas and 2 decimal places.
+If asked to create an invoice, direct the user to /admin/invoices/new or the Otto Pay app at ottopay.lovable.app/invoices/new.`;
 }
 
 // ============================================================
@@ -3454,7 +3463,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { message, conversationHistory = [], briefing_data, is_auto_briefing } = await req.json();
+    const { message, conversationHistory = [], briefing_data, is_auto_briefing, otto_context } = await req.json();
     if (!is_auto_briefing && (!message || typeof message !== "string")) {
       return new Response(JSON.stringify({ error: "Message is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -3503,7 +3512,13 @@ Make them specific to the briefing content.`;
       roleContext += "\nThis user cannot access daily briefings.";
     }
 
-    const fullSystemPrompt = baseSystemPrompt + briefingInstructions + roleContext;
+    // === Otto Pay context ===
+    let ottoSection = "";
+    if (otto_context) {
+      ottoSection = `\n\nCURRENT OTTO PAY METRICS:\n${JSON.stringify(otto_context)}`;
+    }
+
+    const fullSystemPrompt = baseSystemPrompt + briefingInstructions + roleContext + ottoSection;
 
     // === Build messages ===
     let messages: any[];

@@ -99,6 +99,10 @@ export const AssistantProvider = ({ children }: { children: ReactNode }) => {
         body.is_auto_briefing = true;
       }
 
+      if (metadata?.otto_context) {
+        body.otto_context = metadata.otto_context;
+      }
+
       const { data, error } = await supabase.functions.invoke('ai-assistant', {
         body,
       });
