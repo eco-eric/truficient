@@ -332,8 +332,8 @@ export const useUpdateOttoBusiness = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Record<string, any>) => {
-      const businessId = import.meta.env.VITE_OTTOPAY_BUSINESS_ID;
-      const { data, error } = await ottoPatch('business', businessId, payload);
+      // The proxy resolves business_id server-side; pass 'current' as a placeholder
+      const { data, error } = await ottoPatch('business', 'current', payload);
       if (error) throw new Error(error.message);
       return data;
     },
