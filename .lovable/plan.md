@@ -1,30 +1,41 @@
 
 
-## Plan: Simplify Investment Breakdown in Thank You Dialog
+# Plan: Add `create_customer` Write Tool to Bach
 
-### What needs to change
+## What's Already Done
+Bach already has **9 write tools** fully implemented with confirmation flows:
+`create_job`, `update_job_stage`, `log_interaction`, `update_customer_status`, `add_to_pipeline`, `move_pipeline_entry`, `schedule_appointment`, `reschedule_appointment`, `cancel_appointment`
 
-The "Your Estimate Details" dialog on the Thank You page (Step 11) currently splits the price into "Equipment Package" and "Professional Installation" as separate line items. Per your instructions, these should be combined into a single "Equipment + Install" line showing the full equipment price (which already includes labor, installation & tax).
+The **only missing tool** is `create_customer`.
 
-### Changes
+## What We'll Add
 
-**File: `src/pages/estimators/ducted/steps/Step11ThankYou.tsx` (lines 314-328)**
+### 1. Tool Definition (in the tools array)
+Add a `create_customer` tool definition with parameters:
+- `first_name` (required), `last_name` (required)
+- `email`, `phone` (optional)
+- `address_line1`, `city`, `state`, `zip_code` (optional address fields)
+- `lead_source`, `customer_type`, `tags` (optional)
+- `confirmed` (required, boolean — confirmation flow)
 
-Replace the two separate line items ("Equipment Package" + "Professional Installation") with:
+### 2. Execution Function: `executeCreateCustomer`
+- Validates required fields (first + last name)
+- If `confirmed: false`: returns a confirmation summary showing the customer details about to be created
+- If `confirmed: true`:
+  - INSERT into `crm_customers`
+  - If address provided, INSERT into `crm_locations` with `is_primary: true`
+  - Log a `system_conversion` interaction via `crm_interactions`
+  - Return the new `customer_id`
 
-```
-Investment Breakdown
-─────────────────────────────────
-Equipment + Install          $combined_price
-[Addon 1]                    $price
-[Addon 2]                    $price
-─────────────────────────────────
-Total Investment              $total
-```
+### 3. Permission Mapping
+Add `create_customer: "can_use_write_tools"` to the `TOOL_PERMISSIONS` map.
 
-- **"Equipment + Install"** will show `equipmentCost + installationCost` as a single value
-- **Add-ons** remain listed individually below
-- **Total Investment** stays the same (already correct)
+### 4. Tool Router
+Add `case "create_customer": return executeCreateCustomer(supabase, userId, toolInput);` to the switch statement.
 
-This is a single-file, ~10-line edit.
+### 5. System Prompt Update
+Add "Create new customers" to the write operations list in the system prompt.
+
+## Files Changed
+- `supabase/functions/ai-assistant/index.ts` — all changes in this single file
 
