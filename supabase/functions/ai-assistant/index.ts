@@ -89,6 +89,7 @@ const TOOL_PERMISSIONS: Record<string, string> = {
   create_pipeline_entry: "can_use_write_tools",
   intake_lead: "can_use_write_tools",
   review_submissions: "can_use_write_tools",
+  scan_watch_list: "can_use_write_tools",
   schedule_appointment: "can_use_write_tools",
   reschedule_appointment: "can_use_write_tools",
   cancel_appointment: "can_use_write_tools",
@@ -482,6 +483,24 @@ const tools = [
           confirmed_archive: { type: "array", items: { type: "string" }, description: "Array of submission IDs to archive (set after user confirms archive)" },
           confirmed_intake: { type: "array", items: { type: "string" }, description: "Array of submission IDs to run through intake_lead (set after user confirms intake)" },
         },
+      },
+    },
+  },
+  // === WATCH LIST TOOL ===
+  {
+    type: "function" as const,
+    function: {
+      name: "scan_watch_list",
+      description: "Scan the equipment scanner database for high-priority leads based on equipment age, R-22 refrigerant, DFW location, and contact info. Scores leads by urgency and can automatically run intake_lead on confirmed high-priority contacts. Use when the user says 'scan watch list', 'check aging equipment', or similar.",
+      parameters: {
+        type: "object",
+        properties: {
+          lookback_days: { type: "number", description: "How far back to scan (default 30 days)" },
+          min_age_years: { type: "number", description: "Equipment age threshold in years (default 15)" },
+          confirmed: { type: "boolean", description: "Set true ONLY after user confirms intake. First call: always false." },
+          include_medium: { type: "boolean", description: "If true, also intake medium priority leads on confirmation (default false)" },
+        },
+        required: ["confirmed"],
       },
     },
   },
@@ -1782,6 +1801,284 @@ function buildIntakeParams(data: any, table: string): any {
   }
 }
 
+// ============================================================
+// WATCH LIST TOOL
+// ============================================================
+
+const KNOWN_BRANDS = new Set(["carrier", "trane", "lennox", "goodman", "rheem", "york", "bryant", "american standard", "mitsubishi", "daikin", "fujitsu"]);
+
+interface WatchListLead {
+  id: string;
+  name: string | null;
+  email: string;
+  phone: string | null;
+  zip: string | null;
+  brand: string | null;
+  equipment_type: string | null;
+  tonnage: string | null;
+  refrigerant: string | null;
+  age: number | null;
+  install_year: number | null;
+  scanned_at: string;
+  priority: "high" | "medium" | "low";
+  score: number;
+  signals: string[];
+  tags: string[];
+  notes: string;
+  existing_customer: string | null;
+}
+
+function scoreWatchListLead(lead: WatchListLead, currentYear: number): void {
+  let score = 0;
+  const signals: string[] = [];
+  const tags: string[] = [];
+
+  // Calculate age
+  let equipAge = lead.age;
+  if (!equipAge && lead.install_year) {
+    equipAge = currentYear - lead.install_year;
+    lead.age = equipAge;
+  }
+
+  // Email always present (filtered in query)
+  signals.push("Email ✓");
+
+  // DFW zip
+  const isDfw = lead.zip ? DFW_ZIPS.has(lead.zip) : false;
+  if (isDfw) { signals.push("DFW ✓"); score += 3; }
+
+  // Age scoring
+  if (equipAge && equipAge >= 20) { tags.push("Critical Replacement"); score += 3; }
+  else if (equipAge && equipAge >= 15) { tags.push("Aging Equipment"); score += 2; }
+
+  // Phone
+  if (lead.phone && lead.phone.replace(/\D/g, "").length >= 10) { signals.push("Phone ✓"); score += 1; }
+
+  // R-22
+  if (lead.refrigerant && lead.refrigerant.toLowerCase().includes("r-22")) {
+    signals.push("R-22 ✓"); score += 2; tags.push("R-22 Replacement");
+  }
+
+  // Known brand
+  if (lead.brand && KNOWN_BRANDS.has(lead.brand.toLowerCase())) {
+    signals.push("Known brand ✓"); score += 1;
+    tags.push(`${lead.brand} Owner`);
+  }
+
+  lead.signals = signals;
+  lead.score = score;
+  lead.tags = tags;
+
+  // Determine priority
+  const hasEmail = true; // filtered
+  const meetsAge = equipAge ? equipAge >= 15 : false;
+
+  if (hasEmail && isDfw && meetsAge) {
+    lead.priority = "high";
+  } else if (hasEmail && (isDfw || (lead.phone && lead.phone.replace(/\D/g, "").length >= 10))) {
+    lead.priority = "medium";
+  } else {
+    lead.priority = "low";
+  }
+
+  // Build notes
+  lead.notes = `Equipment scanner lead. ${lead.brand || "Unknown"} ${lead.tonnage ? lead.tonnage + "-ton" : ""} installed ${lead.install_year || "unknown"}, age ${equipAge || "unknown"} years. Refrigerant: ${lead.refrigerant || "unknown"}. Scanned: ${new Date(lead.scanned_at).toLocaleDateString("en-US")}.`;
+}
+
+async function executeScanWatchList(supabase: any, userId: string, input: any) {
+  const lookbackDays = input.lookback_days || 30;
+  const minAgeYears = input.min_age_years || 15;
+  const cutoff = new Date(Date.now() - lookbackDays * 86400000).toISOString();
+  const currentYear = new Date().getFullYear();
+
+  // Fetch scans
+  const { data: scans, error: scanErr } = await supabase
+    .from("equipment_scans")
+    .select("id, email, phone, zip_code, brand, equipment_type, tonnage, refrigerant, estimated_age, install_year, customer_name, created_at, status")
+    .not("email", "is", null)
+    .not("email", "eq", "")
+    .gte("created_at", cutoff)
+    .order("created_at", { ascending: false });
+
+  if (scanErr) throw new Error(`Failed to query equipment scans: ${scanErr.message}`);
+
+  // Filter out already converted/archived
+  const eligible = (scans || []).filter((s: any) => s.status !== "converted" && s.status !== "archived");
+  const alreadyConverted = (scans || []).length - eligible.length;
+
+  // Build leads and score
+  const leads: WatchListLead[] = eligible.map((s: any) => {
+    const lead: WatchListLead = {
+      id: s.id,
+      name: s.customer_name || null,
+      email: s.email,
+      phone: s.phone || null,
+      zip: s.zip_code || null,
+      brand: s.brand || null,
+      equipment_type: s.equipment_type || null,
+      tonnage: s.tonnage || null,
+      refrigerant: s.refrigerant || null,
+      age: s.estimated_age || null,
+      install_year: s.install_year || null,
+      scanned_at: s.created_at,
+      priority: "low",
+      score: 0,
+      signals: [],
+      tags: [],
+      notes: "",
+      existing_customer: null,
+    };
+    scoreWatchListLead(lead, currentYear);
+    return lead;
+  });
+
+  // Filter by age threshold
+  const ageFiltered = leads.filter(l => l.age && l.age >= minAgeYears);
+
+  const high = ageFiltered.filter(l => l.priority === "high").sort((a, b) => b.score - a.score);
+  const medium = ageFiltered.filter(l => l.priority === "medium").sort((a, b) => b.score - a.score);
+  const low = ageFiltered.filter(l => l.priority === "low");
+
+  // === CONFIRMED: RUN INTAKE ===
+  if (input.confirmed) {
+    const toIntake = input.include_medium ? [...high, ...medium] : high;
+
+    if (toIntake.length === 0) {
+      return { success: true, message: "No leads to intake." };
+    }
+
+    // Deduplication check
+    const emails = toIntake.map(l => l.email);
+    const { data: existingCustomers } = await supabase
+      .from("crm_customers")
+      .select("id, first_name, last_name, email")
+      .in("email", emails);
+
+    const existingMap = new Map<string, string>();
+    (existingCustomers || []).forEach((c: any) => {
+      if (c.email) existingMap.set(c.email.toLowerCase(), `${c.first_name || ""} ${c.last_name || ""}`.trim());
+    });
+
+    const intakeResults: any[] = [];
+    for (const lead of toIntake) {
+      // Check dedup
+      const existing = existingMap.get(lead.email.toLowerCase());
+      if (existing) {
+        intakeResults.push({ email: lead.email, skipped: true, reason: `Already in CRM as ${existing}` });
+        continue;
+      }
+
+      // Parse name
+      const nameParts = (lead.name || lead.email.split("@")[0] || "Scanner").split(" ");
+      const firstName = nameParts[0] || "Scanner";
+      const lastName = nameParts.slice(1).join(" ") || "User";
+
+      // Determine pipeline stage
+      const hasR22 = lead.refrigerant && lead.refrigerant.toLowerCase().includes("r-22");
+      const leadSource = "Equipment Scanner";
+
+      const intakeParams = {
+        first_name: firstName,
+        last_name: lastName,
+        email: lead.email,
+        phone: lead.phone || undefined,
+        zip_code: lead.zip || undefined,
+        lead_source: leadSource,
+        tags: ["Bach Intake", "Watch List", ...lead.tags],
+        notes: lead.notes,
+        confirmed: true,
+      };
+
+      const result = await executeIntakeLead(supabase, userId, intakeParams);
+      intakeResults.push({ email: lead.email, name: `${firstName} ${lastName}`, result });
+
+      // Mark as converted
+      if (result.success) {
+        await supabase.from("equipment_scans").update({ status: "converted" }).eq("id", lead.id);
+      }
+    }
+
+    const successCount = intakeResults.filter(r => r.result?.success).length;
+    const skippedCount = intakeResults.filter(r => r.skipped).length;
+
+    return {
+      success: true,
+      intake_count: successCount,
+      skipped_count: skippedCount,
+      results: intakeResults.map(r => ({
+        email: r.email,
+        name: r.name,
+        success: r.result?.success || false,
+        skipped: r.skipped || false,
+        reason: r.reason,
+        customer_id: r.result?.customer_id,
+        ghl_sync: r.result?.ghl_sync,
+      })),
+      message: `Watch list intake complete: ${successCount} intaked, ${skippedCount} skipped (already in CRM).`,
+    };
+  }
+
+  // === BUILD REPORT (confirmed: false) ===
+  // Dedup check for report
+  const allEmails = [...high, ...medium].map(l => l.email);
+  if (allEmails.length > 0) {
+    const { data: existingCustomers } = await supabase
+      .from("crm_customers")
+      .select("id, first_name, last_name, email")
+      .in("email", allEmails);
+
+    const existingMap = new Map<string, string>();
+    (existingCustomers || []).forEach((c: any) => {
+      if (c.email) existingMap.set(c.email.toLowerCase(), `${c.first_name || ""} ${c.last_name || ""}`.trim());
+    });
+
+    [...high, ...medium].forEach(l => {
+      const existing = existingMap.get(l.email.toLowerCase());
+      if (existing) l.existing_customer = existing;
+    });
+  }
+
+  return {
+    lookback_days: lookbackDays,
+    min_age_years: minAgeYears,
+    total_scanned: scans?.length || 0,
+    already_converted: alreadyConverted,
+    new_flags: ageFiltered.length,
+    high_priority: high.map((l, i) => ({
+      index: i + 1,
+      id: l.id,
+      name: l.name || l.email.split("@")[0],
+      email: l.email,
+      phone: l.phone || "no phone",
+      brand: l.brand,
+      tonnage: l.tonnage,
+      refrigerant: l.refrigerant,
+      age: l.age,
+      install_year: l.install_year,
+      zip: l.zip,
+      signals: l.signals,
+      tags: l.tags,
+      score: l.score,
+      existing_customer: l.existing_customer,
+      pipeline_stage: l.refrigerant?.toLowerCase().includes("r-22") ? "Contacted" : "New Lead",
+    })),
+    medium_priority: medium.map((l, i) => ({
+      index: high.length + i + 1,
+      id: l.id,
+      name: l.name || l.email.split("@")[0],
+      email: l.email,
+      phone: l.phone || "no phone",
+      brand: l.brand,
+      age: l.age,
+      zip: l.zip,
+      signals: l.signals,
+      existing_customer: l.existing_customer,
+    })),
+    low_count: low.length,
+    instructions: 'Present as a formatted watch list report. For 🔴 HIGH PRIORITY leads, show name, email, phone, equipment details, age, zip, and signal badges. Offer "confirm intake" to run intake_lead on all high items, or "intake all" to include medium. Show dedup warnings for leads already in CRM.',
+  };
+}
+
 //
 // TOOL ROUTER
 // ============================================================
@@ -1809,6 +2106,8 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "reschedule_appointment": return executeRescheduleAppointment(supabase, userId, toolInput);
     case "cancel_appointment": return executeCancelAppointment(supabase, userId, toolInput);
     case "intake_lead": return executeIntakeLead(supabase, userId, toolInput);
+    case "review_submissions": return executeReviewSubmissions(supabase, userId, toolInput);
+    case "scan_watch_list": return executeScanWatchList(supabase, userId, toolInput);
     case "get_google_calendar": return executeGetGoogleCalendar(supabase, toolInput);
     case "get_job_types": return executeGetJobTypes(supabase);
     case "get_pipeline_stages": return executeGetPipelineStages(supabase);
@@ -1845,6 +2144,7 @@ Read operations:
 Write operations (ALWAYS confirm first):
 - Intake new leads from any source using the intake_lead tool, which automatically creates the customer, adds them to the pipeline at the correct stage based on lead source, logs the interaction, and syncs to GoHighLevel
 - Review and filter all incoming submissions using review_submissions — classifies each as real, junk, or unsure using signal-based scoring, automatically runs intake_lead on confirmed real leads, and asks for confirmation before archiving junk
+- Scan the equipment scanner watch list using scan_watch_list — identifies high-priority leads based on equipment age (15+ years), R-22 refrigerant, DFW location, email and phone presence, and known brands. Automatically runs intake_lead on confirmed high-priority leads with appropriate tags and pipeline stage assignment
 - Create new customers (with optional address that becomes their primary location)
 - Create new jobs for existing customers
 - Move jobs between workflow stages
