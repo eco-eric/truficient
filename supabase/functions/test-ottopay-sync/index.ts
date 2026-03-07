@@ -27,7 +27,7 @@ serve(async (req) => {
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const url = `${API_BASE}/functions/v1/api-sync?resource=customers&limit=3`;
+    const url = `${API_BASE}/functions/v1/api-sync?entity=customers&limit=3`;
     console.log('Testing URL:', url);
 
     const res = await fetch(url, {
