@@ -69,45 +69,6 @@ const InvoicesList = () => {
     toast.success('CSV exported');
   };
 
-  const handleCreate = async (data: any, status: string) => {
-    try {
-      const allLineItems = [...data.line_items];
-      if (data.cc_fee_line) {
-        allLineItems.push({ ...data.cc_fee_line, sort_order: allLineItems.length });
-      }
-      await createInvoice.mutateAsync({
-        customer_id: data.customer_id,
-        invoice_date: data.invoice_date,
-        due_date: data.due_date,
-        subtotal: data.subtotal,
-        tax_rate: data.tax_rate,
-        tax_amount: data.tax_amount,
-        total: data.total,
-        notes: data.notes,
-        terms: data.terms,
-        status,
-        line_items: allLineItems,
-      });
-      toast.success(`Invoice created as ${status}`);
-      setCreateOpen(false);
-    } catch (e: any) { toast.error(e.message || 'Failed to create invoice'); }
-  };
-
-  const handleCharge = async (inv: any) => {
-    const balance = inv.total - inv.total_paid;
-    if (balance <= 0) return;
-    try {
-      const { error } = await supabase.functions.invoke('create-invoice-payment', {
-        body: { invoice_id: inv.id, amount: balance, customer_email: inv.customers?.email || '', description: `Payment for ${inv.invoice_number}` },
-      });
-      if (error) throw error;
-      toast.success('Payment processed');
-      qc.invalidateQueries({ queryKey: ['otto-invoices'] });
-      qc.invalidateQueries({ queryKey: ['otto-payments'] });
-      qc.invalidateQueries({ queryKey: ['otto-metrics'] });
-    } catch (e: any) { toast.error(e.message || 'Payment failed'); }
-  };
-
   const isOverdue = (dueDate: string | null, status: string) => dueDate && status !== 'paid' && isBefore(new Date(dueDate), new Date());
   const balanceDue = selectedInvoice ? selectedInvoice.total - selectedInvoice.total_paid : 0;
 
