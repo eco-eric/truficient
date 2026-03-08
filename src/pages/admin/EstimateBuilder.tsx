@@ -1001,6 +1001,13 @@ const EstimateBuilder = () => {
     eq.ahri_number?.toLowerCase().includes(equipmentSearch.toLowerCase())
   );
 
+  // Filter individual equipment by search
+  const filteredUnits = individualEquipment.filter((u: any) =>
+    u.brand.toLowerCase().includes(unitSearch.toLowerCase()) ||
+    u.model_number.toLowerCase().includes(unitSearch.toLowerCase()) ||
+    u.type.toLowerCase().includes(unitSearch.toLowerCase())
+  );
+
   // Filter materials by category
   const filteredMaterials = materialCategory === 'all' 
     ? materials 
