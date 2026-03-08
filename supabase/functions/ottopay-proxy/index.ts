@@ -142,13 +142,10 @@ Deno.serve(async (req) => {
       const resolvedId = (entity === "business" && id === "current") ? BUSINESS_ID : id;
       if (resolvedId) url.searchParams.set("id", resolvedId);
 
-      const payload: any = {};
-      if (params) payload.data = params;
-
       ottoRes = await fetch(url.toString(), {
         method: upperMethod,
         headers: ottoHeaders,
-        body: JSON.stringify(payload),
+        body: JSON.stringify(params || {}),
       });
     }
 
