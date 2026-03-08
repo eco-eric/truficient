@@ -116,12 +116,12 @@ export default function AdminIndividualEquipmentPricing() {
   const pageRows = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const upsertMutation = useMutation({
-    mutationFn: async (data: Partial<EquipmentRow>) => {
+    mutationFn: async (data: { brand: string; model_number: string; type: string; size: string; price: number; notes: string | null; is_active: boolean }) => {
       if (editingId) {
         const { error } = await supabase.from('individual_equipment_pricing').update(data).eq('id', editingId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('individual_equipment_pricing').insert(data);
+        const { error } = await supabase.from('individual_equipment_pricing').insert([data]);
         if (error) throw error;
       }
     },
