@@ -1544,7 +1544,8 @@ const EstimateBuilder = () => {
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {addDialogType === 'equipment' && 'Add Equipment'}
+              {addDialogType === 'equipment' && 'Add System'}
+              {addDialogType === 'unit' && 'Add Individual Unit'}
               {addDialogType === 'material' && 'Add Material'}
               {addDialogType === 'labor' && 'Add Labor'}
               {addDialogType === 'admin_cost' && 'Add Admin Cost'}
