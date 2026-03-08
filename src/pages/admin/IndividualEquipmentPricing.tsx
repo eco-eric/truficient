@@ -377,6 +377,11 @@ export default function AdminIndividualEquipmentPricing() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
+                      <Button variant="ghost" size="icon" title="Duplicate" onClick={() => {
+                        setEditingId(null);
+                        setForm({ brand: row.brand, model_number: row.model_number, type: row.type, size: row.size, price: String(row.price), notes: row.notes || '', is_active: row.is_active });
+                        setDialogOpen(true);
+                      }}><Copy className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => openEdit(row)}><Pencil className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => setDeleteConfirm(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </div>
