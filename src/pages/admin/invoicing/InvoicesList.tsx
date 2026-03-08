@@ -7,26 +7,23 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useOttoInvoices, useCreateOttoInvoice, useOttoLineItems, useOttoInvoicePayments } from '@/hooks/useOttoPay';
-import { InvoiceBuilderSheet } from '@/components/invoicing/InvoiceBuilderSheet';
+import { useOttoInvoices, useOttoLineItems, useOttoInvoicePayments } from '@/hooks/useOttoPay';
 import { DocumentPreview, printDocument } from '@/components/invoicing/DocumentPreview';
 import { StatusBadge } from '@/components/invoicing/StatusBadge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Search, Download, MoreHorizontal, CreditCard, CheckCircle, Eye, FileText, Plus, Printer, DollarSign, Clock, AlertCircle, Bell } from 'lucide-react';
+import { Search, Download, MoreHorizontal, Eye, FileText, Printer, DollarSign, Clock, AlertCircle, ExternalLink } from 'lucide-react';
 import { format, subDays, startOfMonth, subMonths, isAfter, isBefore } from 'date-fns';
 import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 
 const fmt = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
 const statusTabs = ['all', 'draft', 'sent', 'paid', 'partial', 'overdue'] as const;
 const PAGE_SIZE = 25;
 
+const OTTOPAY_APP_URL = 'https://app.myottopay.com';
+
 const InvoicesList = () => {
   const { data: invoices, isLoading } = useOttoInvoices();
-  const createInvoice = useCreateOttoInvoice();
-  const qc = useQueryClient();
   const [searchParams] = useSearchParams();
   const customerFilter = searchParams.get('customer');
   const [search, setSearch] = useState('');
@@ -34,7 +31,6 @@ const InvoicesList = () => {
   const [dateRange, setDateRange] = useState('all');
   const [page, setPage] = useState(0);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
-  const [createOpen, setCreateOpen] = useState(false);
 
   // Detail sheet data
   const { data: detailLineItems } = useOttoLineItems(selectedInvoice?.id ?? null);
@@ -71,45 +67,6 @@ const InvoicesList = () => {
     const a = document.createElement('a'); a.href = url; a.download = `invoices-${format(new Date(), 'yyyy-MM-dd')}.csv`; a.click();
     URL.revokeObjectURL(url);
     toast.success('CSV exported');
-  };
-
-  const handleCreate = async (data: any, status: string) => {
-    try {
-      const allLineItems = [...data.line_items];
-      if (data.cc_fee_line) {
-        allLineItems.push({ ...data.cc_fee_line, sort_order: allLineItems.length });
-      }
-      await createInvoice.mutateAsync({
-        customer_id: data.customer_id,
-        invoice_date: data.invoice_date,
-        due_date: data.due_date,
-        subtotal: data.subtotal,
-        tax_rate: data.tax_rate,
-        tax_amount: data.tax_amount,
-        total: data.total,
-        notes: data.notes,
-        terms: data.terms,
-        status,
-        line_items: allLineItems,
-      });
-      toast.success(`Invoice created as ${status}`);
-      setCreateOpen(false);
-    } catch (e: any) { toast.error(e.message || 'Failed to create invoice'); }
-  };
-
-  const handleCharge = async (inv: any) => {
-    const balance = inv.total - inv.total_paid;
-    if (balance <= 0) return;
-    try {
-      const { error } = await supabase.functions.invoke('create-invoice-payment', {
-        body: { invoice_id: inv.id, amount: balance, customer_email: inv.customers?.email || '', description: `Payment for ${inv.invoice_number}` },
-      });
-      if (error) throw error;
-      toast.success('Payment processed');
-      qc.invalidateQueries({ queryKey: ['otto-invoices'] });
-      qc.invalidateQueries({ queryKey: ['otto-payments'] });
-      qc.invalidateQueries({ queryKey: ['otto-metrics'] });
-    } catch (e: any) { toast.error(e.message || 'Payment failed'); }
   };
 
   const isOverdue = (dueDate: string | null, status: string) => dueDate && status !== 'paid' && isBefore(new Date(dueDate), new Date());
@@ -169,7 +126,7 @@ const InvoicesList = () => {
           </SelectContent>
         </Select>
         <Button variant="outline" size="sm" onClick={exportCSV}><Download className="h-4 w-4 mr-1" /> Export</Button>
-        <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-1" /> New Invoice</Button>
+        <Button variant="outline" onClick={() => window.open(OTTOPAY_APP_URL, '_blank')}><ExternalLink className="h-4 w-4 mr-1" /> Manage in Otto Pay</Button>
       </div>
 
       {/* Status Tabs */}
@@ -224,8 +181,7 @@ const InvoicesList = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedInvoice(inv); }}><Eye className="h-4 w-4 mr-2" /> View</DropdownMenuItem>
-                            <DropdownMenuItem onClick={e => { e.stopPropagation(); handleCharge(inv); }} disabled={balance <= 0}><CreditCard className="h-4 w-4 mr-2" /> Charge</DropdownMenuItem>
-                            <DropdownMenuItem onClick={e => { e.stopPropagation(); toast.success(`${inv.invoice_number} marked as paid`); }} disabled={balance <= 0}><CheckCircle className="h-4 w-4 mr-2" /> Mark Paid</DropdownMenuItem>
+                            <DropdownMenuItem onClick={e => { e.stopPropagation(); window.open(OTTOPAY_APP_URL, '_blank'); }}><ExternalLink className="h-4 w-4 mr-2" /> Manage in Otto Pay</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -248,8 +204,6 @@ const InvoicesList = () => {
         </div>
       )}
 
-      {/* Create Invoice Builder */}
-      <InvoiceBuilderSheet open={createOpen} onOpenChange={setCreateOpen} onSubmit={handleCreate} isPending={createInvoice.isPending} />
 
       {/* Invoice Detail Sheet */}
       <Sheet open={!!selectedInvoice} onOpenChange={open => { if (!open) setSelectedInvoice(null); }}>
@@ -333,14 +287,8 @@ const InvoicesList = () => {
                   })}>
                     <Printer className="h-4 w-4 mr-1" /> Print / PDF
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleCharge(selectedInvoice)} disabled={balanceDue <= 0}>
-                    <CreditCard className="h-4 w-4 mr-1" /> Charge Card
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => toast.success('Invoice marked as paid')} disabled={balanceDue <= 0}>
-                    <CheckCircle className="h-4 w-4 mr-1" /> Mark Paid
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => toast.info('Reminder feature coming soon')}>
-                    <Bell className="h-4 w-4 mr-1" /> Send Reminder
+                  <Button size="sm" variant="outline" onClick={() => window.open(OTTOPAY_APP_URL, '_blank')}>
+                    <ExternalLink className="h-4 w-4 mr-1" /> Manage in Otto Pay
                   </Button>
                 </div>
               </div>

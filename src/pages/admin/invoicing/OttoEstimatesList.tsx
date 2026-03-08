@@ -7,32 +7,27 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useOttoEstimates, useCreateOttoEstimate, useConvertEstimateToInvoice, useOttoEstimateLineItems } from '@/hooks/useOttoPay';
-import { EstimateBuilderSheet } from '@/components/invoicing/EstimateBuilderSheet';
+import { useOttoEstimates, useOttoEstimateLineItems } from '@/hooks/useOttoPay';
 import { DocumentPreview, printDocument } from '@/components/invoicing/DocumentPreview';
 import { StatusBadge } from '@/components/invoicing/StatusBadge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Search, MoreHorizontal, Eye, FileText, Plus, ArrowRightCircle, CheckCircle, XCircle, Printer, DollarSign, Clock } from 'lucide-react';
+import { Search, MoreHorizontal, Eye, FileText, Printer, DollarSign, Clock, CheckCircle, ExternalLink } from 'lucide-react';
 import { format, subDays, startOfMonth, subMonths, isAfter, isBefore } from 'date-fns';
 import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query';
-import { ottoPatch } from '@/integrations/ottopay/client';
 
 const fmt = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
 const statusTabs = ['all', 'draft', 'sent', 'accepted', 'declined', 'converted'] as const;
 const PAGE_SIZE = 25;
 
+const OTTOPAY_APP_URL = 'https://app.myottopay.com';
+
 const OttoEstimatesList = () => {
   const { data: estimates, isLoading } = useOttoEstimates();
-  const createEstimate = useCreateOttoEstimate();
-  const convertToInvoice = useConvertEstimateToInvoice();
-  const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState('all');
   const [page, setPage] = useState(0);
   const [selectedEstimate, setSelectedEstimate] = useState<any>(null);
-  const [createOpen, setCreateOpen] = useState(false);
 
   const { data: detailLineItems } = useOttoEstimateLineItems(selectedEstimate?.id ?? null);
 
@@ -56,35 +51,6 @@ const OttoEstimatesList = () => {
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  const handleCreate = async (data: any, status: string) => {
-    try {
-      await createEstimate.mutateAsync({
-        customer_id: data.customer_id, estimate_date: data.estimate_date, valid_until: data.valid_until,
-        subtotal: data.subtotal, tax_rate: data.tax_rate, tax_amount: data.tax_amount, total: data.total,
-        notes: data.notes, terms: data.terms, status,
-        line_items: data.line_items,
-      });
-      toast.success(`Estimate created as ${status}`);
-      setCreateOpen(false);
-    } catch (e: any) { toast.error(e.message || 'Failed to create estimate'); }
-  };
-
-  const handleConvert = async (est: any) => {
-    try {
-      await convertToInvoice.mutateAsync(est.id);
-      toast.success('Estimate converted to invoice');
-      setSelectedEstimate(null);
-    } catch (e: any) { toast.error(e.message || 'Conversion failed'); }
-  };
-
-  const handleStatusUpdate = async (est: any, newStatus: string) => {
-    try {
-      const { error } = await ottoPatch('estimates', est.id, { status: newStatus });
-      if (error) throw new Error(error.message);
-      qc.invalidateQueries({ queryKey: ['otto-estimates'] });
-      toast.success(`Estimate marked as ${newStatus}`);
-    } catch (e: any) { toast.error(e.message); }
-  };
 
   return (
     <AdminLayout title="Estimates">
@@ -139,7 +105,7 @@ const OttoEstimatesList = () => {
             <SelectItem value="90days">Last 90 Days</SelectItem>
           </SelectContent>
         </Select>
-        <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-1" /> New Estimate</Button>
+        <Button variant="outline" onClick={() => window.open(OTTOPAY_APP_URL, '_blank')}><ExternalLink className="h-4 w-4 mr-1" /> Manage in Otto Pay</Button>
       </div>
 
       {/* Status Tabs */}
@@ -187,9 +153,7 @@ const OttoEstimatesList = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedEstimate(est); }}><Eye className="h-4 w-4 mr-2" /> View</DropdownMenuItem>
-                          <DropdownMenuItem onClick={e => { e.stopPropagation(); handleConvert(est); }} disabled={est.status === 'converted'}><ArrowRightCircle className="h-4 w-4 mr-2" /> Convert to Invoice</DropdownMenuItem>
-                          <DropdownMenuItem onClick={e => { e.stopPropagation(); handleStatusUpdate(est, 'accepted'); }}><CheckCircle className="h-4 w-4 mr-2" /> Mark Accepted</DropdownMenuItem>
-                          <DropdownMenuItem onClick={e => { e.stopPropagation(); handleStatusUpdate(est, 'declined'); }}><XCircle className="h-4 w-4 mr-2" /> Mark Declined</DropdownMenuItem>
+                          <DropdownMenuItem onClick={e => { e.stopPropagation(); window.open(OTTOPAY_APP_URL, '_blank'); }}><ExternalLink className="h-4 w-4 mr-2" /> Manage in Otto Pay</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -211,8 +175,6 @@ const OttoEstimatesList = () => {
         </div>
       )}
 
-      {/* Create Estimate Builder */}
-      <EstimateBuilderSheet open={createOpen} onOpenChange={setCreateOpen} onSubmit={handleCreate} isPending={createEstimate.isPending} />
 
       {/* Estimate Detail Sheet */}
       <Sheet open={!!selectedEstimate} onOpenChange={open => { if (!open) setSelectedEstimate(null); }}>
@@ -272,14 +234,8 @@ const OttoEstimatesList = () => {
                   })}>
                     <Printer className="h-4 w-4 mr-1" /> Print / PDF
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleConvert(selectedEstimate)} disabled={selectedEstimate.status === 'converted' || convertToInvoice.isPending}>
-                    <ArrowRightCircle className="h-4 w-4 mr-1" /> Convert to Invoice
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(selectedEstimate, 'accepted')}>
-                    <CheckCircle className="h-4 w-4 mr-1" /> Accept
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(selectedEstimate, 'declined')}>
-                    <XCircle className="h-4 w-4 mr-1" /> Decline
+                  <Button size="sm" variant="outline" onClick={() => window.open(OTTOPAY_APP_URL, '_blank')}>
+                    <ExternalLink className="h-4 w-4 mr-1" /> Manage in Otto Pay
                   </Button>
                 </div>
               </div>
