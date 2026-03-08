@@ -371,6 +371,28 @@ const TemplateBuilder = () => {
     toast.success(`Added ${equipment.system_name}`);
   };
 
+  const handleAddUnit = (unit: any) => {
+    const newItem: LineItem = {
+      item_type: 'equipment',
+      name: `${unit.brand} ${unit.model_number}`,
+      description: `${unit.type} - ${unit.size}`,
+      material_id: null,
+      labor_rate_id: null,
+      admin_cost_id: null,
+      equipment_system_id: null,
+      quantity: 1,
+      unit: 'each',
+      unit_cost: Number(unit.price),
+      line_total: Number(unit.price),
+      sort_order: lineItems.length,
+      section: 'equipment_controls',
+      isNew: true,
+    };
+    setLineItems([...lineItems, newItem]);
+    setIsAddDialogOpen(false);
+    toast.success(`Added ${unit.brand} ${unit.model_number}`);
+  };
+
   const handleAddCustomItem = (section: EstimateSection = 'miscellaneous_inside') => {
     const newItem: LineItem = {
       item_type: 'custom',
