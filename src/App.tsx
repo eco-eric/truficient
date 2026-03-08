@@ -188,6 +188,9 @@ const router = createBrowserRouter([
       { path: "/smart-group-march", element: <CampaignLandingPage /> },
       { path: "/smart-group-march-g", element: <CampaignLandingPage /> },
       
+      // Public estimate preview
+      { path: "/estimate/preview/:id", element: <PublicEstimatePreview /> },
+      
       // Admin Routes
       { path: "/admin/login", element: <AdminLogin /> },
       {
