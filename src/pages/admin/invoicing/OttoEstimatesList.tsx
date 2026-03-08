@@ -175,8 +175,6 @@ const OttoEstimatesList = () => {
         </div>
       )}
 
-      {/* Create Estimate Builder */}
-      <EstimateBuilderSheet open={createOpen} onOpenChange={setCreateOpen} onSubmit={handleCreate} isPending={createEstimate.isPending} />
 
       {/* Estimate Detail Sheet */}
       <Sheet open={!!selectedEstimate} onOpenChange={open => { if (!open) setSelectedEstimate(null); }}>
