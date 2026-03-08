@@ -1,56 +1,29 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { useOttoTemplates, useOttoTemplateLineItems } from '@/hooks/useOttoPay';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { ottoPost, ottoDelete } from '@/integrations/ottopay/client';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
-import { LineItemEditor } from '@/components/invoicing/LineItemEditor';
-import { Plus, FileText, Trash2, Edit2 } from 'lucide-react';
+import { FileText, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
-import { toast } from 'sonner';
-import type { LineItemDraft } from '@/integrations/ottopay/types';
+
 const fmt = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
+const OTTOPAY_APP_URL = 'https://app.myottopay.com';
 
 const InvoiceTemplates = () => {
   const { data: templates, isLoading } = useOttoTemplates();
-  const qc = useQueryClient();
   const [selected, setSelected] = useState<any>(null);
   const { data: templateItems } = useOttoTemplateLineItems(selected?.id ?? null);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [lineItems, setLineItems] = useState<LineItemDraft[]>([]);
-
-  const createTemplate = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await ottoPost('catalog', { type: 'templates', name, description: description || null, line_items: lineItems.map((li, i) => ({ description: li.description, quantity: li.quantity, unit_price: li.unit_price, sort_order: i })) });
-      if (error) throw new Error(error.message);
-      return data;
-    },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['otto-templates'] }); toast.success('Template created'); setCreateOpen(false); setName(''); setDescription(''); setLineItems([]); },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const deleteTemplate = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await ottoDelete('catalog', id);
-      if (error) throw new Error(error.message);
-    },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['otto-templates'] }); toast.success('Template deleted'); setSelected(null); },
-  });
 
   return (
     <AdminLayout title="Invoice Templates">
       <div className="flex justify-between items-center mb-6">
         <p className="text-sm text-muted-foreground">{(templates || []).length} templates</p>
-        <Button onClick={() => { setName(''); setDescription(''); setLineItems([]); setCreateOpen(true); }}><Plus className="h-4 w-4 mr-1" /> New Template</Button>
+        <Button variant="outline" onClick={() => window.open(OTTOPAY_APP_URL, '_blank')}>
+          <ExternalLink className="h-4 w-4 mr-1" /> Manage in Otto Pay
+        </Button>
       </div>
 
       {isLoading ? (
@@ -89,28 +62,14 @@ const InvoiceTemplates = () => {
                 </TableBody>
               </Table>
               <div className="mt-6">
-                <Button variant="destructive" size="sm" onClick={() => deleteTemplate.mutate(selected.id)}><Trash2 className="h-4 w-4 mr-1" /> Delete Template</Button>
+                <Button variant="outline" size="sm" onClick={() => window.open(OTTOPAY_APP_URL, '_blank')}>
+                  <ExternalLink className="h-4 w-4 mr-1" /> Edit in Otto Pay
+                </Button>
               </div>
             </>
           )}
         </SheetContent>
       </Sheet>
-
-      {/* Create Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>New Template</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div><Label>Name *</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
-            <div><Label>Description</Label><Input value={description} onChange={e => setDescription(e.target.value)} /></div>
-            <div><Label>Line Items</Label><LineItemEditor items={lineItems} onChange={setLineItems} /></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-            <Button onClick={() => createTemplate.mutate()} disabled={createTemplate.isPending || !name.trim()}>Create Template</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </AdminLayout>
   );
 };
