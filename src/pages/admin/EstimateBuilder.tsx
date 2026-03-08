@@ -291,6 +291,20 @@ const EstimateBuilder = () => {
     },
   });
 
+  // Fetch individual equipment (units)
+  const { data: individualEquipment = [] } = useQuery({
+    queryKey: ['individual-equipment-pricing'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('individual_equipment_pricing')
+        .select('*')
+        .eq('is_active', true)
+        .order('brand');
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // Set form data when estimate loads
   useEffect(() => {
     if (estimate) {
