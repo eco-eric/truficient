@@ -204,8 +204,6 @@ const InvoicesList = () => {
         </div>
       )}
 
-      {/* Create Invoice Builder */}
-      <InvoiceBuilderSheet open={createOpen} onOpenChange={setCreateOpen} onSubmit={handleCreate} isPending={createInvoice.isPending} />
 
       {/* Invoice Detail Sheet */}
       <Sheet open={!!selectedInvoice} onOpenChange={open => { if (!open) setSelectedInvoice(null); }}>
