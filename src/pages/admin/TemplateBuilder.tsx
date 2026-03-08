@@ -615,6 +615,44 @@ const TemplateBuilder = () => {
             </div>
           )}
 
+          {/* Unit Equipment Search */}
+          {addDialogType === 'unit' && (
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by brand, model, or type..."
+                  value={unitSearch}
+                  onChange={(e) => setUnitSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {filteredUnits.map((unit: any) => (
+                  <div
+                    key={unit.id}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted cursor-pointer"
+                    onClick={() => handleAddUnit(unit)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Package className="h-5 w-5 text-blue-400" />
+                      <div>
+                        <div className="font-medium">{unit.brand} {unit.model_number}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {unit.type} • {unit.size}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="font-mono font-semibold">{formatCurrency(Number(unit.price))}</div>
+                  </div>
+                ))}
+                {filteredUnits.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">No individual equipment found</div>
+                )}
+              </div>
+            </div>
+          )}
+
           {addDialogType === 'material' && (
             <div className="space-y-4">
               <div className="flex gap-2">
