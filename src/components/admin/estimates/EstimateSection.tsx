@@ -132,7 +132,7 @@ export const SECTION_CONFIGS: SectionConfig[] = [
 interface EstimateSectionProps {
   config: SectionConfig;
   items: LineItem[];
-  onAddItem: (type: 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom', section: EstimateSection) => void;
+  onAddItem: (type: 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom' | 'unit', section: EstimateSection) => void;
   onRemoveItem: (index: number) => void;
   onUpdateItem: (index: number, field: keyof LineItem, value: any) => void;
   onReorderItems?: (sectionItems: LineItem[], newOrder: LineItem[]) => void;
