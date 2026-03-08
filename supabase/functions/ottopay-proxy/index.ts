@@ -17,7 +17,19 @@ const VALID_ENTITIES = new Set([
   "catalog",
   "business",
   "upload",
+  "materials",
+  "jobs",
 ]);
+
+// The Otto Pay api-sync endpoint uses hyphens, our frontend uses underscores
+const ENTITY_MAP: Record<string, string> = {
+  estimate_line_items: "estimate-line-items",
+  invoice_line_items: "invoice-line-items",
+};
+
+function resolveEntity(entity: string): string {
+  return ENTITY_MAP[entity] || entity;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -91,6 +103,8 @@ Deno.serve(async (req) => {
     );
   }
 
+  const resolvedEntity = resolveEntity(entity);
+
   const ottoHeaders: Record<string, string> = {
     "Content-Type": "application/json",
     "x-api-key": SYNC_KEY,
@@ -101,9 +115,11 @@ Deno.serve(async (req) => {
     let ottoRes: Response;
     const upperMethod = method.toUpperCase();
 
+    // Always put entity (and id) in query params for all methods
+    const url = new URL(API_URL);
+    url.searchParams.set("entity", resolvedEntity);
+
     if (upperMethod === "GET") {
-      const url = new URL(API_URL);
-      url.searchParams.set("entity", entity);
       if (id) url.searchParams.set("id", id);
       if (params) {
         if (params.select) url.searchParams.set("select", params.select);
@@ -116,22 +132,20 @@ Deno.serve(async (req) => {
         }
       }
       ottoRes = await fetch(url.toString(), { headers: ottoHeaders });
+
     } else if (upperMethod === "DELETE") {
-      const url = new URL(API_URL);
-      url.searchParams.set("entity", entity);
       if (id) url.searchParams.set("id", id);
       ottoRes = await fetch(url.toString(), { method: "DELETE", headers: ottoHeaders });
+
     } else {
-      // POST, PATCH, PUT
-      const payload: any = { entity };
-      // Resolve 'current' id to actual business ID for business entity
+      // POST, PATCH, PUT — entity in query params, data in body
       const resolvedId = (entity === "business" && id === "current") ? BUSINESS_ID : id;
-      if (resolvedId) payload.id = resolvedId;
-      if (params) payload.data = params;
-      ottoRes = await fetch(API_URL, {
+      if (resolvedId) url.searchParams.set("id", resolvedId);
+
+      ottoRes = await fetch(url.toString(), {
         method: upperMethod,
         headers: ottoHeaders,
-        body: JSON.stringify(payload),
+        body: JSON.stringify(params || {}),
       });
     }
 
