@@ -50,6 +50,7 @@ const TemplateBuilder = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [addDialogType, setAddDialogType] = useState<LineItemType>('material');
   const [equipmentSearch, setEquipmentSearch] = useState('');
+  const [unitSearch, setUnitSearch] = useState('');
   const [materialCategory, setMaterialCategory] = useState('all');
   const [currentAddSection, setCurrentAddSection] = useState<EstimateSection>('miscellaneous_inside');
 

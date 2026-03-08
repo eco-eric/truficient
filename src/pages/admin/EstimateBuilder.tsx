@@ -136,6 +136,7 @@ const EstimateBuilder = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [addDialogType, setAddDialogType] = useState<LineItemType>('material');
   const [equipmentSearch, setEquipmentSearch] = useState('');
+  const [unitSearch, setUnitSearch] = useState('');
   const [materialCategory, setMaterialCategory] = useState('all');
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
