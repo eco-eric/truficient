@@ -7,32 +7,27 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useOttoEstimates, useCreateOttoEstimate, useConvertEstimateToInvoice, useOttoEstimateLineItems } from '@/hooks/useOttoPay';
-import { EstimateBuilderSheet } from '@/components/invoicing/EstimateBuilderSheet';
+import { useOttoEstimates, useOttoEstimateLineItems } from '@/hooks/useOttoPay';
 import { DocumentPreview, printDocument } from '@/components/invoicing/DocumentPreview';
 import { StatusBadge } from '@/components/invoicing/StatusBadge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Search, MoreHorizontal, Eye, FileText, Plus, ArrowRightCircle, CheckCircle, XCircle, Printer, DollarSign, Clock } from 'lucide-react';
+import { Search, MoreHorizontal, Eye, FileText, Printer, DollarSign, Clock, CheckCircle, ExternalLink } from 'lucide-react';
 import { format, subDays, startOfMonth, subMonths, isAfter, isBefore } from 'date-fns';
 import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query';
-import { ottoPatch } from '@/integrations/ottopay/client';
 
 const fmt = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
 const statusTabs = ['all', 'draft', 'sent', 'accepted', 'declined', 'converted'] as const;
 const PAGE_SIZE = 25;
 
+const OTTOPAY_APP_URL = 'https://app.myottopay.com';
+
 const OttoEstimatesList = () => {
   const { data: estimates, isLoading } = useOttoEstimates();
-  const createEstimate = useCreateOttoEstimate();
-  const convertToInvoice = useConvertEstimateToInvoice();
-  const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState('all');
   const [page, setPage] = useState(0);
   const [selectedEstimate, setSelectedEstimate] = useState<any>(null);
-  const [createOpen, setCreateOpen] = useState(false);
 
   const { data: detailLineItems } = useOttoEstimateLineItems(selectedEstimate?.id ?? null);
 
