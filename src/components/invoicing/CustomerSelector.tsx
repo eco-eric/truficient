@@ -93,9 +93,6 @@ export function CustomerSelector({ value, onChange }: CustomerSelectorProps) {
           email: crm.email || null,
           phone: crm.phone || null,
           address,
-          city: raw.billing_city || null,
-          state: raw.billing_state || null,
-          zip: raw.billing_zip || null,
         } as any);
 
         if (newCustomer?.id) {
