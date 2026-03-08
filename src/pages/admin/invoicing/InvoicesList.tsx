@@ -181,8 +181,7 @@ const InvoicesList = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedInvoice(inv); }}><Eye className="h-4 w-4 mr-2" /> View</DropdownMenuItem>
-                            <DropdownMenuItem onClick={e => { e.stopPropagation(); handleCharge(inv); }} disabled={balance <= 0}><CreditCard className="h-4 w-4 mr-2" /> Charge</DropdownMenuItem>
-                            <DropdownMenuItem onClick={e => { e.stopPropagation(); toast.success(`${inv.invoice_number} marked as paid`); }} disabled={balance <= 0}><CheckCircle className="h-4 w-4 mr-2" /> Mark Paid</DropdownMenuItem>
+                            <DropdownMenuItem onClick={e => { e.stopPropagation(); window.open(OTTOPAY_APP_URL, '_blank'); }}><ExternalLink className="h-4 w-4 mr-2" /> Manage in Otto Pay</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
