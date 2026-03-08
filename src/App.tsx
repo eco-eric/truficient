@@ -34,6 +34,7 @@ import CampaignLandingPage from "./pages/landing/CampaignLandingPage";
 import SmartGroupMarchLanding from "./pages/landing/SmartGroupMarchLanding";
 import SmartGroupMarchV2Landing from "./pages/landing/SmartGroupMarchV2Landing";
 import SmartGroupMarchGoogleLanding from "./pages/landing/SmartGroupMarchGoogleLanding";
+import PublicEstimatePreview from "./pages/PublicEstimatePreview";
 
 // Admin imports
 import { AdminRouteLayout } from "./components/admin/AdminRouteLayout";
@@ -186,6 +187,9 @@ const router = createBrowserRouter([
       // Campaign landing pages (go.truficient.com subdomain)
       { path: "/smart-group-march", element: <CampaignLandingPage /> },
       { path: "/smart-group-march-g", element: <CampaignLandingPage /> },
+      
+      // Public estimate preview
+      { path: "/estimate/preview/:id", element: <PublicEstimatePreview /> },
       
       // Admin Routes
       { path: "/admin/login", element: <AdminLogin /> },
