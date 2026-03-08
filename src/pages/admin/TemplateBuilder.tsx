@@ -191,7 +191,7 @@ const TemplateBuilder = () => {
       if (itemsToCreate.length > 0) {
         const newItems = itemsToCreate.map(item => ({
           template_id: id,
-          item_type: item.item_type,
+          item_type: item.item_type === 'unit' ? 'equipment' : item.item_type,
           name: item.name,
           description: item.description,
           material_id: item.material_id,

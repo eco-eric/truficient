@@ -512,7 +512,7 @@ const EstimateBuilder = () => {
       if (itemsToCreate.length > 0) {
         const newItems = itemsToCreate.map(item => ({
           estimate_id: estimateId,
-          item_type: item.item_type,
+          item_type: item.item_type === 'unit' ? 'equipment' : item.item_type,
           name: item.name,
           description: item.description,
           material_id: item.material_id,
