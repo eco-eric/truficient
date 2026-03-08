@@ -51,35 +51,6 @@ const OttoEstimatesList = () => {
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  const handleCreate = async (data: any, status: string) => {
-    try {
-      await createEstimate.mutateAsync({
-        customer_id: data.customer_id, estimate_date: data.estimate_date, valid_until: data.valid_until,
-        subtotal: data.subtotal, tax_rate: data.tax_rate, tax_amount: data.tax_amount, total: data.total,
-        notes: data.notes, terms: data.terms, status,
-        line_items: data.line_items,
-      });
-      toast.success(`Estimate created as ${status}`);
-      setCreateOpen(false);
-    } catch (e: any) { toast.error(e.message || 'Failed to create estimate'); }
-  };
-
-  const handleConvert = async (est: any) => {
-    try {
-      await convertToInvoice.mutateAsync(est.id);
-      toast.success('Estimate converted to invoice');
-      setSelectedEstimate(null);
-    } catch (e: any) { toast.error(e.message || 'Conversion failed'); }
-  };
-
-  const handleStatusUpdate = async (est: any, newStatus: string) => {
-    try {
-      const { error } = await ottoPatch('estimates', est.id, { status: newStatus });
-      if (error) throw new Error(error.message);
-      qc.invalidateQueries({ queryKey: ['otto-estimates'] });
-      toast.success(`Estimate marked as ${newStatus}`);
-    } catch (e: any) { toast.error(e.message); }
-  };
 
   return (
     <AdminLayout title="Estimates">
