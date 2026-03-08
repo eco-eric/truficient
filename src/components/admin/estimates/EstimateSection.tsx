@@ -33,7 +33,7 @@ export type EstimateSection = 'admin_costs' | 'equipment_controls' | 'miscellane
 
 export interface LineItem {
   id?: string;
-  item_type: 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom';
+  item_type: 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom' | 'unit';
   name: string;
   description: string | null;
   material_id: string | null;
