@@ -78,7 +78,8 @@ export const SECTION_CONFIGS: SectionConfig[] = [
     color: 'text-blue-600',
     bgColor: 'bg-blue-50 border-blue-200',
     addButtons: [
-      { type: 'equipment', label: 'Equipment', icon: <Wrench className="h-4 w-4" /> },
+      { type: 'equipment', label: 'System', icon: <Wrench className="h-4 w-4" /> },
+      { type: 'unit', label: 'Unit', icon: <Package className="h-4 w-4" /> },
       { type: 'custom', label: 'Custom', icon: <Plus className="h-4 w-4" /> },
     ],
   },
