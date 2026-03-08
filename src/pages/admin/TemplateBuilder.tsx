@@ -457,7 +457,13 @@ const TemplateBuilder = () => {
     eq.ahri_number?.toLowerCase().includes(equipmentSearch.toLowerCase())
   );
 
-  const filteredMaterials = materialCategory === 'all' 
+  const filteredUnits = individualEquipment.filter((u: any) =>
+    u.brand.toLowerCase().includes(unitSearch.toLowerCase()) ||
+    u.model_number.toLowerCase().includes(unitSearch.toLowerCase()) ||
+    u.type.toLowerCase().includes(unitSearch.toLowerCase())
+  );
+
+  const filteredMaterials = materialCategory === 'all'
     ? materials 
     : materials.filter(m => m.category === materialCategory);
 
