@@ -1596,6 +1596,46 @@ const EstimateBuilder = () => {
             </div>
           )}
 
+          {/* Unit Equipment Search */}
+          {addDialogType === 'unit' && (
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by brand, model, or type..."
+                  value={unitSearch}
+                  onChange={(e) => setUnitSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="max-h-[400px] overflow-y-auto space-y-2">
+                {filteredUnits.length === 0 ? (
+                  <p className="text-center py-4 text-muted-foreground">No individual equipment found</p>
+                ) : (
+                  filteredUnits.map((unit: any) => (
+                    <div
+                      key={unit.id}
+                      className="p-3 border rounded-lg hover:bg-muted cursor-pointer transition-colors"
+                      onClick={() => handleAddUnit(unit)}
+                    >
+                      <div className="flex justify-between">
+                        <div>
+                          <div className="font-medium">{unit.brand} {unit.model_number}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {unit.type} • {unit.size}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-mono font-semibold">{formatCurrency(Number(unit.price))}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Materials */}
           {addDialogType === 'material' && (
             <div className="space-y-4">

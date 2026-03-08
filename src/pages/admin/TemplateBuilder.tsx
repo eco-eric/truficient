@@ -568,6 +568,7 @@ const TemplateBuilder = () => {
           <DialogHeader>
             <DialogTitle>
               {addDialogType === 'equipment' && 'Add Equipment System'}
+              {addDialogType === 'unit' && 'Add Individual Unit'}
               {addDialogType === 'material' && 'Add Material'}
               {addDialogType === 'labor' && 'Add Labor'}
               {addDialogType === 'admin_cost' && 'Add Admin Cost'}
