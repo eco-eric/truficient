@@ -105,7 +105,7 @@ const OttoEstimatesList = () => {
             <SelectItem value="90days">Last 90 Days</SelectItem>
           </SelectContent>
         </Select>
-        <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-1" /> New Estimate</Button>
+        <Button variant="outline" onClick={() => window.open(OTTOPAY_APP_URL, '_blank')}><ExternalLink className="h-4 w-4 mr-1" /> Manage in Otto Pay</Button>
       </div>
 
       {/* Status Tabs */}
