@@ -4,22 +4,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { useOttoInvoices, useCreateOttoInvoice } from '@/hooks/useOttoPay';
-import { InvoiceDetailSheet } from '@/components/invoicing/InvoiceDetailSheet';
-import { LineItemEditor } from '@/components/invoicing/LineItemEditor';
-import { CustomerSelector } from '@/components/invoicing/CustomerSelector';
+import { useOttoInvoices, useCreateOttoInvoice, useOttoLineItems, useOttoInvoicePayments } from '@/hooks/useOttoPay';
+import { InvoiceBuilderSheet } from '@/components/invoicing/InvoiceBuilderSheet';
+import { DocumentPreview, printDocument } from '@/components/invoicing/DocumentPreview';
 import { StatusBadge } from '@/components/invoicing/StatusBadge';
-import { Search, Download, MoreHorizontal, CreditCard, CheckCircle, Eye, FileText, Plus } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Search, Download, MoreHorizontal, CreditCard, CheckCircle, Eye, FileText, Plus, Printer, DollarSign, Clock, AlertCircle, Bell } from 'lucide-react';
 import { format, subDays, startOfMonth, subMonths, isAfter, isBefore } from 'date-fns';
 import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
-import type { LineItemDraft } from '@/integrations/ottopay/types';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const fmt = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
 const statusTabs = ['all', 'draft', 'sent', 'paid', 'partial', 'overdue'] as const;
@@ -28,6 +26,7 @@ const PAGE_SIZE = 25;
 const InvoicesList = () => {
   const { data: invoices, isLoading } = useOttoInvoices();
   const createInvoice = useCreateOttoInvoice();
+  const qc = useQueryClient();
   const [searchParams] = useSearchParams();
   const customerFilter = searchParams.get('customer');
   const [search, setSearch] = useState('');
@@ -37,14 +36,9 @@ const InvoicesList = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
-  // Create form state
-  const [customerId, setCustomerId] = useState<string | null>(null);
-  const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
-  const [dueDate, setDueDate] = useState('');
-  const [taxRate, setTaxRate] = useState(0.0825);
-  const [notes, setNotes] = useState('');
-  const [terms, setTerms] = useState('');
-  const [lineItems, setLineItems] = useState<LineItemDraft[]>([]);
+  // Detail sheet data
+  const { data: detailLineItems } = useOttoLineItems(selectedInvoice?.id ?? null);
+  const { data: detailPayments } = useOttoInvoicePayments(selectedInvoice?.id ?? null);
 
   const filtered = useMemo(() => {
     let list = invoices || [];
@@ -63,6 +57,8 @@ const InvoicesList = () => {
 
   const totalValue = filtered.reduce((s: number, i: any) => s + (i.total || 0), 0);
   const totalCollected = filtered.reduce((s: number, i: any) => s + (i.total_paid || 0), 0);
+  const totalOutstanding = totalValue - totalCollected;
+  const overdueCount = filtered.filter((i: any) => i.status === 'overdue' || (i.due_date && i.status !== 'paid' && isBefore(new Date(i.due_date), new Date()))).length;
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
@@ -77,45 +73,87 @@ const InvoicesList = () => {
     toast.success('CSV exported');
   };
 
-  const resetCreateForm = () => {
-    setCustomerId(null);
-    setInvoiceDate(new Date().toISOString().split('T')[0]);
-    setDueDate('');
-    setTaxRate(0.0825);
-    setNotes('');
-    setTerms('');
-    setLineItems([]);
-  };
-
-  const handleCreate = async (status: string) => {
-    if (!customerId) { toast.error('Select a customer'); return; }
-    if (lineItems.length === 0) { toast.error('Add at least one line item'); return; }
-    const subtotal = lineItems.reduce((s, i) => s + i.line_total, 0);
-    const tax_amount = subtotal * taxRate;
-    const total = subtotal + tax_amount;
+  const handleCreate = async (data: any, status: string) => {
     try {
+      const allLineItems = [...data.line_items];
+      if (data.cc_fee_line) {
+        allLineItems.push({ ...data.cc_fee_line, sort_order: allLineItems.length });
+      }
       await createInvoice.mutateAsync({
-        customer_id: customerId,
-        invoice_date: invoiceDate,
-        due_date: dueDate || null,
-        subtotal, tax_rate: taxRate, tax_amount, total,
-        notes: notes || null, terms: terms || null,
+        customer_id: data.customer_id,
+        invoice_date: data.invoice_date,
+        due_date: data.due_date,
+        subtotal: data.subtotal,
+        tax_rate: data.tax_rate,
+        tax_amount: data.tax_amount,
+        total: data.total,
+        notes: data.notes,
+        terms: data.terms,
         status,
-        line_items: lineItems.map((li, i) => ({ description: li.description, quantity: li.quantity, unit_price: li.unit_price, line_total: li.line_total, sort_order: i })),
+        line_items: allLineItems,
       });
       toast.success(`Invoice created as ${status}`);
       setCreateOpen(false);
-      resetCreateForm();
     } catch (e: any) { toast.error(e.message || 'Failed to create invoice'); }
   };
 
+  const handleCharge = async (inv: any) => {
+    const balance = inv.total - inv.total_paid;
+    if (balance <= 0) return;
+    try {
+      const { error } = await supabase.functions.invoke('create-invoice-payment', {
+        body: { invoice_id: inv.id, amount: balance, customer_email: inv.customers?.email || '', description: `Payment for ${inv.invoice_number}` },
+      });
+      if (error) throw error;
+      toast.success('Payment processed');
+      qc.invalidateQueries({ queryKey: ['otto-invoices'] });
+      qc.invalidateQueries({ queryKey: ['otto-payments'] });
+      qc.invalidateQueries({ queryKey: ['otto-metrics'] });
+    } catch (e: any) { toast.error(e.message || 'Payment failed'); }
+  };
+
   const isOverdue = (dueDate: string | null, status: string) => dueDate && status !== 'paid' && isBefore(new Date(dueDate), new Date());
-  const subtotal = lineItems.reduce((s, i) => s + i.line_total, 0);
-  const taxAmount = subtotal * taxRate;
-  const total = subtotal + taxAmount;
+  const balanceDue = selectedInvoice ? selectedInvoice.total - selectedInvoice.total_paid : 0;
 
   return (
     <AdminLayout title="Invoices">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg p-2.5 bg-blue-50"><FileText className="h-5 w-5 text-blue-600" /></div>
+              <div><p className="text-xs text-muted-foreground">Total Invoices</p><p className="text-xl font-bold">{filtered.length}</p></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg p-2.5 bg-green-50"><DollarSign className="h-5 w-5 text-green-600" /></div>
+              <div><p className="text-xs text-muted-foreground">Collected</p><p className="text-xl font-bold text-green-600">{fmt(totalCollected)}</p></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg p-2.5 bg-yellow-50"><Clock className="h-5 w-5 text-yellow-600" /></div>
+              <div><p className="text-xs text-muted-foreground">Outstanding</p><p className="text-xl font-bold text-yellow-600">{fmt(totalOutstanding)}</p></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg p-2.5 bg-red-50"><AlertCircle className="h-5 w-5 text-red-600" /></div>
+              <div><p className="text-xs text-muted-foreground">Overdue</p><p className="text-xl font-bold text-red-600">{overdueCount}</p></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -131,21 +169,17 @@ const InvoicesList = () => {
           </SelectContent>
         </Select>
         <Button variant="outline" size="sm" onClick={exportCSV}><Download className="h-4 w-4 mr-1" /> Export</Button>
-        <Button onClick={() => { resetCreateForm(); setCreateOpen(true); }}><Plus className="h-4 w-4 mr-1" /> New Invoice</Button>
+        <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-1" /> New Invoice</Button>
       </div>
 
+      {/* Status Tabs */}
       <div className="flex gap-1 mb-4 flex-wrap">
         {statusTabs.map(s => (
           <Button key={s} variant={statusFilter === s ? 'default' : 'outline'} size="sm" className="capitalize" onClick={() => { setStatusFilter(s); setPage(0); }}>{s}</Button>
         ))}
       </div>
 
-      <div className="flex gap-6 text-sm mb-4">
-        <span className="text-muted-foreground">{filtered.length} invoices</span>
-        <span>Total: <strong>{fmt(totalValue)}</strong></span>
-        <span>Collected: <strong className="text-green-600">{fmt(totalCollected)}</strong></span>
-      </div>
-
+      {/* Table */}
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
@@ -174,14 +208,14 @@ const InvoicesList = () => {
                   const balance = inv.total - inv.total_paid;
                   const overdue = isOverdue(inv.due_date, inv.status);
                   return (
-                    <TableRow key={inv.id} className="cursor-pointer" onClick={() => setSelectedInvoice(inv)}>
-                      <TableCell className="font-medium">{inv.invoice_number}</TableCell>
+                    <TableRow key={inv.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedInvoice(inv)}>
+                      <TableCell className="font-semibold text-primary">{inv.invoice_number}</TableCell>
                       <TableCell>{inv.customers?.name || '—'}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{format(new Date(inv.invoice_date || inv.created_at), 'MMM d, yyyy')}</TableCell>
-                      <TableCell className={`text-xs ${overdue ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>{inv.due_date ? format(new Date(inv.due_date), 'MMM d, yyyy') : '—'}</TableCell>
-                      <TableCell className="text-right">{fmt(inv.total)}</TableCell>
-                      <TableCell className="text-right">{fmt(inv.total_paid)}</TableCell>
-                      <TableCell className="text-right font-medium">{balance > 0 ? fmt(balance) : '—'}</TableCell>
+                      <TableCell className={`text-xs ${overdue ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>{inv.due_date ? format(new Date(inv.due_date), 'MMM d, yyyy') : '—'}</TableCell>
+                      <TableCell className="text-right font-medium">{fmt(inv.total)}</TableCell>
+                      <TableCell className="text-right text-green-600">{fmt(inv.total_paid)}</TableCell>
+                      <TableCell className="text-right font-semibold">{balance > 0 ? fmt(balance) : '—'}</TableCell>
                       <TableCell><StatusBadge status={inv.status} /></TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -190,7 +224,7 @@ const InvoicesList = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedInvoice(inv); }}><Eye className="h-4 w-4 mr-2" /> View</DropdownMenuItem>
-                            <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedInvoice(inv); }} disabled={balance <= 0}><CreditCard className="h-4 w-4 mr-2" /> Charge</DropdownMenuItem>
+                            <DropdownMenuItem onClick={e => { e.stopPropagation(); handleCharge(inv); }} disabled={balance <= 0}><CreditCard className="h-4 w-4 mr-2" /> Charge</DropdownMenuItem>
                             <DropdownMenuItem onClick={e => { e.stopPropagation(); toast.success(`${inv.invoice_number} marked as paid`); }} disabled={balance <= 0}><CheckCircle className="h-4 w-4 mr-2" /> Mark Paid</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -214,37 +248,106 @@ const InvoicesList = () => {
         </div>
       )}
 
-      <InvoiceDetailSheet invoice={selectedInvoice} open={!!selectedInvoice} onOpenChange={open => { if (!open) setSelectedInvoice(null); }} />
+      {/* Create Invoice Builder */}
+      <InvoiceBuilderSheet open={createOpen} onOpenChange={setCreateOpen} onSubmit={handleCreate} isPending={createInvoice.isPending} />
 
-      {/* Create Invoice Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>New Invoice</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><Label>Customer *</Label><CustomerSelector value={customerId} onChange={setCustomerId} /></div>
-              <div><Label>Invoice Date</Label><Input type="date" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} /></div>
-              <div><Label>Due Date</Label><Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} /></div>
-              <div><Label>Tax Rate (%)</Label><Input type="number" step="0.01" value={(taxRate * 100).toFixed(2)} onChange={e => setTaxRate(parseFloat(e.target.value) / 100 || 0)} /></div>
-            </div>
-            <div><Label>Line Items</Label><LineItemEditor items={lineItems} onChange={setLineItems} /></div>
-            <div className="border-t pt-3 space-y-1 text-sm text-right">
-              <p>Subtotal: {fmt(subtotal)}</p>
-              <p>Tax ({(taxRate * 100).toFixed(2)}%): {fmt(taxAmount)}</p>
-              <p className="font-semibold text-base">Total: {fmt(total)}</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><Label>Notes</Label><Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} /></div>
-              <div><Label>Terms</Label><Textarea value={terms} onChange={e => setTerms(e.target.value)} rows={3} /></div>
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-            <Button variant="outline" onClick={() => handleCreate('draft')} disabled={createInvoice.isPending}>Save as Draft</Button>
-            <Button onClick={() => handleCreate('sent')} disabled={createInvoice.isPending}>Send Invoice</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Invoice Detail Sheet */}
+      <Sheet open={!!selectedInvoice} onOpenChange={open => { if (!open) setSelectedInvoice(null); }}>
+        <SheetContent className="w-full sm:max-w-3xl overflow-y-auto p-0" side="right">
+          {selectedInvoice && (
+            <>
+              <div className="sticky top-0 z-10 bg-background border-b px-6 py-4">
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-3">
+                    {selectedInvoice.invoice_number}
+                    <StatusBadge status={selectedInvoice.status} />
+                  </SheetTitle>
+                </SheetHeader>
+              </div>
+              <div className="px-6 py-5">
+                {/* Customer Info */}
+                <div className="space-y-1 text-sm mb-6">
+                  <p className="font-semibold text-base">{selectedInvoice.customers?.name || 'Unknown Customer'}</p>
+                  {selectedInvoice.customers?.email && <p className="text-muted-foreground">{selectedInvoice.customers.email}</p>}
+                  {selectedInvoice.customers?.phone && <p className="text-muted-foreground">{selectedInvoice.customers.phone}</p>}
+                </div>
+
+                {/* Document Preview */}
+                <DocumentPreview
+                  type="invoice"
+                  documentNumber={selectedInvoice.invoice_number}
+                  date={selectedInvoice.invoice_date || selectedInvoice.created_at}
+                  dueDate={selectedInvoice.due_date}
+                  customerName={selectedInvoice.customers?.name || 'Unknown'}
+                  customerEmail={selectedInvoice.customers?.email}
+                  customerPhone={selectedInvoice.customers?.phone}
+                  customerAddress={selectedInvoice.customers?.address}
+                  lineItems={(detailLineItems || []).map((li: any) => ({ description: li.description, quantity: li.quantity, unit_price: li.unit_price, line_total: li.line_total }))}
+                  subtotal={selectedInvoice.subtotal}
+                  taxRate={selectedInvoice.tax_rate}
+                  taxAmount={selectedInvoice.tax_amount}
+                  total={selectedInvoice.total}
+                  totalPaid={selectedInvoice.total_paid}
+                  notes={selectedInvoice.notes}
+                  terms={selectedInvoice.terms}
+                  status={selectedInvoice.status}
+                />
+
+                {/* Payment History */}
+                {(detailPayments || []).length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="font-semibold text-sm mb-3">Payment History</h4>
+                    <div className="space-y-2">
+                      {(detailPayments || []).map((p: any) => (
+                        <div key={p.id} className="flex justify-between items-center text-sm border rounded-lg px-4 py-3">
+                          <div>
+                            <p className="font-medium text-green-600">{fmt(p.amount)}</p>
+                            <p className="text-xs text-muted-foreground">{p.payment_method} · {format(new Date(p.payment_date), 'MMM d, yyyy')}</p>
+                          </div>
+                          {p.transaction_id && <span className="text-xs text-muted-foreground font-mono">{p.transaction_id.slice(0, 12)}…</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-2 flex-wrap mt-6 pt-4 border-t">
+                  <Button size="sm" onClick={() => printDocument({
+                    type: 'invoice',
+                    documentNumber: selectedInvoice.invoice_number,
+                    date: selectedInvoice.invoice_date || selectedInvoice.created_at,
+                    dueDate: selectedInvoice.due_date,
+                    customerName: selectedInvoice.customers?.name || 'Unknown',
+                    customerEmail: selectedInvoice.customers?.email,
+                    customerPhone: selectedInvoice.customers?.phone,
+                    customerAddress: selectedInvoice.customers?.address,
+                    lineItems: (detailLineItems || []).map((li: any) => ({ description: li.description, quantity: li.quantity, unit_price: li.unit_price, line_total: li.line_total })),
+                    subtotal: selectedInvoice.subtotal,
+                    taxRate: selectedInvoice.tax_rate,
+                    taxAmount: selectedInvoice.tax_amount,
+                    total: selectedInvoice.total,
+                    totalPaid: selectedInvoice.total_paid,
+                    notes: selectedInvoice.notes,
+                    terms: selectedInvoice.terms,
+                  })}>
+                    <Printer className="h-4 w-4 mr-1" /> Print / PDF
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleCharge(selectedInvoice)} disabled={balanceDue <= 0}>
+                    <CreditCard className="h-4 w-4 mr-1" /> Charge Card
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => toast.success('Invoice marked as paid')} disabled={balanceDue <= 0}>
+                    <CheckCircle className="h-4 w-4 mr-1" /> Mark Paid
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => toast.info('Reminder feature coming soon')}>
+                    <Bell className="h-4 w-4 mr-1" /> Send Reminder
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </AdminLayout>
   );
 };

@@ -4,23 +4,19 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useOttoEstimates, useCreateOttoEstimate, useConvertEstimateToInvoice, useOttoEstimateLineItems } from '@/hooks/useOttoPay';
-import { LineItemEditor } from '@/components/invoicing/LineItemEditor';
-import { CustomerSelector } from '@/components/invoicing/CustomerSelector';
+import { EstimateBuilderSheet } from '@/components/invoicing/EstimateBuilderSheet';
+import { DocumentPreview, printDocument } from '@/components/invoicing/DocumentPreview';
 import { StatusBadge } from '@/components/invoicing/StatusBadge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Search, Download, MoreHorizontal, Eye, FileText, Plus, ArrowRightCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Search, MoreHorizontal, Eye, FileText, Plus, ArrowRightCircle, CheckCircle, XCircle, Printer, DollarSign, Clock } from 'lucide-react';
 import { format, subDays, startOfMonth, subMonths, isAfter, isBefore } from 'date-fns';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { ottoPatch } from '@/integrations/ottopay/client';
-import type { LineItemDraft } from '@/integrations/ottopay/types';
 
 const fmt = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
 const statusTabs = ['all', 'draft', 'sent', 'accepted', 'declined', 'converted'] as const;
@@ -38,14 +34,6 @@ const OttoEstimatesList = () => {
   const [selectedEstimate, setSelectedEstimate] = useState<any>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
-  const [customerId, setCustomerId] = useState<string | null>(null);
-  const [estimateDate, setEstimateDate] = useState(new Date().toISOString().split('T')[0]);
-  const [validUntil, setValidUntil] = useState('');
-  const [taxRate, setTaxRate] = useState(0.0825);
-  const [notes, setNotes] = useState('');
-  const [terms, setTerms] = useState('');
-  const [lineItems, setLineItems] = useState<LineItemDraft[]>([]);
-
   const { data: detailLineItems } = useOttoEstimateLineItems(selectedEstimate?.id ?? null);
 
   const filtered = useMemo(() => {
@@ -62,25 +50,22 @@ const OttoEstimatesList = () => {
     return list;
   }, [estimates, statusFilter, search, dateRange]);
 
+  const totalValue = filtered.reduce((s: number, e: any) => s + (e.total || 0), 0);
+  const acceptedValue = filtered.filter((e: any) => e.status === 'accepted').reduce((s: number, e: any) => s + (e.total || 0), 0);
+  const pendingCount = filtered.filter((e: any) => e.status === 'sent' || e.status === 'draft').length;
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  const resetForm = () => { setCustomerId(null); setEstimateDate(new Date().toISOString().split('T')[0]); setValidUntil(''); setTaxRate(0.0825); setNotes(''); setTerms(''); setLineItems([]); };
-
-  const handleCreate = async (status: string) => {
-    if (!customerId) { toast.error('Select a customer'); return; }
-    if (lineItems.length === 0) { toast.error('Add at least one line item'); return; }
-    const subtotal = lineItems.reduce((s, i) => s + i.line_total, 0);
-    const tax_amount = subtotal * taxRate;
-    const total = subtotal + tax_amount;
+  const handleCreate = async (data: any, status: string) => {
     try {
       await createEstimate.mutateAsync({
-        customer_id: customerId, estimate_date: estimateDate, valid_until: validUntil || null,
-        subtotal, tax_rate: taxRate, tax_amount, total, notes: notes || null, terms: terms || null, status,
-        line_items: lineItems.map((li, i) => ({ description: li.description, quantity: li.quantity, unit_price: li.unit_price, line_total: li.line_total, sort_order: i })),
+        customer_id: data.customer_id, estimate_date: data.estimate_date, valid_until: data.valid_until,
+        subtotal: data.subtotal, tax_rate: data.tax_rate, tax_amount: data.tax_amount, total: data.total,
+        notes: data.notes, terms: data.terms, status,
+        line_items: data.line_items,
       });
       toast.success(`Estimate created as ${status}`);
-      setCreateOpen(false); resetForm();
+      setCreateOpen(false);
     } catch (e: any) { toast.error(e.message || 'Failed to create estimate'); }
   };
 
@@ -101,12 +86,45 @@ const OttoEstimatesList = () => {
     } catch (e: any) { toast.error(e.message); }
   };
 
-  const subtotal = lineItems.reduce((s, i) => s + i.line_total, 0);
-  const taxAmount = subtotal * taxRate;
-  const total = subtotal + taxAmount;
-
   return (
     <AdminLayout title="Estimates">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg p-2.5 bg-blue-50"><FileText className="h-5 w-5 text-blue-600" /></div>
+              <div><p className="text-xs text-muted-foreground">Total Estimates</p><p className="text-xl font-bold">{filtered.length}</p></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg p-2.5 bg-green-50"><DollarSign className="h-5 w-5 text-green-600" /></div>
+              <div><p className="text-xs text-muted-foreground">Total Value</p><p className="text-xl font-bold">{fmt(totalValue)}</p></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg p-2.5 bg-emerald-50"><CheckCircle className="h-5 w-5 text-emerald-600" /></div>
+              <div><p className="text-xs text-muted-foreground">Accepted</p><p className="text-xl font-bold text-emerald-600">{fmt(acceptedValue)}</p></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg p-2.5 bg-yellow-50"><Clock className="h-5 w-5 text-yellow-600" /></div>
+              <div><p className="text-xs text-muted-foreground">Pending</p><p className="text-xl font-bold text-yellow-600">{pendingCount}</p></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -121,15 +139,17 @@ const OttoEstimatesList = () => {
             <SelectItem value="90days">Last 90 Days</SelectItem>
           </SelectContent>
         </Select>
-        <Button onClick={() => { resetForm(); setCreateOpen(true); }}><Plus className="h-4 w-4 mr-1" /> New Estimate</Button>
+        <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-1" /> New Estimate</Button>
       </div>
 
+      {/* Status Tabs */}
       <div className="flex gap-1 mb-4 flex-wrap">
         {statusTabs.map(s => (
           <Button key={s} variant={statusFilter === s ? 'default' : 'outline'} size="sm" className="capitalize" onClick={() => { setStatusFilter(s); setPage(0); }}>{s}</Button>
         ))}
       </div>
 
+      {/* Table */}
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
@@ -153,12 +173,12 @@ const OttoEstimatesList = () => {
               </TableHeader>
               <TableBody>
                 {paged.map((est: any) => (
-                  <TableRow key={est.id} className="cursor-pointer" onClick={() => setSelectedEstimate(est)}>
-                    <TableCell className="font-medium">{est.estimate_number}</TableCell>
+                  <TableRow key={est.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedEstimate(est)}>
+                    <TableCell className="font-semibold text-primary">{est.estimate_number}</TableCell>
                     <TableCell>{est.customers?.name || '—'}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{format(new Date(est.estimate_date || est.created_at), 'MMM d, yyyy')}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{est.valid_until ? format(new Date(est.valid_until), 'MMM d, yyyy') : '—'}</TableCell>
-                    <TableCell className="text-right">{fmt(est.total)}</TableCell>
+                    <TableCell className="text-right font-medium">{fmt(est.total)}</TableCell>
                     <TableCell><StatusBadge status={est.status} /></TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -191,77 +211,82 @@ const OttoEstimatesList = () => {
         </div>
       )}
 
+      {/* Create Estimate Builder */}
+      <EstimateBuilderSheet open={createOpen} onOpenChange={setCreateOpen} onSubmit={handleCreate} isPending={createEstimate.isPending} />
+
       {/* Estimate Detail Sheet */}
       <Sheet open={!!selectedEstimate} onOpenChange={open => { if (!open) setSelectedEstimate(null); }}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-3xl overflow-y-auto p-0" side="right">
           {selectedEstimate && (
             <>
-              <SheetHeader className="pb-4">
-                <SheetTitle className="flex items-center gap-3">
-                  {selectedEstimate.estimate_number}
-                  <StatusBadge status={selectedEstimate.status} />
-                </SheetTitle>
-              </SheetHeader>
-              <div className="space-y-1 text-sm mb-6">
-                <p className="font-medium">{selectedEstimate.customers?.name || 'Unknown'}</p>
-                {selectedEstimate.customers?.email && <p className="text-muted-foreground">{selectedEstimate.customers.email}</p>}
+              <div className="sticky top-0 z-10 bg-background border-b px-6 py-4">
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-3">
+                    {selectedEstimate.estimate_number}
+                    <StatusBadge status={selectedEstimate.status} />
+                  </SheetTitle>
+                </SheetHeader>
               </div>
-              <h4 className="font-semibold text-sm mb-2">Line Items</h4>
-              <Table>
-                <TableHeader><TableRow><TableHead>Description</TableHead><TableHead className="text-right">Qty</TableHead><TableHead className="text-right">Price</TableHead><TableHead className="text-right">Total</TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {(detailLineItems || []).map((li: any) => (
-                    <TableRow key={li.id}><TableCell>{li.description}</TableCell><TableCell className="text-right">{li.quantity}</TableCell><TableCell className="text-right">{fmt(li.unit_price)}</TableCell><TableCell className="text-right">{fmt(li.line_total)}</TableCell></TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <div className="border-t pt-3 space-y-1 text-sm mb-6 mt-4">
-                <div className="flex justify-between"><span>Subtotal</span><span>{fmt(selectedEstimate.subtotal)}</span></div>
-                <div className="flex justify-between"><span>Tax ({((selectedEstimate.tax_rate || 0) * 100).toFixed(1)}%)</span><span>{fmt(selectedEstimate.tax_amount)}</span></div>
-                <div className="flex justify-between font-semibold text-base"><span>Total</span><span>{fmt(selectedEstimate.total)}</span></div>
-              </div>
-              {selectedEstimate.notes && <div className="mb-4"><h4 className="font-semibold text-sm mb-1">Notes</h4><p className="text-sm text-muted-foreground">{selectedEstimate.notes}</p></div>}
-              <div className="flex gap-2 flex-wrap">
-                <Button size="sm" onClick={() => handleConvert(selectedEstimate)} disabled={selectedEstimate.status === 'converted' || convertToInvoice.isPending}>
-                  <ArrowRightCircle className="h-4 w-4 mr-1" /> Convert to Invoice
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(selectedEstimate, 'accepted')}><CheckCircle className="h-4 w-4 mr-1" /> Accept</Button>
-                <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(selectedEstimate, 'declined')}><XCircle className="h-4 w-4 mr-1" /> Decline</Button>
+              <div className="px-6 py-5">
+                <div className="space-y-1 text-sm mb-6">
+                  <p className="font-semibold text-base">{selectedEstimate.customers?.name || 'Unknown'}</p>
+                  {selectedEstimate.customers?.email && <p className="text-muted-foreground">{selectedEstimate.customers.email}</p>}
+                </div>
+
+                <DocumentPreview
+                  type="estimate"
+                  documentNumber={selectedEstimate.estimate_number}
+                  date={selectedEstimate.estimate_date || selectedEstimate.created_at}
+                  validUntil={selectedEstimate.valid_until}
+                  customerName={selectedEstimate.customers?.name || 'Unknown'}
+                  customerEmail={selectedEstimate.customers?.email}
+                  customerPhone={selectedEstimate.customers?.phone}
+                  customerAddress={selectedEstimate.customers?.address}
+                  lineItems={(detailLineItems || []).map((li: any) => ({ description: li.description, quantity: li.quantity, unit_price: li.unit_price, line_total: li.line_total }))}
+                  subtotal={selectedEstimate.subtotal}
+                  taxRate={selectedEstimate.tax_rate || 0}
+                  taxAmount={selectedEstimate.tax_amount}
+                  total={selectedEstimate.total}
+                  notes={selectedEstimate.notes}
+                  terms={selectedEstimate.terms}
+                  status={selectedEstimate.status}
+                />
+
+                <div className="flex gap-2 flex-wrap mt-6 pt-4 border-t">
+                  <Button size="sm" onClick={() => printDocument({
+                    type: 'estimate',
+                    documentNumber: selectedEstimate.estimate_number,
+                    date: selectedEstimate.estimate_date || selectedEstimate.created_at,
+                    validUntil: selectedEstimate.valid_until,
+                    customerName: selectedEstimate.customers?.name || 'Unknown',
+                    customerEmail: selectedEstimate.customers?.email,
+                    customerPhone: selectedEstimate.customers?.phone,
+                    customerAddress: selectedEstimate.customers?.address,
+                    lineItems: (detailLineItems || []).map((li: any) => ({ description: li.description, quantity: li.quantity, unit_price: li.unit_price, line_total: li.line_total })),
+                    subtotal: selectedEstimate.subtotal,
+                    taxRate: selectedEstimate.tax_rate || 0,
+                    taxAmount: selectedEstimate.tax_amount,
+                    total: selectedEstimate.total,
+                    notes: selectedEstimate.notes,
+                    terms: selectedEstimate.terms,
+                  })}>
+                    <Printer className="h-4 w-4 mr-1" /> Print / PDF
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleConvert(selectedEstimate)} disabled={selectedEstimate.status === 'converted' || convertToInvoice.isPending}>
+                    <ArrowRightCircle className="h-4 w-4 mr-1" /> Convert to Invoice
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(selectedEstimate, 'accepted')}>
+                    <CheckCircle className="h-4 w-4 mr-1" /> Accept
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(selectedEstimate, 'declined')}>
+                    <XCircle className="h-4 w-4 mr-1" /> Decline
+                  </Button>
+                </div>
               </div>
             </>
           )}
         </SheetContent>
       </Sheet>
-
-      {/* Create Estimate Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>New Estimate</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><Label>Customer *</Label><CustomerSelector value={customerId} onChange={setCustomerId} /></div>
-              <div><Label>Estimate Date</Label><Input type="date" value={estimateDate} onChange={e => setEstimateDate(e.target.value)} /></div>
-              <div><Label>Valid Until</Label><Input type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} /></div>
-              <div><Label>Tax Rate (%)</Label><Input type="number" step="0.01" value={(taxRate * 100).toFixed(2)} onChange={e => setTaxRate(parseFloat(e.target.value) / 100 || 0)} /></div>
-            </div>
-            <div><Label>Line Items</Label><LineItemEditor items={lineItems} onChange={setLineItems} /></div>
-            <div className="border-t pt-3 space-y-1 text-sm text-right">
-              <p>Subtotal: {fmt(subtotal)}</p>
-              <p>Tax ({(taxRate * 100).toFixed(2)}%): {fmt(taxAmount)}</p>
-              <p className="font-semibold text-base">Total: {fmt(total)}</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><Label>Notes</Label><Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} /></div>
-              <div><Label>Terms</Label><Textarea value={terms} onChange={e => setTerms(e.target.value)} rows={3} /></div>
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-            <Button variant="outline" onClick={() => handleCreate('draft')} disabled={createEstimate.isPending}>Save as Draft</Button>
-            <Button onClick={() => handleCreate('sent')} disabled={createEstimate.isPending}>Send Estimate</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </AdminLayout>
   );
 };
