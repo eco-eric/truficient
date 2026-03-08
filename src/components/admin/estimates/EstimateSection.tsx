@@ -56,7 +56,7 @@ interface SectionConfig {
   icon: React.ReactNode;
   color: string;
   bgColor: string;
-  addButtons: { type: 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom'; label: string; icon: React.ReactNode }[];
+  addButtons: { type: 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom' | 'unit'; label: string; icon: React.ReactNode }[];
 }
 
 export const SECTION_CONFIGS: SectionConfig[] = [
