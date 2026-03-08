@@ -3609,6 +3609,48 @@ export type Database = {
           },
         ]
       }
+      individual_equipment_pricing: {
+        Row: {
+          brand: string
+          created_at: string
+          id: string
+          is_active: boolean
+          model_number: string
+          notes: string | null
+          price: number
+          size: string
+          sort_order: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          brand: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          model_number: string
+          notes?: string | null
+          price?: number
+          size: string
+          sort_order?: number
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          brand?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          model_number?: string
+          notes?: string | null
+          price?: number
+          size?: string
+          sort_order?: number
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       integration_configs: {
         Row: {
           config: Json
