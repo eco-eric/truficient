@@ -111,6 +111,7 @@ export const navSections: NavSection[] = [
       { label: 'Templates', href: '/admin/estimate-templates', icon: LayoutTemplate, permissionKey: 'nav.estimate-templates' },
       { label: 'System Pricing', href: '/admin/system-pricing', icon: DollarSign, permissionKey: 'nav.system-pricing' },
       { label: 'Customer Equipment', href: '/admin/customer-equipment', icon: Package, permissionKey: 'nav.customer-equipment' },
+      { label: 'Individual Equipment', href: '/admin/equipment-pricing', icon: Package, permissionKey: 'nav.equipment-pricing' },
       { label: 'Ductless Config', href: '/admin/ductless-config', icon: AirVent, permissionKey: 'nav.ductless-config' },
     ],
   },

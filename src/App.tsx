@@ -239,6 +239,7 @@ const router = createBrowserRouter([
           { path: "/admin/landing-pages/:id", element: <ProtectedRoute><AdminLandingPageFormEditor /></ProtectedRoute> },
           { path: "/admin/ductless-config", element: <ProtectedRoute><AdminDuctlessConfig /></ProtectedRoute> },
           { path: "/admin/customer-equipment", element: <ProtectedRoute><AdminCustomerEquipment /></ProtectedRoute> },
+          { path: "/admin/equipment-pricing", element: <ProtectedRoute><AdminIndividualEquipmentPricing /></ProtectedRoute> },
           { path: "/admin/ducted-submissions", element: <Navigate to="/admin/submissions" replace /> },
           { path: "/admin/financing", element: <ProtectedRoute><AdminFinancingOptions /></ProtectedRoute> },
           { path: "/admin/gallery", element: <ProtectedRoute><AdminGallery /></ProtectedRoute> },
