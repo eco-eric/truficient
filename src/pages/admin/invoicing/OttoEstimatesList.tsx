@@ -153,9 +153,7 @@ const OttoEstimatesList = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedEstimate(est); }}><Eye className="h-4 w-4 mr-2" /> View</DropdownMenuItem>
-                          <DropdownMenuItem onClick={e => { e.stopPropagation(); handleConvert(est); }} disabled={est.status === 'converted'}><ArrowRightCircle className="h-4 w-4 mr-2" /> Convert to Invoice</DropdownMenuItem>
-                          <DropdownMenuItem onClick={e => { e.stopPropagation(); handleStatusUpdate(est, 'accepted'); }}><CheckCircle className="h-4 w-4 mr-2" /> Mark Accepted</DropdownMenuItem>
-                          <DropdownMenuItem onClick={e => { e.stopPropagation(); handleStatusUpdate(est, 'declined'); }}><XCircle className="h-4 w-4 mr-2" /> Mark Declined</DropdownMenuItem>
+                          <DropdownMenuItem onClick={e => { e.stopPropagation(); window.open(OTTOPAY_APP_URL, '_blank'); }}><ExternalLink className="h-4 w-4 mr-2" /> Manage in Otto Pay</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
