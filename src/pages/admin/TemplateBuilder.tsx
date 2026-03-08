@@ -39,7 +39,7 @@ import {
   type LineItem 
 } from '@/components/admin/estimates/EstimateSection';
 
-type LineItemType = 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom';
+type LineItemType = 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom' | 'unit';
 
 const TemplateBuilder = () => {
   const { id } = useParams();

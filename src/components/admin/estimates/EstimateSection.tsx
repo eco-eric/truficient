@@ -149,6 +149,7 @@ const formatCurrency = (amount: number) => {
 const getItemIcon = (itemType: string) => {
   switch (itemType) {
     case 'equipment': return <Wrench className="h-4 w-4 text-blue-500" />;
+    case 'unit': return <Package className="h-4 w-4 text-blue-400" />;
     case 'material': return <Package className="h-4 w-4 text-green-500" />;
     case 'labor': return <Users className="h-4 w-4 text-amber-500" />;
     case 'admin_cost': return <Receipt className="h-4 w-4 text-purple-500" />;

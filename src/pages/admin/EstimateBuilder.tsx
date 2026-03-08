@@ -68,7 +68,7 @@ import {
 type JobType = 'residential_new' | 'residential_replacement' | 'commercial_new' | 'commercial_replacement' | 'maintenance' | 'repair';
 type HeatingType = 'gas' | 'electric' | 'heat_pump' | 'dual_fuel';
 type EstimateStatus = 'draft' | 'sent' | 'accepted' | 'declined' | 'expired';
-type LineItemType = 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom';
+type LineItemType = 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom' | 'unit';
 
 interface EstimateData {
   title: string;
