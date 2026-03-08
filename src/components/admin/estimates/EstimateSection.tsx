@@ -33,7 +33,7 @@ export type EstimateSection = 'admin_costs' | 'equipment_controls' | 'miscellane
 
 export interface LineItem {
   id?: string;
-  item_type: 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom';
+  item_type: 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom' | 'unit';
   name: string;
   description: string | null;
   material_id: string | null;
@@ -56,7 +56,7 @@ interface SectionConfig {
   icon: React.ReactNode;
   color: string;
   bgColor: string;
-  addButtons: { type: 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom'; label: string; icon: React.ReactNode }[];
+  addButtons: { type: 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom' | 'unit'; label: string; icon: React.ReactNode }[];
 }
 
 export const SECTION_CONFIGS: SectionConfig[] = [
@@ -78,7 +78,8 @@ export const SECTION_CONFIGS: SectionConfig[] = [
     color: 'text-blue-600',
     bgColor: 'bg-blue-50 border-blue-200',
     addButtons: [
-      { type: 'equipment', label: 'Equipment', icon: <Wrench className="h-4 w-4" /> },
+      { type: 'equipment', label: 'System', icon: <Wrench className="h-4 w-4" /> },
+      { type: 'unit', label: 'Unit', icon: <Package className="h-4 w-4" /> },
       { type: 'custom', label: 'Custom', icon: <Plus className="h-4 w-4" /> },
     ],
   },
@@ -131,7 +132,7 @@ export const SECTION_CONFIGS: SectionConfig[] = [
 interface EstimateSectionProps {
   config: SectionConfig;
   items: LineItem[];
-  onAddItem: (type: 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom', section: EstimateSection) => void;
+  onAddItem: (type: 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom' | 'unit', section: EstimateSection) => void;
   onRemoveItem: (index: number) => void;
   onUpdateItem: (index: number, field: keyof LineItem, value: any) => void;
   onReorderItems?: (sectionItems: LineItem[], newOrder: LineItem[]) => void;
@@ -148,6 +149,7 @@ const formatCurrency = (amount: number) => {
 const getItemIcon = (itemType: string) => {
   switch (itemType) {
     case 'equipment': return <Wrench className="h-4 w-4 text-blue-500" />;
+    case 'unit': return <Package className="h-4 w-4 text-blue-400" />;
     case 'material': return <Package className="h-4 w-4 text-green-500" />;
     case 'labor': return <Users className="h-4 w-4 text-amber-500" />;
     case 'admin_cost': return <Receipt className="h-4 w-4 text-purple-500" />;

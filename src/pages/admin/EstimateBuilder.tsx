@@ -68,7 +68,7 @@ import {
 type JobType = 'residential_new' | 'residential_replacement' | 'commercial_new' | 'commercial_replacement' | 'maintenance' | 'repair';
 type HeatingType = 'gas' | 'electric' | 'heat_pump' | 'dual_fuel';
 type EstimateStatus = 'draft' | 'sent' | 'accepted' | 'declined' | 'expired';
-type LineItemType = 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom';
+type LineItemType = 'equipment' | 'material' | 'labor' | 'admin_cost' | 'custom' | 'unit';
 
 interface EstimateData {
   title: string;
@@ -136,6 +136,7 @@ const EstimateBuilder = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [addDialogType, setAddDialogType] = useState<LineItemType>('material');
   const [equipmentSearch, setEquipmentSearch] = useState('');
+  const [unitSearch, setUnitSearch] = useState('');
   const [materialCategory, setMaterialCategory] = useState('all');
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
@@ -285,6 +286,20 @@ const EstimateBuilder = () => {
         .from('equipment_systems')
         .select('*')
         .order('system_name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch individual equipment (units)
+  const { data: individualEquipment = [] } = useQuery({
+    queryKey: ['individual-equipment-pricing'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('individual_equipment_pricing')
+        .select('*')
+        .eq('is_active', true)
+        .order('brand');
       if (error) throw error;
       return data;
     },
@@ -512,7 +527,7 @@ const EstimateBuilder = () => {
       if (itemsToCreate.length > 0) {
         const newItems = itemsToCreate.map(item => ({
           estimate_id: estimateId,
-          item_type: item.item_type,
+          item_type: item.item_type === 'unit' ? 'equipment' : item.item_type,
           name: item.name,
           description: item.description,
           material_id: item.material_id,
@@ -806,6 +821,28 @@ const EstimateBuilder = () => {
     toast.success(`Added ${newItems.length} components from ${equipment.system_name}`);
   };
 
+  const handleAddUnit = (unit: any) => {
+    const newItem: LineItem = {
+      item_type: 'equipment',
+      name: `${unit.brand} ${unit.model_number}`,
+      description: `${unit.type} - ${unit.size}`,
+      material_id: null,
+      labor_rate_id: null,
+      admin_cost_id: null,
+      equipment_system_id: null,
+      quantity: 1,
+      unit: 'each',
+      unit_cost: Number(unit.price),
+      line_total: Number(unit.price),
+      sort_order: lineItems.length,
+      section: 'equipment_controls' as EstimateSection,
+      isNew: true,
+    };
+    setLineItems([...lineItems, newItem]);
+    setIsAddDialogOpen(false);
+    toast.success(`Added ${unit.brand} ${unit.model_number}`);
+  };
+
   const handleAddCustomItem = (section: EstimateSection = 'miscellaneous_inside') => {
     const newItem: LineItem = {
       item_type: 'custom',
@@ -962,6 +999,13 @@ const EstimateBuilder = () => {
     eq.system_name.toLowerCase().includes(equipmentSearch.toLowerCase()) ||
     eq.condenser_heat_pump_model?.toLowerCase().includes(equipmentSearch.toLowerCase()) ||
     eq.ahri_number?.toLowerCase().includes(equipmentSearch.toLowerCase())
+  );
+
+  // Filter individual equipment by search
+  const filteredUnits = individualEquipment.filter((u: any) =>
+    u.brand.toLowerCase().includes(unitSearch.toLowerCase()) ||
+    u.model_number.toLowerCase().includes(unitSearch.toLowerCase()) ||
+    u.type.toLowerCase().includes(unitSearch.toLowerCase())
   );
 
   // Filter materials by category
@@ -1500,7 +1544,8 @@ const EstimateBuilder = () => {
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {addDialogType === 'equipment' && 'Add Equipment'}
+              {addDialogType === 'equipment' && 'Add System'}
+              {addDialogType === 'unit' && 'Add Individual Unit'}
               {addDialogType === 'material' && 'Add Material'}
               {addDialogType === 'labor' && 'Add Labor'}
               {addDialogType === 'admin_cost' && 'Add Admin Cost'}
@@ -1546,6 +1591,46 @@ const EstimateBuilder = () => {
                       </div>
                     );
                   })
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Unit Equipment Search */}
+          {addDialogType === 'unit' && (
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by brand, model, or type..."
+                  value={unitSearch}
+                  onChange={(e) => setUnitSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="max-h-[400px] overflow-y-auto space-y-2">
+                {filteredUnits.length === 0 ? (
+                  <p className="text-center py-4 text-muted-foreground">No individual equipment found</p>
+                ) : (
+                  filteredUnits.map((unit: any) => (
+                    <div
+                      key={unit.id}
+                      className="p-3 border rounded-lg hover:bg-muted cursor-pointer transition-colors"
+                      onClick={() => handleAddUnit(unit)}
+                    >
+                      <div className="flex justify-between">
+                        <div>
+                          <div className="font-medium">{unit.brand} {unit.model_number}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {unit.type} • {unit.size}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-mono font-semibold">{formatCurrency(Number(unit.price))}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
             </div>
