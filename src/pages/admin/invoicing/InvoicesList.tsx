@@ -7,26 +7,23 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useOttoInvoices, useCreateOttoInvoice, useOttoLineItems, useOttoInvoicePayments } from '@/hooks/useOttoPay';
-import { InvoiceBuilderSheet } from '@/components/invoicing/InvoiceBuilderSheet';
+import { useOttoInvoices, useOttoLineItems, useOttoInvoicePayments } from '@/hooks/useOttoPay';
 import { DocumentPreview, printDocument } from '@/components/invoicing/DocumentPreview';
 import { StatusBadge } from '@/components/invoicing/StatusBadge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Search, Download, MoreHorizontal, CreditCard, CheckCircle, Eye, FileText, Plus, Printer, DollarSign, Clock, AlertCircle, Bell } from 'lucide-react';
+import { Search, Download, MoreHorizontal, Eye, FileText, Printer, DollarSign, Clock, AlertCircle, ExternalLink } from 'lucide-react';
 import { format, subDays, startOfMonth, subMonths, isAfter, isBefore } from 'date-fns';
 import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 
 const fmt = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
 const statusTabs = ['all', 'draft', 'sent', 'paid', 'partial', 'overdue'] as const;
 const PAGE_SIZE = 25;
 
+const OTTOPAY_APP_URL = 'https://app.myottopay.com';
+
 const InvoicesList = () => {
   const { data: invoices, isLoading } = useOttoInvoices();
-  const createInvoice = useCreateOttoInvoice();
-  const qc = useQueryClient();
   const [searchParams] = useSearchParams();
   const customerFilter = searchParams.get('customer');
   const [search, setSearch] = useState('');
@@ -34,7 +31,6 @@ const InvoicesList = () => {
   const [dateRange, setDateRange] = useState('all');
   const [page, setPage] = useState(0);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
-  const [createOpen, setCreateOpen] = useState(false);
 
   // Detail sheet data
   const { data: detailLineItems } = useOttoLineItems(selectedInvoice?.id ?? null);
