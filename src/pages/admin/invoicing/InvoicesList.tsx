@@ -287,14 +287,8 @@ const InvoicesList = () => {
                   })}>
                     <Printer className="h-4 w-4 mr-1" /> Print / PDF
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleCharge(selectedInvoice)} disabled={balanceDue <= 0}>
-                    <CreditCard className="h-4 w-4 mr-1" /> Charge Card
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => toast.success('Invoice marked as paid')} disabled={balanceDue <= 0}>
-                    <CheckCircle className="h-4 w-4 mr-1" /> Mark Paid
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => toast.info('Reminder feature coming soon')}>
-                    <Bell className="h-4 w-4 mr-1" /> Send Reminder
+                  <Button size="sm" variant="outline" onClick={() => window.open(OTTOPAY_APP_URL, '_blank')}>
+                    <ExternalLink className="h-4 w-4 mr-1" /> Manage in Otto Pay
                   </Button>
                 </div>
               </div>

@@ -234,14 +234,8 @@ const OttoEstimatesList = () => {
                   })}>
                     <Printer className="h-4 w-4 mr-1" /> Print / PDF
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleConvert(selectedEstimate)} disabled={selectedEstimate.status === 'converted' || convertToInvoice.isPending}>
-                    <ArrowRightCircle className="h-4 w-4 mr-1" /> Convert to Invoice
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(selectedEstimate, 'accepted')}>
-                    <CheckCircle className="h-4 w-4 mr-1" /> Accept
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(selectedEstimate, 'declined')}>
-                    <XCircle className="h-4 w-4 mr-1" /> Decline
+                  <Button size="sm" variant="outline" onClick={() => window.open(OTTOPAY_APP_URL, '_blank')}>
+                    <ExternalLink className="h-4 w-4 mr-1" /> Manage in Otto Pay
                   </Button>
                 </div>
               </div>
