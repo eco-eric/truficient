@@ -33,7 +33,7 @@ const PrivacyPolicy = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            Last Updated: January 15, 2026
+            Last Updated: March 09, 2026
           </motion.p>
         </div>
       </motion.section>
@@ -49,285 +49,245 @@ const PrivacyPolicy = () => {
           <Card className="shadow-lg">
             <CardContent className="p-8 md:p-12">
               
+              {/* Introduction */}
+              <div className="bg-muted border-l-4 border-secondary p-6 mb-8 rounded">
+                <p className="text-muted-foreground">
+                  This Privacy Policy explains how Truficient Energy Solutions, LLC collects, uses, and protects your information when you use our website and services, including SMS communications, email communications, appointment scheduling, and website analytics tools.
+                </p>
+                <p className="text-muted-foreground mt-3">
+                  By using our website or submitting information through our opt-in forms, you agree to this Privacy Policy and our{' '}
+                  <a href="/terms-of-service" className="text-secondary hover:underline font-medium">Terms of Service</a>.
+                </p>
+              </div>
+
               {/* Table of Contents */}
               <div className="bg-muted border-l-4 border-secondary p-6 mb-8 rounded">
                 <h2 className="text-xl font-bold text-primary mb-4">Table of Contents</h2>
                 <nav className="space-y-2">
-                  <a href="#introduction" className="block text-primary hover:text-secondary transition-colors">1. Introduction</a>
-                  <a href="#information-collect" className="block text-primary hover:text-secondary transition-colors">2. Information We Collect</a>
-                  <a href="#how-use" className="block text-primary hover:text-secondary transition-colors">3. How We Use Your Information</a>
-                  <a href="#cookie-policy" className="block text-primary hover:text-secondary transition-colors">4. Cookie Policy</a>
-                  <a href="#how-share" className="block text-primary hover:text-secondary transition-colors">5. How We Share Your Information</a>
-                  <a href="#data-retention" className="block text-primary hover:text-secondary transition-colors">6. Data Retention</a>
-                  <a href="#privacy-rights" className="block text-primary hover:text-secondary transition-colors">7. Your Privacy Rights</a>
-                  <a href="#data-security" className="block text-primary hover:text-secondary transition-colors">8. Data Security</a>
-                  <a href="#contact" className="block text-primary hover:text-secondary transition-colors">9. Contact Us</a>
+                  <a href="#information-collect" className="block text-primary hover:text-secondary transition-colors">1. Information We Collect</a>
+                  <a href="#how-use" className="block text-primary hover:text-secondary transition-colors">2. How We Use Your Information</a>
+                  <a href="#cookies" className="block text-primary hover:text-secondary transition-colors">3. Cookies and Tracking Technologies</a>
+                  <a href="#how-share" className="block text-primary hover:text-secondary transition-colors">4. How We Share Your Information</a>
+                  <a href="#sms" className="block text-primary hover:text-secondary transition-colors">5. SMS Communications</a>
+                  <a href="#choices" className="block text-primary hover:text-secondary transition-colors">6. Your Choices</a>
+                  <a href="#data-security" className="block text-primary hover:text-secondary transition-colors">7. Data Security</a>
+                  <a href="#children" className="block text-primary hover:text-secondary transition-colors">8. Children's Privacy</a>
+                  <a href="#updates" className="block text-primary hover:text-secondary transition-colors">9. Updates to This Policy</a>
+                  <a href="#contact" className="block text-primary hover:text-secondary transition-colors">10. Contact Us</a>
                 </nav>
               </div>
 
-              {/* Introduction */}
-              <section id="introduction" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">Introduction</h2>
+              {/* 1. Information We Collect */}
+              <section id="information-collect" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">1. Information We Collect</h2>
+                
+                <h3 className="text-xl font-bold text-primary mt-6 mb-3">Contact Information</h3>
+                <p className="text-muted-foreground mb-4">We may collect personal information including:</p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-4">
+                  <li>Name</li>
+                  <li>Email address</li>
+                  <li>Phone number</li>
+                  <li>Mailing address</li>
+                </ul>
+                <p className="text-muted-foreground mb-4">This information may be collected when you:</p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-6">
+                  <li>Submit a form on our website</li>
+                  <li>Request information about our services</li>
+                  <li>Schedule an appointment</li>
+                  <li>Communicate with our team</li>
+                </ul>
+
+                <h3 className="text-xl font-bold text-primary mt-6 mb-3">Communications Data</h3>
+                <p className="text-muted-foreground mb-4">If you opt in to receive communications from us, we may collect and maintain:</p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-4">
+                  <li>Messaging preferences</li>
+                  <li>SMS consent records</li>
+                  <li>Email subscription preferences</li>
+                  <li>Records of opt-in and opt-out activity</li>
+                </ul>
+                <p className="text-muted-foreground mb-6 text-sm italic">
+                  These records help us maintain compliance with messaging regulations.
+                </p>
+
+                <h3 className="text-xl font-bold text-primary mt-6 mb-3">Usage and Device Information</h3>
                 <p className="text-muted-foreground mb-4">
-                  Truficient Energy Solutions ("Truficient," "we," "us," or "our") respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website at www.truficient.com (the "Site") or use our HVAC services.
+                  We may automatically collect certain information when you visit our website through cookies, analytics tools, and tracking technologies. This information may include:
+                </p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-6">
+                  <li>IP address</li>
+                  <li>Browser type</li>
+                  <li>Device information</li>
+                  <li>Pages visited</li>
+                  <li>Interaction with website content</li>
+                </ul>
+
+                <h3 className="text-xl font-bold text-primary mt-6 mb-3">Appointment and Service Data</h3>
+                <p className="text-muted-foreground">
+                  If you request services or schedule appointments, we may collect information related to those interactions to properly provide our services.
+                </p>
+              </section>
+
+              {/* 2. How We Use Your Information */}
+              <section id="how-use" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">2. How We Use Your Information</h2>
+                <p className="text-muted-foreground mb-4">We use the information we collect to:</p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+                  <li>Provide requested services</li>
+                  <li>Respond to inquiries and support requests</li>
+                  <li>Schedule and confirm appointments</li>
+                  <li>Send appointment reminders and service updates</li>
+                  <li>Send SMS and email communications you have consented to receive</li>
+                  <li>Improve website functionality and marketing performance</li>
+                  <li>Maintain records of messaging consent and opt-out requests</li>
+                </ul>
+              </section>
+
+              {/* 3. Cookies and Tracking Technologies */}
+              <section id="cookies" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">3. Cookies and Tracking Technologies</h2>
+                <p className="text-muted-foreground mb-4">
+                  Our website may use cookies and similar technologies to analyze traffic and improve user experience.
                 </p>
                 <p className="text-muted-foreground">
-                  By using our Site or services, you agree to the collection and use of information in accordance with this Privacy Policy. If you do not agree with this policy, please do not use our Site or services.
+                  You can control cookie settings through your browser preferences. Some website features may not function correctly if cookies are disabled.
                 </p>
               </section>
 
-              {/* Information We Collect */}
-              <section id="information-collect" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">Information We Collect</h2>
-                
-                <h3 className="text-xl font-bold text-primary mt-6 mb-3">Personal Information You Provide</h3>
-                <p className="text-muted-foreground mb-4">
-                  We collect personal information that you voluntarily provide to us when you:
-                </p>
-                <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-4">
-                  <li>Request a service estimate or quote</li>
-                  <li>Schedule an HVAC service appointment</li>
-                  <li>Contact us via phone, email, or contact forms</li>
-                  <li>Subscribe to our newsletter or promotional emails</li>
-                  <li>Submit reviews or testimonials</li>
-                </ul>
-
-                <div className="bg-blue-50 border-l-4 border-primary p-4 mb-4 rounded">
-                  <h4 className="font-bold text-primary mb-2">This information may include:</h4>
-                  <ul className="text-muted-foreground space-y-1">
-                    <li><strong>Contact Information:</strong> Name, email, phone number, mailing address</li>
-                    <li><strong>Service Information:</strong> Property address, service requests, HVAC system details</li>
-                    <li><strong>Payment Information:</strong> Billing address (payment processing handled by third-party providers)</li>
-                    <li><strong>Communication Records:</strong> Your communications with us</li>
-                  </ul>
-                </div>
-
-                <h3 className="text-xl font-bold text-primary mt-6 mb-3">Information Collected Automatically</h3>
-                <p className="text-muted-foreground mb-4">
-                  When you visit our Site, we automatically collect certain information about your device and browsing activity, including:
-                </p>
-                <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
-                  <li>Usage Data (pages visited, time spent, links clicked)</li>
-                  <li>Device Information (IP address, browser type, operating system)</li>
-                  <li>Location Data (general geographic location based on IP)</li>
-                  <li>Cookies and Tracking Technologies</li>
-                </ul>
-              </section>
-
-              {/* How We Use Your Information */}
-              <section id="how-use" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">How We Use Your Information</h2>
-                
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="bg-muted p-6 rounded-lg border-2 border-border">
-                    <h3 className="text-lg font-bold text-primary mb-3">Service Delivery</h3>
-                    <ul className="text-muted-foreground space-y-2 text-sm">
-                      <li>• Provide HVAC services</li>
-                      <li>• Process service requests</li>
-                      <li>• Schedule appointments</li>
-                      <li>• Send service reminders</li>
-                    </ul>
-                  </div>
-
-                  <div className="bg-muted p-6 rounded-lg border-2 border-border">
-                    <h3 className="text-lg font-bold text-primary mb-3">Business Operations</h3>
-                    <ul className="text-muted-foreground space-y-2 text-sm">
-                      <li>• Improve website experience</li>
-                      <li>• Analyze usage patterns</li>
-                      <li>• Process payments</li>
-                      <li>• Manage customer relationships</li>
-                    </ul>
-                  </div>
-
-                  <div className="bg-muted p-6 rounded-lg border-2 border-border">
-                    <h3 className="text-lg font-bold text-primary mb-3">Marketing & Communications</h3>
-                    <ul className="text-muted-foreground space-y-2 text-sm">
-                      <li>• Contact you about our services</li>
-                      <li>• Send newsletters and promotions</li>
-                      <li>• Provide service updates</li>
-                      <li>• Send customer surveys</li>
-                    </ul>
-                  </div>
-
-                  <div className="bg-muted p-6 rounded-lg border-2 border-border">
-                    <h3 className="text-lg font-bold text-primary mb-3">Legal & Safety</h3>
-                    <ul className="text-muted-foreground space-y-2 text-sm">
-                      <li>• Comply with legal obligations</li>
-                      <li>• Protect our rights and property</li>
-                      <li>• Prevent fraud</li>
-                      <li>• Enforce Terms of Service</li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="bg-yellow-50 border-l-4 border-secondary p-4 mt-6 rounded">
-                  <h4 className="font-bold text-primary mb-2">Important: Your Consent to Contact</h4>
-                  <p className="text-muted-foreground">
-                    <strong>By submitting your contact information through our forms, you consent to receive communications from us</strong> regarding HVAC services, promotions, and related offerings. You may opt out at any time by clicking "unsubscribe" in our emails or contacting us directly.
-                  </p>
-                </div>
-              </section>
-
-              {/* Cookie Policy */}
-              <section id="cookie-policy" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">Cookie Policy</h2>
-                
-                <p className="text-muted-foreground mb-4">
-                  Cookies are small text files stored on your device that help us improve your browsing experience and analyze website traffic.
-                </p>
-
-                <h3 className="text-xl font-bold text-primary mt-6 mb-3">Types of Cookies We Use</h3>
-                <div className="space-y-4">
-                  <div className="border-l-4 border-green-500 pl-4">
-                    <h4 className="font-bold text-foreground">Essential Cookies</h4>
-                    <p className="text-muted-foreground text-sm">Required for basic site functionality (login, navigation, security)</p>
-                  </div>
-                  <div className="border-l-4 border-blue-500 pl-4">
-                    <h4 className="font-bold text-foreground">Analytics Cookies</h4>
-                    <p className="text-muted-foreground text-sm">Help us understand how visitors use our site (Google Analytics, etc.)</p>
-                  </div>
-                  <div className="border-l-4 border-purple-500 pl-4">
-                    <h4 className="font-bold text-foreground">Marketing Cookies</h4>
-                    <p className="text-muted-foreground text-sm">Used to deliver relevant advertisements and track campaign effectiveness</p>
-                  </div>
-                  <div className="border-l-4 border-orange-500 pl-4">
-                    <h4 className="font-bold text-foreground">Preference Cookies</h4>
-                    <p className="text-muted-foreground text-sm">Remember your settings and preferences</p>
-                  </div>
-                </div>
-
-                <p className="text-muted-foreground mt-4">
-                  You can control cookies through your browser settings. To learn more, visit{' '}
-                  <a href="https://www.allaboutcookies.org" target="_blank" rel="noopener noreferrer" className="text-secondary hover:underline">
-                    www.allaboutcookies.org
-                  </a>.
-                </p>
-              </section>
-
-              {/* How We Share Your Information */}
+              {/* 4. How We Share Your Information */}
               <section id="how-share" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">How We Share Your Information</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">4. How We Share Your Information</h2>
                 
                 <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
-                  <p className="text-foreground font-bold">
-                    We do NOT sell your personal information.
-                  </p>
+                  <p className="text-foreground font-bold">We do not sell your personal information.</p>
                 </div>
 
-                <p className="text-muted-foreground mb-4">We may share your information in the following circumstances:</p>
+                <p className="text-muted-foreground mb-4">We may share information only in the following limited circumstances:</p>
 
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-bold text-primary mb-2">Service Providers</h3>
-                    <p className="text-muted-foreground text-sm">
-                      We share information with trusted third-party providers who assist with website hosting, payment processing, email marketing, analytics, and CRM systems.
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-bold text-primary mb-2">Business Partners</h3>
-                    <p className="text-muted-foreground text-sm">
-                      HVAC equipment manufacturers (e.g., Mitsubishi) for warranty purposes, financing partners, and review platforms (Facebook, Houzz, Yelp, Angi).
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-bold text-primary mb-2">Legal Requirements</h3>
-                    <p className="text-muted-foreground text-sm">
-                      We may disclose information if required by law, court order, or government request, or to protect our legal rights and prevent illegal activity.
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Data Retention */}
-              <section id="data-retention" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">Data Retention</h2>
-                <p className="text-muted-foreground mb-4">
-                  We retain your personal information for as long as necessary to provide services and comply with legal requirements.
+                <h3 className="text-lg font-bold text-primary mb-2 mt-6">Service Providers</h3>
+                <p className="text-muted-foreground mb-2">We may share information with trusted service providers that assist us with:</p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-4">
+                  <li>SMS messaging services</li>
+                  <li>Email delivery platforms</li>
+                  <li>Customer relationship management systems</li>
+                  <li>Appointment scheduling tools</li>
+                  <li>Website analytics</li>
+                </ul>
+                <p className="text-muted-foreground mb-6 text-sm italic">
+                  These providers may only use information to perform services on our behalf.
                 </p>
-                <div className="bg-muted p-4 rounded">
-                  <p className="text-foreground">
-                    <strong>Standard Retention Period:</strong> We typically retain customer information for <strong>seven (7) years</strong> after the last service interaction, unless a longer retention period is required by law.
+
+                <h3 className="text-lg font-bold text-primary mb-2">Legal Requirements</h3>
+                <p className="text-muted-foreground mb-6">
+                  We may disclose information when required by law or when necessary to protect the rights, safety, or property of Truficient Energy Solutions, LLC, our customers, or others.
+                </p>
+
+                <h3 className="text-lg font-bold text-primary mb-2">Business Transfers</h3>
+                <p className="text-muted-foreground mb-6">
+                  If Truficient Energy Solutions, LLC is involved in a merger, acquisition, or asset sale, your information may be transferred as part of that transaction.
+                </p>
+
+                <h3 className="text-lg font-bold text-primary mb-2">Mobile Information Protection</h3>
+                <div className="bg-yellow-50 border-l-4 border-secondary p-4 rounded">
+                  <p className="text-muted-foreground mb-2">
+                    <strong>No mobile information will be shared with third parties or affiliates for marketing or promotional purposes.</strong>
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    Information sharing with subcontractors in support services such as customer support or messaging platforms is permitted. All other use case categories exclude text messaging originator opt-in data and consent. This information will not be shared with any third parties.
                   </p>
                 </div>
               </section>
 
-              {/* Your Privacy Rights */}
-              <section id="privacy-rights" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">Your Privacy Rights</h2>
-                
-                <p className="text-muted-foreground mb-4">Depending on your location, you may have the following rights:</p>
-
-                <div className="grid md:grid-cols-2 gap-4 mb-6">
-                  <div className="bg-blue-50 p-4 rounded border border-blue-200">
-                    <h4 className="font-bold text-primary mb-2">Access & Portability</h4>
-                    <p className="text-muted-foreground text-sm">Request access to your personal information and receive a copy in a portable format</p>
-                  </div>
-                  <div className="bg-blue-50 p-4 rounded border border-blue-200">
-                    <h4 className="font-bold text-primary mb-2">Correction & Updates</h4>
-                    <p className="text-muted-foreground text-sm">Request correction of inaccurate information and update your contact preferences</p>
-                  </div>
-                  <div className="bg-blue-50 p-4 rounded border border-blue-200">
-                    <h4 className="font-bold text-primary mb-2">Deletion</h4>
-                    <p className="text-muted-foreground text-sm">Request deletion of your personal information (subject to legal retention requirements)</p>
-                  </div>
-                  <div className="bg-blue-50 p-4 rounded border border-blue-200">
-                    <h4 className="font-bold text-primary mb-2">Opt-Out Rights</h4>
-                    <p className="text-muted-foreground text-sm">Opt out of marketing communications and certain data collection practices</p>
-                  </div>
-                </div>
-
-                <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4 rounded">
-                  <h4 className="font-bold text-primary mb-2">California Residents (CCPA/CPRA)</h4>
-                  <p className="text-muted-foreground text-sm">
-                    California residents have additional rights including the right to know what personal information is collected, whether it's sold or shared, and the right to opt out of sale (we do not sell information).
-                  </p>
-                </div>
-
-                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                  <h4 className="font-bold text-primary mb-2">Texas Residents</h4>
-                  <p className="text-muted-foreground text-sm">
-                    Texas residents have rights under applicable Texas privacy laws to access, correct, and delete their personal information.
-                  </p>
-                </div>
-              </section>
-
-              {/* Data Security */}
-              <section id="data-security" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">Data Security</h2>
+              {/* 5. SMS Communications */}
+              <section id="sms" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">5. SMS Communications</h2>
                 <p className="text-muted-foreground mb-4">
-                  We implement appropriate technical and organizational security measures to protect your personal information:
+                  If you provide your phone number and consent to receive text messages, Truficient Energy Solutions, LLC may send SMS communications related to:
                 </p>
                 <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-4">
-                  <li>SSL encryption for data transmission</li>
-                  <li>Secure servers and data storage systems</li>
-                  <li>Limited access on a need-to-know basis</li>
-                  <li>Regular security assessments and updates</li>
+                  <li>Appointment reminders</li>
+                  <li>Service notifications</li>
+                  <li>Follow-up communications</li>
+                  <li>Promotional messages related to our services</li>
                 </ul>
-                <p className="text-muted-foreground text-sm italic">
-                  However, no method of transmission over the internet is 100% secure. While we strive to protect your information, we cannot guarantee absolute security.
+                <div className="bg-muted p-4 rounded border border-border">
+                  <p className="text-muted-foreground">
+                    Message frequency may vary. Message and data rates may apply.
+                  </p>
+                  <p className="text-muted-foreground mt-2">
+                    You may opt out at any time by replying <strong className="text-secondary">STOP</strong> to any message. For assistance, reply <strong className="text-secondary">HELP</strong>.
+                  </p>
+                </div>
+              </section>
+
+              {/* 6. Your Choices */}
+              <section id="choices" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">6. Your Choices</h2>
+                
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-primary mb-2">SMS Opt-Out</h3>
+                    <p className="text-muted-foreground">
+                      You may opt out of SMS messages by replying <strong className="text-secondary">STOP</strong> to any text message.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-primary mb-2">Email Opt-Out</h3>
+                    <p className="text-muted-foreground">
+                      You may unsubscribe from marketing emails by clicking the unsubscribe link in the email.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-primary mb-2">Access or Correction</h3>
+                    <p className="text-muted-foreground">
+                      You may contact us to request access to, correction of, or deletion of your personal information, subject to applicable laws.
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+              {/* 7. Data Security */}
+              <section id="data-security" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">7. Data Security</h2>
+                <p className="text-muted-foreground">
+                  We use reasonable administrative, technical, and physical safeguards to protect personal information. However, no method of data transmission or storage is completely secure.
                 </p>
               </section>
 
-              {/* Contact Us */}
+              {/* 8. Children's Privacy */}
+              <section id="children" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">8. Children's Privacy</h2>
+                <p className="text-muted-foreground">
+                  Our services are not intended for children under 13 and we do not knowingly collect personal information from children.
+                </p>
+              </section>
+
+              {/* 9. Updates to This Policy */}
+              <section id="updates" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">9. Updates to This Policy</h2>
+                <p className="text-muted-foreground">
+                  We may update this Privacy Policy from time to time. Updates will be posted on this page with a revised "Last Updated" date.
+                </p>
+              </section>
+
+              {/* 10. Contact Us */}
               <section id="contact" className="mb-8">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">Contact Us</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">10. Contact Us</h2>
                 <p className="text-muted-foreground mb-6">
-                  If you have questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us:
+                  If you have questions regarding this Privacy Policy, please contact:
                 </p>
 
                 <div className="bg-primary text-primary-foreground p-6 rounded-lg">
-                  <h3 className="text-xl font-bold mb-4 text-secondary">Truficient Energy Solutions</h3>
+                  <h3 className="text-xl font-bold mb-4 text-secondary">Truficient Energy Solutions, LLC</h3>
                   <div className="space-y-2">
-                    <p>808 Business Parkway<br />Richardson, TX 75081</p>
-                    <p><strong>Phone:</strong> <a href="tel:214-238-4349" className="hover:text-secondary transition-colors">214-238-4349</a></p>
-                    <p><strong>Email:</strong> <a href="mailto:info@truficient.com" className="hover:text-secondary transition-colors">info@truficient.com</a></p>
-                    <p className="text-sm text-primary-foreground/80 mt-4">
-                      <strong>Privacy Inquiries:</strong> Please include "Privacy Request" in the subject line
+                    <p>808 Business Pkwy<br />Richardson, Texas 75081<br />United States</p>
+                    <p><strong>Phone:</strong>{' '}
+                      <a href="tel:+12142384349" className="hover:text-secondary transition-colors">+1 214-238-4349</a>
                     </p>
-                    <p className="text-sm text-primary-foreground/80">
-                      We will respond to your inquiry within <strong>30 days</strong> of receipt.
+                    <p><strong>Email:</strong>{' '}
+                      <a href="mailto:info@truficient.com" className="hover:text-secondary transition-colors">info@truficient.com</a>
+                    </p>
+                    <p><strong>Website:</strong>{' '}
+                      <a href="https://truficient.com" target="_blank" rel="noopener noreferrer" className="hover:text-secondary transition-colors">https://truficient.com</a>
                     </p>
                   </div>
                 </div>
@@ -336,7 +296,7 @@ const PrivacyPolicy = () => {
               {/* Footer */}
               <div className="text-center pt-8 border-t-2 border-border">
                 <p className="text-muted-foreground text-sm">
-                  © 2026 Truficient Energy Solutions. All rights reserved.
+                  © 2026 Truficient Energy Solutions, LLC. All rights reserved.
                 </p>
               </div>
 

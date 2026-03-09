@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import { CheckCircle } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { usePageSEO } from '@/hooks/usePageSEO';
@@ -34,7 +33,7 @@ const TermsOfService = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            Last Updated: January 15, 2026
+            Last Updated: March 09, 2026
           </motion.p>
         </div>
       </motion.section>
@@ -50,386 +49,164 @@ const TermsOfService = () => {
           <Card className="shadow-lg">
             <CardContent className="p-8 md:p-12">
               
-              {/* Important Notice */}
-              <div className="bg-yellow-50 border-l-4 border-secondary p-6 mb-8 rounded">
-                <h2 className="text-xl font-bold text-primary mb-2">Important Notice</h2>
+              {/* Introduction */}
+              <div className="bg-muted border-l-4 border-secondary p-6 mb-8 rounded">
                 <p className="text-muted-foreground">
-                  These Terms of Service govern your use of Truficient's website and services. By using our website or services, you agree to these terms. Please read them carefully.
+                  These Terms of Service govern your use of the services provided by Truficient Energy Solutions, LLC, including the use of our website and participation in our SMS and email communications programs. By accessing our website, submitting your information through our website opt-in form, or using our services, you agree to these Terms of Service and our{' '}
+                  <a href="/privacy-policy" className="text-secondary hover:underline font-medium">Privacy Policy</a>.
                 </p>
               </div>
 
               {/* Table of Contents */}
               <div className="bg-muted border-l-4 border-secondary p-6 mb-8 rounded">
                 <h2 className="text-xl font-bold text-primary mb-4">Table of Contents</h2>
-                <nav className="grid md:grid-cols-2 gap-2">
-                  <a href="#agreement" className="block text-primary hover:text-secondary transition-colors">1. Agreement to Terms</a>
-                  <a href="#service-area" className="block text-primary hover:text-secondary transition-colors">2. Service Area</a>
-                  <a href="#services" className="block text-primary hover:text-secondary transition-colors">3. Services Provided</a>
-                  <a href="#licensing" className="block text-primary hover:text-secondary transition-colors">4. Licensing & Certifications</a>
-                  <a href="#website-use" className="block text-primary hover:text-secondary transition-colors">5. Use of Our Website</a>
-                  <a href="#service-agreements" className="block text-primary hover:text-secondary transition-colors">6. Service Agreements</a>
-                  <a href="#warranties" className="block text-primary hover:text-secondary transition-colors">7. Warranties</a>
-                  <a href="#disclaimers" className="block text-primary hover:text-secondary transition-colors">8. Disclaimers & Liability</a>
-                  <a href="#dispute" className="block text-primary hover:text-secondary transition-colors">9. Dispute Resolution</a>
+                <nav className="space-y-2">
+                  <a href="#program-description" className="block text-primary hover:text-secondary transition-colors">1. Program Description</a>
+                  <a href="#consent" className="block text-primary hover:text-secondary transition-colors">2. Consent to Receive Messages</a>
+                  <a href="#frequency" className="block text-primary hover:text-secondary transition-colors">3. Message Frequency</a>
+                  <a href="#rates" className="block text-primary hover:text-secondary transition-colors">4. Message and Data Rates</a>
+                  <a href="#opt-out" className="block text-primary hover:text-secondary transition-colors">5. Opt-Out Instructions</a>
+                  <a href="#help" className="block text-primary hover:text-secondary transition-colors">6. Help and Support</a>
+                  <a href="#carrier" className="block text-primary hover:text-secondary transition-colors">7. Carrier Disclaimer</a>
+                  <a href="#privacy" className="block text-primary hover:text-secondary transition-colors">8. Privacy</a>
+                  <a href="#changes" className="block text-primary hover:text-secondary transition-colors">9. Changes to These Terms</a>
                   <a href="#contact" className="block text-primary hover:text-secondary transition-colors">10. Contact Information</a>
                 </nav>
               </div>
 
-              {/* Agreement to Terms */}
-              <section id="agreement" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">Agreement to Terms</h2>
+              {/* 1. Program Description */}
+              <section id="program-description" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">1. Program Description</h2>
                 <p className="text-muted-foreground mb-4">
-                  Welcome to Truficient Energy Solutions. These Terms of Service govern your use of our website at www.truficient.com and any HVAC services we provide.
+                  Truficient Energy Solutions, LLC provides energy consulting and efficiency solutions for homeowners and businesses.
                 </p>
                 <p className="text-muted-foreground mb-4">
-                  <strong>By accessing or using our Site or Services, you agree to be bound by these Terms.</strong> If you do not agree, you may not use our Site or Services.
+                  Individuals who submit their information through the opt-in form on our website may receive SMS and email communications from us. These communications may include both non-marketing and marketing messages, including but not limited to:
                 </p>
-                
-                <div className="bg-blue-50 p-4 rounded border border-blue-200">
-                  <h3 className="font-bold text-primary mb-2">Eligibility</h3>
+                <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-4">
+                  <li>Appointment confirmations and reminders</li>
+                  <li>Service notifications and updates</li>
+                  <li>Account or service related communications</li>
+                  <li>Follow-up communications related to your inquiry</li>
+                  <li>Promotional messages or special offers related to our services</li>
+                </ul>
+                <p className="text-muted-foreground">
+                  Message frequency may vary depending on your interaction with our services.
+                </p>
+              </section>
+
+              {/* 2. Consent to Receive Messages */}
+              <section id="consent" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">2. Consent to Receive Messages</h2>
+                <p className="text-muted-foreground mb-4">
+                  By providing your phone number and submitting the opt-in form on our website, you consent to receive text messages from Truficient Energy Solutions, LLC.
+                </p>
+                <p className="text-muted-foreground mb-4">
+                  These messages may include non-marketing and marketing communications related to our services.
+                </p>
+                <div className="bg-yellow-50 border-l-4 border-secondary p-4 rounded">
+                  <p className="text-foreground font-bold">
+                    Consent to receive SMS communications is not a condition of purchase.
+                  </p>
+                </div>
+              </section>
+
+              {/* 3. Message Frequency */}
+              <section id="frequency" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">3. Message Frequency</h2>
+                <p className="text-muted-foreground">
+                  Message frequency may vary depending on your interaction with our services, service updates, or marketing communications.
+                </p>
+              </section>
+
+              {/* 4. Message and Data Rates */}
+              <section id="rates" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">4. Message and Data Rates</h2>
+                <p className="text-muted-foreground mb-4">
+                  Message and data rates may apply for messages sent to you from us and to us from you. Charges depend on your mobile carrier and service plan.
+                </p>
+                <p className="text-muted-foreground">
+                  For questions regarding your messaging or data plan, please contact your wireless provider.
+                </p>
+              </section>
+
+              {/* 5. Opt-Out Instructions */}
+              <section id="opt-out" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">5. Opt-Out Instructions</h2>
+                <p className="text-muted-foreground mb-4">
+                  You can opt out of receiving SMS messages at any time.
+                </p>
+                <div className="bg-muted p-6 rounded-lg border-2 border-border mb-4">
+                  <p className="text-foreground font-bold mb-2">
+                    To stop receiving messages, reply <span className="text-secondary">STOP</span> to any message sent by Truficient Energy Solutions, LLC.
+                  </p>
                   <p className="text-muted-foreground text-sm">
-                    You must be at least <strong>18 years old</strong> to use our Services or enter into service agreements. By using our Site, you represent that you meet this requirement and have the legal capacity to enter into binding contracts.
+                    After sending STOP, you will receive a confirmation message indicating that you have been unsubscribed. After this, you will no longer receive SMS messages unless you choose to opt in again.
                   </p>
                 </div>
               </section>
 
-              {/* Service Area */}
-              <section id="service-area" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">Service Area</h2>
+              {/* 6. Help and Support */}
+              <section id="help" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">6. Help and Support</h2>
                 <p className="text-muted-foreground mb-4">
-                  Truficient provides HVAC services exclusively in the <strong>Dallas-Fort Worth Metroplex</strong>, including:
+                  If you are experiencing issues with our messaging program, reply <strong className="text-secondary">HELP</strong> to any SMS message for assistance.
                 </p>
-                
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="bg-muted p-4 rounded border border-border">
-                    <h4 className="font-bold text-primary mb-2">Dallas Area</h4>
-                    <p className="text-muted-foreground text-sm">Dallas and surrounding communities</p>
-                  </div>
-                  <div className="bg-muted p-4 rounded border border-border">
-                    <h4 className="font-bold text-primary mb-2">North Dallas</h4>
-                    <p className="text-muted-foreground text-sm">Plano, Richardson, Allen</p>
-                  </div>
-                  <div className="bg-muted p-4 rounded border border-border">
-                    <h4 className="font-bold text-primary mb-2">Frisco-McKinney</h4>
-                    <p className="text-muted-foreground text-sm">Frisco, McKinney, Prosper</p>
-                  </div>
-                  <div className="bg-muted p-4 rounded border border-border">
-                    <h4 className="font-bold text-primary mb-2">Mid-Cities</h4>
-                    <p className="text-muted-foreground text-sm">Irving, Euless, Bedford</p>
-                  </div>
-                  <div className="bg-muted p-4 rounded border border-border">
-                    <h4 className="font-bold text-primary mb-2">South Dallas</h4>
-                    <p className="text-muted-foreground text-sm">Desoto, Cedar Hill, Lancaster</p>
-                  </div>
-                  <div className="bg-muted p-4 rounded border border-border">
-                    <h4 className="font-bold text-primary mb-2">Arlington-GP</h4>
-                    <p className="text-muted-foreground text-sm">Arlington, Grand Prairie</p>
-                  </div>
-                </div>
+                <p className="text-muted-foreground mb-2">You may also contact us directly:</p>
+                <ul className="text-muted-foreground space-y-2 ml-4">
+                  <li><strong>Email:</strong>{' '}
+                    <a href="mailto:info@truficient.com" className="text-secondary hover:underline">info@truficient.com</a>
+                  </li>
+                  <li><strong>Phone:</strong>{' '}
+                    <a href="tel:+12142384349" className="text-secondary hover:underline">+1 214-238-4349</a>
+                  </li>
+                </ul>
+              </section>
 
-                <p className="text-muted-foreground text-sm mt-4 italic">
-                  Services outside this area may be considered on a case-by-case basis and are subject to additional fees.
+              {/* 7. Carrier Disclaimer */}
+              <section id="carrier" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">7. Carrier Disclaimer</h2>
+                <p className="text-muted-foreground">
+                  Wireless carriers are not liable for delayed or undelivered messages.
                 </p>
               </section>
 
-              {/* Services Provided */}
-              <section id="services" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">Services Provided</h2>
-                
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-xl font-bold text-primary mb-3">HVAC Services</h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="bg-blue-50 p-4 rounded">
-                        <h4 className="font-bold text-primary mb-2">Installation</h4>
-                        <ul className="text-muted-foreground text-sm space-y-1">
-                          <li>• Complete HVAC systems</li>
-                          <li>• Mini-split installation</li>
-                          <li>• Ductless systems</li>
-                        </ul>
-                      </div>
-                      <div className="bg-blue-50 p-4 rounded">
-                        <h4 className="font-bold text-primary mb-2">Repair</h4>
-                        <ul className="text-muted-foreground text-sm space-y-1">
-                          <li>• AC repair</li>
-                          <li>• Heating repair</li>
-                          <li>• Emergency services</li>
-                        </ul>
-                      </div>
-                      <div className="bg-blue-50 p-4 rounded">
-                        <h4 className="font-bold text-primary mb-2">Maintenance</h4>
-                        <ul className="text-muted-foreground text-sm space-y-1">
-                          <li>• Routine maintenance</li>
-                          <li>• Preventive plans</li>
-                          <li>• System inspections</li>
-                        </ul>
-                      </div>
-                      <div className="bg-blue-50 p-4 rounded">
-                        <h4 className="font-bold text-primary mb-2">Replacement</h4>
-                        <ul className="text-muted-foreground text-sm space-y-1">
-                          <li>• AC replacement</li>
-                          <li>• Heating systems</li>
-                          <li>• Equipment upgrades</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
-                    <h3 className="text-lg font-bold text-primary mb-2">Estimates and Quotes</h3>
-                    <ul className="text-muted-foreground space-y-2 text-sm">
-                      <li><strong>Estimates are not final prices:</strong> Initial estimates are approximate and subject to change based on actual conditions</li>
-                      <li><strong>On-site assessments:</strong> Final pricing determined after inspection</li>
-                      <li><strong>Written quotes:</strong> Provided before beginning work</li>
-                      <li><strong>Quote validity:</strong> Valid for <strong>30 days</strong> from issue date</li>
-                    </ul>
-                  </div>
-                </div>
-              </section>
-
-              {/* Licensing and Certifications */}
-              <section id="licensing" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">Licensing and Certifications</h2>
-                
-                <div className="bg-primary text-primary-foreground p-6 rounded-lg">
-                  <h3 className="text-xl font-bold text-secondary mb-4">Truficient Energy Solutions is:</h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="flex items-start">
-                      <CheckCircle className="w-6 h-6 text-secondary mr-2 flex-shrink-0 mt-1" />
-                      <div>
-                        <p className="font-bold">Licensed & Insured</p>
-                        <p className="text-sm text-primary-foreground/80">Texas HVAC Contractor</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <CheckCircle className="w-6 h-6 text-secondary mr-2 flex-shrink-0 mt-1" />
-                      <div>
-                        <p className="font-bold">Mitsubishi Diamond Contractor</p>
-                        <p className="text-sm text-primary-foreground/80">Specialized training & certification</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <CheckCircle className="w-6 h-6 text-secondary mr-2 flex-shrink-0 mt-1" />
-                      <div>
-                        <p className="font-bold">HERS Certified</p>
-                        <p className="text-sm text-primary-foreground/80">Energy efficiency provider</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <CheckCircle className="w-6 h-6 text-secondary mr-2 flex-shrink-0 mt-1" />
-                      <div>
-                        <p className="font-bold">Fully Compliant</p>
-                        <p className="text-sm text-primary-foreground/80">Texas regulations & building codes</p>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-sm text-primary-foreground/80 mt-4">License information available upon request</p>
-                </div>
-              </section>
-
-              {/* Use of Website */}
-              <section id="website-use" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">Use of Our Website</h2>
-                
-                <h3 className="text-xl font-bold text-primary mb-3">Acceptable Use</h3>
-                <p className="text-muted-foreground mb-4">You agree to use our Site only for lawful purposes. You agree NOT to:</p>
-                
-                <div className="grid md:grid-cols-2 gap-3 mb-6">
-                  <div className="flex items-start bg-red-50 p-3 rounded">
-                    <span className="text-red-500 mr-2">✗</span>
-                    <span className="text-muted-foreground text-sm">Violate laws or regulations</span>
-                  </div>
-                  <div className="flex items-start bg-red-50 p-3 rounded">
-                    <span className="text-red-500 mr-2">✗</span>
-                    <span className="text-muted-foreground text-sm">Infringe intellectual property</span>
-                  </div>
-                  <div className="flex items-start bg-red-50 p-3 rounded">
-                    <span className="text-red-500 mr-2">✗</span>
-                    <span className="text-muted-foreground text-sm">Transmit viruses or malware</span>
-                  </div>
-                  <div className="flex items-start bg-red-50 p-3 rounded">
-                    <span className="text-red-500 mr-2">✗</span>
-                    <span className="text-muted-foreground text-sm">Attempt unauthorized access</span>
-                  </div>
-                  <div className="flex items-start bg-red-50 p-3 rounded">
-                    <span className="text-red-500 mr-2">✗</span>
-                    <span className="text-muted-foreground text-sm">Use automated systems (bots)</span>
-                  </div>
-                  <div className="flex items-start bg-red-50 p-3 rounded">
-                    <span className="text-red-500 mr-2">✗</span>
-                    <span className="text-muted-foreground text-sm">Submit false information</span>
-                  </div>
-                </div>
-
-                <h3 className="text-xl font-bold text-primary mb-3">Intellectual Property</h3>
-                <p className="text-muted-foreground mb-4">
-                  All content on our Site (text, graphics, logos, images, videos, the Truficient name and branding) is the property of Truficient Energy Solutions and is protected by copyright and trademark laws.
+              {/* 8. Privacy */}
+              <section id="privacy" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">8. Privacy</h2>
+                <p className="text-muted-foreground">
+                  Your privacy is important to us. Your use of our website and services is also governed by our{' '}
+                  <a href="/privacy-policy" className="text-secondary hover:underline font-medium">Privacy Policy</a>.
                 </p>
-                <div className="bg-muted p-4 rounded">
-                  <p className="text-muted-foreground text-sm">
-                    <strong>You may not:</strong> Copy, reproduce, or distribute Site content without permission • Use our trademarks or logos without authorization • Create derivative works • Use content for commercial purposes without permission
-                  </p>
-                </div>
               </section>
 
-              {/* Service Agreements */}
-              <section id="service-agreements" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">Service Agreements and Appointments</h2>
-                
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-xl font-bold text-primary mb-3">Scheduling</h3>
-                    <ul className="space-y-2 text-muted-foreground">
-                      <li className="flex items-start">
-                        <span className="text-secondary mr-2">•</span>
-                        <span><strong>Appointments not confirmed</strong> until you receive confirmation from Truficient</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="text-secondary mr-2">•</span>
-                        <span><strong>Cancellations:</strong> Please provide at least <strong>24 hours notice</strong></span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="text-secondary mr-2">•</span>
-                        <span><strong>Late cancellations or no-shows</strong> may incur a service fee</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="text-secondary mr-2">•</span>
-                        <span><strong>Emergency services</strong> subject to availability and additional charges</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h3 className="text-xl font-bold text-primary mb-3">Payment Terms</h3>
-                    <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
-                      <ul className="space-y-2 text-muted-foreground text-sm">
-                        <li><strong>Payment due:</strong> Upon completion of service unless other arrangements made</li>
-                        <li><strong>Accepted methods:</strong> Cash, check, credit/debit cards, financing (subject to approval)</li>
-                        <li><strong>Deposits:</strong> Major installations may require 50% deposit</li>
-                        <li><strong>Late payments:</strong> Subject to interest charges and collection efforts</li>
-                        <li><strong>Disputed charges:</strong> Contact within <strong>10 days</strong> of invoice</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
+              {/* 9. Changes to These Terms */}
+              <section id="changes" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">9. Changes to These Terms</h2>
+                <p className="text-muted-foreground">
+                  Truficient Energy Solutions, LLC may update these Terms of Service from time to time. Updates will be posted on this page with a revised "Last Updated" date.
+                </p>
               </section>
 
-              {/* Warranties */}
-              <section id="warranties" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">Warranties</h2>
-                
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="border-2 border-primary rounded-lg p-6">
-                    <h3 className="text-lg font-bold text-primary mb-3">Service Warranty</h3>
-                    <p className="text-muted-foreground text-sm mb-3">We stand behind our workmanship with labor warranties on installation and repair work.</p>
-                    <div className="bg-muted p-3 rounded">
-                      <p className="text-xs text-muted-foreground"><strong>Does not cover:</strong> Normal wear and tear, misuse, neglect, unauthorized modifications, or external damage</p>
-                    </div>
-                  </div>
-
-                  <div className="border-2 border-secondary rounded-lg p-6">
-                    <h3 className="text-lg font-bold text-primary mb-3">Manufacturer Warranties</h3>
-                    <ul className="text-muted-foreground text-sm space-y-2">
-                      <li><strong>Mitsubishi:</strong> Up to 12-year residential, 10-year commercial parts warranty</li>
-                      <li><strong>Other equipment:</strong> Varies by manufacturer</li>
-                      <li><strong>Registration required</strong> for extended warranties</li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mt-4 rounded">
-                  <h4 className="font-bold text-primary mb-2">Warranty Limitations</h4>
-                  <p className="text-muted-foreground text-sm">
-                    Warranties are void if equipment is serviced by unauthorized technicians. Regular maintenance may be required. We are not responsible for manufacturer warranty claims.
-                  </p>
-                </div>
-              </section>
-
-              {/* Disclaimers and Limitations */}
-              <section id="disclaimers" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">Disclaimers and Limitations of Liability</h2>
-                
-                <div className="bg-red-50 border-2 border-red-300 p-6 rounded-lg mb-6">
-                  <h3 className="text-lg font-bold text-red-800 mb-3">IMPORTANT LEGAL DISCLAIMERS</h3>
-                  <p className="text-muted-foreground text-sm mb-3">
-                    TO THE FULLEST EXTENT PERMITTED BY LAW:
-                  </p>
-                  <ul className="space-y-2 text-muted-foreground text-sm">
-                    <li><strong>No guarantees:</strong> We cannot guarantee specific outcomes or energy savings</li>
-                    <li><strong>"As-is" basis:</strong> Services provided on "as-is" and "as-available" basis</li>
-                    <li><strong>Third-party products:</strong> Not responsible for manufacturer equipment defects</li>
-                    <li><strong>Emergency services:</strong> Cannot guarantee immediate availability</li>
-                  </ul>
-                </div>
-
-                <div className="bg-muted p-6 rounded-lg">
-                  <h3 className="text-lg font-bold text-primary mb-3">Limitation of Liability</h3>
-                  <p className="text-muted-foreground text-sm mb-3">
-                    TRUFICIENT SHALL NOT BE LIABLE FOR:
-                  </p>
-                  <ul className="space-y-2 text-muted-foreground text-sm">
-                    <li>• Indirect damages (lost profits, data loss, business interruption)</li>
-                    <li>• Consequential damages from services or Site use</li>
-                    <li>• Damages exceeding fees paid for the specific service</li>
-                    <li>• Acts of nature, severe weather, or uncontrollable events</li>
-                  </ul>
-                  <p className="text-xs text-muted-foreground mt-3 italic">
-                    Some jurisdictions do not allow certain limitations. In such cases, liability is limited to the maximum extent permitted by law.
-                  </p>
-                </div>
-              </section>
-
-              {/* Dispute Resolution */}
-              <section id="dispute" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">Dispute Resolution</h2>
-                
-                <div className="space-y-4">
-                  <div className="bg-blue-50 p-4 rounded border border-blue-200">
-                    <h3 className="font-bold text-primary mb-2">Informal Resolution</h3>
-                    <p className="text-muted-foreground text-sm">
-                      Before filing any legal action, you agree to first contact us at info@truficient.com to attempt informal resolution.
-                    </p>
-                  </div>
-
-                  <div className="bg-muted p-4 rounded">
-                    <h3 className="font-bold text-primary mb-2">Governing Law</h3>
-                    <p className="text-muted-foreground text-sm">
-                      These Terms are governed by the laws of the <strong>State of Texas</strong>, without regard to conflict of law principles.
-                    </p>
-                  </div>
-
-                  <div className="bg-muted p-4 rounded">
-                    <h3 className="font-bold text-primary mb-2">Venue</h3>
-                    <p className="text-muted-foreground text-sm">
-                      Any legal proceedings shall be brought exclusively in state or federal courts in <strong>Dallas County, Texas</strong>.
-                    </p>
-                  </div>
-
-                  <div className="bg-yellow-50 p-4 rounded border border-yellow-300">
-                    <h3 className="font-bold text-primary mb-2">Class Action Waiver</h3>
-                    <p className="text-muted-foreground text-sm">
-                      You agree to bring claims against Truficient only in your individual capacity, not as part of any class or representative action.
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Contact Information */}
+              {/* 10. Contact Information */}
               <section id="contact" className="mb-8">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">Contact Information</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">10. Contact Information</h2>
                 <p className="text-muted-foreground mb-6">
-                  For questions, concerns, or notices regarding these Terms of Service:
+                  If you have questions regarding these Terms of Service, please contact us:
                 </p>
 
                 <div className="bg-primary text-primary-foreground p-6 rounded-lg">
-                  <h3 className="text-xl font-bold mb-4 text-secondary">Truficient Energy Solutions</h3>
+                  <h3 className="text-xl font-bold mb-4 text-secondary">Truficient Energy Solutions, LLC</h3>
                   <div className="space-y-2">
-                    <p>808 Business Parkway<br />Richardson, TX 75081</p>
-                    <p><strong>Phone:</strong> <a href="tel:214-238-4349" className="hover:text-secondary transition-colors">214-238-4349</a></p>
-                    <p><strong>Email:</strong> <a href="mailto:info@truficient.com" className="hover:text-secondary transition-colors">info@truficient.com</a></p>
-                    <p><strong>Hours:</strong> Monday-Friday, 8:00 AM - 5:00 PM CST</p>
-                    <p className="text-sm text-primary-foreground/80 mt-4">
-                      <strong>Legal Inquiries:</strong> Please include "Legal/Terms Inquiry" in the subject line
+                    <p>808 Business Pkwy<br />Richardson, Texas 75081<br />United States</p>
+                    <p><strong>Phone:</strong>{' '}
+                      <a href="tel:+12142384349" className="hover:text-secondary transition-colors">+1 214-238-4349</a>
+                    </p>
+                    <p><strong>Email:</strong>{' '}
+                      <a href="mailto:info@truficient.com" className="hover:text-secondary transition-colors">info@truficient.com</a>
+                    </p>
+                    <p><strong>Website:</strong>{' '}
+                      <a href="https://truficient.com" target="_blank" rel="noopener noreferrer" className="hover:text-secondary transition-colors">https://truficient.com</a>
                     </p>
                   </div>
                 </div>
@@ -437,11 +214,8 @@ const TermsOfService = () => {
 
               {/* Footer */}
               <div className="text-center pt-8 border-t-2 border-border">
-                <p className="text-muted-foreground text-sm mb-2">
-                  © 2026 Truficient Energy Solutions. All rights reserved.
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  Licensed & Insured HVAC Contractor
+                <p className="text-muted-foreground text-sm">
+                  © 2026 Truficient Energy Solutions, LLC. All rights reserved.
                 </p>
               </div>
 
