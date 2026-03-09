@@ -1,19 +1,12 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Phone, Mail, MapPin, Clock, Send } from 'lucide-react';
+import { Phone, Mail, MapPin, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { usePageSEO } from '@/hooks/usePageSEO';
-import { trackContactFormSubmission, trackPhoneCallClick } from '@/utils/conversionTracking';
-import { useFormSourceTags } from '@/hooks/useFormSourceTags';
+import { trackPhoneCallClick } from '@/utils/conversionTracking';
 
 const contactInfo = [
   {
@@ -48,93 +41,17 @@ const contactInfo = [
 
 const Contact = () => {
   usePageSEO();
-  const { toast } = useToast();
-  const { data: dynamicTags } = useFormSourceTags('contact');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    serviceType: '',
-    message: '',
-  });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleServiceChange = (value: string) => {
-    setFormData(prev => ({ ...prev, serviceType: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      // Save to database first
-      const { error } = await supabase
-        .from('contact_submissions')
-        .insert({
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          service_type: formData.serviceType || null,
-          message: formData.message,
-        });
-
-      if (error) throw error;
-
-      // Sync to GoHighLevel (non-blocking - form succeeds even if GHL fails)
-      supabase.functions.invoke('sync-ghl-contact', {
-        body: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          serviceType: formData.serviceType,
-          message: formData.message,
-          source: 'Website Contact Form',
-          tags: dynamicTags || ['website-lead'],
-        },
-      }).then(({ error: ghlError }) => {
-        if (ghlError) {
-          console.error('GHL sync failed (non-critical):', ghlError);
-        } else {
-          console.log('Contact synced to GHL successfully');
-        }
-      });
-
-      // Track conversion in Meta Pixel and Google Analytics
-      trackContactFormSubmission(formData.serviceType);
-
-      toast({
-        title: "Message Sent!",
-        description: "Thank you for contacting us. We'll get back to you within 24 hours.",
-      });
-
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        serviceType: '',
-        message: '',
-      });
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      toast({
-        title: "Error",
-        description: "There was a problem sending your message. Please try again or call us directly.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  // Load GHL form embed script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://link.msgsndr.com/js/form_embed.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -236,103 +153,23 @@ const Contact = () => {
                     Fill out the form below and we'll get back to you within 24 hours.
                   </p>
                   
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName">First Name *</Label>
-                        <Input
-                          id="firstName"
-                          name="firstName"
-                          value={formData.firstName}
-                          onChange={handleInputChange}
-                          required
-                          placeholder="John"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Last Name *</Label>
-                        <Input
-                          id="lastName"
-                          name="lastName"
-                          value={formData.lastName}
-                          onChange={handleInputChange}
-                          required
-                          placeholder="Doe"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email *</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        required
-                        placeholder="john@example.com"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number *</Label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        required
-                        placeholder="(214) 555-0123"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="serviceType">Type of Service</Label>
-                      <Select value={formData.serviceType} onValueChange={handleServiceChange}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a service type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="repair">Repair</SelectItem>
-                          <SelectItem value="install">Installation</SelectItem>
-                          <SelectItem value="maintenance">Maintenance</SelectItem>
-                          <SelectItem value="estimate">Free Estimate</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="message">What can we help you with? *</Label>
-                      <Textarea
-                        id="message"
-                        name="message"
-                        value={formData.message}
-                        onChange={handleInputChange}
-                        required
-                        placeholder="Please describe your HVAC needs or questions..."
-                        rows={4}
-                      />
-                    </div>
-
-                    <Button 
-                      type="submit" 
-                      size="lg" 
-                      className="w-full bg-secondary hover:bg-gold-dark text-secondary-foreground font-semibold"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        'Sending...'
-                      ) : (
-                        <>
-                          <Send className="w-5 h-5 mr-2" />
-                          Send Message
-                        </>
-                      )}
-                    </Button>
-                  </form>
+                  <iframe
+                    src="https://api.leadconnectorhq.com/widget/form/6b2igF5Olgw32kyyiZnb"
+                    style={{ width: '100%', height: '100%', border: 'none', borderRadius: '3px' }}
+                    id="inline-6b2igF5Olgw32kyyiZnb"
+                    data-layout="{'id':'INLINE'}"
+                    data-trigger-type="alwaysShow"
+                    data-trigger-value=""
+                    data-activation-type="alwaysActivated"
+                    data-activation-value=""
+                    data-deactivation-type="neverDeactivate"
+                    data-deactivation-value=""
+                    data-form-name="Website optin Form"
+                    data-height="1008"
+                    data-layout-iframe-id="inline-6b2igF5Olgw32kyyiZnb"
+                    data-form-id="6b2igF5Olgw32kyyiZnb"
+                    title="Website optin Form"
+                  />
                 </CardContent>
               </Card>
             </motion.div>
