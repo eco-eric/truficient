@@ -153,103 +153,23 @@ const Contact = () => {
                     Fill out the form below and we'll get back to you within 24 hours.
                   </p>
                   
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName">First Name *</Label>
-                        <Input
-                          id="firstName"
-                          name="firstName"
-                          value={formData.firstName}
-                          onChange={handleInputChange}
-                          required
-                          placeholder="John"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Last Name *</Label>
-                        <Input
-                          id="lastName"
-                          name="lastName"
-                          value={formData.lastName}
-                          onChange={handleInputChange}
-                          required
-                          placeholder="Doe"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email *</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        required
-                        placeholder="john@example.com"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number *</Label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        required
-                        placeholder="(214) 555-0123"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="serviceType">Type of Service</Label>
-                      <Select value={formData.serviceType} onValueChange={handleServiceChange}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a service type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="repair">Repair</SelectItem>
-                          <SelectItem value="install">Installation</SelectItem>
-                          <SelectItem value="maintenance">Maintenance</SelectItem>
-                          <SelectItem value="estimate">Free Estimate</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="message">What can we help you with? *</Label>
-                      <Textarea
-                        id="message"
-                        name="message"
-                        value={formData.message}
-                        onChange={handleInputChange}
-                        required
-                        placeholder="Please describe your HVAC needs or questions..."
-                        rows={4}
-                      />
-                    </div>
-
-                    <Button 
-                      type="submit" 
-                      size="lg" 
-                      className="w-full bg-secondary hover:bg-gold-dark text-secondary-foreground font-semibold"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        'Sending...'
-                      ) : (
-                        <>
-                          <Send className="w-5 h-5 mr-2" />
-                          Send Message
-                        </>
-                      )}
-                    </Button>
-                  </form>
+                  <iframe
+                    src="https://api.leadconnectorhq.com/widget/form/6b2igF5Olgw32kyyiZnb"
+                    style={{ width: '100%', height: '100%', border: 'none', borderRadius: '3px' }}
+                    id="inline-6b2igF5Olgw32kyyiZnb"
+                    data-layout="{'id':'INLINE'}"
+                    data-trigger-type="alwaysShow"
+                    data-trigger-value=""
+                    data-activation-type="alwaysActivated"
+                    data-activation-value=""
+                    data-deactivation-type="neverDeactivate"
+                    data-deactivation-value=""
+                    data-form-name="Website optin Form"
+                    data-height="1008"
+                    data-layout-iframe-id="inline-6b2igF5Olgw32kyyiZnb"
+                    data-form-id="6b2igF5Olgw32kyyiZnb"
+                    title="Website optin Form"
+                  />
                 </CardContent>
               </Card>
             </motion.div>
