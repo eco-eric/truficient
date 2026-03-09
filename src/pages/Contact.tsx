@@ -41,93 +41,17 @@ const contactInfo = [
 
 const Contact = () => {
   usePageSEO();
-  const { toast } = useToast();
-  const { data: dynamicTags } = useFormSourceTags('contact');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    serviceType: '',
-    message: '',
-  });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleServiceChange = (value: string) => {
-    setFormData(prev => ({ ...prev, serviceType: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      // Save to database first
-      const { error } = await supabase
-        .from('contact_submissions')
-        .insert({
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          service_type: formData.serviceType || null,
-          message: formData.message,
-        });
-
-      if (error) throw error;
-
-      // Sync to GoHighLevel (non-blocking - form succeeds even if GHL fails)
-      supabase.functions.invoke('sync-ghl-contact', {
-        body: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          serviceType: formData.serviceType,
-          message: formData.message,
-          source: 'Website Contact Form',
-          tags: dynamicTags || ['website-lead'],
-        },
-      }).then(({ error: ghlError }) => {
-        if (ghlError) {
-          console.error('GHL sync failed (non-critical):', ghlError);
-        } else {
-          console.log('Contact synced to GHL successfully');
-        }
-      });
-
-      // Track conversion in Meta Pixel and Google Analytics
-      trackContactFormSubmission(formData.serviceType);
-
-      toast({
-        title: "Message Sent!",
-        description: "Thank you for contacting us. We'll get back to you within 24 hours.",
-      });
-
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        serviceType: '',
-        message: '',
-      });
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      toast({
-        title: "Error",
-        description: "There was a problem sending your message. Please try again or call us directly.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  // Load GHL form embed script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://link.msgsndr.com/js/form_embed.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
