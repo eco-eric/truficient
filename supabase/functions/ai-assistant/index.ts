@@ -3599,7 +3599,7 @@ Make them specific to the briefing content.`;
         }
 
         try {
-          let result = await executeTool(supabase, toolName, toolInput, user.id);
+          let result = await executeTool(serviceClient, toolName, toolInput, user.id);
           // Redact financials for restricted roles
           if (!permissions.can_view_financials) {
             result = redactFinancials(result);
