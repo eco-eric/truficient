@@ -141,7 +141,7 @@ const TermsOfService = () => {
 
               {/* 5. Opt-Out Instructions */}
               <section id="opt-out" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">5. Opt-Out Instructions</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">6. Opt-Out Instructions</h2>
                 <p className="text-muted-foreground mb-4">
                   You can opt out of receiving SMS messages at any time.
                 </p>
