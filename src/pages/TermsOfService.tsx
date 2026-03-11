@@ -182,7 +182,7 @@ const TermsOfService = () => {
 
               {/* 8. Privacy */}
               <section id="privacy" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">8. Privacy</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">9. Privacy</h2>
                 <p className="text-muted-foreground">
                   Your privacy is important to us. Your use of our website and services is also governed by our{' '}
                   <a href="/privacy-policy" className="text-secondary hover:underline font-medium">Privacy Policy</a>.
