@@ -174,7 +174,7 @@ const TermsOfService = () => {
 
               {/* 7. Carrier Disclaimer */}
               <section id="carrier" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">7. Carrier Disclaimer</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">8. Carrier Disclaimer</h2>
                 <p className="text-muted-foreground">
                   Wireless carriers are not liable for delayed or undelivered messages.
                 </p>
