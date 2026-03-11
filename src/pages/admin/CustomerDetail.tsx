@@ -50,27 +50,7 @@ const CustomerDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [editOpen, setEditOpen] = useState(false);
-  const [isEditingNotes, setIsEditingNotes] = useState(false);
-  const [notesValue, setNotesValue] = useState('');
   const queryClient = useQueryClient();
-
-  const notesMutation = useMutation({
-    mutationFn: async (notes: string) => {
-      const { error } = await supabase
-        .from('crm_customers')
-        .update({ notes: notes || null })
-        .eq('id', id!);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['crm_customer', id] });
-      toast.success('Notes saved');
-      setIsEditingNotes(false);
-    },
-    onError: (error: Error) => {
-      toast.error(`Failed to save notes: ${error.message}`);
-    },
-  });
 
   const syncCustomerMutation = useMutation({
     mutationFn: async (customerId: string) => {
