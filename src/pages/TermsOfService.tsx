@@ -157,7 +157,7 @@ const TermsOfService = () => {
 
               {/* 6. Help and Support */}
               <section id="help" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">6. Help and Support</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">7. Help and Support</h2>
                 <p className="text-muted-foreground mb-4">
                   If you are experiencing issues with our messaging program, reply <strong className="text-secondary">HELP</strong> to any SMS message for assistance.
                 </p>
