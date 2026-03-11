@@ -3228,6 +3228,7 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "update_customer_status": return executeUpdateCustomerStatus(supabase, userId, toolInput);
     case "add_to_pipeline": return executeAddToPipeline(supabase, userId, toolInput);
     case "move_pipeline_entry": return executeMovePipelineEntry(supabase, userId, toolInput);
+    case "update_pipeline_entry": return executeUpdatePipelineEntry(supabase, userId, toolInput);
     case "schedule_appointment": return executeScheduleAppointment(supabase, userId, toolInput);
     case "reschedule_appointment": return executeRescheduleAppointment(supabase, userId, toolInput);
     case "cancel_appointment": return executeCancelAppointment(supabase, userId, toolInput);
