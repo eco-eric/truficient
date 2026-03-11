@@ -31,6 +31,7 @@ import { CustomerFormDialog } from '@/components/admin/customers/CustomerFormDia
 import { InteractionLog } from '@/components/admin/customers/InteractionLog';
 import { CustomerLocations } from '@/components/admin/customers/CustomerLocations';
 import { ActivityTimeline } from '@/components/admin/customers/ActivityTimeline';
+import { CustomerNotes } from '@/components/admin/customers/CustomerNotes';
 import { LinkedSubmissions } from '@/components/admin/customers/LinkedSubmissions';
 import { AIAssistantWidget } from '@/components/admin/ai/AIAssistantWidget';
 import type { Database } from '@/integrations/supabase/types';
