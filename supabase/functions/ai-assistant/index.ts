@@ -365,6 +365,26 @@ const tools = [
   {
     type: "function" as const,
     function: {
+      name: "update_pipeline_entry",
+      description: "Update fields on an existing pipeline entry (estimated value, probability, expected close date, notes). Use when the lead is already in the pipeline and you need to change deal details without moving stages. ALWAYS confirm first.",
+      parameters: {
+        type: "object",
+        properties: {
+          entry_id: { type: "string", description: "UUID of the pipeline entry. Use search_customers to find it." },
+          customer_id: { type: "string", description: "UUID of the customer (alternative to entry_id — will find their pipeline entry)" },
+          estimated_value: { type: "number", description: "New estimated deal value in dollars" },
+          probability: { type: "number", description: "New win probability percentage (0-100)" },
+          expected_close_date: { type: "string", description: "New expected close date YYYY-MM-DD" },
+          notes: { type: "string", description: "Updated notes for the pipeline entry" },
+          confirmed: { type: "boolean", description: "Set true ONLY after user confirms." },
+        },
+        required: ["confirmed"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
       name: "schedule_appointment",
       description: "Create a timed appointment for an existing job with a start/end time and optional team assignment. Automatically creates a Google Calendar event with job details, customer info, and location. ALWAYS confirm with the user before executing.",
       parameters: {
@@ -1159,6 +1179,59 @@ async function executeMovePipelineEntry(supabase: any, userId: string, input: an
   await supabase.from("crm_interactions").insert({ customer_id: entry.crm_customers?.id, interaction_type: "note", content: `Pipeline stage changed from "${currentStage}" to "${targetStage.display_name}" (via AI Assistant)`, logged_by: userId });
 
   return { success: true, message: `Moved ${customerName} from "${currentStage}" to "${targetStage.display_name}" in the pipeline` };
+}
+
+async function executeUpdatePipelineEntry(supabase: any, userId: string, input: any) {
+  // Find the entry by entry_id or customer_id
+  let entry: any;
+  if (input.entry_id) {
+    const { data } = await supabase.from("crm_pipeline_entries").select("id, estimated_value, probability, expected_close_date, notes, crm_customers(first_name, last_name, id), crm_pipeline_stages(display_name)").eq("id", input.entry_id).single();
+    entry = data;
+  } else if (input.customer_id) {
+    const { data } = await supabase.from("crm_pipeline_entries").select("id, estimated_value, probability, expected_close_date, notes, crm_customers(first_name, last_name, id), crm_pipeline_stages(display_name)").eq("customer_id", input.customer_id).limit(1).single();
+    entry = data;
+  } else {
+    return { error: "Provide either entry_id or customer_id." };
+  }
+  if (!entry) return { error: "Pipeline entry not found." };
+
+  const customerName = `${entry.crm_customers?.first_name} ${entry.crm_customers?.last_name}`;
+  const changes: string[] = [];
+  const updateData: Record<string, any> = { updated_at: new Date().toISOString() };
+
+  if (input.estimated_value !== undefined) {
+    changes.push(`Estimated value: $${entry.estimated_value?.toLocaleString() || 0} → $${input.estimated_value.toLocaleString()}`);
+    updateData.estimated_value = input.estimated_value;
+  }
+  if (input.probability !== undefined) {
+    changes.push(`Probability: ${entry.probability || 0}% → ${input.probability}%`);
+    updateData.probability = input.probability;
+  }
+  if (input.expected_close_date !== undefined) {
+    changes.push(`Expected close: ${entry.expected_close_date || "Not set"} → ${input.expected_close_date}`);
+    updateData.expected_close_date = input.expected_close_date;
+  }
+  if (input.notes !== undefined) {
+    changes.push(`Notes updated`);
+    updateData.notes = input.notes;
+  }
+
+  if (changes.length === 0) return { error: "No fields to update. Provide at least one of: estimated_value, probability, expected_close_date, notes." };
+
+  if (!input.confirmed) {
+    return {
+      needs_confirmation: true, action: "update_pipeline_entry",
+      summary: { customer: customerName, stage: entry.crm_pipeline_stages?.display_name, changes },
+      confirmation_prompt: `Update **${customerName}**'s pipeline entry?\n${changes.map(c => `• ${c}`).join("\n")}`,
+    };
+  }
+
+  const { error } = await supabase.from("crm_pipeline_entries").update(updateData).eq("id", entry.id);
+  if (error) throw new Error(`Failed to update pipeline entry: ${error.message}`);
+
+  await supabase.from("crm_interactions").insert({ customer_id: entry.crm_customers?.id, interaction_type: "note", content: `Pipeline entry updated: ${changes.join("; ")} (via AI Assistant)`, logged_by: userId });
+
+  return { success: true, message: `Updated ${customerName}'s pipeline entry: ${changes.join(", ")}` };
 }
 
 // Job type color map for Google Calendar
@@ -3155,6 +3228,7 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "update_customer_status": return executeUpdateCustomerStatus(supabase, userId, toolInput);
     case "add_to_pipeline": return executeAddToPipeline(supabase, userId, toolInput);
     case "move_pipeline_entry": return executeMovePipelineEntry(supabase, userId, toolInput);
+    case "update_pipeline_entry": return executeUpdatePipelineEntry(supabase, userId, toolInput);
     case "schedule_appointment": return executeScheduleAppointment(supabase, userId, toolInput);
     case "reschedule_appointment": return executeRescheduleAppointment(supabase, userId, toolInput);
     case "cancel_appointment": return executeCancelAppointment(supabase, userId, toolInput);
