@@ -113,7 +113,7 @@ const TermsOfService = () => {
                 <p className="text-muted-foreground mb-4">
                   These messages may include non-marketing and marketing communications related to our services.
                 </p>
-                <div className="bg-yellow-50 border-l-4 border-secondary p-4 rounded">
+                <div className="bg-muted border-l-4 border-secondary p-4 rounded">
                   <p className="text-foreground font-bold">
                     Consent to receive SMS communications is not a condition of purchase.
                   </p>
