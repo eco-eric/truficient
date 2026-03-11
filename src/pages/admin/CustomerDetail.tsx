@@ -25,7 +25,6 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Textarea } from '@/components/ui/textarea';
 import { Link } from 'react-router-dom';
 import { CustomerFormDialog } from '@/components/admin/customers/CustomerFormDialog';
 import { InteractionLog } from '@/components/admin/customers/InteractionLog';
