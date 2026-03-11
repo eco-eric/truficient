@@ -61,20 +61,29 @@ const TermsOfService = () => {
               <div className="bg-muted border-l-4 border-secondary p-6 mb-8 rounded">
                 <h2 className="text-xl font-bold text-primary mb-4">Table of Contents</h2>
                 <nav className="space-y-2">
-                  <a href="#program-description" className="block text-primary hover:text-secondary transition-colors">1. Program Description</a>
-                  <a href="#consent" className="block text-primary hover:text-secondary transition-colors">2. Consent to Receive Messages</a>
-                  <a href="#frequency" className="block text-primary hover:text-secondary transition-colors">3. Message Frequency</a>
-                  <a href="#rates" className="block text-primary hover:text-secondary transition-colors">4. Message and Data Rates</a>
-                  <a href="#opt-out" className="block text-primary hover:text-secondary transition-colors">5. Opt-Out Instructions</a>
-                  <a href="#help" className="block text-primary hover:text-secondary transition-colors">6. Help and Support</a>
-                  <a href="#carrier" className="block text-primary hover:text-secondary transition-colors">7. Carrier Disclaimer</a>
-                  <a href="#privacy" className="block text-primary hover:text-secondary transition-colors">8. Privacy</a>
-                  <a href="#changes" className="block text-primary hover:text-secondary transition-colors">9. Changes to These Terms</a>
-                  <a href="#contact" className="block text-primary hover:text-secondary transition-colors">10. Contact Information</a>
+                  <a href="#eligibility" className="block text-primary hover:text-secondary transition-colors">1. Eligibility</a>
+                  <a href="#program-description" className="block text-primary hover:text-secondary transition-colors">2. Program Description</a>
+                  <a href="#consent" className="block text-primary hover:text-secondary transition-colors">3. Consent to Receive Messages</a>
+                  <a href="#frequency" className="block text-primary hover:text-secondary transition-colors">4. Message Frequency</a>
+                  <a href="#rates" className="block text-primary hover:text-secondary transition-colors">5. Message and Data Rates</a>
+                  <a href="#opt-out" className="block text-primary hover:text-secondary transition-colors">6. Opt-Out Instructions</a>
+                  <a href="#help" className="block text-primary hover:text-secondary transition-colors">7. Help and Support</a>
+                  <a href="#carrier" className="block text-primary hover:text-secondary transition-colors">8. Carrier Disclaimer</a>
+                  <a href="#privacy" className="block text-primary hover:text-secondary transition-colors">9. Privacy</a>
+                  <a href="#changes" className="block text-primary hover:text-secondary transition-colors">10. Changes to These Terms</a>
+                  <a href="#contact" className="block text-primary hover:text-secondary transition-colors">11. Contact Information</a>
                 </nav>
               </div>
 
-              {/* 1. Program Description */}
+              {/* 1. Eligibility */}
+              <section id="eligibility" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">1. Eligibility</h2>
+                <p className="text-muted-foreground">
+                  By using this website and submitting any forms, you confirm that you are at least 18 years of age or have the consent of a parent or legal guardian to use this website and receive communications from Truficient Energy Solutions, LLC. If you do not meet this requirement, please do not use our services or submit your information through our website.
+                </p>
+              </section>
+
+              {/* 2. Program Description */}
               <section id="program-description" className="mb-12">
                 <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">1. Program Description</h2>
                 <p className="text-muted-foreground mb-4">
