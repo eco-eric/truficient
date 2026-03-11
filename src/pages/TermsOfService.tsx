@@ -61,22 +61,31 @@ const TermsOfService = () => {
               <div className="bg-muted border-l-4 border-secondary p-6 mb-8 rounded">
                 <h2 className="text-xl font-bold text-primary mb-4">Table of Contents</h2>
                 <nav className="space-y-2">
-                  <a href="#program-description" className="block text-primary hover:text-secondary transition-colors">1. Program Description</a>
-                  <a href="#consent" className="block text-primary hover:text-secondary transition-colors">2. Consent to Receive Messages</a>
-                  <a href="#frequency" className="block text-primary hover:text-secondary transition-colors">3. Message Frequency</a>
-                  <a href="#rates" className="block text-primary hover:text-secondary transition-colors">4. Message and Data Rates</a>
-                  <a href="#opt-out" className="block text-primary hover:text-secondary transition-colors">5. Opt-Out Instructions</a>
-                  <a href="#help" className="block text-primary hover:text-secondary transition-colors">6. Help and Support</a>
-                  <a href="#carrier" className="block text-primary hover:text-secondary transition-colors">7. Carrier Disclaimer</a>
-                  <a href="#privacy" className="block text-primary hover:text-secondary transition-colors">8. Privacy</a>
-                  <a href="#changes" className="block text-primary hover:text-secondary transition-colors">9. Changes to These Terms</a>
-                  <a href="#contact" className="block text-primary hover:text-secondary transition-colors">10. Contact Information</a>
+                  <a href="#eligibility" className="block text-primary hover:text-secondary transition-colors">1. Eligibility</a>
+                  <a href="#program-description" className="block text-primary hover:text-secondary transition-colors">2. Program Description</a>
+                  <a href="#consent" className="block text-primary hover:text-secondary transition-colors">3. Consent to Receive Messages</a>
+                  <a href="#frequency" className="block text-primary hover:text-secondary transition-colors">4. Message Frequency</a>
+                  <a href="#rates" className="block text-primary hover:text-secondary transition-colors">5. Message and Data Rates</a>
+                  <a href="#opt-out" className="block text-primary hover:text-secondary transition-colors">6. Opt-Out Instructions</a>
+                  <a href="#help" className="block text-primary hover:text-secondary transition-colors">7. Help and Support</a>
+                  <a href="#carrier" className="block text-primary hover:text-secondary transition-colors">8. Carrier Disclaimer</a>
+                  <a href="#privacy" className="block text-primary hover:text-secondary transition-colors">9. Privacy</a>
+                  <a href="#changes" className="block text-primary hover:text-secondary transition-colors">10. Changes to These Terms</a>
+                  <a href="#contact" className="block text-primary hover:text-secondary transition-colors">11. Contact Information</a>
                 </nav>
               </div>
 
-              {/* 1. Program Description */}
+              {/* 1. Eligibility */}
+              <section id="eligibility" className="mb-12">
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">1. Eligibility</h2>
+                <p className="text-muted-foreground">
+                  By using this website and submitting any forms, you confirm that you are at least 18 years of age or have the consent of a parent or legal guardian to use this website and receive communications from Truficient Energy Solutions, LLC. If you do not meet this requirement, please do not use our services or submit your information through our website.
+                </p>
+              </section>
+
+              {/* 2. Program Description */}
               <section id="program-description" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">1. Program Description</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">2. Program Description</h2>
                 <p className="text-muted-foreground mb-4">
                   Truficient Energy Solutions, LLC provides energy consulting and efficiency solutions for homeowners and businesses.
                 </p>
@@ -97,14 +106,14 @@ const TermsOfService = () => {
 
               {/* 2. Consent to Receive Messages */}
               <section id="consent" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">2. Consent to Receive Messages</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">3. Consent to Receive Messages</h2>
                 <p className="text-muted-foreground mb-4">
                   By providing your phone number and submitting the opt-in form on our website, you consent to receive text messages from Truficient Energy Solutions, LLC.
                 </p>
                 <p className="text-muted-foreground mb-4">
                   These messages may include non-marketing and marketing communications related to our services.
                 </p>
-                <div className="bg-yellow-50 border-l-4 border-secondary p-4 rounded">
+                <div className="bg-muted border-l-4 border-secondary p-4 rounded">
                   <p className="text-foreground font-bold">
                     Consent to receive SMS communications is not a condition of purchase.
                   </p>
@@ -113,7 +122,7 @@ const TermsOfService = () => {
 
               {/* 3. Message Frequency */}
               <section id="frequency" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">3. Message Frequency</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">4. Message Frequency</h2>
                 <p className="text-muted-foreground">
                   Message frequency may vary depending on your interaction with our services, service updates, or marketing communications.
                 </p>
@@ -121,7 +130,7 @@ const TermsOfService = () => {
 
               {/* 4. Message and Data Rates */}
               <section id="rates" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">4. Message and Data Rates</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">5. Message and Data Rates</h2>
                 <p className="text-muted-foreground mb-4">
                   Message and data rates may apply for messages sent to you from us and to us from you. Charges depend on your mobile carrier and service plan.
                 </p>
@@ -132,7 +141,7 @@ const TermsOfService = () => {
 
               {/* 5. Opt-Out Instructions */}
               <section id="opt-out" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">5. Opt-Out Instructions</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">6. Opt-Out Instructions</h2>
                 <p className="text-muted-foreground mb-4">
                   You can opt out of receiving SMS messages at any time.
                 </p>
@@ -148,7 +157,7 @@ const TermsOfService = () => {
 
               {/* 6. Help and Support */}
               <section id="help" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">6. Help and Support</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">7. Help and Support</h2>
                 <p className="text-muted-foreground mb-4">
                   If you are experiencing issues with our messaging program, reply <strong className="text-secondary">HELP</strong> to any SMS message for assistance.
                 </p>
@@ -165,7 +174,7 @@ const TermsOfService = () => {
 
               {/* 7. Carrier Disclaimer */}
               <section id="carrier" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">7. Carrier Disclaimer</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">8. Carrier Disclaimer</h2>
                 <p className="text-muted-foreground">
                   Wireless carriers are not liable for delayed or undelivered messages.
                 </p>
@@ -173,7 +182,7 @@ const TermsOfService = () => {
 
               {/* 8. Privacy */}
               <section id="privacy" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">8. Privacy</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">9. Privacy</h2>
                 <p className="text-muted-foreground">
                   Your privacy is important to us. Your use of our website and services is also governed by our{' '}
                   <a href="/privacy-policy" className="text-secondary hover:underline font-medium">Privacy Policy</a>.
@@ -182,7 +191,7 @@ const TermsOfService = () => {
 
               {/* 9. Changes to These Terms */}
               <section id="changes" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">9. Changes to These Terms</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">10. Changes to These Terms</h2>
                 <p className="text-muted-foreground">
                   Truficient Energy Solutions, LLC may update these Terms of Service from time to time. Updates will be posted on this page with a revised "Last Updated" date.
                 </p>
@@ -190,7 +199,7 @@ const TermsOfService = () => {
 
               {/* 10. Contact Information */}
               <section id="contact" className="mb-8">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">10. Contact Information</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">11. Contact Information</h2>
                 <p className="text-muted-foreground mb-6">
                   If you have questions regarding these Terms of Service, please contact us:
                 </p>
