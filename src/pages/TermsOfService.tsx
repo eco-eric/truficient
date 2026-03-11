@@ -191,7 +191,7 @@ const TermsOfService = () => {
 
               {/* 9. Changes to These Terms */}
               <section id="changes" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">9. Changes to These Terms</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">10. Changes to These Terms</h2>
                 <p className="text-muted-foreground">
                   Truficient Energy Solutions, LLC may update these Terms of Service from time to time. Updates will be posted on this page with a revised "Last Updated" date.
                 </p>
