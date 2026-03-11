@@ -122,7 +122,7 @@ const TermsOfService = () => {
 
               {/* 3. Message Frequency */}
               <section id="frequency" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">3. Message Frequency</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">4. Message Frequency</h2>
                 <p className="text-muted-foreground">
                   Message frequency may vary depending on your interaction with our services, service updates, or marketing communications.
                 </p>
