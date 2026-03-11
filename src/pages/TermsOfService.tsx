@@ -106,7 +106,7 @@ const TermsOfService = () => {
 
               {/* 2. Consent to Receive Messages */}
               <section id="consent" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">2. Consent to Receive Messages</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">3. Consent to Receive Messages</h2>
                 <p className="text-muted-foreground mb-4">
                   By providing your phone number and submitting the opt-in form on our website, you consent to receive text messages from Truficient Energy Solutions, LLC.
                 </p>
