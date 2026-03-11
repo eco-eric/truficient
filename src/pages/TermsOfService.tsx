@@ -130,7 +130,7 @@ const TermsOfService = () => {
 
               {/* 4. Message and Data Rates */}
               <section id="rates" className="mb-12">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">4. Message and Data Rates</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">5. Message and Data Rates</h2>
                 <p className="text-muted-foreground mb-4">
                   Message and data rates may apply for messages sent to you from us and to us from you. Charges depend on your mobile carrier and service plan.
                 </p>
