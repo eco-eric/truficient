@@ -365,6 +365,26 @@ const tools = [
   {
     type: "function" as const,
     function: {
+      name: "update_pipeline_entry",
+      description: "Update fields on an existing pipeline entry (estimated value, probability, expected close date, notes). Use when the lead is already in the pipeline and you need to change deal details without moving stages. ALWAYS confirm first.",
+      parameters: {
+        type: "object",
+        properties: {
+          entry_id: { type: "string", description: "UUID of the pipeline entry. Use search_customers to find it." },
+          customer_id: { type: "string", description: "UUID of the customer (alternative to entry_id — will find their pipeline entry)" },
+          estimated_value: { type: "number", description: "New estimated deal value in dollars" },
+          probability: { type: "number", description: "New win probability percentage (0-100)" },
+          expected_close_date: { type: "string", description: "New expected close date YYYY-MM-DD" },
+          notes: { type: "string", description: "Updated notes for the pipeline entry" },
+          confirmed: { type: "boolean", description: "Set true ONLY after user confirms." },
+        },
+        required: ["confirmed"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
       name: "schedule_appointment",
       description: "Create a timed appointment for an existing job with a start/end time and optional team assignment. Automatically creates a Google Calendar event with job details, customer info, and location. ALWAYS confirm with the user before executing.",
       parameters: {
