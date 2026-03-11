@@ -199,7 +199,7 @@ const TermsOfService = () => {
 
               {/* 10. Contact Information */}
               <section id="contact" className="mb-8">
-                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">10. Contact Information</h2>
+                <h2 className="text-3xl font-bold text-primary mb-4 pb-2 border-b-2 border-secondary">11. Contact Information</h2>
                 <p className="text-muted-foreground mb-6">
                   If you have questions regarding these Terms of Service, please contact us:
                 </p>
