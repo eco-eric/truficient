@@ -29,7 +29,7 @@ interface CalendarEvent {
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>("week");
+  const [viewMode, setViewMode] = useState<ViewMode>("day");
   const [refreshing, setRefreshing] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const isMobile = useIsMobile();
