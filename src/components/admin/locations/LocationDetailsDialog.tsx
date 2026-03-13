@@ -1,4 +1,6 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -8,9 +10,10 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Home, Edit } from 'lucide-react';
+import { MapPin, Home, Edit, Users } from 'lucide-react';
 import { LocationMapEmbed } from './LocationMapEmbed';
 import type { CrmLocation, CrmCustomer } from '@/types/crmLocations';
+import { RELATIONSHIP_TYPE_OPTIONS } from '@/types/crmLocations';
 
 interface LocationDetailsDialogProps {
   open: boolean;
