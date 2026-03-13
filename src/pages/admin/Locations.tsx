@@ -44,10 +44,12 @@ import {
 import { MoreHorizontal } from 'lucide-react';
 import { AddLocationDialog } from '@/components/admin/locations/AddLocationDialog';
 import { LocationDetailsDialog } from '@/components/admin/locations/LocationDetailsDialog';
-import type { CrmLocation, CrmCustomer } from '@/types/crmLocations';
+import type { CrmLocation, CrmCustomer, CrmLocationCustomer } from '@/types/crmLocations';
+import { RELATIONSHIP_TYPE_OPTIONS } from '@/types/crmLocations';
 
 type LocationWithCustomer = CrmLocation & {
   customer?: CrmCustomer;
+  linked_customers?: CrmLocationCustomer[];
 };
 
 export default function Locations() {
