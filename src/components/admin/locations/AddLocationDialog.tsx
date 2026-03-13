@@ -103,6 +103,9 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Linked customers with relationship types
+  const [linkedCustomers, setLinkedCustomers] = useState<Array<{ customer_id: string; relationship_type: string }>>([]);
+  
   const [formData, setFormData] = useState({
     customer_id: '',
     location_name: 'Main House',
