@@ -615,7 +615,78 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
             )}
           </div>
 
-          {/* Location Details */}
+          {/* Additional Linked Customers */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>Additional People Linked to This Location</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setLinkedCustomers(prev => [...prev, { customer_id: '', relationship_type: 'spouse' }])}
+              >
+                <Plus className="mr-1 h-3 w-3" />
+                Add Person
+              </Button>
+            </div>
+            
+            {linkedCustomers
+              .filter(lc => lc.customer_id !== formData.customer_id)
+              .map((link, index) => {
+                const actualIndex = linkedCustomers.findIndex(lc => lc === link);
+                return (
+                  <div key={index} className="flex items-center gap-2">
+                    <select
+                      className="flex h-9 flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm"
+                      value={link.customer_id}
+                      onChange={(e) => {
+                        const updated = [...linkedCustomers];
+                        updated[actualIndex] = { ...updated[actualIndex], customer_id: e.target.value };
+                        setLinkedCustomers(updated);
+                      }}
+                    >
+                      <option value="">Select person...</option>
+                      {customers
+                        .filter(c => c.id !== formData.customer_id)
+                        .map(c => (
+                          <option key={c.id} value={c.id}>
+                            {c.company_name || `${c.first_name || ''} ${c.last_name || ''}`.trim()}
+                          </option>
+                        ))}
+                    </select>
+                    <select
+                      className="flex h-9 w-40 rounded-md border border-input bg-background px-3 py-1 text-sm"
+                      value={link.relationship_type}
+                      onChange={(e) => {
+                        const updated = [...linkedCustomers];
+                        updated[actualIndex] = { ...updated[actualIndex], relationship_type: e.target.value };
+                        setLinkedCustomers(updated);
+                      }}
+                    >
+                      {RELATIONSHIP_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 shrink-0"
+                      onClick={() => setLinkedCustomers(prev => prev.filter((_, i) => i !== actualIndex))}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                );
+              })}
+            
+            {linkedCustomers.filter(lc => lc.customer_id !== formData.customer_id).length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                Link additional people like a spouse, GC, or tenant to this location.
+              </p>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="location_name">Location Name</Label>
