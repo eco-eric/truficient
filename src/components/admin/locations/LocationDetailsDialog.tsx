@@ -1,4 +1,6 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -8,9 +10,10 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Home, Edit } from 'lucide-react';
+import { MapPin, Home, Edit, Users } from 'lucide-react';
 import { LocationMapEmbed } from './LocationMapEmbed';
 import type { CrmLocation, CrmCustomer } from '@/types/crmLocations';
+import { RELATIONSHIP_TYPE_OPTIONS } from '@/types/crmLocations';
 
 interface LocationDetailsDialogProps {
   open: boolean;
@@ -28,6 +31,22 @@ export function LocationDetailsDialog({
   onEdit,
 }: LocationDetailsDialogProps) {
   const customer = customers.find(c => c.id === location.customer_id);
+
+  // Fetch linked customers
+  const { data: linkedCustomers = [] } = useQuery({
+    queryKey: ['crm_location_customers', location.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_location_customers')
+        .select('*, customer:crm_customers(id, first_name, last_name, email, phone, company_name)')
+        .eq('location_id', location.id);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open,
+  });
+
+  const otherLinked = linkedCustomers.filter(lc => lc.customer_id !== location.customer_id);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -52,13 +71,36 @@ export function LocationDetailsDialog({
         <div className="space-y-6">
           {/* Customer Info */}
           <div>
-            <h3 className="font-semibold mb-2">Customer</h3>
+            <h3 className="font-semibold mb-2">Primary Customer</h3>
             <div className="text-sm space-y-1">
               <div>{customer?.first_name} {customer?.last_name}</div>
               {customer?.email && <div className="text-muted-foreground">{customer.email}</div>}
               {customer?.phone && <div className="text-muted-foreground">{customer.phone}</div>}
             </div>
           </div>
+
+          {/* Linked People */}
+          {otherLinked.length > 0 && (
+            <div>
+              <h3 className="font-semibold mb-2 flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Linked People
+              </h3>
+              <div className="space-y-2">
+                {otherLinked.map(lc => {
+                  const relLabel = RELATIONSHIP_TYPE_OPTIONS.find(r => r.value === lc.relationship_type)?.label || lc.relationship_type;
+                  const c = lc.customer;
+                  return (
+                    <div key={lc.id} className="flex items-center gap-2 text-sm">
+                      <Badge variant="outline" className="text-xs">{relLabel}</Badge>
+                      <span>{c?.company_name || `${c?.first_name || ''} ${c?.last_name || ''}`.trim()}</span>
+                      {c?.phone && <span className="text-muted-foreground">• {c.phone}</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Address */}
           <div>

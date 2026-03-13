@@ -44,10 +44,12 @@ import {
 import { MoreHorizontal } from 'lucide-react';
 import { AddLocationDialog } from '@/components/admin/locations/AddLocationDialog';
 import { LocationDetailsDialog } from '@/components/admin/locations/LocationDetailsDialog';
-import type { CrmLocation, CrmCustomer } from '@/types/crmLocations';
+import type { CrmLocation, CrmCustomer, CrmLocationCustomer } from '@/types/crmLocations';
+import { RELATIONSHIP_TYPE_OPTIONS } from '@/types/crmLocations';
 
 type LocationWithCustomer = CrmLocation & {
   customer?: CrmCustomer;
+  linked_customers?: CrmLocationCustomer[];
 };
 
 export default function Locations() {
@@ -60,7 +62,7 @@ export default function Locations() {
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<LocationWithCustomer | null>(null);
 
-  // Fetch locations with customer data
+  // Fetch locations with customer data and linked customers
   const { data: locations = [], isLoading } = useQuery({
     queryKey: ['crm_locations', searchTerm, selectedCustomerId],
     queryFn: async () => {
@@ -68,7 +70,15 @@ export default function Locations() {
         .from('crm_locations')
         .select(`
           *,
-          customer:crm_customers(*)
+          customer:crm_customers(*),
+          linked_customers:crm_location_customers(
+            id,
+            customer_id,
+            relationship_type,
+            is_primary_contact,
+            created_at,
+            customer:crm_customers(id, first_name, last_name, email, phone, company_name)
+          )
         `)
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
@@ -307,7 +317,7 @@ export default function Locations() {
                     {locations.map((location) => (
                       <TableRow key={location.id}>
                         <TableCell>
-                          <div>
+                          <div className="space-y-1">
                             <button
                               onClick={() => navigate(`/admin/customers/${location.customer_id}`)}
                               className="font-medium text-primary hover:underline flex items-center gap-1"
@@ -315,11 +325,23 @@ export default function Locations() {
                               {getCustomerDisplayName(location.customer)}
                               <ExternalLink className="h-3 w-3" />
                             </button>
-                            {location.customer?.email && (
-                              <div className="text-sm text-muted-foreground">
-                                {location.customer.email}
-                              </div>
-                            )}
+                            {location.linked_customers && location.linked_customers
+                              .filter(lc => lc.customer_id !== location.customer_id)
+                              .map(lc => {
+                                const relLabel = RELATIONSHIP_TYPE_OPTIONS.find(r => r.value === lc.relationship_type)?.label || lc.relationship_type;
+                                const name = lc.customer?.company_name || `${lc.customer?.first_name || ''} ${lc.customer?.last_name || ''}`.trim() || 'Unknown';
+                                return (
+                                  <div key={lc.id} className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <Badge variant="outline" className="text-[10px] px-1 py-0">{relLabel}</Badge>
+                                    <button
+                                      onClick={() => navigate(`/admin/customers/${lc.customer_id}`)}
+                                      className="hover:underline"
+                                    >
+                                      {name}
+                                    </button>
+                                  </div>
+                                );
+                              })}
                           </div>
                         </TableCell>
                         <TableCell>

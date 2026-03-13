@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
@@ -14,10 +14,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, MapPin, Search, Navigation } from 'lucide-react';
+import { Loader2, MapPin, Search, Navigation, X, Plus } from 'lucide-react';
 import { LocationMapEmbed } from './LocationMapEmbed';
-import type { CrmCustomer, CrmLocation, BUILDING_TYPE_OPTIONS, PropertyLookupData } from '@/types/crmLocations';
+import type { CrmCustomer, CrmLocation, BUILDING_TYPE_OPTIONS, PropertyLookupData, RELATIONSHIP_TYPE_OPTIONS } from '@/types/crmLocations';
+import { RELATIONSHIP_TYPE_OPTIONS as RELATIONSHIP_OPTIONS } from '@/types/crmLocations';
 
 // Map RentCast propertyType to our building_type and location_type
 function mapRentCastPropertyType(propertyType: string | null): {
@@ -101,6 +103,9 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Linked customers with relationship types
+  const [linkedCustomers, setLinkedCustomers] = useState<Array<{ customer_id: string; relationship_type: string }>>([]);
+  
   const [formData, setFormData] = useState({
     customer_id: '',
     location_name: 'Main House',
@@ -131,6 +136,21 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [propertyDataSource, setPropertyDataSource] = useState<string | null>(null);
+
+  // Fetch linked customers when editing
+  const { data: existingLinks = [] } = useQuery({
+    queryKey: ['crm_location_customers', editingLocation?.id],
+    queryFn: async () => {
+      if (!editingLocation?.id) return [];
+      const { data, error } = await supabase
+        .from('crm_location_customers')
+        .select('customer_id, relationship_type')
+        .eq('location_id', editingLocation.id);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!editingLocation?.id,
+  });
 
   // Populate form when editing
   useEffect(() => {
@@ -165,6 +185,16 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
     }
   }, [editingLocation]);
 
+  // Populate linked customers from existing data
+  useEffect(() => {
+    if (existingLinks.length > 0) {
+      setLinkedCustomers(existingLinks.map(l => ({
+        customer_id: l.customer_id,
+        relationship_type: l.relationship_type,
+      })));
+    }
+  }, [existingLinks]);
+
   // Reset form when dialog closes
   useEffect(() => {
     if (!open && !editingLocation) {
@@ -195,6 +225,7 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
         is_primary: false,
       });
       setPropertyDataSource(null);
+      setLinkedCustomers([]);
     }
   }, [open, editingLocation]);
 
@@ -383,22 +414,56 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
         property_data_verified_at: propertyDataSource ? new Date().toISOString() : null,
       };
 
+      let locationId: string;
+      
       if (editingLocation) {
         const { error } = await supabase
           .from('crm_locations')
           .update(payload)
           .eq('id', editingLocation.id);
         if (error) throw error;
+        locationId = editingLocation.id;
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('crm_locations')
-          .insert(payload);
+          .insert(payload)
+          .select('id')
+          .single();
         if (error) throw error;
+        locationId = data.id;
+      }
+
+      // Sync linked customers
+      // Delete existing links
+      await supabase
+        .from('crm_location_customers')
+        .delete()
+        .eq('location_id', locationId);
+
+      // Insert new links (always include the primary customer_id as owner)
+      const allLinks = [
+        { location_id: locationId, customer_id: formData.customer_id, relationship_type: 'owner', is_primary_contact: true },
+        ...linkedCustomers
+          .filter(lc => lc.customer_id !== formData.customer_id)
+          .map(lc => ({
+            location_id: locationId,
+            customer_id: lc.customer_id,
+            relationship_type: lc.relationship_type,
+            is_primary_contact: false,
+          })),
+      ];
+
+      if (allLinks.length > 0) {
+        const { error: linkError } = await supabase
+          .from('crm_location_customers')
+          .insert(allLinks);
+        if (linkError) throw linkError;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm_locations'] });
       queryClient.invalidateQueries({ queryKey: ['all_crm_locations'] });
+      queryClient.invalidateQueries({ queryKey: ['crm_location_customers'] });
       toast({
         title: 'Success',
         description: editingLocation ? 'Location updated successfully' : 'Location added successfully',
@@ -550,7 +615,78 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
             )}
           </div>
 
-          {/* Location Details */}
+          {/* Additional Linked Customers */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>Additional People Linked to This Location</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setLinkedCustomers(prev => [...prev, { customer_id: '', relationship_type: 'spouse' }])}
+              >
+                <Plus className="mr-1 h-3 w-3" />
+                Add Person
+              </Button>
+            </div>
+            
+            {linkedCustomers
+              .filter(lc => lc.customer_id !== formData.customer_id)
+              .map((link, index) => {
+                const actualIndex = linkedCustomers.findIndex(lc => lc === link);
+                return (
+                  <div key={index} className="flex items-center gap-2">
+                    <select
+                      className="flex h-9 flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm"
+                      value={link.customer_id}
+                      onChange={(e) => {
+                        const updated = [...linkedCustomers];
+                        updated[actualIndex] = { ...updated[actualIndex], customer_id: e.target.value };
+                        setLinkedCustomers(updated);
+                      }}
+                    >
+                      <option value="">Select person...</option>
+                      {customers
+                        .filter(c => c.id !== formData.customer_id)
+                        .map(c => (
+                          <option key={c.id} value={c.id}>
+                            {c.company_name || `${c.first_name || ''} ${c.last_name || ''}`.trim()}
+                          </option>
+                        ))}
+                    </select>
+                    <select
+                      className="flex h-9 w-40 rounded-md border border-input bg-background px-3 py-1 text-sm"
+                      value={link.relationship_type}
+                      onChange={(e) => {
+                        const updated = [...linkedCustomers];
+                        updated[actualIndex] = { ...updated[actualIndex], relationship_type: e.target.value };
+                        setLinkedCustomers(updated);
+                      }}
+                    >
+                      {RELATIONSHIP_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 shrink-0"
+                      onClick={() => setLinkedCustomers(prev => prev.filter((_, i) => i !== actualIndex))}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                );
+              })}
+            
+            {linkedCustomers.filter(lc => lc.customer_id !== formData.customer_id).length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                Link additional people like a spouse, GC, or tenant to this location.
+              </p>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="location_name">Location Name</Label>

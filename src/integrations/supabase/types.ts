@@ -1567,6 +1567,48 @@ export type Database = {
           },
         ]
       }
+      crm_location_customers: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          is_primary_contact: boolean
+          location_id: string
+          relationship_type: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          is_primary_contact?: boolean
+          location_id: string
+          relationship_type?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          is_primary_contact?: boolean
+          location_id?: string
+          relationship_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_location_customers_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_location_customers_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "crm_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_locations: {
         Row: {
           access_notes: string | null

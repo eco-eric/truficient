@@ -74,7 +74,25 @@ export interface CrmLocation {
   
   // Joined data
   customer?: CrmCustomer;
+  linked_customers?: CrmLocationCustomer[];
 }
+
+export interface CrmLocationCustomer {
+  id: string;
+  location_id?: string;
+  customer_id: string;
+  relationship_type: string;
+  is_primary_contact: boolean;
+  created_at: string;
+  customer?: Partial<CrmCustomer>;
+}
+
+export const RELATIONSHIP_TYPE_OPTIONS = [
+  { value: 'owner', label: 'Owner' },
+  { value: 'spouse', label: 'Spouse' },
+  { value: 'gc', label: 'General Contractor' },
+  { value: 'tenant', label: 'Tenant' },
+] as const;
 
 export interface CrmLocationEquipment {
   id: string;
