@@ -226,6 +226,8 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
       });
       setPropertyDataSource(null);
       setLinkedCustomers([]);
+    }
+  }, [open, editingLocation]);
 
   // Geocode manual address to get coordinates and county
   const handleGetCoordinates = async () => {
