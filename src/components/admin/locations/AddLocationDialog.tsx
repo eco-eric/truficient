@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
@@ -14,10 +14,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, MapPin, Search, Navigation } from 'lucide-react';
+import { Loader2, MapPin, Search, Navigation, X, Plus } from 'lucide-react';
 import { LocationMapEmbed } from './LocationMapEmbed';
-import type { CrmCustomer, CrmLocation, BUILDING_TYPE_OPTIONS, PropertyLookupData } from '@/types/crmLocations';
+import type { CrmCustomer, CrmLocation, BUILDING_TYPE_OPTIONS, PropertyLookupData, RELATIONSHIP_TYPE_OPTIONS } from '@/types/crmLocations';
+import { RELATIONSHIP_TYPE_OPTIONS as RELATIONSHIP_OPTIONS } from '@/types/crmLocations';
 
 // Map RentCast propertyType to our building_type and location_type
 function mapRentCastPropertyType(propertyType: string | null): {
