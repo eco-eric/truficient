@@ -137,6 +137,21 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [propertyDataSource, setPropertyDataSource] = useState<string | null>(null);
 
+  // Fetch linked customers when editing
+  const { data: existingLinks = [] } = useQuery({
+    queryKey: ['crm_location_customers', editingLocation?.id],
+    queryFn: async () => {
+      if (!editingLocation?.id) return [];
+      const { data, error } = await supabase
+        .from('crm_location_customers')
+        .select('customer_id, relationship_type')
+        .eq('location_id', editingLocation.id);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!editingLocation?.id,
+  });
+
   // Populate form when editing
   useEffect(() => {
     if (editingLocation) {
@@ -169,6 +184,16 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
       setPropertyDataSource(editingLocation.property_data_source);
     }
   }, [editingLocation]);
+
+  // Populate linked customers from existing data
+  useEffect(() => {
+    if (existingLinks.length > 0) {
+      setLinkedCustomers(existingLinks.map(l => ({
+        customer_id: l.customer_id,
+        relationship_type: l.relationship_type,
+      })));
+    }
+  }, [existingLinks]);
 
   // Reset form when dialog closes
   useEffect(() => {
