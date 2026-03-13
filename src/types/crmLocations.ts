@@ -79,12 +79,12 @@ export interface CrmLocation {
 
 export interface CrmLocationCustomer {
   id: string;
-  location_id: string;
+  location_id?: string;
   customer_id: string;
   relationship_type: string;
   is_primary_contact: boolean;
   created_at: string;
-  customer?: CrmCustomer;
+  customer?: Partial<CrmCustomer>;
 }
 
 export const RELATIONSHIP_TYPE_OPTIONS = [
