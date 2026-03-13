@@ -317,7 +317,7 @@ export default function Locations() {
                     {locations.map((location) => (
                       <TableRow key={location.id}>
                         <TableCell>
-                          <div>
+                          <div className="space-y-1">
                             <button
                               onClick={() => navigate(`/admin/customers/${location.customer_id}`)}
                               className="font-medium text-primary hover:underline flex items-center gap-1"
@@ -325,11 +325,23 @@ export default function Locations() {
                               {getCustomerDisplayName(location.customer)}
                               <ExternalLink className="h-3 w-3" />
                             </button>
-                            {location.customer?.email && (
-                              <div className="text-sm text-muted-foreground">
-                                {location.customer.email}
-                              </div>
-                            )}
+                            {location.linked_customers && location.linked_customers
+                              .filter(lc => lc.customer_id !== location.customer_id)
+                              .map(lc => {
+                                const relLabel = RELATIONSHIP_TYPE_OPTIONS.find(r => r.value === lc.relationship_type)?.label || lc.relationship_type;
+                                const name = lc.customer?.company_name || `${lc.customer?.first_name || ''} ${lc.customer?.last_name || ''}`.trim() || 'Unknown';
+                                return (
+                                  <div key={lc.id} className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <Badge variant="outline" className="text-[10px] px-1 py-0">{relLabel}</Badge>
+                                    <button
+                                      onClick={() => navigate(`/admin/customers/${lc.customer_id}`)}
+                                      className="hover:underline"
+                                    >
+                                      {name}
+                                    </button>
+                                  </div>
+                                );
+                              })}
                           </div>
                         </TableCell>
                         <TableCell>
