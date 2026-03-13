@@ -60,7 +60,7 @@ export default function Locations() {
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<LocationWithCustomer | null>(null);
 
-  // Fetch locations with customer data
+  // Fetch locations with customer data and linked customers
   const { data: locations = [], isLoading } = useQuery({
     queryKey: ['crm_locations', searchTerm, selectedCustomerId],
     queryFn: async () => {
@@ -68,7 +68,15 @@ export default function Locations() {
         .from('crm_locations')
         .select(`
           *,
-          customer:crm_customers(*)
+          customer:crm_customers(*),
+          linked_customers:crm_location_customers(
+            id,
+            customer_id,
+            relationship_type,
+            is_primary_contact,
+            created_at,
+            customer:crm_customers(id, first_name, last_name, email, phone, company_name)
+          )
         `)
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
