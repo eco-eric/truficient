@@ -463,6 +463,7 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm_locations'] });
       queryClient.invalidateQueries({ queryKey: ['all_crm_locations'] });
+      queryClient.invalidateQueries({ queryKey: ['crm_location_customers'] });
       toast({
         title: 'Success',
         description: editingLocation ? 'Location updated successfully' : 'Location added successfully',
