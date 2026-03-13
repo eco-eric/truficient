@@ -414,17 +414,50 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
         property_data_verified_at: propertyDataSource ? new Date().toISOString() : null,
       };
 
+      let locationId: string;
+      
       if (editingLocation) {
         const { error } = await supabase
           .from('crm_locations')
           .update(payload)
           .eq('id', editingLocation.id);
         if (error) throw error;
+        locationId = editingLocation.id;
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('crm_locations')
-          .insert(payload);
+          .insert(payload)
+          .select('id')
+          .single();
         if (error) throw error;
+        locationId = data.id;
+      }
+
+      // Sync linked customers
+      // Delete existing links
+      await supabase
+        .from('crm_location_customers')
+        .delete()
+        .eq('location_id', locationId);
+
+      // Insert new links (always include the primary customer_id as owner)
+      const allLinks = [
+        { location_id: locationId, customer_id: formData.customer_id, relationship_type: 'owner', is_primary_contact: true },
+        ...linkedCustomers
+          .filter(lc => lc.customer_id !== formData.customer_id)
+          .map(lc => ({
+            location_id: locationId,
+            customer_id: lc.customer_id,
+            relationship_type: lc.relationship_type,
+            is_primary_contact: false,
+          })),
+      ];
+
+      if (allLinks.length > 0) {
+        const { error: linkError } = await supabase
+          .from('crm_location_customers')
+          .insert(allLinks);
+        if (linkError) throw linkError;
       }
     },
     onSuccess: () => {
