@@ -96,6 +96,28 @@ export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose
     enabled: !!formData.customer_id
   });
 
+  // Fetch estimates for linking (filtered by customer if selected)
+  const { data: estimates = [] } = useQuery({
+    queryKey: ['estimates-for-job-link', formData.customer_id],
+    queryFn: async () => {
+      let query = supabase.from('estimates').select('id, estimate_number, grand_total');
+      if (formData.customer_id) query = query.eq('customer_id', formData.customer_id);
+      const { data } = await query.order('created_at', { ascending: false }).limit(30);
+      return data || [];
+    },
+  });
+
+  // Fetch pipeline entries for linking
+  const { data: pipelineEntries = [] } = useQuery({
+    queryKey: ['pipeline-for-job-link', formData.customer_id],
+    queryFn: async () => {
+      let query = supabase.from('crm_pipeline_entries').select('id, estimated_value, customer:crm_customers!inner(first_name, last_name, company_name)');
+      if (formData.customer_id) query = query.eq('customer_id', formData.customer_id);
+      const { data } = await query.limit(30);
+      return data || [];
+    },
+  });
+
   // Get first stage for selected job type
   const getInitialStage = (jobTypeId: string) => {
     const stagesForType = allStages
