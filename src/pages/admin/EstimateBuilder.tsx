@@ -56,6 +56,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { generateEstimatePDF } from '@/utils/generateEstimatePDF';
+import { LinkedRecordsCard } from '@/components/admin/shared/LinkedRecordsCard';
 import { VersionHistoryDialog } from '@/components/admin/estimates/VersionHistoryDialog';
 import { 
   EstimateSectionComponent, 
@@ -1535,6 +1536,15 @@ const EstimateBuilder = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Linked Records */}
+            {!isNew && id && (
+              <LinkedRecordsCard
+                entityType="estimate"
+                entityId={id}
+                customerId={selectedCustomerId}
+              />
+            )}
           </div>
         </div>
       </div>

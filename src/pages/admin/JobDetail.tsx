@@ -31,6 +31,7 @@ import JobFormDialog from '@/components/admin/jobs/JobFormDialog';
 import { AIAssistantWidget } from '@/components/admin/ai/AIAssistantWidget';
 import { useUserRole } from '@/hooks/useUserRole';
 import JobTasksCard from '@/components/admin/jobs/JobTasksCard';
+import { LinkedRecordsCard } from '@/components/admin/shared/LinkedRecordsCard';
 
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>();
@@ -794,6 +795,15 @@ export default function JobDetail() {
                 </Select>
               </CardContent>
             </Card>
+
+            {/* Linked Records */}
+            <LinkedRecordsCard
+              entityType="job"
+              entityId={job.id}
+              customerId={job.customer_id}
+              sourceEstimateId={job.source_estimate_id}
+              sourcePipelineId={job.source_pipeline_id}
+            />
 
             {/* Job Tasks */}
             <JobTasksCard jobId={job.id} />

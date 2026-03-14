@@ -1,5 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
@@ -10,7 +12,9 @@ import {
   Phone,
   Mail,
   Pencil,
-  Trash2
+  Trash2,
+  Briefcase,
+  FileText
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -55,6 +59,19 @@ export const PipelineCard = ({ entry, onEdit, onDelete }: PipelineCardProps) => 
     transition,
     isDragging,
   } = useSortable({ id: entry.id });
+
+  // Fetch linked jobs and estimates for this pipeline entry
+  const { data: linkedJobs = [] } = useQuery({
+    queryKey: ['pipeline-linked-jobs', entry.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('crm_jobs')
+        .select('id, job_number, source_estimate_id')
+        .eq('source_pipeline_id', entry.id)
+        .is('deleted_at', null);
+      return data || [];
+    },
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -139,6 +156,26 @@ export const PipelineCard = ({ entry, onEdit, onDelete }: PipelineCardProps) => 
           <div className="flex items-center gap-1 mt-2 text-sm font-bold text-primary">
             <DollarSign className="h-3.5 w-3.5" />
             {formatCurrency(entry.estimated_value)}
+          </div>
+        )}
+
+        {/* Linked jobs/estimates badges */}
+        {linkedJobs.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {linkedJobs.map((job: any) => (
+              <Link key={job.id} to={`/admin/jobs/${job.id}`} onClick={(e) => e.stopPropagation()}>
+                <Badge variant="outline" className="text-[9px] px-1.5 h-4 gap-0.5 hover:bg-accent cursor-pointer">
+                  <Briefcase className="h-2.5 w-2.5" />
+                  {job.job_number}
+                </Badge>
+              </Link>
+            ))}
+            {linkedJobs.some((j: any) => j.source_estimate_id) && (
+              <Badge variant="outline" className="text-[9px] px-1.5 h-4 gap-0.5 bg-accent/50">
+                <FileText className="h-2.5 w-2.5" />
+                Est
+              </Badge>
+            )}
           </div>
         )}
 

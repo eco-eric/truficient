@@ -63,7 +63,9 @@ export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose
     scheduled_end: editingJob?.scheduled_end_date?.slice(0, 10) || editingJob?.scheduled_end?.slice(0, 10) || '',
     quoted_amount: editingJob?.quoted_amount || '',
     internal_notes: editingJob?.internal_notes || '',
-    customer_notes: editingJob?.customer_notes || ''
+    customer_notes: editingJob?.customer_notes || '',
+    source_estimate_id: editingJob?.source_estimate_id || '',
+    source_pipeline_id: editingJob?.source_pipeline_id || '',
   });
 
   const { data: customers = [] } = useQuery({
@@ -94,6 +96,28 @@ export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose
     enabled: !!formData.customer_id
   });
 
+  // Fetch estimates for linking (filtered by customer if selected)
+  const { data: estimates = [] } = useQuery({
+    queryKey: ['estimates-for-job-link', formData.customer_id],
+    queryFn: async () => {
+      let query = supabase.from('estimates').select('id, estimate_number, grand_total');
+      if (formData.customer_id) query = query.eq('customer_id', formData.customer_id);
+      const { data } = await query.order('created_at', { ascending: false }).limit(30);
+      return data || [];
+    },
+  });
+
+  // Fetch pipeline entries for linking
+  const { data: pipelineEntries = [] } = useQuery({
+    queryKey: ['pipeline-for-job-link', formData.customer_id],
+    queryFn: async () => {
+      let query = supabase.from('crm_pipeline_entries').select('id, estimated_value, customer:crm_customers!inner(first_name, last_name, company_name)');
+      if (formData.customer_id) query = query.eq('customer_id', formData.customer_id);
+      const { data } = await query.limit(30);
+      return data || [];
+    },
+  });
+
   // Get first stage for selected job type
   const getInitialStage = (jobTypeId: string) => {
     const stagesForType = allStages
@@ -114,7 +138,9 @@ export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose
         scheduled_end_date: formData.scheduled_end || null,
         quoted_amount: formData.quoted_amount ? parseFloat(formData.quoted_amount as string) : null,
         internal_notes: formData.internal_notes,
-        customer_notes: formData.customer_notes
+        customer_notes: formData.customer_notes,
+        source_estimate_id: formData.source_estimate_id || null,
+        source_pipeline_id: formData.source_pipeline_id || null,
       };
 
       if (editingJob?.id) {
@@ -340,7 +366,51 @@ export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose
           />
         </div>
 
-        {/* Notes */}
+        {/* Link Estimate & Pipeline */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Link Estimate</Label>
+            <Select
+              value={formData.source_estimate_id}
+              onValueChange={(v) => setFormData({ ...formData, source_estimate_id: v === 'none' ? '' : v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="None" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {estimates.map((est: any) => (
+                  <SelectItem key={est.id} value={est.id}>
+                    {est.estimate_number} — ${est.grand_total?.toLocaleString() || '0'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Link Pipeline Entry</Label>
+            <Select
+              value={formData.source_pipeline_id}
+              onValueChange={(v) => setFormData({ ...formData, source_pipeline_id: v === 'none' ? '' : v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="None" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {pipelineEntries.map((entry: any) => {
+                  const name = entry.customer?.company_name || `${entry.customer?.first_name || ''} ${entry.customer?.last_name || ''}`.trim();
+                  return (
+                    <SelectItem key={entry.id} value={entry.id}>
+                      {name} {entry.estimated_value ? `— $${entry.estimated_value.toLocaleString()}` : ''}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Internal Notes</Label>
