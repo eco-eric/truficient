@@ -63,7 +63,9 @@ export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose
     scheduled_end: editingJob?.scheduled_end_date?.slice(0, 10) || editingJob?.scheduled_end?.slice(0, 10) || '',
     quoted_amount: editingJob?.quoted_amount || '',
     internal_notes: editingJob?.internal_notes || '',
-    customer_notes: editingJob?.customer_notes || ''
+    customer_notes: editingJob?.customer_notes || '',
+    source_estimate_id: editingJob?.source_estimate_id || '',
+    source_pipeline_id: editingJob?.source_pipeline_id || '',
   });
 
   const { data: customers = [] } = useQuery({
