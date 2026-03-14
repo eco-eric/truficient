@@ -190,7 +190,7 @@ export default function AdminIndividualEquipmentPricing() {
   };
 
   const handleSave = () => {
-    if (!form.brand || !form.model_number || !form.size || !form.price) {
+    if (!form.brand || !form.model_number || !form.price) {
       toast({ title: 'Please fill all required fields', variant: 'destructive' });
       return;
     }
