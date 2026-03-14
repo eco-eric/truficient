@@ -796,6 +796,15 @@ export default function JobDetail() {
               </CardContent>
             </Card>
 
+            {/* Linked Records */}
+            <LinkedRecordsCard
+              entityType="job"
+              entityId={job.id}
+              customerId={job.customer_id}
+              sourceEstimateId={job.source_estimate_id}
+              sourcePipelineId={job.source_pipeline_id}
+            />
+
             {/* Job Tasks */}
             <JobTasksCard jobId={job.id} />
 
