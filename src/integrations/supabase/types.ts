@@ -3692,7 +3692,7 @@ export type Database = {
           model_number: string
           notes: string | null
           price: number
-          size: string
+          size: string | null
           sort_order: number
           type: string
           updated_at: string
@@ -3705,7 +3705,7 @@ export type Database = {
           model_number: string
           notes?: string | null
           price?: number
-          size: string
+          size?: string | null
           sort_order?: number
           type: string
           updated_at?: string
@@ -3718,7 +3718,7 @@ export type Database = {
           model_number?: string
           notes?: string | null
           price?: number
-          size?: string
+          size?: string | null
           sort_order?: number
           type?: string
           updated_at?: string

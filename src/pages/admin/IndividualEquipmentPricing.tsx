@@ -16,7 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Package, Plus, Search, Pencil, Trash2, Upload, Download, ArrowUpDown, ArrowUp, ArrowDown, Copy, ExternalLink } from 'lucide-react';
 
-const EQUIPMENT_TYPES = ['Air Handler', 'Condenser', 'Furnace', 'Heat Pump', 'Coil', 'Mini-Split', 'Wall Mount', 'Floor Mount', '1 Way Ceiling Cassette', '4 Way Cassette', 'Other'] as const;
+const EQUIPMENT_TYPES = ['Air Handler', 'Condenser', 'Furnace', 'Heat Pump', 'Coil', 'Mini-Split', 'Wall Mount', 'Floor Mount', '1 Way Ceiling Cassette', '4 Way Cassette', 'Branch Box', 'Thermostat', 'Dehumidifier', 'Other'] as const;
 
 const TYPE_COLORS: Record<string, string> = {
   'Air Handler': 'bg-blue-100 text-blue-800 border-blue-200',
@@ -29,6 +29,9 @@ const TYPE_COLORS: Record<string, string> = {
   'Floor Mount': 'bg-indigo-100 text-indigo-800 border-indigo-200',
   '1 Way Ceiling Cassette': 'bg-sky-100 text-sky-800 border-sky-200',
   '4 Way Cassette': 'bg-violet-100 text-violet-800 border-violet-200',
+  'Branch Box': 'bg-amber-100 text-amber-800 border-amber-200',
+  'Thermostat': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  'Dehumidifier': 'bg-rose-100 text-rose-800 border-rose-200',
   'Other': 'bg-gray-100 text-gray-800 border-gray-200',
 };
 
@@ -187,7 +190,7 @@ export default function AdminIndividualEquipmentPricing() {
   };
 
   const handleSave = () => {
-    if (!form.brand || !form.model_number || !form.size || !form.price) {
+    if (!form.brand || !form.model_number || !form.price) {
       toast({ title: 'Please fill all required fields', variant: 'destructive' });
       return;
     }
@@ -243,12 +246,13 @@ export default function AdminIndividualEquipmentPricing() {
       const rows: Partial<EquipmentRow>[] = [];
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].match(/(".*?"|[^,]+)/g)?.map(c => c.replace(/^"|"$/g, '').trim()) || [];
-        if (cols.length < 5) { errors.push(`Row ${i}: not enough columns`); continue; }
+        if (cols.length < 4) { errors.push(`Row ${i}: not enough columns`); continue; }
         const [brand, model_number, type, size, priceStr] = cols;
-        if (!brand || !model_number || !type || !size) { errors.push(`Row ${i}: missing required field`); continue; }
-        const price = parseFloat(priceStr);
+        if (!brand || !model_number || !type) { errors.push(`Row ${i}: missing required field`); continue; }
+        const price = parseFloat(priceStr || size || '0');
         if (isNaN(price)) { errors.push(`Row ${i}: invalid price`); continue; }
-        rows.push({ brand, model_number, type, size, price, is_active: true });
+        const hasSize = cols.length >= 5 && size && isNaN(parseFloat(size));
+        rows.push({ brand, model_number, type, size: hasSize ? size : '', price: cols.length >= 5 ? parseFloat(priceStr) : parseFloat(size), is_active: true });
       }
       setImportRows(rows);
       setImportErrors(errors);
@@ -427,8 +431,8 @@ export default function AdminIndividualEquipmentPricing() {
               </Select>
             </div>
             <div>
-              <Label>Size *</Label>
-              <Input value={form.size} onChange={e => setForm(f => ({ ...f, size: e.target.value }))} placeholder='e.g. 2 Ton, 80,000 BTU' />
+              <Label>Size</Label>
+              <Input value={form.size} onChange={e => setForm(f => ({ ...f, size: e.target.value }))} placeholder='e.g. 2 Ton, 80,000 BTU (optional)' />
             </div>
             <div>
               <Label>Price *</Label>
