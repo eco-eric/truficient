@@ -109,7 +109,7 @@ export function InteractionLog({ customerId, interactions }: InteractionLogProps
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const interactionAt = new Date(`${interactionDate}T${interactionTime}:00`).toISOString();
+      const interactionAt = buildCSTDateTime(interactionDate, interactionTime);
       const payload = {
         customer_id: customerId,
         interaction_type: type,
