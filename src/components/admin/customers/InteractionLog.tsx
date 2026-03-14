@@ -26,7 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { formatInCST } from '@/lib/cstTimezone';
+import { formatInCST, buildCSTDateTime } from '@/lib/cstTimezone';
 import type { Database } from '@/integrations/supabase/types';
 
 type Interaction = Database['public']['Tables']['crm_interactions']['Row'];
