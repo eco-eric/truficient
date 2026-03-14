@@ -1535,6 +1535,15 @@ const EstimateBuilder = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Linked Records */}
+            {!isNew && id && (
+              <LinkedRecordsCard
+                entityType="estimate"
+                entityId={id}
+                customerId={selectedCustomerId}
+              />
+            )}
           </div>
         </div>
       </div>
