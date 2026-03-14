@@ -430,8 +430,8 @@ export default function AdminIndividualEquipmentPricing() {
               </Select>
             </div>
             <div>
-              <Label>Size *</Label>
-              <Input value={form.size} onChange={e => setForm(f => ({ ...f, size: e.target.value }))} placeholder='e.g. 2 Ton, 80,000 BTU' />
+              <Label>Size</Label>
+              <Input value={form.size} onChange={e => setForm(f => ({ ...f, size: e.target.value }))} placeholder='e.g. 2 Ton, 80,000 BTU (optional)' />
             </div>
             <div>
               <Label>Price *</Label>
