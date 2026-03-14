@@ -16,7 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Package, Plus, Search, Pencil, Trash2, Upload, Download, ArrowUpDown, ArrowUp, ArrowDown, Copy, ExternalLink } from 'lucide-react';
 
-const EQUIPMENT_TYPES = ['Air Handler', 'Condenser', 'Furnace', 'Heat Pump', 'Coil', 'Mini-Split', 'Wall Mount', 'Floor Mount', '1 Way Ceiling Cassette', '4 Way Cassette', 'Other'] as const;
+const EQUIPMENT_TYPES = ['Air Handler', 'Condenser', 'Furnace', 'Heat Pump', 'Coil', 'Mini-Split', 'Wall Mount', 'Floor Mount', '1 Way Ceiling Cassette', '4 Way Cassette', 'Branch Box', 'Thermostat', 'Dehumidifier', 'Other'] as const;
 
 const TYPE_COLORS: Record<string, string> = {
   'Air Handler': 'bg-blue-100 text-blue-800 border-blue-200',
@@ -29,6 +29,9 @@ const TYPE_COLORS: Record<string, string> = {
   'Floor Mount': 'bg-indigo-100 text-indigo-800 border-indigo-200',
   '1 Way Ceiling Cassette': 'bg-sky-100 text-sky-800 border-sky-200',
   '4 Way Cassette': 'bg-violet-100 text-violet-800 border-violet-200',
+  'Branch Box': 'bg-amber-100 text-amber-800 border-amber-200',
+  'Thermostat': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  'Dehumidifier': 'bg-rose-100 text-rose-800 border-rose-200',
   'Other': 'bg-gray-100 text-gray-800 border-gray-200',
 };
 
