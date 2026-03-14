@@ -366,7 +366,51 @@ export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose
           />
         </div>
 
-        {/* Notes */}
+        {/* Link Estimate & Pipeline */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Link Estimate</Label>
+            <Select
+              value={formData.source_estimate_id}
+              onValueChange={(v) => setFormData({ ...formData, source_estimate_id: v === 'none' ? '' : v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="None" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {estimates.map((est: any) => (
+                  <SelectItem key={est.id} value={est.id}>
+                    {est.estimate_number} — ${est.grand_total?.toLocaleString() || '0'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Link Pipeline Entry</Label>
+            <Select
+              value={formData.source_pipeline_id}
+              onValueChange={(v) => setFormData({ ...formData, source_pipeline_id: v === 'none' ? '' : v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="None" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {pipelineEntries.map((entry: any) => {
+                  const name = entry.customer?.company_name || `${entry.customer?.first_name || ''} ${entry.customer?.last_name || ''}`.trim();
+                  return (
+                    <SelectItem key={entry.id} value={entry.id}>
+                      {name} {entry.estimated_value ? `— $${entry.estimated_value.toLocaleString()}` : ''}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Internal Notes</Label>
