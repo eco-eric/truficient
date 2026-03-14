@@ -246,12 +246,13 @@ export default function AdminIndividualEquipmentPricing() {
       const rows: Partial<EquipmentRow>[] = [];
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].match(/(".*?"|[^,]+)/g)?.map(c => c.replace(/^"|"$/g, '').trim()) || [];
-        if (cols.length < 5) { errors.push(`Row ${i}: not enough columns`); continue; }
+        if (cols.length < 4) { errors.push(`Row ${i}: not enough columns`); continue; }
         const [brand, model_number, type, size, priceStr] = cols;
-        if (!brand || !model_number || !type || !size) { errors.push(`Row ${i}: missing required field`); continue; }
-        const price = parseFloat(priceStr);
+        if (!brand || !model_number || !type) { errors.push(`Row ${i}: missing required field`); continue; }
+        const price = parseFloat(priceStr || size || '0');
         if (isNaN(price)) { errors.push(`Row ${i}: invalid price`); continue; }
-        rows.push({ brand, model_number, type, size, price, is_active: true });
+        const hasSize = cols.length >= 5 && size && isNaN(parseFloat(size));
+        rows.push({ brand, model_number, type, size: hasSize ? size : '', price: cols.length >= 5 ? parseFloat(priceStr) : parseFloat(size), is_active: true });
       }
       setImportRows(rows);
       setImportErrors(errors);
