@@ -31,6 +31,7 @@ import JobFormDialog from '@/components/admin/jobs/JobFormDialog';
 import { AIAssistantWidget } from '@/components/admin/ai/AIAssistantWidget';
 import { useUserRole } from '@/hooks/useUserRole';
 import JobTasksCard from '@/components/admin/jobs/JobTasksCard';
+import { LinkedRecordsCard } from '@/components/admin/shared/LinkedRecordsCard';
 
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>();
