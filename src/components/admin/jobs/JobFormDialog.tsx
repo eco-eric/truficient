@@ -116,7 +116,9 @@ export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose
         scheduled_end_date: formData.scheduled_end || null,
         quoted_amount: formData.quoted_amount ? parseFloat(formData.quoted_amount as string) : null,
         internal_notes: formData.internal_notes,
-        customer_notes: formData.customer_notes
+        customer_notes: formData.customer_notes,
+        source_estimate_id: formData.source_estimate_id || null,
+        source_pipeline_id: formData.source_pipeline_id || null,
       };
 
       if (editingJob?.id) {
