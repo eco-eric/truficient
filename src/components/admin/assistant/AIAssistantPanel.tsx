@@ -324,12 +324,7 @@ export const AIAssistantPanel = ({ enableVoice = true, briefingData }: AIAssista
             placeholder={isListening ? 'Listening...' : 'Ask me anything...'}
             rows={6}
             className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4A]/30 focus:border-[#1B2A4A] max-h-[280px] min-h-[120px]"
-            onKeyDown={e => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
+            
             onInput={e => {
               const target = e.target as HTMLTextAreaElement;
               target.style.height = 'auto';
