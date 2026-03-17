@@ -97,6 +97,22 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
     },
   });
 
+  // Fetch customer locations for address import
+  const { data: customerLocations } = useQuery({
+    queryKey: ['crm_locations', customer?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_locations')
+        .select('id, location_name, address_line1, address_line2, city, state, zip_code')
+        .eq('customer_id', customer!.id)
+        .is('deleted_at', null)
+        .order('is_primary', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!customer?.id,
+  });
+
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
     defaultValues: {
