@@ -345,6 +345,62 @@ export function CustomerLocations({ customerId, locations, customer }: CustomerL
               </Select>
             </div>
 
+            {/* Import Address Buttons */}
+            <div className="flex flex-wrap gap-2">
+              {customer?.billing_address && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setAddressLine1(customer.billing_address || '');
+                    setAddressLine2((customer as any).billing_address_line2 || '');
+                    setCity(customer.billing_city || '');
+                    setState(customer.billing_state || 'TX');
+                    setZipCode(customer.billing_zip || '');
+                    toast.success('Billing address imported');
+                  }}
+                >
+                  <MapPin className="h-3.5 w-3.5 mr-1.5" />
+                  Use Billing Address
+                </Button>
+              )}
+              {locations.filter(l => !editingLocation || l.id !== editingLocation.id).length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" variant="outline" size="sm">
+                      <Home className="h-3.5 w-3.5 mr-1.5" />
+                      Import from Location
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {locations
+                      .filter(l => !editingLocation || l.id !== editingLocation.id)
+                      .map(loc => (
+                        <DropdownMenuItem
+                          key={loc.id}
+                          onClick={() => {
+                            setAddressLine1(loc.address_line1);
+                            setAddressLine2(loc.address_line2 || '');
+                            setCity(loc.city);
+                            setState(loc.state);
+                            setZipCode(loc.zip_code);
+                            if (loc.square_footage) setSquareFootage(loc.square_footage.toString());
+                            if (loc.year_built) setYearBuilt(loc.year_built.toString());
+                            if (loc.stories) setStories(loc.stories.toString());
+                            if (loc.gate_code) setGateCode(loc.gate_code);
+                            if (loc.access_notes) setAccessNotes(loc.access_notes);
+                            toast.success('Address imported from location');
+                          }}
+                        >
+                          {loc.location_name || loc.address_line1} — {loc.city}
+                        </DropdownMenuItem>
+                      ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+
             <div className="space-y-2">
               <Label>Address Line 1 *</Label>
               <Input 

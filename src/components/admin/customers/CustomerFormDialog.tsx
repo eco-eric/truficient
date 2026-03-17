@@ -358,6 +358,36 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
             </div>
 
             {/* Billing Address */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Billing Address</span>
+              {customer && customerLocations && customerLocations.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" variant="ghost" size="sm" className="h-7 text-xs">
+                      <MapPin className="h-3 w-3 mr-1" />
+                      Import from Location
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {customerLocations.map(loc => (
+                      <DropdownMenuItem
+                        key={loc.id}
+                        onClick={() => {
+                          form.setValue('billing_address', loc.address_line1);
+                          form.setValue('billing_address_line2', loc.address_line2 || '');
+                          form.setValue('billing_city', loc.city);
+                          form.setValue('billing_state', loc.state);
+                          form.setValue('billing_zip', loc.zip_code);
+                          toast.success('Address imported from location');
+                        }}
+                      >
+                        {loc.location_name || loc.address_line1} — {loc.city}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
             <FormField
               control={form.control}
               name="billing_address"
