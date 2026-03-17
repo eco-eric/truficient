@@ -491,6 +491,25 @@ const MCP_TOOLS = [
       required: ["page_id"],
     },
   },
+  // === NATURAL LANGUAGE PASSTHROUGH ===
+  {
+    name: "ask_bach",
+    description: "Send a natural language request to Bach. Use this when you want Bach to reason about what to do, handle multi-step tasks, or when you're not sure which specific tool to call. Bach will figure out the right tools and execute them.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+          description: "Plain English request. Examples: 'Review new submissions and intake the real leads', 'Draft an estimate for Jane Smith for a residential replacement', 'What does today's schedule look like?'",
+        },
+        context: {
+          type: "string",
+          description: "Optional context Harold wants to share with Bach — e.g. customer info already known, prior conversation summary",
+        },
+      },
+      required: ["message"],
+    },
+  },
 ];
 
 // ============================================================
