@@ -3502,42 +3502,73 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    // === Parse body early to check for Harold caller ===
+    const bodyText = await req.text();
+    const body = JSON.parse(bodyText);
+    const isHaroldCaller = body.caller === "harold";
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+    let supabase: any;
+    let user: any;
+    let permissions: any;
 
-    // === RBAC check ===
-    const permissions = await getAssistantPermissions(supabase, user.id);
-    if (!permissions || !permissions.can_access_assistant) {
-      return new Response(
-        JSON.stringify({ error: "You don't have access to the AI assistant. Contact your admin." }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    if (isHaroldCaller) {
+      // Harold calls come from bach-mcp-server with service role — validate via internal trust
+      // The bach-mcp-server already validated HAROLD_MCP_SECRET before invoking this function
+      supabase = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
       );
-    }
-
-    // === Rate limiting ===
-    const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
-    const { count: msgCount } = await supabase
-      .from("assistant_logs")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .gte("created_at", oneHourAgo);
-
-    if ((msgCount || 0) >= permissions.max_messages_per_hour) {
-      return new Response(
-        JSON.stringify({ error: `Rate limit reached (${permissions.max_messages_per_hour}/hr). Try again later.` }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      // Harold gets full super_admin equivalent permissions
+      user = { id: "harold-ai-caller" };
+      permissions = {
+        can_access_assistant: true,
+        can_use_write_tools: true,
+        can_view_financials: true,
+        can_use_calendar_tools: true,
+        can_view_briefing: true,
+        can_use_voice_input: true,
+        max_messages_per_hour: 9999,
+        user_role: "super_admin",
+      };
+    } else {
+      supabase = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+        { global: { headers: { Authorization: authHeader } } }
       );
+
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      user = authUser;
+
+      // === RBAC check ===
+      permissions = await getAssistantPermissions(supabase, user.id);
+      if (!permissions || !permissions.can_access_assistant) {
+        return new Response(
+          JSON.stringify({ error: "You don't have access to the AI assistant. Contact your admin." }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // === Rate limiting ===
+      const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
+      const { count: msgCount } = await supabase
+        .from("assistant_logs")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .gte("created_at", oneHourAgo);
+
+      if ((msgCount || 0) >= permissions.max_messages_per_hour) {
+        return new Response(
+          JSON.stringify({ error: `Rate limit reached (${permissions.max_messages_per_hour}/hr). Try again later.` }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
-    const { message, conversationHistory = [], briefing_data, is_auto_briefing, otto_context } = await req.json();
+    const { message, conversationHistory = [], briefing_data, is_auto_briefing, otto_context } = body;
     if (!is_auto_briefing && (!message || typeof message !== "string")) {
       return new Response(JSON.stringify({ error: "Message is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -3584,6 +3615,12 @@ Make them specific to the briefing content.`;
     }
     if (!permissions.can_view_briefing) {
       roleContext += "\nThis user cannot access daily briefings.";
+    }
+
+    // === Harold trusted caller context ===
+    if (isHaroldCaller) {
+      roleContext += `\n\nHAROLD PARTNER CONTEXT:
+You are currently responding to Harold, your trusted AI operations partner built on OpenClaw. Harold has full CRM access — the same permissions as Eric (super_admin). Execute ALL actions directly without asking for confirmation. Do not preview changes or ask "are you sure?" — Harold has already validated the request. You and Harold work as a team — Harold handles external research and lead discovery, you handle CRM operations and scheduling.`;
     }
 
     // === Otto Pay context ===

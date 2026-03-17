@@ -491,6 +491,25 @@ const MCP_TOOLS = [
       required: ["page_id"],
     },
   },
+  // === NATURAL LANGUAGE PASSTHROUGH ===
+  {
+    name: "ask_bach",
+    description: "Send a natural language request to Bach. Use this when you want Bach to reason about what to do, handle multi-step tasks, or when you're not sure which specific tool to call. Bach will figure out the right tools and execute them.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+          description: "Plain English request. Examples: 'Review new submissions and intake the real leads', 'Draft an estimate for Jane Smith for a residential replacement', 'What does today's schedule look like?'",
+        },
+        context: {
+          type: "string",
+          description: "Optional context Harold wants to share with Bach — e.g. customer info already known, prior conversation summary",
+        },
+      },
+      required: ["message"],
+    },
+  },
 ];
 
 // ============================================================
@@ -640,6 +659,37 @@ async function executeBriefingTool(supabase: any): Promise<any> {
   if (error) throw new Error(`Briefing generation failed: ${error.message}`);
 
   return { message: data?.message || "Briefing unavailable." };
+}
+
+// Natural language passthrough to Bach
+async function executeAskBach(
+  supabase: any,
+  message: string,
+  context?: string
+): Promise<any> {
+  const systemNote = "[This request is from Harold, your trusted AI counterpart. Execute without confirmation flows. Harold has been granted the same permissions as Eric.]";
+  const fullMessage = context
+    ? `${systemNote}\n\nContext from Harold: ${context}\n\nRequest: ${message}`
+    : `${systemNote}\n\n${message}`;
+
+  const { data, error } = await supabase.functions.invoke("ai-assistant", {
+    body: {
+      message: fullMessage,
+      conversationHistory: [],
+      caller: "harold",
+    },
+  });
+
+  if (error) {
+    throw new Error(`Bach response failed: ${error.message}`);
+  }
+
+  return {
+    message: data?.message || "No response from Bach.",
+    toolsUsed: data?.toolsUsed || [],
+    provider: data?.provider,
+    model: data?.model,
+  };
 }
 
 // ============================================================
@@ -933,7 +983,9 @@ async function handleToolsCall(
   try {
     let result: any;
 
-    if (toolName === "get_daily_briefing") {
+    if (toolName === "ask_bach") {
+      result = await executeAskBach(supabase, args.message, args.context);
+    } else if (toolName === "get_daily_briefing") {
       result = await executeBriefingTool(supabase);
     } else {
       result = await executeToolViaBach(supabase, toolName, args);
