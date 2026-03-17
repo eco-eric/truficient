@@ -983,7 +983,9 @@ async function handleToolsCall(
   try {
     let result: any;
 
-    if (toolName === "get_daily_briefing") {
+    if (toolName === "ask_bach") {
+      result = await executeAskBach(supabase, args.message, args.context);
+    } else if (toolName === "get_daily_briefing") {
       result = await executeBriefingTool(supabase);
     } else {
       result = await executeToolViaBach(supabase, toolName, args);
