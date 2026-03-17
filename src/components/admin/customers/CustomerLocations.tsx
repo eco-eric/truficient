@@ -55,7 +55,7 @@ interface CustomerLocationsProps {
   } | null;
 }
 
-export function CustomerLocations({ customerId, locations }: CustomerLocationsProps) {
+export function CustomerLocations({ customerId, locations, customer }: CustomerLocationsProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
   const queryClient = useQueryClient();
