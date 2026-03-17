@@ -1037,6 +1037,12 @@ Deno.serve(async (req) => {
     case "tools/call":
       response = await handleToolsCall(id, params, supabase);
       break;
+    case "resources/list":
+      response = handleResourcesList(id);
+      break;
+    case "resources/read":
+      response = await handleResourcesRead(id, params, supabase);
+      break;
     default:
       response = jsonRpcError(id, RPC_METHOD_NOT_FOUND, `Unknown method: ${method}`);
   }
