@@ -46,6 +46,13 @@ type Location = Database['public']['Tables']['crm_locations']['Row'];
 interface CustomerLocationsProps {
   customerId: string;
   locations: Location[];
+  customer?: {
+    billing_address?: string | null;
+    billing_address_line2?: string | null;
+    billing_city?: string | null;
+    billing_state?: string | null;
+    billing_zip?: string | null;
+  } | null;
 }
 
 export function CustomerLocations({ customerId, locations }: CustomerLocationsProps) {
