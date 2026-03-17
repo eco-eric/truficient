@@ -398,7 +398,7 @@ const CustomerDetail = () => {
               </TabsContent>
 
               <TabsContent value="locations" className="mt-4">
-                <CustomerLocations customerId={id!} locations={locations || []} />
+                <CustomerLocations customerId={id!} locations={locations || []} customer={customer} />
               </TabsContent>
 
               <TabsContent value="activity" className="mt-4 space-y-4">
