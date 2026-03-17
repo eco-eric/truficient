@@ -54,3 +54,6 @@ verify_jwt = false
 
 [functions.harold-api]
 verify_jwt = false
+
+[functions.bach-mcp-server]
+verify_jwt = false
