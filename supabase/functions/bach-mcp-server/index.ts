@@ -1048,12 +1048,15 @@ Deno.serve(async (req) => {
   }
 
   // === Log to assistant_logs ===
-  if (method === "tools/call") {
+  if (method === "tools/call" || method === "resources/read") {
+    const logDetail = method === "tools/call"
+      ? `${params?.name || "unknown"} — ${JSON.stringify(params?.arguments || {}).substring(0, 500)}`
+      : `${params?.uri || "unknown"}`;
     supabase.from("assistant_logs").insert({
       user_id: null,
-      user_message: `[HAROLD-MCP] ${method}: ${params?.name || "unknown"} — ${JSON.stringify(params?.arguments || {}).substring(0, 500)}`,
+      user_message: `[HAROLD-MCP] ${method}: ${logDetail}`,
       assistant_response: JSON.stringify(response.result || response.error || {}).substring(0, 2000),
-      tools_used: [{ tool: params?.name, input: params?.arguments }],
+      tools_used: method === "tools/call" ? [{ tool: params?.name, input: params?.arguments }] : [{ tool: "resource_read", input: { uri: params?.uri } }],
       duration_ms: Date.now() - startTime,
     }).then(() => {}).catch(() => {});
   }
