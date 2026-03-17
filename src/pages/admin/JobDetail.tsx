@@ -335,11 +335,16 @@ export default function JobDetail() {
   const deleteJobMutation = useMutation({
     mutationFn: async () => {
       // Soft delete
-      const { error } = await supabase
+      const { data, error, count } = await supabase
         .from('crm_jobs')
         .update({ deleted_at: new Date().toISOString() })
-        .eq('id', id);
+        .eq('id', id)
+        .select();
+      console.log('Delete job result:', { data, error, count, id });
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('No rows were updated. You may not have permission to delete this job.');
+      }
     },
     onSuccess: () => {
       toast.success('Job deleted successfully');
