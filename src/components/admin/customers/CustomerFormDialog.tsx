@@ -30,6 +30,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { CampaignTagSelector } from './CampaignTagSelector';
 import { CompanySelector } from '@/components/admin/companies/CompanySelector';
 import type { Database } from '@/integrations/supabase/types';
