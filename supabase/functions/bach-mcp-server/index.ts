@@ -650,8 +650,263 @@ function handleInitialize(id: string | number | null) {
   return jsonRpcResult(id, {
     protocolVersion: "2024-11-05",
     serverInfo: { name: "bach-crm-server", version: "1.0.0" },
-    capabilities: { tools: {}, resources: {} },
+    capabilities: {
+      tools: {},
+      resources: { subscribe: false, listChanged: false },
+    },
   });
+}
+
+// ============================================================
+// MCP RESOURCE DEFINITIONS
+// ============================================================
+
+const MCP_RESOURCES = [
+  {
+    uri: "crm://customers/recent",
+    name: "Recent Customers",
+    description: "Most recent 20 CRM customers",
+    mimeType: "application/json",
+  },
+  {
+    uri: "crm://pipeline/overview",
+    name: "Pipeline Overview",
+    description: "Current pipeline stages and lead counts with estimated values",
+    mimeType: "application/json",
+  },
+  {
+    uri: "crm://jobs/active",
+    name: "Active Jobs",
+    description: "All active jobs with current stage, customer, and job type",
+    mimeType: "application/json",
+  },
+  {
+    uri: "crm://schedule/today",
+    name: "Today's Schedule",
+    description: "Today's appointments with team assignments and job details",
+    mimeType: "application/json",
+  },
+  {
+    uri: "crm://submissions/unreviewed",
+    name: "Unreviewed Submissions",
+    description: "New submissions from the last 48 hours not yet processed",
+    mimeType: "application/json",
+  },
+  {
+    uri: "crm://watchlist/high-priority",
+    name: "Watch List High Priority",
+    description: "Equipment scanner leads with 15+ year old systems in DFW area",
+    mimeType: "application/json",
+  },
+  {
+    uri: "crm://briefing/latest",
+    name: "Latest Morning Briefing",
+    description: "Most recent Bach morning briefing data",
+    mimeType: "application/json",
+  },
+];
+
+function handleResourcesList(id: string | number | null) {
+  return jsonRpcResult(id, { resources: MCP_RESOURCES });
+}
+
+// ============================================================
+// RESOURCE READ HANDLERS
+// ============================================================
+
+const DFW_ZIPS = new Set([
+  "75001","75002","75006","75007","75009","75010","75013","75019","75023","75024",
+  "75025","75028","75034","75035","75038","75039","75040","75041","75042","75043",
+  "75044","75048","75050","75051","75052","75054","75056","75057","75060","75061",
+  "75062","75063","75065","75067","75068","75069","75070","75071","75074","75075",
+  "75076","75077","75078","75080","75081","75082","75083","75085","75087","75088",
+  "75089","75093","75094","75098","75104","75115","75116","75134","75137","75141",
+  "75142","75146","75149","75150","75152","75154","75159","75166","75180","75181",
+  "75182","75189","75201","75202","75203","75204","75205","75206","75207","75208",
+  "75209","75210","75211","75212","75214","75215","75216","75217","75218","75219",
+  "75220","75223","75224","75225","75226","75227","75228","75229","75230","75231",
+  "75232","75233","75234","75235","75236","75237","75238","75240","75241","75243",
+  "75244","75246","75247","75248","75249","75251","75252","75253","75254","75270",
+  "76001","76002","76003","76005","76006","76010","76011","76012","76013","76014",
+  "76015","76016","76017","76018","76019","76020","76021","76022","76023","76028",
+  "76034","76039","76040","76044","76051","76052","76053","76054","76060","76063",
+  "76064","76065","76071","76078","76084","76085","76086","76092","76093","76094",
+  "76101","76102","76103","76104","76105","76106","76107","76108","76109","76110",
+  "76111","76112","76114","76115","76116","76117","76118","76119","76120","76123",
+  "76126","76127","76129","76131","76132","76133","76134","76135","76137","76140",
+  "76148","76155","76164","76177","76179","76180","76182","76244","76248","76262",
+]);
+
+async function readResource(uri: string, supabase: any): Promise<any> {
+  switch (uri) {
+    case "crm://customers/recent": {
+      const { data, error } = await supabase
+        .from("crm_customers")
+        .select("id, first_name, last_name, email, phone, customer_status, customer_type, lead_source, created_at, updated_at")
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw new Error(`customers/recent: ${error.message}`);
+      return data;
+    }
+
+    case "crm://pipeline/overview": {
+      const { data: stages, error: stagesErr } = await supabase
+        .from("crm_pipeline_stages")
+        .select("id, name, display_name, sort_order, color, is_won_stage, is_lost_stage")
+        .eq("is_active", true)
+        .order("sort_order");
+      if (stagesErr) throw new Error(`pipeline stages: ${stagesErr.message}`);
+
+      const { data: entries, error: entriesErr } = await supabase
+        .from("crm_pipeline_entries")
+        .select("id, stage_id, estimated_value, probability, customer_id, crm_customers(first_name, last_name)")
+      if (entriesErr) throw new Error(`pipeline entries: ${entriesErr.message}`);
+
+      const stageMap = (stages || []).map((s: any) => {
+        const stageEntries = (entries || []).filter((e: any) => e.stage_id === s.id);
+        return {
+          ...s,
+          count: stageEntries.length,
+          total_value: stageEntries.reduce((sum: number, e: any) => sum + (Number(e.estimated_value) || 0), 0),
+          weighted_value: stageEntries.reduce((sum: number, e: any) => sum + (Number(e.estimated_value) || 0) * ((Number(e.probability) || 0) / 100), 0),
+        };
+      });
+      return { stages: stageMap, total_entries: (entries || []).length };
+    }
+
+    case "crm://jobs/active": {
+      const { data, error } = await supabase
+        .from("crm_jobs")
+        .select(`id, job_number, title, priority, scheduled_date, scheduled_end_date, created_at,
+          crm_customers(id, first_name, last_name, phone),
+          crm_job_types(name, slug, category),
+          crm_job_stages!crm_jobs_current_stage_id_fkey(name, stage_type, color)`)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw new Error(`jobs/active: ${error.message}`);
+      // Filter out completed/closed jobs
+      return (data || []).filter((j: any) => j.crm_job_stages?.stage_type !== "end");
+    }
+
+    case "crm://schedule/today": {
+      const now = new Date();
+      const todayStr = getCSTDateStr(now);
+      const dayStart = toCSTBoundary(todayStr, "00:00");
+      const dayEnd = toCSTBoundary(todayStr, "23:59");
+
+      const { data, error } = await supabase
+        .from("crm_job_appointments")
+        .select(`id, start_datetime, end_datetime, notes, title,
+          crm_jobs(job_number, title, customer_id, scheduled_date,
+            crm_customers(first_name, last_name, phone),
+            crm_job_types(name, category),
+            crm_locations(address_line1, city, state, zip_code)),
+          crm_teams(name, color)`)
+        .gte("start_datetime", dayStart)
+        .lte("start_datetime", dayEnd)
+        .order("start_datetime");
+      if (error) throw new Error(`schedule/today: ${error.message}`);
+      return (data || []).map((a: any) => ({
+        ...a,
+        start_display: formatTimeCST(a.start_datetime),
+        end_display: a.end_datetime ? formatTimeCST(a.end_datetime) : null,
+      }));
+    }
+
+    case "crm://submissions/unreviewed": {
+      const cutoff = new Date(Date.now() - 48 * 3600000).toISOString();
+      const [contact, landing, ductless, ducted, scanner] = await Promise.all([
+        supabase.from("contact_submissions")
+          .select("id, first_name, last_name, email, phone, service_type, created_at")
+          .or("status.is.null,status.eq.new")
+          .gte("created_at", cutoff)
+          .order("created_at", { ascending: false }),
+        supabase.from("landing_page_submissions")
+          .select("id, first_name, last_name, email, phone, service_type, created_at")
+          .or("status.is.null,status.eq.new")
+          .gte("created_at", cutoff)
+          .order("created_at", { ascending: false }),
+        supabase.from("ductless_estimate_submissions")
+          .select("id, customer_name, customer_email, customer_phone, created_at")
+          .or("status.is.null,status.eq.new")
+          .gte("created_at", cutoff)
+          .order("created_at", { ascending: false }),
+        supabase.from("ducted_estimate_submissions")
+          .select("id, customer_name, customer_email, customer_phone, created_at")
+          .or("status.is.null,status.eq.new")
+          .gte("created_at", cutoff)
+          .order("created_at", { ascending: false }),
+        supabase.from("equipment_scans")
+          .select("id, customer_name, email, phone, created_at, model_number, manufacturer, year, refrigerant_type, zip_code")
+          .not("email", "is", null)
+          .or("status.is.null,status.eq.new")
+          .gte("created_at", cutoff)
+          .order("created_at", { ascending: false }),
+      ]);
+      return {
+        contact: contact.data || [],
+        landing_page: landing.data || [],
+        ductless: ductless.data || [],
+        ducted: ducted.data || [],
+        scanner: scanner.data || [],
+        total: (contact.data?.length || 0) + (landing.data?.length || 0) + (ductless.data?.length || 0) + (ducted.data?.length || 0) + (scanner.data?.length || 0),
+      };
+    }
+
+    case "crm://watchlist/high-priority": {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+      const currentYear = new Date().getFullYear();
+      const { data, error } = await supabase
+        .from("equipment_scans")
+        .select("id, customer_name, email, phone, model_number, manufacturer, year, refrigerant_type, zip_code, created_at")
+        .not("email", "is", null)
+        .gte("created_at", thirtyDaysAgo)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw new Error(`watchlist: ${error.message}`);
+      // Filter: age 15+, DFW zip, not already converted
+      return (data || []).filter((s: any) => {
+        const age = s.year ? currentYear - Number(s.year) : 0;
+        const inDFW = s.zip_code && DFW_ZIPS.has(String(s.zip_code));
+        return age >= 15 && inDFW;
+      });
+    }
+
+    case "crm://briefing/latest": {
+      // Call the briefing edge function to get fresh data
+      const { data, error } = await supabase.functions.invoke("assistant-briefing", { body: {} });
+      if (error) throw new Error(`briefing: ${error.message}`);
+      return data;
+    }
+
+    default:
+      throw new Error(`Unknown resource URI: ${uri}`);
+  }
+}
+
+async function handleResourcesRead(id: string | number | null, params: any, supabase: any) {
+  const uri = params?.uri;
+  if (!uri) {
+    return jsonRpcError(id, RPC_INVALID_REQUEST, "Missing params.uri");
+  }
+  const validResource = MCP_RESOURCES.find(r => r.uri === uri);
+  if (!validResource) {
+    return jsonRpcError(id, RPC_METHOD_NOT_FOUND, `Unknown resource: ${uri}. Use resources/list to see available resources.`);
+  }
+  try {
+    const data = await readResource(uri, supabase);
+    return jsonRpcResult(id, {
+      contents: [{
+        uri,
+        mimeType: "application/json",
+        text: JSON.stringify(data),
+      }],
+    });
+  } catch (err: any) {
+    return jsonRpcError(id, RPC_INTERNAL_ERROR, `Resource read failed: ${err.message}`);
+  }
 }
 
 function handleToolsList(id: string | number | null) {
