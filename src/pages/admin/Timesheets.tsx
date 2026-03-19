@@ -83,8 +83,8 @@ export default function Timesheets() {
     },
   });
 
-  // Add manual entry
-  const addEntry = useMutation({
+  // Add or update manual entry
+  const saveEntry = useMutation({
     mutationFn: async () => {
       const member = members.find(m => m.id === selectedMember);
       if (!member) throw new Error('Select a team member');
@@ -96,10 +96,10 @@ export default function Timesheets() {
       const overtimeHours = Math.max(0, totalHours - OVERTIME_THRESHOLD);
 
       const entryDateStr = format(entryDate, 'yyyy-MM-dd');
-      const jobIds = selectedJobs.length > 0 ? selectedJobs : [null];
-      
-      for (const jobId of jobIds) {
-        const { error } = await supabase.from('time_entries').insert({
+
+      if (editingEntryId) {
+        // Update existing entry
+        const { error } = await supabase.from('time_entries').update({
           team_member_id: selectedMember,
           entry_date: entryDateStr,
           manual_start: manualStart,
@@ -109,16 +109,36 @@ export default function Timesheets() {
           overtime_hours: Math.round(overtimeHours * 100) / 100,
           hourly_rate: member.hourly_rate,
           overtime_rate: member.overtime_rate,
-          job_id: jobId,
+          job_id: selectedJobs.length > 0 ? selectedJobs[0] : null,
           notes: notes || null,
           entry_type: 'manual',
-        });
+        }).eq('id', editingEntryId);
         if (error) throw error;
+      } else {
+        // Insert new entries
+        const jobIds = selectedJobs.length > 0 ? selectedJobs : [null];
+        for (const jobId of jobIds) {
+          const { error } = await supabase.from('time_entries').insert({
+            team_member_id: selectedMember,
+            entry_date: entryDateStr,
+            manual_start: manualStart,
+            manual_end: manualEnd,
+            break_minutes: Number(breakMinutes || 0),
+            total_hours: Math.round(totalHours * 100) / 100,
+            overtime_hours: Math.round(overtimeHours * 100) / 100,
+            hourly_rate: member.hourly_rate,
+            overtime_rate: member.overtime_rate,
+            job_id: jobId,
+            notes: notes || null,
+            entry_type: 'manual',
+          });
+          if (error) throw error;
+        }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['time-entries', dateStr] });
-      toast.success('Time entry added');
+      toast.success(editingEntryId ? 'Entry updated' : 'Time entry added');
       resetForm();
       setDialogOpen(false);
     },
