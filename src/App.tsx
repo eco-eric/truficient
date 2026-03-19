@@ -94,6 +94,7 @@ import AdminRolePermissions from "./pages/admin/RolePermissions";
 import AdminCompanies from "./pages/admin/Companies";
 import AdminCompanyDetail from "./pages/admin/CompanyDetail";
 import AdminTasks from "./pages/admin/Tasks";
+import AdminTimesheets from "./pages/admin/Timesheets";
 import InvoicingMissionControl from "./pages/admin/invoicing/InvoicingMissionControl";
 import InvoicesList from "./pages/admin/invoicing/InvoicesList";
 import OttoEstimatesList from "./pages/admin/invoicing/OttoEstimatesList";
@@ -211,6 +212,7 @@ const router = createBrowserRouter([
           { path: "/admin/jobs/:id", element: <ProtectedRoute><AdminJobDetail /></ProtectedRoute> },
           { path: "/admin/job-types", element: <ProtectedRoute><AdminJobTypesConfig /></ProtectedRoute> },
           { path: "/admin/teams", element: <ProtectedRoute><AdminTeams /></ProtectedRoute> },
+          { path: "/admin/timesheets", element: <ProtectedRoute><AdminTimesheets /></ProtectedRoute> },
           { path: "/admin/workedge", element: <ProtectedRoute><AdminWorkEdgeProjects /></ProtectedRoute> },
           { path: "/admin/calendar", element: <ProtectedRoute><AdminCalendar /></ProtectedRoute> },
           { path: "/admin/calendars", element: <ProtectedRoute><AdminCalendarSettings /></ProtectedRoute> },

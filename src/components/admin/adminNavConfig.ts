@@ -76,6 +76,7 @@ export const navSections: NavSection[] = [
       { label: 'Calendar', href: '/admin/calendar', icon: LayoutDashboard, permissionKey: 'nav.calendar' },
       { label: 'Jobs Board', href: '/admin/jobs', icon: Briefcase, permissionKey: 'nav.jobs' },
       { label: 'Teams & Crew', href: '/admin/teams', icon: UsersRound, permissionKey: 'nav.teams' },
+      { label: 'Timesheets', href: '/admin/timesheets', icon: ClipboardList, permissionKey: 'nav.timesheets' },
       { label: 'WorkEdge Projects', href: '/admin/workedge', icon: Camera, permissionKey: 'nav.workedge' },
       { label: 'Job Types', href: '/admin/job-types', icon: Wrench, permissionKey: 'nav.job-types' },
       { label: 'Calendar Settings', href: '/admin/calendars', icon: Settings, permissionKey: 'nav.calendars' },
