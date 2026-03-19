@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, FileText, Pencil, Plus, Trash2, Video } from "lucide-react";
+import { SynchronyDisclosureGenerator } from "@/components/admin/financing/SynchronyDisclosureGenerator";
 
 type FinancingOption = {
   id: string;
