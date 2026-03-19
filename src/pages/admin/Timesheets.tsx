@@ -24,6 +24,7 @@ const OVERTIME_THRESHOLD = 8; // hours per day
 export default function Timesheets() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [entryType, setEntryType] = useState<'manual' | 'clock'>('manual');
   const [selectedMember, setSelectedMember] = useState('');
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
