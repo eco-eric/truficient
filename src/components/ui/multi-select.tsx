@@ -73,7 +73,7 @@ export function MultiSelect({
           )}
           disabled={disabled}
         >
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1 overflow-hidden">
             {selected.length === 0 ? (
               <span>{placeholder}</span>
             ) : (
@@ -83,12 +83,12 @@ export function MultiSelect({
                   <Badge
                     key={value}
                     variant="secondary"
-                    className="mr-1 mb-1"
+                    className="mr-1 mb-1 max-w-[200px]"
                   >
-                    {option?.label}
+                    <span className="truncate">{option?.label}</span>
                     <button
                       type="button"
-                      className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 shrink-0"
                       onClick={(e) => handleRemove(value, e)}
                     >
                       <X className="h-3 w-3" />
