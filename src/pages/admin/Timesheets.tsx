@@ -68,18 +68,36 @@ export default function Timesheets() {
     },
   });
 
+  // Active stage IDs for timesheet job linking
+  const ACTIVE_STAGE_IDS = new Set([
+    // Commercial Install: Permit & Planning → City Inspection
+    '0270f3d5-6fd5-4fc3-9a44-30b737cfa68c', 'f9171c65-3454-4f59-94a6-1ff0aac5e12b',
+    '1025c1e5-ae09-41ca-9df6-00f2095e5106', 'cfb45d0c-d696-405b-9ac4-46726fcfc519',
+    'a568ba3d-f5a3-4893-8a69-1d1897aac076',
+    // Commercial Service: Scheduled → On Site
+    '01928c3a-66d5-4fc2-b86b-3291d5a2b6ca', 'dc48d353-3813-4e96-acab-038a01465a4f',
+    '6b7c3d05-582f-4ae6-a37c-448006da0646',
+    // Residential Install: Contract Signed → Customer Walkthrough
+    '8324b420-c6f4-4bb0-a9df-9d3b877a0d51', '47d7b7a7-bd43-4d1c-9033-fac04b4ca232',
+    'ecb09ca7-7ccb-4bf8-86d2-0a091bfb4dd4', 'd626c1b3-40fe-4df6-8002-df2d00aed820',
+    '38fa8291-e66e-43c8-889d-b8d805ac026e', '0e419499-bb5e-45ea-b2c0-9cc2d5f19e02',
+    '56431c10-f97b-4d59-9462-c56db7067af4', '67bfc1fa-c6af-492d-9913-469fec63b8e4',
+    // Residential Service: Scheduled → On Site
+    '287e661f-36b2-42f0-8d4b-2a9868d83dd1', 'f873a88e-15a3-4951-8f76-a1b130e436b4',
+    '355ed7e4-29d6-4aab-b5f8-d3a725ff337d',
+  ]);
+
   // Fetch active jobs for linking
   const { data: activeJobs = [] } = useQuery({
     queryKey: ['timesheet-active-jobs'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('crm_jobs')
-        .select('id, job_number, title, current_stage_id, crm_job_stages!crm_jobs_current_stage_id_fkey(stage_type)')
+        .select('id, job_number, title, current_stage_id')
         .is('deleted_at', null)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []).filter((j: any) => j.crm_job_stages?.stage_type !== 'end');
+      return (data || []).filter((j: any) => j.current_stage_id && ACTIVE_STAGE_IDS.has(j.current_stage_id));
     },
   });
 
