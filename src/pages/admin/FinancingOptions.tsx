@@ -488,6 +488,11 @@ const FinancingOptions = () => {
             </Card>
           </div>
         </div>
+
+        {/* Synchrony Disclosure Generator */}
+        <div className="pt-4">
+          <SynchronyDisclosureGenerator />
+        </div>
       </div>
     </AdminLayout>
   );
