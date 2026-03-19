@@ -94,6 +94,7 @@ import AdminRolePermissions from "./pages/admin/RolePermissions";
 import AdminCompanies from "./pages/admin/Companies";
 import AdminCompanyDetail from "./pages/admin/CompanyDetail";
 import AdminTasks from "./pages/admin/Tasks";
+import AdminTimesheets from "./pages/admin/Timesheets";
 import InvoicingMissionControl from "./pages/admin/invoicing/InvoicingMissionControl";
 import InvoicesList from "./pages/admin/invoicing/InvoicesList";
 import OttoEstimatesList from "./pages/admin/invoicing/OttoEstimatesList";
