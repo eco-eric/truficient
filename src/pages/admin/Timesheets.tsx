@@ -26,7 +26,8 @@ export default function Timesheets() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [entryType, setEntryType] = useState<'manual' | 'clock'>('manual');
   const [selectedMember, setSelectedMember] = useState('');
-  const [selectedJob, setSelectedJob] = useState('');
+  const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
+  const [entryDate, setEntryDate] = useState<Date>(new Date());
   const [manualStart, setManualStart] = useState('08:00');
   const [manualEnd, setManualEnd] = useState('17:00');
   const [breakMinutes, setBreakMinutes] = useState('30');
