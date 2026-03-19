@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, addDays, subDays } from 'date-fns';
 import { Clock, Play, Square, Plus, ChevronLeft, ChevronRight, CalendarIcon, Check, X, Trash2 } from 'lucide-react';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,7 +26,8 @@ export default function Timesheets() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [entryType, setEntryType] = useState<'manual' | 'clock'>('manual');
   const [selectedMember, setSelectedMember] = useState('');
-  const [selectedJob, setSelectedJob] = useState('');
+  const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
+  const [entryDate, setEntryDate] = useState<Date>(new Date());
   const [manualStart, setManualStart] = useState('08:00');
   const [manualEnd, setManualEnd] = useState('17:00');
   const [breakMinutes, setBreakMinutes] = useState('30');
@@ -92,21 +94,26 @@ export default function Timesheets() {
       const totalHours = Math.max(0, totalMinutes / 60);
       const overtimeHours = Math.max(0, totalHours - OVERTIME_THRESHOLD);
 
-      const { error } = await supabase.from('time_entries').insert({
-        team_member_id: selectedMember,
-        entry_date: dateStr,
-        manual_start: manualStart,
-        manual_end: manualEnd,
-        break_minutes: Number(breakMinutes || 0),
-        total_hours: Math.round(totalHours * 100) / 100,
-        overtime_hours: Math.round(overtimeHours * 100) / 100,
-        hourly_rate: member.hourly_rate,
-        overtime_rate: member.overtime_rate,
-        job_id: selectedJob && selectedJob !== 'none' ? selectedJob : null,
-        notes: notes || null,
-        entry_type: 'manual',
-      });
-      if (error) throw error;
+      const entryDateStr = format(entryDate, 'yyyy-MM-dd');
+      const jobIds = selectedJobs.length > 0 ? selectedJobs : [null];
+      
+      for (const jobId of jobIds) {
+        const { error } = await supabase.from('time_entries').insert({
+          team_member_id: selectedMember,
+          entry_date: entryDateStr,
+          manual_start: manualStart,
+          manual_end: manualEnd,
+          break_minutes: Number(breakMinutes || 0),
+          total_hours: Math.round(totalHours * 100) / 100,
+          overtime_hours: Math.round(overtimeHours * 100) / 100,
+          hourly_rate: member.hourly_rate,
+          overtime_rate: member.overtime_rate,
+          job_id: jobId,
+          notes: notes || null,
+          entry_type: 'manual',
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['time-entries', dateStr] });
@@ -189,7 +196,8 @@ export default function Timesheets() {
 
   const resetForm = () => {
     setSelectedMember('');
-    setSelectedJob('');
+    setSelectedJobs([]);
+    setEntryDate(new Date());
     setManualStart('08:00');
     setManualEnd('17:00');
     setBreakMinutes('30');
@@ -302,6 +310,25 @@ export default function Timesheets() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label>Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start text-left font-normal">
+                        <CalendarIcon className="h-4 w-4 mr-2" />
+                        {format(entryDate, 'MMM d, yyyy')}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={entryDate}
+                        onSelect={(d) => d && setEntryDate(d)}
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Start Time</Label>
@@ -317,18 +344,16 @@ export default function Timesheets() {
                   <Input type="number" value={breakMinutes} onChange={e => setBreakMinutes(e.target.value)} min="0" />
                 </div>
                 <div>
-                  <Label>Link to Job (optional)</Label>
-                  <Select value={selectedJob} onValueChange={setSelectedJob}>
-                    <SelectTrigger><SelectValue placeholder="No job linked" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {activeJobs.map((j: any) => (
-                        <SelectItem key={j.id} value={j.id}>
-                          {j.job_number} — {j.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Link to Jobs (optional)</Label>
+                  <MultiSelect
+                    options={activeJobs.map((j: any) => ({
+                      value: j.id,
+                      label: `${j.job_number} — ${j.title}`,
+                    }))}
+                    selected={selectedJobs}
+                    onChange={setSelectedJobs}
+                    placeholder="Select jobs..."
+                  />
                 </div>
                 <div>
                   <Label>Notes</Label>
