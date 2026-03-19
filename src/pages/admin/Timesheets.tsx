@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, addDays, subDays } from 'date-fns';
-import { Clock, Play, Square, Plus, ChevronLeft, ChevronRight, CalendarIcon, Check, X, Trash2 } from 'lucide-react';
+import { Clock, Play, Square, Plus, ChevronLeft, ChevronRight, CalendarIcon, Check, X, Trash2, Copy } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -192,6 +192,34 @@ export default function Timesheets() {
       queryClient.invalidateQueries({ queryKey: ['time-entries', dateStr] });
       toast.success('Entry deleted');
     },
+  });
+
+  // Duplicate entry
+  const duplicateEntry = useMutation({
+    mutationFn: async (id: string) => {
+      const entry = entries.find(e => e.id === id);
+      if (!entry) throw new Error('Entry not found');
+      const { error } = await supabase.from('time_entries').insert({
+        team_member_id: entry.team_member_id,
+        entry_date: entry.entry_date,
+        manual_start: entry.manual_start,
+        manual_end: entry.manual_end,
+        break_minutes: entry.break_minutes,
+        total_hours: entry.total_hours,
+        overtime_hours: entry.overtime_hours,
+        hourly_rate: entry.hourly_rate,
+        overtime_rate: entry.overtime_rate,
+        job_id: entry.job_id,
+        notes: entry.notes,
+        entry_type: entry.entry_type === 'clock' ? 'manual' : entry.entry_type,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['time-entries', dateStr] });
+      toast.success('Entry duplicated');
+    },
+    onError: (err: any) => toast.error(err.message),
   });
 
   const resetForm = () => {
@@ -512,6 +540,13 @@ export default function Timesheets() {
                               </Button>
                             </>
                           )}
+                          <Button
+                            variant="ghost" size="icon" className="h-7 w-7"
+                            onClick={() => duplicateEntry.mutate(entry.id)}
+                            title="Duplicate entry"
+                          >
+                            <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
                           <Button
                             variant="ghost" size="icon" className="h-7 w-7"
                             onClick={() => deleteEntry.mutate(entry.id)}
