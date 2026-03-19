@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, addDays, subDays } from 'date-fns';
-import { Clock, Play, Square, Plus, ChevronLeft, ChevronRight, CalendarIcon, Check, X, Trash2, Copy } from 'lucide-react';
+import { Clock, Play, Square, Plus, ChevronLeft, ChevronRight, CalendarIcon, Check, X, Trash2, Copy, Pencil } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -24,6 +24,7 @@ const OVERTIME_THRESHOLD = 8; // hours per day
 export default function Timesheets() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [entryType, setEntryType] = useState<'manual' | 'clock'>('manual');
   const [selectedMember, setSelectedMember] = useState('');
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
@@ -82,8 +83,8 @@ export default function Timesheets() {
     },
   });
 
-  // Add manual entry
-  const addEntry = useMutation({
+  // Add or update manual entry
+  const saveEntry = useMutation({
     mutationFn: async () => {
       const member = members.find(m => m.id === selectedMember);
       if (!member) throw new Error('Select a team member');
@@ -95,10 +96,10 @@ export default function Timesheets() {
       const overtimeHours = Math.max(0, totalHours - OVERTIME_THRESHOLD);
 
       const entryDateStr = format(entryDate, 'yyyy-MM-dd');
-      const jobIds = selectedJobs.length > 0 ? selectedJobs : [null];
-      
-      for (const jobId of jobIds) {
-        const { error } = await supabase.from('time_entries').insert({
+
+      if (editingEntryId) {
+        // Update existing entry
+        const { error } = await supabase.from('time_entries').update({
           team_member_id: selectedMember,
           entry_date: entryDateStr,
           manual_start: manualStart,
@@ -108,16 +109,36 @@ export default function Timesheets() {
           overtime_hours: Math.round(overtimeHours * 100) / 100,
           hourly_rate: member.hourly_rate,
           overtime_rate: member.overtime_rate,
-          job_id: jobId,
+          job_id: selectedJobs.length > 0 ? selectedJobs[0] : null,
           notes: notes || null,
           entry_type: 'manual',
-        });
+        }).eq('id', editingEntryId);
         if (error) throw error;
+      } else {
+        // Insert new entries
+        const jobIds = selectedJobs.length > 0 ? selectedJobs : [null];
+        for (const jobId of jobIds) {
+          const { error } = await supabase.from('time_entries').insert({
+            team_member_id: selectedMember,
+            entry_date: entryDateStr,
+            manual_start: manualStart,
+            manual_end: manualEnd,
+            break_minutes: Number(breakMinutes || 0),
+            total_hours: Math.round(totalHours * 100) / 100,
+            overtime_hours: Math.round(overtimeHours * 100) / 100,
+            hourly_rate: member.hourly_rate,
+            overtime_rate: member.overtime_rate,
+            job_id: jobId,
+            notes: notes || null,
+            entry_type: 'manual',
+          });
+          if (error) throw error;
+        }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['time-entries', dateStr] });
-      toast.success('Time entry added');
+      toast.success(editingEntryId ? 'Entry updated' : 'Time entry added');
       resetForm();
       setDialogOpen(false);
     },
@@ -194,33 +215,18 @@ export default function Timesheets() {
     },
   });
 
-  // Duplicate entry
-  const duplicateEntry = useMutation({
-    mutationFn: async (id: string) => {
-      const entry = entries.find(e => e.id === id);
-      if (!entry) throw new Error('Entry not found');
-      const { error } = await supabase.from('time_entries').insert({
-        team_member_id: entry.team_member_id,
-        entry_date: entry.entry_date,
-        manual_start: entry.manual_start,
-        manual_end: entry.manual_end,
-        break_minutes: entry.break_minutes,
-        total_hours: entry.total_hours,
-        overtime_hours: entry.overtime_hours,
-        hourly_rate: entry.hourly_rate,
-        overtime_rate: entry.overtime_rate,
-        job_id: entry.job_id,
-        notes: entry.notes,
-        entry_type: entry.entry_type === 'clock' ? 'manual' : entry.entry_type,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['time-entries', dateStr] });
-      toast.success('Entry duplicated');
-    },
-    onError: (err: any) => toast.error(err.message),
-  });
+  const prefillFromEntry = (entry: any, isEdit: boolean) => {
+    setSelectedMember(entry.team_member_id || '');
+    setEntryDate(entry.entry_date ? parseISO(entry.entry_date) : new Date());
+    setManualStart(entry.manual_start?.slice(0, 5) || '08:00');
+    setManualEnd(entry.manual_end?.slice(0, 5) || '17:00');
+    setBreakMinutes(String(entry.break_minutes ?? 30));
+    setSelectedJobs(entry.job_id ? [entry.job_id] : []);
+    setNotes(entry.notes || '');
+    setEntryType('manual');
+    setEditingEntryId(isEdit ? entry.id : null);
+    setDialogOpen(true);
+  };
 
   const resetForm = () => {
     setSelectedMember('');
@@ -231,6 +237,7 @@ export default function Timesheets() {
     setBreakMinutes('30');
     setNotes('');
     setEntryType('manual');
+    setEditingEntryId(null);
   };
 
   // Summary calculations
@@ -314,15 +321,15 @@ export default function Timesheets() {
             </PopoverContent>
           </Popover>
 
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button size="sm">
+              <Button size="sm" onClick={() => resetForm()}>
                 <Plus className="h-4 w-4 mr-1" /> Add Entry
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[480px]">
               <DialogHeader>
-                <DialogTitle>Add Time Entry</DialogTitle>
+                <DialogTitle>{editingEntryId ? 'Edit Time Entry' : 'Add Time Entry'}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
@@ -387,8 +394,8 @@ export default function Timesheets() {
                   <Label>Notes</Label>
                   <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Optional notes..." />
                 </div>
-                <Button className="w-full" onClick={() => addEntry.mutate()} disabled={!selectedMember || addEntry.isPending}>
-                  {addEntry.isPending ? 'Adding...' : 'Add Entry'}
+                <Button className="w-full" onClick={() => saveEntry.mutate()} disabled={!selectedMember || saveEntry.isPending}>
+                  {saveEntry.isPending ? 'Saving...' : editingEntryId ? 'Update Entry' : 'Add Entry'}
                 </Button>
               </div>
             </DialogContent>
@@ -542,7 +549,14 @@ export default function Timesheets() {
                           )}
                           <Button
                             variant="ghost" size="icon" className="h-7 w-7"
-                            onClick={() => duplicateEntry.mutate(entry.id)}
+                            onClick={() => prefillFromEntry(entry, true)}
+                            title="Edit entry"
+                          >
+                            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                          <Button
+                            variant="ghost" size="icon" className="h-7 w-7"
+                            onClick={() => prefillFromEntry(entry, false)}
                             title="Duplicate entry"
                           >
                             <Copy className="h-3.5 w-3.5 text-muted-foreground" />
