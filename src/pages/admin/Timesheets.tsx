@@ -94,20 +94,26 @@ export default function Timesheets() {
       const totalHours = Math.max(0, totalMinutes / 60);
       const overtimeHours = Math.max(0, totalHours - OVERTIME_THRESHOLD);
 
-      const { error } = await supabase.from('time_entries').insert({
-        team_member_id: selectedMember,
-        entry_date: dateStr,
-        manual_start: manualStart,
-        manual_end: manualEnd,
-        break_minutes: Number(breakMinutes || 0),
-        total_hours: Math.round(totalHours * 100) / 100,
-        overtime_hours: Math.round(overtimeHours * 100) / 100,
-        hourly_rate: member.hourly_rate,
-        overtime_rate: member.overtime_rate,
-        job_id: selectedJob && selectedJob !== 'none' ? selectedJob : null,
-        notes: notes || null,
-        entry_type: 'manual',
-      });
+      const entryDateStr = format(entryDate, 'yyyy-MM-dd');
+      const jobIds = selectedJobs.length > 0 ? selectedJobs : [null];
+      
+      for (const jobId of jobIds) {
+        const { error } = await supabase.from('time_entries').insert({
+          team_member_id: selectedMember,
+          entry_date: entryDateStr,
+          manual_start: manualStart,
+          manual_end: manualEnd,
+          break_minutes: Number(breakMinutes || 0),
+          total_hours: Math.round(totalHours * 100) / 100,
+          overtime_hours: Math.round(overtimeHours * 100) / 100,
+          hourly_rate: member.hourly_rate,
+          overtime_rate: member.overtime_rate,
+          job_id: jobId,
+          notes: notes || null,
+          entry_type: 'manual',
+        });
+        if (error) throw error;
+      }
       if (error) throw error;
     },
     onSuccess: () => {
