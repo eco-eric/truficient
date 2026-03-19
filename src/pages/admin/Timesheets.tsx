@@ -394,8 +394,8 @@ export default function Timesheets() {
                   <Label>Notes</Label>
                   <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Optional notes..." />
                 </div>
-                <Button className="w-full" onClick={() => addEntry.mutate()} disabled={!selectedMember || addEntry.isPending}>
-                  {addEntry.isPending ? 'Adding...' : 'Add Entry'}
+                <Button className="w-full" onClick={() => saveEntry.mutate()} disabled={!selectedMember || saveEntry.isPending}>
+                  {saveEntry.isPending ? 'Saving...' : editingEntryId ? 'Update Entry' : 'Add Entry'}
                 </Button>
               </div>
             </DialogContent>
