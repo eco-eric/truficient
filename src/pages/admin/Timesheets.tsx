@@ -218,7 +218,6 @@ export default function Timesheets() {
   return (
     <AdminLayout
       title="Timesheets"
-      description={`Daily time tracking — ${format(selectedDate, 'EEEE, MMMM d, yyyy')}`}
     >
       {/* Date Nav + Actions */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
