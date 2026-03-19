@@ -76,8 +76,12 @@ export const TrackingScripts = () => {
     initializedRef.current.meta = true;
   }, [metaPixel?.is_enabled, metaPixel?.setting_value, cookieConsent?.marketing]);
 
-  // Initialize Google Analytics (only if analytics consent given)
+  // Initialize Google Analytics (only if analytics consent given, skip admin routes)
   useEffect(() => {
+    if (location.pathname.startsWith('/admin')) {
+      return;
+    }
+
     if (!googleAnalytics?.is_enabled || !googleAnalytics.setting_value || initializedRef.current.ga) {
       return;
     }
@@ -103,7 +107,7 @@ export const TrackingScripts = () => {
     window.gtag('js', new Date());
     window.gtag('config', measurementId);
     initializedRef.current.ga = true;
-  }, [googleAnalytics?.is_enabled, googleAnalytics?.setting_value, cookieConsent?.analytics]);
+  }, [location.pathname, googleAnalytics?.is_enabled, googleAnalytics?.setting_value, cookieConsent?.analytics]);
 
   // Initialize/Remove GHL Chat Widget based on settings (hide on admin pages)
   useEffect(() => {
