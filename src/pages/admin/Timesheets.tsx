@@ -102,7 +102,7 @@ export default function Timesheets() {
         overtime_hours: Math.round(overtimeHours * 100) / 100,
         hourly_rate: member.hourly_rate,
         overtime_rate: member.overtime_rate,
-        job_id: selectedJob || null,
+        job_id: selectedJob && selectedJob !== 'none' ? selectedJob : null,
         notes: notes || null,
         entry_type: 'manual',
       });
