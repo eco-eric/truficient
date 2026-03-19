@@ -549,7 +549,14 @@ export default function Timesheets() {
                           )}
                           <Button
                             variant="ghost" size="icon" className="h-7 w-7"
-                            onClick={() => duplicateEntry.mutate(entry.id)}
+                            onClick={() => prefillFromEntry(entry, true)}
+                            title="Edit entry"
+                          >
+                            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                          <Button
+                            variant="ghost" size="icon" className="h-7 w-7"
+                            onClick={() => prefillFromEntry(entry, false)}
                             title="Duplicate entry"
                           >
                             <Copy className="h-3.5 w-3.5 text-muted-foreground" />
