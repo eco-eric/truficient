@@ -310,6 +310,25 @@ export default function Timesheets() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label>Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start text-left font-normal">
+                        <CalendarIcon className="h-4 w-4 mr-2" />
+                        {format(entryDate, 'MMM d, yyyy')}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={entryDate}
+                        onSelect={(d) => d && setEntryDate(d)}
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Start Time</Label>
@@ -325,18 +344,16 @@ export default function Timesheets() {
                   <Input type="number" value={breakMinutes} onChange={e => setBreakMinutes(e.target.value)} min="0" />
                 </div>
                 <div>
-                  <Label>Link to Job (optional)</Label>
-                  <Select value={selectedJob} onValueChange={setSelectedJob}>
-                    <SelectTrigger><SelectValue placeholder="No job linked" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {activeJobs.map((j: any) => (
-                        <SelectItem key={j.id} value={j.id}>
-                          {j.job_number} — {j.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Link to Jobs (optional)</Label>
+                  <MultiSelect
+                    options={activeJobs.map((j: any) => ({
+                      value: j.id,
+                      label: `${j.job_number} — ${j.title}`,
+                    }))}
+                    selected={selectedJobs}
+                    onChange={setSelectedJobs}
+                    placeholder="Select jobs..."
+                  />
                 </div>
                 <div>
                   <Label>Notes</Label>
