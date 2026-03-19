@@ -321,15 +321,15 @@ export default function Timesheets() {
             </PopoverContent>
           </Popover>
 
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button size="sm">
+              <Button size="sm" onClick={() => resetForm()}>
                 <Plus className="h-4 w-4 mr-1" /> Add Entry
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[480px]">
               <DialogHeader>
-                <DialogTitle>Add Time Entry</DialogTitle>
+                <DialogTitle>{editingEntryId ? 'Edit Time Entry' : 'Add Time Entry'}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
