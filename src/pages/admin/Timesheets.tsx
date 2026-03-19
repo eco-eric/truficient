@@ -114,7 +114,6 @@ export default function Timesheets() {
         });
         if (error) throw error;
       }
-      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['time-entries', dateStr] });
