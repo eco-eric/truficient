@@ -321,7 +321,7 @@ export default function Timesheets() {
                   <Select value={selectedJob} onValueChange={setSelectedJob}>
                     <SelectTrigger><SelectValue placeholder="No job linked" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {activeJobs.map((j: any) => (
                         <SelectItem key={j.id} value={j.id}>
                           {j.job_number} — {j.title}
