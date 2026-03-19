@@ -477,7 +477,7 @@ export default function Timesheets() {
                                 variant="ghost" size="icon" className="h-7 w-7"
                                 onClick={() => updateStatus.mutate({ id: entry.id, status: 'approved' })}
                               >
-                                <Check className="h-3.5 w-3.5 text-green-600" />
+                                <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
                               </Button>
                               <Button
                                 variant="ghost" size="icon" className="h-7 w-7"
