@@ -153,8 +153,12 @@ export const TrackingScripts = () => {
     }
   }, [location.pathname, ghlChatWidget?.is_enabled, ghlChatWidget?.setting_value, cookieConsent?.marketing]);
 
-  // Track page views on route change
+  // Track page views on route change (skip admin routes)
   useEffect(() => {
+    if (location.pathname.startsWith('/admin')) {
+      return;
+    }
+
     if (metaPixel?.is_enabled && metaPixel.setting_value && initializedRef.current.meta && cookieConsent?.marketing) {
       window.fbq?.('track', 'PageView');
     }
