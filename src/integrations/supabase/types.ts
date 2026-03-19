@@ -4239,6 +4239,87 @@ export type Database = {
         }
         Relationships: []
       }
+      time_entries: {
+        Row: {
+          approved_by: string | null
+          break_minutes: number | null
+          clock_in: string | null
+          clock_out: string | null
+          created_at: string
+          entry_date: string
+          entry_type: string
+          hourly_rate: number | null
+          id: string
+          job_id: string | null
+          manual_end: string | null
+          manual_start: string | null
+          notes: string | null
+          overtime_hours: number | null
+          overtime_rate: number | null
+          status: string
+          team_member_id: string
+          total_hours: number | null
+          updated_at: string
+        }
+        Insert: {
+          approved_by?: string | null
+          break_minutes?: number | null
+          clock_in?: string | null
+          clock_out?: string | null
+          created_at?: string
+          entry_date?: string
+          entry_type?: string
+          hourly_rate?: number | null
+          id?: string
+          job_id?: string | null
+          manual_end?: string | null
+          manual_start?: string | null
+          notes?: string | null
+          overtime_hours?: number | null
+          overtime_rate?: number | null
+          status?: string
+          team_member_id: string
+          total_hours?: number | null
+          updated_at?: string
+        }
+        Update: {
+          approved_by?: string | null
+          break_minutes?: number | null
+          clock_in?: string | null
+          clock_out?: string | null
+          created_at?: string
+          entry_date?: string
+          entry_type?: string
+          hourly_rate?: number | null
+          id?: string
+          job_id?: string | null
+          manual_end?: string | null
+          manual_start?: string | null
+          notes?: string | null
+          overtime_hours?: number | null
+          overtime_rate?: number | null
+          status?: string
+          team_member_id?: string
+          total_hours?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "crm_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "crm_team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tracking_settings: {
         Row: {
           created_at: string
