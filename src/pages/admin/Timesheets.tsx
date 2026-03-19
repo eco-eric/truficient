@@ -102,7 +102,7 @@ export default function Timesheets() {
         overtime_hours: Math.round(overtimeHours * 100) / 100,
         hourly_rate: member.hourly_rate,
         overtime_rate: member.overtime_rate,
-        job_id: selectedJob || null,
+        job_id: selectedJob && selectedJob !== 'none' ? selectedJob : null,
         notes: notes || null,
         entry_type: 'manual',
       });
@@ -321,7 +321,7 @@ export default function Timesheets() {
                   <Select value={selectedJob} onValueChange={setSelectedJob}>
                     <SelectTrigger><SelectValue placeholder="No job linked" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {activeJobs.map((j: any) => (
                         <SelectItem key={j.id} value={j.id}>
                           {j.job_number} — {j.title}
