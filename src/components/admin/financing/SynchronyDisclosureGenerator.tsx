@@ -6,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { CreditCard, Download, AlertTriangle } from "lucide-react";
+import { CreditCard, Download, Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FinancingPlan {
@@ -26,10 +28,35 @@ interface FinancingPlan {
   notes: string | null;
 }
 
+interface Customer {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  company_name: string | null;
+  billing_address: string | null;
+  billing_city: string | null;
+  billing_state: string | null;
+  billing_zip: string | null;
+}
+
+interface Location {
+  id: string;
+  address_line1: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  location_name: string | null;
+}
+
 const fmtCur = (v: number) =>
   "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const fmtFactor = (n: number) => `${(n * 100).toFixed(3)}%`;
+
+const getCustomerLabel = (c: Customer) => {
+  const name = [c.first_name, c.last_name].filter(Boolean).join(" ");
+  return c.company_name ? (name ? `${name} (${c.company_name})` : c.company_name) : name || "Unnamed";
+};
 
 // Full Synchrony disclosure text per plan code
 const PLAN_DISCLOSURES: Record<string, { intro: string; disc: string }> = {
@@ -59,7 +86,6 @@ const PLAN_DISCLOSURES: Record<string, { intro: string; disc: string }> = {
   },
 };
 
-// Fallback disclosure for plans not in the hardcoded map
 const DEFAULT_DISCLOSURE = {
   intro: "On qualifying purchases with your Synchrony Bank credit card. A $29 account activation fee may apply.",
   disc: "*Subject to credit approval. Minimum monthly payments required. Regular account terms apply to non-promotional purchases. For new accounts: Purchase APR is 26.99%; Minimum Interest Charge is $2. One-time Account Activation Fee of $29 charged at time of first purchase posts to account. Existing cardholders should see their credit card agreement for their applicable terms. Subject to credit approval.",
@@ -67,18 +93,42 @@ const DEFAULT_DISCLOSURE = {
 
 export const SynchronyDisclosureGenerator = () => {
   const [amount, setAmount] = useState("");
-  const [customerName, setCustomerName] = useState("");
-  const [billStreet, setBillStreet] = useState("");
-  const [billCity, setBillCity] = useState("");
-  const [billState, setBillState] = useState("");
-  const [billZip, setBillZip] = useState("");
-  const [sameAddr, setSameAddr] = useState(true);
-  const [jobStreet, setJobStreet] = useState("");
-  const [jobCity, setJobCity] = useState("");
-  const [jobState, setJobState] = useState("");
-  const [jobZip, setJobZip] = useState("");
+  const [customerId, setCustomerId] = useState("");
+  const [customerOpen, setCustomerOpen] = useState(false);
+  const [locationId, setLocationId] = useState("");
   const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set());
 
+  // Fetch customers
+  const { data: customers = [] } = useQuery({
+    queryKey: ["crm_customers_disclosure"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("crm_customers")
+        .select("id, first_name, last_name, company_name, billing_address, billing_city, billing_state, billing_zip")
+        .is("deleted_at", null)
+        .order("last_name");
+      if (error) throw error;
+      return data as Customer[];
+    },
+  });
+
+  // Fetch locations for selected customer
+  const { data: locations = [] } = useQuery({
+    queryKey: ["crm_locations_disclosure", customerId],
+    queryFn: async () => {
+      if (!customerId) return [];
+      const { data, error } = await supabase
+        .from("crm_locations")
+        .select("id, address_line1, city, state, zip_code, location_name")
+        .eq("customer_id", customerId)
+        .is("deleted_at", null);
+      if (error) throw error;
+      return data as Location[];
+    },
+    enabled: !!customerId,
+  });
+
+  // Fetch financing plans
   const { data: plans = [] } = useQuery({
     queryKey: ["financing_options_disclosure"],
     queryFn: async () => {
@@ -91,6 +141,14 @@ export const SynchronyDisclosureGenerator = () => {
       return data as FinancingPlan[];
     },
   });
+
+  const sortedCustomers = useMemo(
+    () => [...customers].sort((a, b) => getCustomerLabel(a).localeCompare(getCustomerLabel(b))),
+    [customers]
+  );
+
+  const selectedCustomer = customers.find((c) => c.id === customerId);
+  const selectedLocation = locations.find((l) => l.id === locationId);
 
   const amountNum = useMemo(() => {
     const v = parseFloat(amount);
@@ -110,10 +168,16 @@ export const SynchronyDisclosureGenerator = () => {
   };
 
   const generatePDF = () => {
-    if (!amountNum || !customerName.trim() || !billStreet.trim() || !billCity.trim() || !billZip.trim() || selectedCodes.size === 0) {
-      toast.error("Please fill in all required fields and select at least one financing plan.");
+    if (!amountNum || !selectedCustomer || selectedCodes.size === 0) {
+      toast.error("Please fill in all required fields (amount, customer) and select at least one financing plan.");
       return;
     }
+
+    const customerName = getCustomerLabel(selectedCustomer);
+    const billingLine = [selectedCustomer.billing_address, selectedCustomer.billing_city, selectedCustomer.billing_state, selectedCustomer.billing_zip].filter(Boolean).join(", ");
+    const jobLine = selectedLocation
+      ? `${selectedLocation.address_line1}, ${selectedLocation.city}, ${selectedLocation.state} ${selectedLocation.zip_code}`
+      : "";
 
     const selPlans = plans.filter((p) => selectedCodes.has(p.tran_code || ""));
     const doc = new jsPDF({ unit: "pt", format: "letter" });
@@ -134,16 +198,13 @@ export const SynchronyDisclosureGenerator = () => {
     const drawHeader = () => {
       setFill(NAVY); doc.rect(0, 0, W, 70, "F");
       setFill(GOLD); doc.rect(0, 70, W, 3, "F");
-
-      // Logo dots
-      const sx = ML, sy = 18, gX = 7, gY = 7, dotR = 2.8;
+      const sx = ML, gX = 7, gY = 7, dotR = 2.8;
       for (let r = 0; r < 3; r++) {
         for (let c = 0; c < 4; c++) {
           setFill(GOLD);
-          doc.circle(sx + c * gX, sy + r * gY, dotR, "F");
+          doc.circle(sx + c * gX, 18 + r * gY, dotR, "F");
         }
       }
-
       doc.setFont("helvetica", "bold"); doc.setFontSize(17); setColor(WHITE);
       doc.text("truficient", ML + 37, 32);
       doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
@@ -151,7 +212,6 @@ export const SynchronyDisclosureGenerator = () => {
       doc.text("ENERGY SOLUTIONS", ML + 37, 46);
       doc.setTextColor(180, 148, 60);
       doc.text("TACLB77247C", ML + 37, 58);
-
       doc.setFont("helvetica", "bold"); doc.setFontSize(13); setColor(WHITE);
       doc.text("SYNCHRONY", W - MR - 55, 28, { align: "right" });
       doc.setFont("helvetica", "normal"); doc.setFontSize(8); setColor(GOLD);
@@ -199,35 +259,35 @@ export const SynchronyDisclosureGenerator = () => {
     doc.text("High-Efficiency Heat Pump & HVAC System", ML, y); y += 22;
 
     // Customer info box
-    const finalJobStreet = sameAddr ? billStreet : (jobStreet || billStreet);
-    const finalJobCity = sameAddr ? billCity : (jobCity || billCity);
-    const finalJobState = sameAddr ? billState : (jobState || billState);
-    const finalJobZip = sameAddr ? billZip : (jobZip || billZip);
-
-    const boxH = sameAddr ? 66 : 88;
+    const hasJob = !!jobLine;
+    const boxH = billingLine && hasJob ? 88 : billingLine || hasJob ? 66 : 44;
     setFill(OFFWHT); setDraw(LGRAY); doc.setLineWidth(0.5);
     doc.roundedRect(ML, y, CW, boxH, 4, 4, "FD");
     setFill(GOLD); doc.rect(ML + 14, y + 10, 2, boxH - 20, "F");
 
+    let infoY = y + 20;
     doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); setColor(GRAY);
-    doc.text("CUSTOMER", ML + 24, y + 20);
+    doc.text("CUSTOMER", ML + 24, infoY);
     doc.setFont("helvetica", "normal"); doc.setFontSize(11); setColor([20, 20, 20]);
-    doc.text(customerName, ML + 90, y + 20);
+    doc.text(customerName, ML + 90, infoY);
+    infoY += 18;
 
-    doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); setColor(GRAY);
-    doc.text("BILLING", ML + 24, y + 38);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(10.5); setColor([20, 20, 20]);
-    doc.text(`${billStreet}, ${billCity}, ${billState.toUpperCase()} ${billZip}`, ML + 62, y + 38);
-
-    if (!sameAddr) {
+    if (billingLine) {
       doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); setColor(GRAY);
-      doc.text("JOB SITE", ML + 24, y + 56);
+      doc.text("BILLING", ML + 24, infoY);
       doc.setFont("helvetica", "normal"); doc.setFontSize(10.5); setColor([20, 20, 20]);
-      doc.text(`${finalJobStreet}, ${finalJobCity}, ${finalJobState.toUpperCase()} ${finalJobZip}`, ML + 67, y + 56);
+      doc.text(billingLine, ML + 62, infoY);
+      infoY += 18;
+    }
+
+    if (hasJob) {
+      doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); setColor(GRAY);
+      doc.text("JOB SITE", ML + 24, infoY);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(10.5); setColor([20, 20, 20]);
+      doc.text(jobLine, ML + 67, infoY);
     }
     y += boxH + 14;
 
-    // Disclaimer
     const discNote = "All monthly payments shown are an estimate only. Actual monthly fixed or equal payments will be rounded to the next highest whole dollar.";
     y = textBlock(discNote, ML, y, CW, 9, "italic", GRAY, 12) + 10;
 
@@ -240,7 +300,6 @@ export const SynchronyDisclosureGenerator = () => {
     doc.text(fmtCur(amountNum), ML + 26, y + 44);
     y += 68;
 
-    // Plans section
     doc.setFont("helvetica", "bold"); doc.setFontSize(13); setColor(NAVY);
     doc.text("Plans Available with this Purchase", ML, y); y += 6;
     setDraw(GOLD); doc.setLineWidth(2);
@@ -347,79 +406,94 @@ export const SynchronyDisclosureGenerator = () => {
         <CardHeader className="pb-3">
           <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground">Transaction Information</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="grid gap-2">
-            <Label>Total Amount Financed *</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">$</span>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-                className="pl-7 text-lg font-bold"
-              />
-            </div>
-          </div>
-          <div className="grid gap-2">
-            <Label>Customer Name *</Label>
-            <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Jane Smith" />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Location Info */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground">Location Information</CardTitle>
-        </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-2">
-            <Label>Billing Address — Street *</Label>
-            <Input value={billStreet} onChange={(e) => setBillStreet(e.target.value)} placeholder="123 Main Street" />
-          </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Amount */}
             <div className="grid gap-2">
-              <Label>City *</Label>
-              <Input value={billCity} onChange={(e) => setBillCity(e.target.value)} placeholder="Dallas" />
+              <Label>Total Amount Financed *</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">$</span>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="pl-7 text-lg font-bold"
+                />
+              </div>
             </div>
+
+            {/* Customer Selector */}
             <div className="grid gap-2">
-              <Label>State</Label>
-              <Input value={billState} onChange={(e) => setBillState(e.target.value)} placeholder="TX" maxLength={2} className="uppercase" />
-            </div>
-            <div className="grid gap-2">
-              <Label>ZIP Code *</Label>
-              <Input value={billZip} onChange={(e) => setBillZip(e.target.value)} placeholder="75001" maxLength={5} />
+              <Label>Customer *</Label>
+              <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={customerOpen}
+                    className="justify-between font-normal"
+                  >
+                    {selectedCustomer ? getCustomerLabel(selectedCustomer) : "Select customer..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[350px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search customers..." />
+                    <CommandList>
+                      <CommandEmpty>No customer found.</CommandEmpty>
+                      <CommandGroup>
+                        {sortedCustomers.map((c) => (
+                          <CommandItem
+                            key={c.id}
+                            value={getCustomerLabel(c)}
+                            onSelect={() => {
+                              setCustomerId(c.id);
+                              setLocationId("");
+                              setCustomerOpen(false);
+                            }}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", customerId === c.id ? "opacity-100" : "opacity-0")} />
+                            {getCustomerLabel(c)}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
-          <label className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 cursor-pointer">
-            <Checkbox checked={sameAddr} onCheckedChange={(c) => setSameAddr(!!c)} />
-            <span className="text-sm font-medium">Job location is the same as billing address</span>
-          </label>
-
-          {!sameAddr && (
-            <div className="space-y-4 pl-4 border-l-2 border-primary/20">
-              <div className="grid gap-2">
-                <Label>Job Location — Street</Label>
-                <Input value={jobStreet} onChange={(e) => setJobStreet(e.target.value)} placeholder="456 Oak Avenue" />
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="grid gap-2">
-                  <Label>City</Label>
-                  <Input value={jobCity} onChange={(e) => setJobCity(e.target.value)} placeholder="Plano" />
-                </div>
-                <div className="grid gap-2">
-                  <Label>State</Label>
-                  <Input value={jobState} onChange={(e) => setJobState(e.target.value)} placeholder="TX" maxLength={2} className="uppercase" />
-                </div>
-                <div className="grid gap-2">
-                  <Label>ZIP Code</Label>
-                  <Input value={jobZip} onChange={(e) => setJobZip(e.target.value)} placeholder="75024" maxLength={5} />
-                </div>
-              </div>
+          {/* Location Selector */}
+          {customerId && (
+            <div className="grid gap-2">
+              <Label>Job Location</Label>
+              {locations.length > 0 ? (
+                <Select value={locationId} onValueChange={setLocationId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a location..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.map((loc) => (
+                      <SelectItem key={loc.id} value={loc.id}>
+                        {loc.location_name ? `${loc.location_name} — ` : ""}
+                        {loc.address_line1}, {loc.city}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">No locations found for this customer.</p>
+              )}
+              {selectedLocation && (
+                <p className="text-xs text-muted-foreground">
+                  {selectedLocation.address_line1}, {selectedLocation.city}, {selectedLocation.state} {selectedLocation.zip_code}
+                </p>
+              )}
             </div>
           )}
         </CardContent>
@@ -488,7 +562,9 @@ export const SynchronyDisclosureGenerator = () => {
                   <div className="border-t pt-3 flex justify-between items-baseline">
                     <span className="text-xs text-muted-foreground">Est. Monthly</span>
                     {monthly ? (
-                      <span className="text-lg font-bold text-primary">{fmtCur(monthly)}<span className="text-xs font-normal text-muted-foreground">/mo</span></span>
+                      <span className="text-lg font-bold text-primary">
+                        {fmtCur(monthly)}<span className="text-xs font-normal text-muted-foreground">/mo</span>
+                      </span>
                     ) : (
                       <span className="text-xs text-muted-foreground">Enter amount above</span>
                     )}
