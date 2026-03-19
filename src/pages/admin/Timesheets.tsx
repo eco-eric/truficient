@@ -659,7 +659,7 @@ export default function Timesheets() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-medium flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              Time Entries — {format(selectedDate, 'MMM d')}
+              Time Entries — {format(selectedDate, 'EEE, MMM d')}
             </CardTitle>
           </CardHeader>
           <CardContent>
