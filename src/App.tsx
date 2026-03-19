@@ -212,6 +212,7 @@ const router = createBrowserRouter([
           { path: "/admin/jobs/:id", element: <ProtectedRoute><AdminJobDetail /></ProtectedRoute> },
           { path: "/admin/job-types", element: <ProtectedRoute><AdminJobTypesConfig /></ProtectedRoute> },
           { path: "/admin/teams", element: <ProtectedRoute><AdminTeams /></ProtectedRoute> },
+          { path: "/admin/timesheets", element: <ProtectedRoute><AdminTimesheets /></ProtectedRoute> },
           { path: "/admin/workedge", element: <ProtectedRoute><AdminWorkEdgeProjects /></ProtectedRoute> },
           { path: "/admin/calendar", element: <ProtectedRoute><AdminCalendar /></ProtectedRoute> },
           { path: "/admin/calendars", element: <ProtectedRoute><AdminCalendarSettings /></ProtectedRoute> },
