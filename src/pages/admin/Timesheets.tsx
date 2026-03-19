@@ -196,7 +196,8 @@ export default function Timesheets() {
 
   const resetForm = () => {
     setSelectedMember('');
-    setSelectedJob('');
+    setSelectedJobs([]);
+    setEntryDate(new Date());
     setManualStart('08:00');
     setManualEnd('17:00');
     setBreakMinutes('30');
