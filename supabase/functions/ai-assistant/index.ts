@@ -1495,9 +1495,60 @@ async function executeGetPipelineStages(supabase: any) {
   return { stages: data || [] };
 }
 
+async function findExistingCustomer(supabase: any, firstName: string, lastName: string, email?: string, phone?: string) {
+  // Check by email first (strongest match)
+  if (email) {
+    const { data } = await supabase
+      .from("crm_customers")
+      .select("id, first_name, last_name, email, phone")
+      .ilike("email", email)
+      .is("deleted_at", null)
+      .limit(1)
+      .single();
+    if (data) return data;
+  }
+  // Check by name + phone
+  if (phone && firstName) {
+    const cleanPhone = phone.replace(/\D/g, "").slice(-10);
+    const { data } = await supabase
+      .from("crm_customers")
+      .select("id, first_name, last_name, email, phone")
+      .ilike("first_name", firstName)
+      .ilike("last_name", lastName || "")
+      .is("deleted_at", null);
+    if (data?.length) {
+      const match = data.find((c: any) => c.phone?.replace(/\D/g, "").slice(-10) === cleanPhone);
+      if (match) return match;
+    }
+  }
+  // Check by exact name match (weaker)
+  if (firstName && lastName) {
+    const { data } = await supabase
+      .from("crm_customers")
+      .select("id, first_name, last_name, email, phone")
+      .ilike("first_name", firstName)
+      .ilike("last_name", lastName)
+      .is("deleted_at", null)
+      .limit(1)
+      .single();
+    if (data) return data;
+  }
+  return null;
+}
+
 async function executeCreateCustomer(supabase: any, userId: string, input: any) {
   const customerName = `${input.first_name} ${input.last_name}`;
   const hasAddress = input.address_line1 && input.city && input.zip_code;
+
+  // Check for existing customer BEFORE confirmation
+  const existing = await findExistingCustomer(supabase, input.first_name, input.last_name, input.email, input.phone);
+  if (existing && !input.force_create) {
+    return {
+      duplicate_found: true,
+      existing_customer: existing,
+      message: `⚠️ A customer named **${existing.first_name} ${existing.last_name}** already exists (ID: ${existing.id})${existing.email ? ` — ${existing.email}` : ""}${existing.phone ? ` — ${existing.phone}` : ""}. Use the existing customer or say "force create" to create a new record anyway.`,
+    };
+  }
 
   if (!input.confirmed) {
     return {
