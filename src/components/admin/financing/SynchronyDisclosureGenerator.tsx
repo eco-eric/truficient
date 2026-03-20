@@ -164,8 +164,41 @@ export const SynchronyDisclosureGenerator = () => {
     [customers]
   );
 
+  const queryClient = useQueryClient();
   const selectedCustomer = customers.find((c) => c.id === customerId);
   const selectedLocation = locations.find((l) => l.id === locationId);
+
+  const handleAddLocation = async () => {
+    if (!newLoc.address_line1.trim() || !newLoc.city.trim() || !newLoc.zip_code.trim()) {
+      toast.error("Please fill in address, city, and ZIP code.");
+      return;
+    }
+    setAddingLocation(true);
+    try {
+      const { data, error } = await supabase
+        .from("crm_locations")
+        .insert({
+          customer_id: customerId,
+          address_line1: newLoc.address_line1.trim(),
+          city: newLoc.city.trim(),
+          state: newLoc.state.trim() || "TX",
+          zip_code: newLoc.zip_code.trim(),
+          location_name: newLoc.location_name.trim() || null,
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["crm_locations_disclosure", customerId] });
+      setLocationId(data.id);
+      setShowAddLocation(false);
+      setNewLoc({ address_line1: "", city: "", state: "TX", zip_code: "", location_name: "" });
+      toast.success("Location added successfully!");
+    } catch (err: any) {
+      toast.error("Failed to add location: " + (err.message || "Unknown error"));
+    } finally {
+      setAddingLocation(false);
+    }
+  };
 
   const amountNum = useMemo(() => {
     const v = parseFloat(amount);
