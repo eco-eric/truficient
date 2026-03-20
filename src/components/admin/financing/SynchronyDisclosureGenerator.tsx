@@ -270,8 +270,8 @@ export const SynchronyDisclosureGenerator = () => {
         doc.text("energy solutions", ML + 10, 46);
       }
 
-      doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); setColor(WHITE);
-      doc.text("TACLB77247C", ML, 65);
+
+
 
       doc.setFont("helvetica", "bold"); doc.setFontSize(13); setColor(WHITE);
       doc.text("SYNCHRONY", W - MR, 28, { align: "right" });
