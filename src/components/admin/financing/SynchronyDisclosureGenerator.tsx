@@ -399,7 +399,7 @@ export const SynchronyDisclosureGenerator = () => {
     selPlans.forEach((plan) => {
       doc.addPage();
       drawHeader();
-      y = 88;
+      y = 100;
       const code = plan.tran_code || "";
       const disclosure = PLAN_DISCLOSURES[code] || DEFAULT_DISCLOSURE;
 
