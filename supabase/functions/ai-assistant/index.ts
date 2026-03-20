@@ -249,6 +249,7 @@ const tools = [
           customer_type: { type: "string", enum: ["residential", "commercial"], description: "Customer type (default residential)" },
           tags: { type: "array", items: { type: "string" }, description: "Optional tags" },
           confirmed: { type: "boolean", description: "Set true ONLY after user confirms. First call: always false." },
+          force_create: { type: "boolean", description: "Set true to bypass duplicate detection and create a new record anyway." },
         },
         required: ["first_name", "last_name", "confirmed"],
       },
@@ -1495,9 +1496,60 @@ async function executeGetPipelineStages(supabase: any) {
   return { stages: data || [] };
 }
 
+async function findExistingCustomer(supabase: any, firstName: string, lastName: string, email?: string, phone?: string) {
+  // Check by email first (strongest match)
+  if (email) {
+    const { data } = await supabase
+      .from("crm_customers")
+      .select("id, first_name, last_name, email, phone")
+      .ilike("email", email)
+      .is("deleted_at", null)
+      .limit(1)
+      .single();
+    if (data) return data;
+  }
+  // Check by name + phone
+  if (phone && firstName) {
+    const cleanPhone = phone.replace(/\D/g, "").slice(-10);
+    const { data } = await supabase
+      .from("crm_customers")
+      .select("id, first_name, last_name, email, phone")
+      .ilike("first_name", firstName)
+      .ilike("last_name", lastName || "")
+      .is("deleted_at", null);
+    if (data?.length) {
+      const match = data.find((c: any) => c.phone?.replace(/\D/g, "").slice(-10) === cleanPhone);
+      if (match) return match;
+    }
+  }
+  // Check by exact name match (weaker)
+  if (firstName && lastName) {
+    const { data } = await supabase
+      .from("crm_customers")
+      .select("id, first_name, last_name, email, phone")
+      .ilike("first_name", firstName)
+      .ilike("last_name", lastName)
+      .is("deleted_at", null)
+      .limit(1)
+      .single();
+    if (data) return data;
+  }
+  return null;
+}
+
 async function executeCreateCustomer(supabase: any, userId: string, input: any) {
   const customerName = `${input.first_name} ${input.last_name}`;
   const hasAddress = input.address_line1 && input.city && input.zip_code;
+
+  // Check for existing customer BEFORE confirmation
+  const existing = await findExistingCustomer(supabase, input.first_name, input.last_name, input.email, input.phone);
+  if (existing && !input.force_create) {
+    return {
+      duplicate_found: true,
+      existing_customer: existing,
+      message: `⚠️ A customer named **${existing.first_name} ${existing.last_name}** already exists (ID: ${existing.id})${existing.email ? ` — ${existing.email}` : ""}${existing.phone ? ` — ${existing.phone}` : ""}. Use the existing customer or say "force create" to create a new record anyway.`,
+    };
+  }
 
   if (!input.confirmed) {
     return {
@@ -1632,24 +1684,34 @@ async function executeIntakeLead(supabase: any, userId: string, input: any) {
   // === EXECUTE CHAIN ===
   const results: Record<string, string> = {};
 
-  // Step 1: Create Customer
-  const { data: customer, error: custError } = await supabase
-    .from("crm_customers")
-    .insert({
-      first_name: input.first_name,
-      last_name: input.last_name,
-      email: input.email || null,
-      phone: input.phone || null,
-      customer_type: input.customer_type || "residential",
-      customer_status: "lead",
-      lead_source: input.lead_source || null,
-      tags: input.tags || null,
-    })
-    .select("id")
-    .single();
+  // Step 1: Check for existing customer first
+  const existing = await findExistingCustomer(supabase, input.first_name, input.last_name, input.email, input.phone);
+  let customer: any;
 
-  if (custError) return { error: `Failed to create customer: ${custError.message}` };
-  results.customer = `✓ Customer created: ${customer.id}`;
+  if (existing && !input.force_create) {
+    // Use the existing customer instead of creating a duplicate
+    customer = existing;
+    results.customer = `✓ Using existing customer: ${existing.first_name} ${existing.last_name} (${existing.id})`;
+  } else {
+    const { data: newCustomer, error: custError } = await supabase
+      .from("crm_customers")
+      .insert({
+        first_name: input.first_name,
+        last_name: input.last_name,
+        email: input.email || null,
+        phone: input.phone || null,
+        customer_type: input.customer_type || "residential",
+        customer_status: "lead",
+        lead_source: input.lead_source || null,
+        tags: input.tags || null,
+      })
+      .select("id")
+      .single();
+
+    if (custError) return { error: `Failed to create customer: ${custError.message}` };
+    customer = newCustomer;
+    results.customer = `✓ Customer created: ${customer.id}`;
+  }
 
   // Step 2: Create Location (if address provided) + auto property lookup
   if (hasAddress) {
