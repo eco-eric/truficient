@@ -531,7 +531,79 @@ export const SynchronyDisclosureGenerator = () => {
           {/* Location Selector */}
           {customerId && (
             <div className="grid gap-2">
-              <Label>Job Location</Label>
+              <div className="flex items-center justify-between">
+                <Label>Job Location</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => setShowAddLocation(!showAddLocation)}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {showAddLocation ? "Cancel" : "Add Location"}
+                </Button>
+              </div>
+
+              {showAddLocation && (
+                <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+                  <div className="grid gap-2">
+                    <Label className="text-xs">Location Name (optional)</Label>
+                    <Input
+                      placeholder="e.g. Main Residence"
+                      value={newLoc.location_name}
+                      onChange={(e) => setNewLoc((p) => ({ ...p, location_name: e.target.value }))}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-xs">Street Address *</Label>
+                    <Input
+                      placeholder="123 Main St"
+                      value={newLoc.address_line1}
+                      onChange={(e) => setNewLoc((p) => ({ ...p, address_line1: e.target.value }))}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="grid gap-1">
+                      <Label className="text-xs">City *</Label>
+                      <Input
+                        placeholder="Dallas"
+                        value={newLoc.city}
+                        onChange={(e) => setNewLoc((p) => ({ ...p, city: e.target.value }))}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div className="grid gap-1">
+                      <Label className="text-xs">State</Label>
+                      <Input
+                        value={newLoc.state}
+                        onChange={(e) => setNewLoc((p) => ({ ...p, state: e.target.value }))}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div className="grid gap-1">
+                      <Label className="text-xs">ZIP *</Label>
+                      <Input
+                        placeholder="75201"
+                        value={newLoc.zip_code}
+                        onChange={(e) => setNewLoc((p) => ({ ...p, zip_code: e.target.value }))}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleAddLocation}
+                    disabled={addingLocation}
+                    className="w-full"
+                  >
+                    {addingLocation ? "Saving..." : "Save Location"}
+                  </Button>
+                </div>
+              )}
+
               {locations.length > 0 ? (
                 <Select value={locationId} onValueChange={setLocationId}>
                   <SelectTrigger>
@@ -547,7 +619,7 @@ export const SynchronyDisclosureGenerator = () => {
                   </SelectContent>
                 </Select>
               ) : (
-                <p className="text-sm text-muted-foreground italic">No locations found for this customer.</p>
+                !showAddLocation && <p className="text-sm text-muted-foreground italic">No locations found — click "Add Location" to create one.</p>
               )}
               {selectedLocation && (
                 <p className="text-xs text-muted-foreground">
