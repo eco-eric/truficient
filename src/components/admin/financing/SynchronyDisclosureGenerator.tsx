@@ -308,7 +308,7 @@ export const SynchronyDisclosureGenerator = () => {
 
     // === PAGE 1: COVER ===
     drawHeader();
-    let y = 88;
+    let y = 100;
 
     doc.setFont("helvetica", "bold"); doc.setFontSize(21); setColor(NAVY);
     doc.text("Synchrony Financing Information", ML, y); y += 8;
