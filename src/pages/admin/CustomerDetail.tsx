@@ -53,6 +53,7 @@ const CustomerDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [editOpen, setEditOpen] = useState(false);
+  const [jobDialogOpen, setJobDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const syncCustomerMutation = useMutation({
