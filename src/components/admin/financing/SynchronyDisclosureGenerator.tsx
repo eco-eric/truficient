@@ -11,8 +11,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { CreditCard, Download, Check, ChevronsUpDown } from "lucide-react";
+import { CreditCard, Download, Check, ChevronsUpDown, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface FinancingPlan {
   id: string;
@@ -97,6 +98,9 @@ export const SynchronyDisclosureGenerator = () => {
   const [customerOpen, setCustomerOpen] = useState(false);
   const [locationId, setLocationId] = useState("");
   const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set());
+  const [showAddLocation, setShowAddLocation] = useState(false);
+  const [newLoc, setNewLoc] = useState({ address_line1: "", city: "", state: "TX", zip_code: "", location_name: "" });
+  const [addingLocation, setAddingLocation] = useState(false);
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
 
   // Pre-load logo as base64 for PDF embedding
@@ -160,8 +164,41 @@ export const SynchronyDisclosureGenerator = () => {
     [customers]
   );
 
+  const queryClient = useQueryClient();
   const selectedCustomer = customers.find((c) => c.id === customerId);
   const selectedLocation = locations.find((l) => l.id === locationId);
+
+  const handleAddLocation = async () => {
+    if (!newLoc.address_line1.trim() || !newLoc.city.trim() || !newLoc.zip_code.trim()) {
+      toast.error("Please fill in address, city, and ZIP code.");
+      return;
+    }
+    setAddingLocation(true);
+    try {
+      const { data, error } = await supabase
+        .from("crm_locations")
+        .insert({
+          customer_id: customerId,
+          address_line1: newLoc.address_line1.trim(),
+          city: newLoc.city.trim(),
+          state: newLoc.state.trim() || "TX",
+          zip_code: newLoc.zip_code.trim(),
+          location_name: newLoc.location_name.trim() || null,
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["crm_locations_disclosure", customerId] });
+      setLocationId(data.id);
+      setShowAddLocation(false);
+      setNewLoc({ address_line1: "", city: "", state: "TX", zip_code: "", location_name: "" });
+      toast.success("Location added successfully!");
+    } catch (err: any) {
+      toast.error("Failed to add location: " + (err.message || "Unknown error"));
+    } finally {
+      setAddingLocation(false);
+    }
+  };
 
   const amountNum = useMemo(() => {
     const v = parseFloat(amount);
@@ -494,7 +531,79 @@ export const SynchronyDisclosureGenerator = () => {
           {/* Location Selector */}
           {customerId && (
             <div className="grid gap-2">
-              <Label>Job Location</Label>
+              <div className="flex items-center justify-between">
+                <Label>Job Location</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => setShowAddLocation(!showAddLocation)}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {showAddLocation ? "Cancel" : "Add Location"}
+                </Button>
+              </div>
+
+              {showAddLocation && (
+                <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+                  <div className="grid gap-2">
+                    <Label className="text-xs">Location Name (optional)</Label>
+                    <Input
+                      placeholder="e.g. Main Residence"
+                      value={newLoc.location_name}
+                      onChange={(e) => setNewLoc((p) => ({ ...p, location_name: e.target.value }))}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-xs">Street Address *</Label>
+                    <Input
+                      placeholder="123 Main St"
+                      value={newLoc.address_line1}
+                      onChange={(e) => setNewLoc((p) => ({ ...p, address_line1: e.target.value }))}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="grid gap-1">
+                      <Label className="text-xs">City *</Label>
+                      <Input
+                        placeholder="Dallas"
+                        value={newLoc.city}
+                        onChange={(e) => setNewLoc((p) => ({ ...p, city: e.target.value }))}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div className="grid gap-1">
+                      <Label className="text-xs">State</Label>
+                      <Input
+                        value={newLoc.state}
+                        onChange={(e) => setNewLoc((p) => ({ ...p, state: e.target.value }))}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div className="grid gap-1">
+                      <Label className="text-xs">ZIP *</Label>
+                      <Input
+                        placeholder="75201"
+                        value={newLoc.zip_code}
+                        onChange={(e) => setNewLoc((p) => ({ ...p, zip_code: e.target.value }))}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleAddLocation}
+                    disabled={addingLocation}
+                    className="w-full"
+                  >
+                    {addingLocation ? "Saving..." : "Save Location"}
+                  </Button>
+                </div>
+              )}
+
               {locations.length > 0 ? (
                 <Select value={locationId} onValueChange={setLocationId}>
                   <SelectTrigger>
@@ -510,7 +619,7 @@ export const SynchronyDisclosureGenerator = () => {
                   </SelectContent>
                 </Select>
               ) : (
-                <p className="text-sm text-muted-foreground italic">No locations found for this customer.</p>
+                !showAddLocation && <p className="text-sm text-muted-foreground italic">No locations found — click "Add Location" to create one.</p>
               )}
               {selectedLocation && (
                 <p className="text-xs text-muted-foreground">
