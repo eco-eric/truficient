@@ -404,7 +404,9 @@ export const SynchronyDisclosureGenerator = () => {
       const disclosure = PLAN_DISCLOSURES[code] || DEFAULT_DISCLOSURE;
 
       doc.setFont("helvetica", "bold"); doc.setFontSize(20); setColor(NAVY);
-      doc.text(`Plan ${code}  —  ${plan.promotional_offer}`, ML, y); y += 8;
+      const titleLines = doc.splitTextToSize(`Plan ${code}  —  ${plan.promotional_offer}`, CW);
+      doc.text(titleLines, ML, y);
+      y += titleLines.length * 24 + 4;
       setDraw(GOLD); doc.setLineWidth(2.5);
       doc.line(ML, y, W - MR, y); y += 20;
 
