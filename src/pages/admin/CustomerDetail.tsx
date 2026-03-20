@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog } from '@/components/ui/dialog';
 import { 
   ArrowLeft, 
   Phone, 
@@ -21,7 +22,8 @@ import {
   Upload,
   CheckCircle2,
   Loader2,
-  Building2
+  Building2,
+  Plus
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -33,6 +35,8 @@ import { ActivityTimeline } from '@/components/admin/customers/ActivityTimeline'
 import { CustomerNotes } from '@/components/admin/customers/CustomerNotes';
 import { LinkedSubmissions } from '@/components/admin/customers/LinkedSubmissions';
 import { AIAssistantWidget } from '@/components/admin/ai/AIAssistantWidget';
+import { CustomerEquipmentTab } from '@/components/admin/customers/CustomerEquipmentTab';
+import JobFormDialog from '@/components/admin/jobs/JobFormDialog';
 import type { Database } from '@/integrations/supabase/types';
 
 type Customer = Database['public']['Tables']['crm_customers']['Row'];
