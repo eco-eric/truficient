@@ -444,9 +444,14 @@ const CustomerDetail = () => {
               </TabsContent>
 
               <TabsContent value="jobs" className="mt-4">
-                {jobs && jobs.length > 0 ? (
-                  <div className="space-y-3">
-                    {jobs.map((job) => {
+                <div className="space-y-3">
+                  <div className="flex justify-end">
+                    <Button size="sm" onClick={() => setJobDialogOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" /> Create Job
+                    </Button>
+                  </div>
+                  {jobs && jobs.length > 0 ? (
+                    jobs.map((job) => {
                       const stage = (job as any).crm_job_stages;
                       return (
                         <Link key={job.id} to={`/admin/jobs/${job.id}`}>
@@ -475,35 +480,37 @@ const CustomerDetail = () => {
                           </Card>
                         </Link>
                       );
-                    })}
-                  </div>
-                ) : (
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex flex-col items-center py-8">
-                        <Calendar className="h-8 w-8 text-muted-foreground mb-2" />
-                        <p className="text-muted-foreground">No jobs found</p>
-                        <p className="text-xs text-muted-foreground mt-1">Jobs will appear here once created</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                    })
+                  ) : (
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="flex flex-col items-center py-8">
+                          <Calendar className="h-8 w-8 text-muted-foreground mb-2" />
+                          <p className="text-muted-foreground">No jobs found</p>
+                          <p className="text-xs text-muted-foreground mt-1">Create a job to get started</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
               </TabsContent>
 
               <TabsContent value="estimates" className="mt-4">
-                <LinkedSubmissions customerId={id!} />
+                <div className="space-y-3">
+                  <div className="flex justify-end">
+                    <Button size="sm" onClick={() => navigate(`/admin/estimates/builder?customer_id=${id}`)}>
+                      <Plus className="h-4 w-4 mr-2" /> Create Estimate
+                    </Button>
+                  </div>
+                  <LinkedSubmissions customerId={id!} />
+                </div>
               </TabsContent>
 
               <TabsContent value="equipment" className="mt-4">
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col items-center py-8">
-                      <Package className="h-8 w-8 text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground">No equipment records</p>
-                      <p className="text-xs text-muted-foreground mt-1">Equipment from scans will appear here</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <CustomerEquipmentTab 
+                  customerId={id!} 
+                  locations={(locations || []).map(l => ({ id: l.id, address_line1: l.address_line1, city: l.city }))}
+                />
               </TabsContent>
             </Tabs>
           </div>
@@ -515,6 +522,20 @@ const CustomerDetail = () => {
         onOpenChange={setEditOpen}
         customer={customer}
       />
+
+      <Dialog open={jobDialogOpen} onOpenChange={setJobDialogOpen}>
+        {jobDialogOpen && (
+          <JobFormDialog
+            editingJob={{ customer: { id: customer.id } }}
+            jobTypes={jobTypes as any}
+            allStages={allStages as any}
+            onClose={() => {
+              setJobDialogOpen(false);
+              queryClient.invalidateQueries({ queryKey: ['crm_jobs', id] });
+            }}
+          />
+        )}
+      </Dialog>
     </AdminLayout>
   );
 };
