@@ -1683,24 +1683,34 @@ async function executeIntakeLead(supabase: any, userId: string, input: any) {
   // === EXECUTE CHAIN ===
   const results: Record<string, string> = {};
 
-  // Step 1: Create Customer
-  const { data: customer, error: custError } = await supabase
-    .from("crm_customers")
-    .insert({
-      first_name: input.first_name,
-      last_name: input.last_name,
-      email: input.email || null,
-      phone: input.phone || null,
-      customer_type: input.customer_type || "residential",
-      customer_status: "lead",
-      lead_source: input.lead_source || null,
-      tags: input.tags || null,
-    })
-    .select("id")
-    .single();
+  // Step 1: Check for existing customer first
+  const existing = await findExistingCustomer(supabase, input.first_name, input.last_name, input.email, input.phone);
+  let customer: any;
 
-  if (custError) return { error: `Failed to create customer: ${custError.message}` };
-  results.customer = `✓ Customer created: ${customer.id}`;
+  if (existing && !input.force_create) {
+    // Use the existing customer instead of creating a duplicate
+    customer = existing;
+    results.customer = `✓ Using existing customer: ${existing.first_name} ${existing.last_name} (${existing.id})`;
+  } else {
+    const { data: newCustomer, error: custError } = await supabase
+      .from("crm_customers")
+      .insert({
+        first_name: input.first_name,
+        last_name: input.last_name,
+        email: input.email || null,
+        phone: input.phone || null,
+        customer_type: input.customer_type || "residential",
+        customer_status: "lead",
+        lead_source: input.lead_source || null,
+        tags: input.tags || null,
+      })
+      .select("id")
+      .single();
+
+    if (custError) return { error: `Failed to create customer: ${custError.message}` };
+    customer = newCustomer;
+    results.customer = `✓ Customer created: ${customer.id}`;
+  }
 
   // Step 2: Create Location (if address provided) + auto property lookup
   if (hasAddress) {

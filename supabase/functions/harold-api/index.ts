@@ -668,6 +668,23 @@ async function executeTool(serviceClient: any, toolName: string, input: any): Pr
     }
 
     case "create_customer": {
+      // Check for existing customer to prevent duplicates
+      let existingCustomer = null;
+      if (input.email) {
+        const { data: byEmail } = await serviceClient.from("crm_customers")
+          .select("*").ilike("email", input.email).is("deleted_at", null).limit(1).single();
+        if (byEmail) existingCustomer = byEmail;
+      }
+      if (!existingCustomer && input.first_name && input.last_name) {
+        const { data: byName } = await serviceClient.from("crm_customers")
+          .select("*").ilike("first_name", input.first_name).ilike("last_name", input.last_name || "")
+          .is("deleted_at", null).limit(1).single();
+        if (byName) existingCustomer = byName;
+      }
+      if (existingCustomer && !input.force_create) {
+        return { created: false, duplicate: true, customer: existingCustomer, message: `Existing customer found: ${existingCustomer.first_name} ${existingCustomer.last_name}` };
+      }
+
       const { data, error } = await serviceClient.from("crm_customers").insert({
         first_name: input.first_name,
         last_name: input.last_name || null,
