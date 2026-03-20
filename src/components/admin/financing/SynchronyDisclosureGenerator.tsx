@@ -97,6 +97,19 @@ export const SynchronyDisclosureGenerator = () => {
   const [customerOpen, setCustomerOpen] = useState(false);
   const [locationId, setLocationId] = useState("");
   const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set());
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
+
+  // Pre-load logo as base64 for PDF embedding
+  useEffect(() => {
+    fetch("/images/truficient-logo.png")
+      .then((res) => res.blob())
+      .then((blob) => {
+        const reader = new FileReader();
+        reader.onloadend = () => setLogoDataUrl(reader.result as string);
+        reader.readAsDataURL(blob);
+      })
+      .catch(() => setLogoDataUrl(null));
+  }, []);
 
   // Fetch customers
   const { data: customers = [] } = useQuery({
