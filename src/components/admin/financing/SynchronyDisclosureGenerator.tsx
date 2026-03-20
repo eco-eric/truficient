@@ -183,8 +183,11 @@ export const SynchronyDisclosureGenerator = () => {
     const doc = new jsPDF({ unit: "pt", format: "letter" });
 
     const W = 612, H = 792, ML = 50, MR = 50, CW = W - ML - MR;
+    // TruFicient brand colors
     const NAVY = [11, 31, 58] as const;
-    const GOLD = [201, 168, 76] as const;
+    const BRAND_GREEN = [165, 169, 131] as const;  // Pantone 5783 C
+    const BRAND_GOLD = [255, 181, 71] as const;    // Golden Amber #FFB547
+    const GOLD = BRAND_GOLD;
     const WHITE = [255, 255, 255] as const;
     const DGRAY = [60, 60, 60] as const;
     const GRAY = [110, 120, 140] as const;
