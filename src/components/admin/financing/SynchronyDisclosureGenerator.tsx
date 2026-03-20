@@ -98,6 +98,9 @@ export const SynchronyDisclosureGenerator = () => {
   const [customerOpen, setCustomerOpen] = useState(false);
   const [locationId, setLocationId] = useState("");
   const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set());
+  const [showAddLocation, setShowAddLocation] = useState(false);
+  const [newLoc, setNewLoc] = useState({ address_line1: "", city: "", state: "TX", zip_code: "", location_name: "" });
+  const [addingLocation, setAddingLocation] = useState(false);
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
 
   // Pre-load logo as base64 for PDF embedding
