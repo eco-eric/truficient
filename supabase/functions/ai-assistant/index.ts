@@ -249,6 +249,7 @@ const tools = [
           customer_type: { type: "string", enum: ["residential", "commercial"], description: "Customer type (default residential)" },
           tags: { type: "array", items: { type: "string" }, description: "Optional tags" },
           confirmed: { type: "boolean", description: "Set true ONLY after user confirms. First call: always false." },
+          force_create: { type: "boolean", description: "Set true to bypass duplicate detection and create a new record anyway." },
         },
         required: ["first_name", "last_name", "confirmed"],
       },
