@@ -132,6 +132,38 @@ const CustomerDetail = () => {
     enabled: !!id,
   });
 
+  const { data: jobTypes = [] } = useQuery({
+    queryKey: ['crm_job_types'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('crm_job_types').select('*').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: allStages = [] } = useQuery({
+    queryKey: ['crm_job_stages_all'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('crm_job_stages').select('*').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: equipmentCount = 0 } = useQuery({
+    queryKey: ['crm_location_equipment_count', id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('crm_location_equipment')
+        .select('*', { count: 'exact', head: true })
+        .eq('customer_id', id!)
+        .is('deleted_at', null);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!id,
+  });
+
   const { data: estimatesCount } = useQuery({
     queryKey: ['estimates_count', id],
     queryFn: async () => {
