@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { jsPDF } from "jspdf";
@@ -97,6 +97,19 @@ export const SynchronyDisclosureGenerator = () => {
   const [customerOpen, setCustomerOpen] = useState(false);
   const [locationId, setLocationId] = useState("");
   const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set());
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
+
+  // Pre-load logo as base64 for PDF embedding
+  useEffect(() => {
+    fetch("/images/truficient-logo.png")
+      .then((res) => res.blob())
+      .then((blob) => {
+        const reader = new FileReader();
+        reader.onloadend = () => setLogoDataUrl(reader.result as string);
+        reader.readAsDataURL(blob);
+      })
+      .catch(() => setLogoDataUrl(null));
+  }, []);
 
   // Fetch customers
   const { data: customers = [] } = useQuery({
@@ -183,8 +196,11 @@ export const SynchronyDisclosureGenerator = () => {
     const doc = new jsPDF({ unit: "pt", format: "letter" });
 
     const W = 612, H = 792, ML = 50, MR = 50, CW = W - ML - MR;
+    // TruFicient brand colors
     const NAVY = [11, 31, 58] as const;
-    const GOLD = [201, 168, 76] as const;
+    const BRAND_GREEN = [165, 169, 131] as const;  // Pantone 5783 C
+    const BRAND_GOLD = [255, 181, 71] as const;    // Golden Amber #FFB547
+    const GOLD = BRAND_GOLD;
     const WHITE = [255, 255, 255] as const;
     const DGRAY = [60, 60, 60] as const;
     const GRAY = [110, 120, 140] as const;
@@ -196,29 +212,36 @@ export const SynchronyDisclosureGenerator = () => {
     const setDraw = (c: readonly number[]) => doc.setDrawColor(c[0], c[1], c[2]);
 
     const drawHeader = () => {
-      setFill(NAVY); doc.rect(0, 0, W, 70, "F");
-      setFill(GOLD); doc.rect(0, 70, W, 3, "F");
-      const sx = ML, gX = 7, gY = 7, dotR = 2.8;
-      for (let r = 0; r < 3; r++) {
-        for (let c = 0; c < 4; c++) {
-          setFill(GOLD);
-          doc.circle(sx + c * gX, 18 + r * gY, dotR, "F");
+      setFill(BRAND_GREEN); doc.rect(0, 0, W, 70, "F");
+      setFill(BRAND_GOLD); doc.rect(0, 70, W, 3, "F");
+
+      // Add logo if loaded
+      if (logoDataUrl) {
+        try {
+          doc.addImage(logoDataUrl, "PNG", ML, 10, 160, 50);
+        } catch {
+          // Fallback text if logo fails
+          doc.setFont("helvetica", "bold"); doc.setFontSize(17); setColor(WHITE);
+          doc.text("truficient", ML + 10, 32);
+          doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); setColor(WHITE);
+          doc.text("energy solutions", ML + 10, 46);
         }
+      } else {
+        doc.setFont("helvetica", "bold"); doc.setFontSize(17); setColor(WHITE);
+        doc.text("truficient", ML + 10, 32);
+        doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); setColor(WHITE);
+        doc.text("energy solutions", ML + 10, 46);
       }
-      doc.setFont("helvetica", "bold"); doc.setFontSize(17); setColor(WHITE);
-      doc.text("truficient", ML + 37, 32);
-      doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
-      doc.setTextColor(201, 168, 76);
-      doc.text("ENERGY SOLUTIONS", ML + 37, 46);
-      doc.setTextColor(180, 148, 60);
-      doc.text("TACLB77247C", ML + 37, 58);
+
+      doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); setColor(WHITE);
+      doc.text("TACLB77247C", ML, 65);
+
       doc.setFont("helvetica", "bold"); doc.setFontSize(13); setColor(WHITE);
-      doc.text("SYNCHRONY", W - MR - 55, 28, { align: "right" });
-      doc.setFont("helvetica", "normal"); doc.setFontSize(8); setColor(GOLD);
-      doc.text("FINANCING DISCLOSURE", W - MR - 55, 40, { align: "right" });
-      doc.setFont("helvetica", "italic"); doc.setFontSize(8);
-      doc.setTextColor(180, 148, 60);
-      doc.text("Subject to credit approval", W - MR - 55, 52, { align: "right" });
+      doc.text("SYNCHRONY", W - MR, 28, { align: "right" });
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8); setColor(BRAND_GOLD);
+      doc.text("FINANCING DISCLOSURE", W - MR, 40, { align: "right" });
+      doc.setFont("helvetica", "italic"); doc.setFontSize(8); setColor(WHITE);
+      doc.text("Subject to credit approval", W - MR, 52, { align: "right" });
     };
 
     const drawFooter = () => {
