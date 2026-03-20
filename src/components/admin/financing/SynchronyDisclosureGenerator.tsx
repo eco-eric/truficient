@@ -249,7 +249,7 @@ export const SynchronyDisclosureGenerator = () => {
     const setDraw = (c: readonly number[]) => doc.setDrawColor(c[0], c[1], c[2]);
 
     const drawHeader = () => {
-      setFill(BRAND_GREEN); doc.rect(0, 0, W, 70, "F");
+      setFill(NAVY); doc.rect(0, 0, W, 70, "F");
       setFill(BRAND_GOLD); doc.rect(0, 70, W, 3, "F");
 
       // Add logo if loaded
@@ -308,7 +308,7 @@ export const SynchronyDisclosureGenerator = () => {
 
     // === PAGE 1: COVER ===
     drawHeader();
-    let y = 88;
+    let y = 100;
 
     doc.setFont("helvetica", "bold"); doc.setFontSize(21); setColor(NAVY);
     doc.text("Synchrony Financing Information", ML, y); y += 8;
@@ -399,7 +399,7 @@ export const SynchronyDisclosureGenerator = () => {
     selPlans.forEach((plan) => {
       doc.addPage();
       drawHeader();
-      y = 88;
+      y = 100;
       const code = plan.tran_code || "";
       const disclosure = PLAN_DISCLOSURES[code] || DEFAULT_DISCLOSURE;
 
