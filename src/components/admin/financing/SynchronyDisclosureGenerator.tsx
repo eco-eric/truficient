@@ -249,7 +249,7 @@ export const SynchronyDisclosureGenerator = () => {
     const setDraw = (c: readonly number[]) => doc.setDrawColor(c[0], c[1], c[2]);
 
     const drawHeader = () => {
-      setFill(BRAND_GREEN); doc.rect(0, 0, W, 70, "F");
+      setFill(NAVY); doc.rect(0, 0, W, 70, "F");
       setFill(BRAND_GOLD); doc.rect(0, 70, W, 3, "F");
 
       // Add logo if loaded
