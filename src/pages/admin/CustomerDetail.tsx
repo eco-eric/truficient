@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog } from '@/components/ui/dialog';
 import { 
   ArrowLeft, 
   Phone, 
@@ -21,7 +22,8 @@ import {
   Upload,
   CheckCircle2,
   Loader2,
-  Building2
+  Building2,
+  Plus
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -33,6 +35,8 @@ import { ActivityTimeline } from '@/components/admin/customers/ActivityTimeline'
 import { CustomerNotes } from '@/components/admin/customers/CustomerNotes';
 import { LinkedSubmissions } from '@/components/admin/customers/LinkedSubmissions';
 import { AIAssistantWidget } from '@/components/admin/ai/AIAssistantWidget';
+import { CustomerEquipmentTab } from '@/components/admin/customers/CustomerEquipmentTab';
+import JobFormDialog from '@/components/admin/jobs/JobFormDialog';
 import type { Database } from '@/integrations/supabase/types';
 
 type Customer = Database['public']['Tables']['crm_customers']['Row'];
@@ -49,6 +53,7 @@ const CustomerDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [editOpen, setEditOpen] = useState(false);
+  const [jobDialogOpen, setJobDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const syncCustomerMutation = useMutation({
@@ -123,6 +128,38 @@ const CustomerDetail = () => {
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
+    },
+    enabled: !!id,
+  });
+
+  const { data: jobTypes = [] } = useQuery({
+    queryKey: ['crm_job_types'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('crm_job_types').select('*').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: allStages = [] } = useQuery({
+    queryKey: ['crm_job_stages_all'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('crm_job_stages').select('*').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: equipmentCount = 0 } = useQuery({
+    queryKey: ['crm_location_equipment_count', id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('crm_location_equipment')
+        .select('*', { count: 'exact', head: true })
+        .eq('customer_id', id!)
+        .is('deleted_at', null);
+      if (error) throw error;
+      return count || 0;
     },
     enabled: !!id,
   });
@@ -332,7 +369,7 @@ const CustomerDetail = () => {
                 <TabsTrigger value="activity">Activity ({interactions?.length || 0})</TabsTrigger>
                 <TabsTrigger value="jobs">Jobs ({jobs?.length || 0})</TabsTrigger>
                 <TabsTrigger value="estimates">Estimates ({(estimatesCount || 0) + (submissionLinksCount || 0)})</TabsTrigger>
-                <TabsTrigger value="equipment">Equipment (0)</TabsTrigger>
+                <TabsTrigger value="equipment">Equipment ({equipmentCount})</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="mt-4">
@@ -407,9 +444,14 @@ const CustomerDetail = () => {
               </TabsContent>
 
               <TabsContent value="jobs" className="mt-4">
-                {jobs && jobs.length > 0 ? (
-                  <div className="space-y-3">
-                    {jobs.map((job) => {
+                <div className="space-y-3">
+                  <div className="flex justify-end">
+                    <Button size="sm" onClick={() => setJobDialogOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" /> Create Job
+                    </Button>
+                  </div>
+                  {jobs && jobs.length > 0 ? (
+                    jobs.map((job) => {
                       const stage = (job as any).crm_job_stages;
                       return (
                         <Link key={job.id} to={`/admin/jobs/${job.id}`}>
@@ -438,35 +480,37 @@ const CustomerDetail = () => {
                           </Card>
                         </Link>
                       );
-                    })}
-                  </div>
-                ) : (
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex flex-col items-center py-8">
-                        <Calendar className="h-8 w-8 text-muted-foreground mb-2" />
-                        <p className="text-muted-foreground">No jobs found</p>
-                        <p className="text-xs text-muted-foreground mt-1">Jobs will appear here once created</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                    })
+                  ) : (
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="flex flex-col items-center py-8">
+                          <Calendar className="h-8 w-8 text-muted-foreground mb-2" />
+                          <p className="text-muted-foreground">No jobs found</p>
+                          <p className="text-xs text-muted-foreground mt-1">Create a job to get started</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
               </TabsContent>
 
               <TabsContent value="estimates" className="mt-4">
-                <LinkedSubmissions customerId={id!} />
+                <div className="space-y-3">
+                  <div className="flex justify-end">
+                    <Button size="sm" onClick={() => navigate(`/admin/estimates/builder?customer_id=${id}`)}>
+                      <Plus className="h-4 w-4 mr-2" /> Create Estimate
+                    </Button>
+                  </div>
+                  <LinkedSubmissions customerId={id!} />
+                </div>
               </TabsContent>
 
               <TabsContent value="equipment" className="mt-4">
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col items-center py-8">
-                      <Package className="h-8 w-8 text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground">No equipment records</p>
-                      <p className="text-xs text-muted-foreground mt-1">Equipment from scans will appear here</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <CustomerEquipmentTab 
+                  customerId={id!} 
+                  locations={(locations || []).map(l => ({ id: l.id, address_line1: l.address_line1, city: l.city }))}
+                />
               </TabsContent>
             </Tabs>
           </div>
@@ -478,6 +522,20 @@ const CustomerDetail = () => {
         onOpenChange={setEditOpen}
         customer={customer}
       />
+
+      <Dialog open={jobDialogOpen} onOpenChange={setJobDialogOpen}>
+        {jobDialogOpen && (
+          <JobFormDialog
+            editingJob={{ customer: { id: customer.id } }}
+            jobTypes={jobTypes as any}
+            allStages={allStages as any}
+            onClose={() => {
+              setJobDialogOpen(false);
+              queryClient.invalidateQueries({ queryKey: ['crm_jobs', id] });
+            }}
+          />
+        )}
+      </Dialog>
     </AdminLayout>
   );
 };

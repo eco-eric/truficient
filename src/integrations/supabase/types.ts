@@ -1609,6 +1609,117 @@ export type Database = {
           },
         ]
       }
+      crm_location_equipment: {
+        Row: {
+          brand: string | null
+          btu_capacity: number | null
+          condition_rating: number | null
+          created_at: string
+          customer_id: string
+          deleted_at: string | null
+          equipment_type: string
+          estimated_age: number | null
+          hspf_rating: number | null
+          id: string
+          install_date: string | null
+          is_active: boolean
+          last_service_date: string | null
+          location_description: string | null
+          location_id: string | null
+          manufacture_date: string | null
+          model_number: string | null
+          next_service_due: string | null
+          notes: string | null
+          refrigerant_type: string | null
+          replacement_notes: string | null
+          replacement_priority: string | null
+          replacement_recommended: boolean
+          seer_rating: number | null
+          serial_number: string | null
+          tonnage: number | null
+          updated_at: string
+          warranty_expiration: string | null
+          zone_served: string | null
+        }
+        Insert: {
+          brand?: string | null
+          btu_capacity?: number | null
+          condition_rating?: number | null
+          created_at?: string
+          customer_id: string
+          deleted_at?: string | null
+          equipment_type?: string
+          estimated_age?: number | null
+          hspf_rating?: number | null
+          id?: string
+          install_date?: string | null
+          is_active?: boolean
+          last_service_date?: string | null
+          location_description?: string | null
+          location_id?: string | null
+          manufacture_date?: string | null
+          model_number?: string | null
+          next_service_due?: string | null
+          notes?: string | null
+          refrigerant_type?: string | null
+          replacement_notes?: string | null
+          replacement_priority?: string | null
+          replacement_recommended?: boolean
+          seer_rating?: number | null
+          serial_number?: string | null
+          tonnage?: number | null
+          updated_at?: string
+          warranty_expiration?: string | null
+          zone_served?: string | null
+        }
+        Update: {
+          brand?: string | null
+          btu_capacity?: number | null
+          condition_rating?: number | null
+          created_at?: string
+          customer_id?: string
+          deleted_at?: string | null
+          equipment_type?: string
+          estimated_age?: number | null
+          hspf_rating?: number | null
+          id?: string
+          install_date?: string | null
+          is_active?: boolean
+          last_service_date?: string | null
+          location_description?: string | null
+          location_id?: string | null
+          manufacture_date?: string | null
+          model_number?: string | null
+          next_service_due?: string | null
+          notes?: string | null
+          refrigerant_type?: string | null
+          replacement_notes?: string | null
+          replacement_priority?: string | null
+          replacement_recommended?: boolean
+          seer_rating?: number | null
+          serial_number?: string | null
+          tonnage?: number | null
+          updated_at?: string
+          warranty_expiration?: string | null
+          zone_served?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_location_equipment_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_location_equipment_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "crm_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_locations: {
         Row: {
           access_notes: string | null
