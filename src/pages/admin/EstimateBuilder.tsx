@@ -1545,6 +1545,11 @@ const EstimateBuilder = () => {
                 customerId={selectedCustomerId}
               />
             )}
+
+            {/* File Attachments */}
+            {!isNew && id && (
+              <FileAttachments entityType="estimate" entityId={id} title="Attachments" compact />
+            )}
           </div>
         </div>
       </div>

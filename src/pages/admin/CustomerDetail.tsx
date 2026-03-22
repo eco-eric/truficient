@@ -514,6 +514,10 @@ const CustomerDetail = () => {
                   locations={(locations || []).map(l => ({ id: l.id, address_line1: l.address_line1, city: l.city }))}
                 />
               </TabsContent>
+
+              <TabsContent value="files" className="mt-4">
+                <FileAttachments entityType="customer" entityId={id!} title="Customer Files" />
+              </TabsContent>
             </Tabs>
           </div>
         </div>
