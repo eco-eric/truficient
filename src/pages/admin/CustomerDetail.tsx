@@ -36,6 +36,7 @@ import { CustomerNotes } from '@/components/admin/customers/CustomerNotes';
 import { LinkedSubmissions } from '@/components/admin/customers/LinkedSubmissions';
 import { AIAssistantWidget } from '@/components/admin/ai/AIAssistantWidget';
 import { CustomerEquipmentTab } from '@/components/admin/customers/CustomerEquipmentTab';
+import { FileAttachments } from '@/components/admin/FileAttachments';
 import JobFormDialog from '@/components/admin/jobs/JobFormDialog';
 import type { Database } from '@/integrations/supabase/types';
 
