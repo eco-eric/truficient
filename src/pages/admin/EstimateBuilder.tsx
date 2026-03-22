@@ -57,6 +57,7 @@ import {
 import { cn } from '@/lib/utils';
 import { generateEstimatePDF } from '@/utils/generateEstimatePDF';
 import { LinkedRecordsCard } from '@/components/admin/shared/LinkedRecordsCard';
+import { FileAttachments } from '@/components/admin/FileAttachments';
 import { VersionHistoryDialog } from '@/components/admin/estimates/VersionHistoryDialog';
 import { 
   EstimateSectionComponent, 
@@ -1544,6 +1545,11 @@ const EstimateBuilder = () => {
                 entityId={id}
                 customerId={selectedCustomerId}
               />
+            )}
+
+            {/* File Attachments */}
+            {!isNew && id && (
+              <FileAttachments entityType="estimate" entityId={id} title="Attachments" compact />
             )}
           </div>
         </div>
