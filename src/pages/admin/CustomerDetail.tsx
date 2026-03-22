@@ -371,6 +371,7 @@ const CustomerDetail = () => {
                 <TabsTrigger value="jobs">Jobs ({jobs?.length || 0})</TabsTrigger>
                 <TabsTrigger value="estimates">Estimates ({(estimatesCount || 0) + (submissionLinksCount || 0)})</TabsTrigger>
                 <TabsTrigger value="equipment">Equipment ({equipmentCount})</TabsTrigger>
+                <TabsTrigger value="files">Files</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="mt-4">
