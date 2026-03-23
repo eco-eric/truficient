@@ -58,6 +58,7 @@ import { cn } from '@/lib/utils';
 import { generateEstimatePDF } from '@/utils/generateEstimatePDF';
 import { LinkedRecordsCard } from '@/components/admin/shared/LinkedRecordsCard';
 import { FileAttachments } from '@/components/admin/FileAttachments';
+import { WorkEdgeProjectSelector } from '@/components/admin/WorkEdgeProjectSelector';
 import { VersionHistoryDialog } from '@/components/admin/estimates/VersionHistoryDialog';
 import { 
   EstimateSectionComponent, 
@@ -1338,32 +1339,11 @@ const EstimateBuilder = () => {
                 )}
 
                 {/* WorkEdge Project Link */}
-                <div className="space-y-2">
-                  <Label htmlFor="workedge_project_id" className="flex items-center gap-1.5">
-                    <Wrench className="h-3.5 w-3.5" />
-                    WorkEdge Project ID
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="workedge_project_id"
-                      value={workedgeProjectId}
-                      onChange={(e) => setWorkedgeProjectId(e.target.value)}
-                      placeholder="Enter WorkEdge project ID..."
-                      className="flex-1"
-                    />
-                    {workedgeProjectId && (
-                      <Button variant="outline" size="sm" asChild>
-                        <a
-                          href={`https://workedge.pro/projects/${workedgeProjectId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Open
-                        </a>
-                      </Button>
-                    )}
-                  </div>
-                </div>
+                <WorkEdgeProjectSelector
+                  value={workedgeProjectId}
+                  onChange={setWorkedgeProjectId}
+                  customerId={selectedCustomerId}
+                />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
