@@ -58,6 +58,7 @@ import { cn } from '@/lib/utils';
 import { generateEstimatePDF } from '@/utils/generateEstimatePDF';
 import { LinkedRecordsCard } from '@/components/admin/shared/LinkedRecordsCard';
 import { FileAttachments } from '@/components/admin/FileAttachments';
+import { WorkEdgeProjectSelector } from '@/components/admin/WorkEdgeProjectSelector';
 import { VersionHistoryDialog } from '@/components/admin/estimates/VersionHistoryDialog';
 import { 
   EstimateSectionComponent, 
