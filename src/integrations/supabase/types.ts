@@ -979,6 +979,48 @@ export type Database = {
           },
         ]
       }
+      crm_customer_relationships: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          notes: string | null
+          related_customer_id: string
+          relationship_type: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          notes?: string | null
+          related_customer_id: string
+          relationship_type?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          notes?: string | null
+          related_customer_id?: string
+          relationship_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_customer_relationships_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_customer_relationships_related_customer_id_fkey"
+            columns: ["related_customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_customers: {
         Row: {
           alternate_phone: string | null
