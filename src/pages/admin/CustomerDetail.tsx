@@ -362,6 +362,8 @@ const CustomerDetail = () => {
             </CardContent>
           </Card>
 
+          <CustomerRelationships customerId={customer.id} />
+
           {/* Main Content */}
           <div className="lg:col-span-2">
             <Tabs defaultValue="overview">
