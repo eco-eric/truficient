@@ -366,6 +366,13 @@ export default function JobAppointmentDialog({
       toast.error('Please select start and end dates');
       return;
     }
+    // Validate end is after start
+    const startISO = buildCSTDateTime(formData.startDate, formData.startTime);
+    const endISO = buildCSTDateTime(formData.endDate, formData.endTime);
+    if (new Date(endISO) <= new Date(startISO)) {
+      toast.error('End date/time must be after start date/time');
+      return;
+    }
     saveMutation.mutate(syncToCalendar);
   };
 
