@@ -1227,6 +1227,8 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
               )}
             </Button>
           </DialogFooter>
+          </>
+          )}
         </form>
       </DialogContent>
     </Dialog>
