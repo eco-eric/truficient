@@ -263,6 +263,10 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
       });
       setPropertyDataSource(null);
       setLinkedCustomers([]);
+      setMode('new');
+      setSelectedExistingLocationId(null);
+      setExistingLocationSearch('');
+      setExistingRelationshipType('owner');
     }
   }, [open, editingLocation]);
 
