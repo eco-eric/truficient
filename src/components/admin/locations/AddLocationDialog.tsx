@@ -103,6 +103,43 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Mode toggle: 'new' or 'existing'
+  const [mode, setMode] = useState<'new' | 'existing'>('new');
+  const [existingLocationSearch, setExistingLocationSearch] = useState('');
+  const [selectedExistingLocationId, setSelectedExistingLocationId] = useState<string | null>(null);
+  const [existingRelationshipType, setExistingRelationshipType] = useState('owner');
+
+  // Fetch all locations for "Link Existing" mode
+  const { data: allLocations = [] } = useQuery({
+    queryKey: ['all_crm_locations_for_linking'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_locations')
+        .select(`
+          *,
+          customer:crm_customers(id, first_name, last_name, company_name)
+        `)
+        .is('deleted_at', null)
+        .order('address_line1');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open && mode === 'existing' && !editingLocation,
+  });
+
+  // Filter existing locations based on search
+  const filteredExistingLocations = useMemo(() => {
+    if (!existingLocationSearch.trim()) return allLocations;
+    const term = existingLocationSearch.toLowerCase();
+    return allLocations.filter((loc: any) => {
+      const address = `${loc.address_line1} ${loc.city} ${loc.zip_code}`.toLowerCase();
+      const customerName = loc.customer
+        ? `${loc.customer.first_name || ''} ${loc.customer.last_name || ''} ${loc.customer.company_name || ''}`.toLowerCase()
+        : '';
+      return address.includes(term) || customerName.includes(term);
+    });
+  }, [allLocations, existingLocationSearch]);
+
   // Linked customers with relationship types
   const [linkedCustomers, setLinkedCustomers] = useState<Array<{ customer_id: string; relationship_type: string }>>([]);
   
