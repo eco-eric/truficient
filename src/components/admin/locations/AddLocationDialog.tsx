@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, MapPin, Search, Navigation, X, Plus } from 'lucide-react';
+import { Loader2, MapPin, Search, Navigation, X, Plus, Link2, Home } from 'lucide-react';
 import { LocationMapEmbed } from './LocationMapEmbed';
 import type { CrmCustomer, CrmLocation, BUILDING_TYPE_OPTIONS, PropertyLookupData, RELATIONSHIP_TYPE_OPTIONS } from '@/types/crmLocations';
 import { RELATIONSHIP_TYPE_OPTIONS as RELATIONSHIP_OPTIONS } from '@/types/crmLocations';
@@ -102,6 +102,43 @@ const COUNTY_APPRAISAL_LINKS = [
 export function AddLocationDialog({ open, onOpenChange, customers, editingLocation }: AddLocationDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Mode toggle: 'new' or 'existing'
+  const [mode, setMode] = useState<'new' | 'existing'>('new');
+  const [existingLocationSearch, setExistingLocationSearch] = useState('');
+  const [selectedExistingLocationId, setSelectedExistingLocationId] = useState<string | null>(null);
+  const [existingRelationshipType, setExistingRelationshipType] = useState('owner');
+
+  // Fetch all locations for "Link Existing" mode
+  const { data: allLocations = [] } = useQuery({
+    queryKey: ['all_crm_locations_for_linking'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_locations')
+        .select(`
+          *,
+          customer:crm_customers(id, first_name, last_name, company_name)
+        `)
+        .is('deleted_at', null)
+        .order('address_line1');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open && mode === 'existing' && !editingLocation,
+  });
+
+  // Filter existing locations based on search
+  const filteredExistingLocations = useMemo(() => {
+    if (!existingLocationSearch.trim()) return allLocations;
+    const term = existingLocationSearch.toLowerCase();
+    return allLocations.filter((loc: any) => {
+      const address = `${loc.address_line1} ${loc.city} ${loc.zip_code}`.toLowerCase();
+      const customerName = loc.customer
+        ? `${loc.customer.first_name || ''} ${loc.customer.last_name || ''} ${loc.customer.company_name || ''}`.toLowerCase()
+        : '';
+      return address.includes(term) || customerName.includes(term);
+    });
+  }, [allLocations, existingLocationSearch]);
 
   // Linked customers with relationship types
   const [linkedCustomers, setLinkedCustomers] = useState<Array<{ customer_id: string; relationship_type: string }>>([]);
@@ -226,6 +263,10 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
       });
       setPropertyDataSource(null);
       setLinkedCustomers([]);
+      setMode('new');
+      setSelectedExistingLocationId(null);
+      setExistingLocationSearch('');
+      setExistingRelationshipType('owner');
     }
   }, [open, editingLocation]);
 
@@ -479,9 +520,61 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
     },
   });
 
+  // Link existing location mutation
+  const linkExistingMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedExistingLocationId || !formData.customer_id) {
+        throw new Error('Please select a customer and a location');
+      }
+
+      // Check if this link already exists
+      const { data: existing } = await supabase
+        .from('crm_location_customers')
+        .select('id')
+        .eq('location_id', selectedExistingLocationId)
+        .eq('customer_id', formData.customer_id)
+        .maybeSingle();
+
+      if (existing) {
+        throw new Error('This customer is already linked to this location');
+      }
+
+      const { error } = await supabase
+        .from('crm_location_customers')
+        .insert({
+          location_id: selectedExistingLocationId,
+          customer_id: formData.customer_id,
+          relationship_type: existingRelationshipType,
+          is_primary_contact: false,
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_locations'] });
+      queryClient.invalidateQueries({ queryKey: ['all_crm_locations'] });
+      queryClient.invalidateQueries({ queryKey: ['crm_location_customers'] });
+      toast({
+        title: 'Success',
+        description: 'Customer linked to existing location',
+      });
+      onOpenChange(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    saveMutation.mutate();
+    if (mode === 'existing') {
+      linkExistingMutation.mutate();
+    } else {
+      saveMutation.mutate();
+    }
   };
 
   const handleCopyBillingAddress = async () => {
@@ -577,12 +670,38 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
           <DialogDescription>
             {editingLocation 
               ? 'Update the service location details.'
-              : 'Add a new service address for a customer. Use the property lookup to automatically fill details.'}
+              : 'Add a new location or link a customer to an existing one.'}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Customer Selection */}
+          {/* Mode Toggle - only show when adding new (not editing) */}
+          {!editingLocation && (
+            <div className="flex gap-2 p-1 bg-muted rounded-lg w-fit">
+              <Button
+                type="button"
+                size="sm"
+                variant={mode === 'new' ? 'default' : 'ghost'}
+                onClick={() => setMode('new')}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add New
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={mode === 'existing' ? 'default' : 'ghost'}
+                onClick={() => setMode('existing')}
+                className="gap-2"
+              >
+                <Link2 className="h-4 w-4" />
+                Link Existing
+              </Button>
+            </div>
+          )}
+
+          {/* Customer Selection - always shown */}
           <div className="space-y-2">
             <Label htmlFor="customer">Customer *</Label>
             <select
@@ -601,7 +720,7 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
               ))}
             </select>
             
-            {!editingLocation && formData.customer_id && hasBillingAddress && (
+            {!editingLocation && mode === 'new' && formData.customer_id && hasBillingAddress && (
               <Button
                 type="button"
                 variant="outline"
@@ -614,6 +733,101 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
               </Button>
             )}
           </div>
+
+          {/* ========== LINK EXISTING MODE ========== */}
+          {mode === 'existing' && !editingLocation && (
+            <>
+              <div className="space-y-3">
+                <Label>Search Existing Locations</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by address, city, or customer name..."
+                    value={existingLocationSearch}
+                    onChange={(e) => setExistingLocationSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+
+                <div className="border rounded-lg max-h-[300px] overflow-y-auto">
+                  {filteredExistingLocations.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      {existingLocationSearch ? 'No locations found' : 'No locations available'}
+                    </div>
+                  ) : (
+                    filteredExistingLocations.map((loc: any) => {
+                      const isSelected = selectedExistingLocationId === loc.id;
+                      const ownerName = loc.customer
+                        ? `${loc.customer.first_name || ''} ${loc.customer.last_name || ''}`.trim() || loc.customer.company_name
+                        : 'Unknown';
+                      return (
+                        <div
+                          key={loc.id}
+                          className={`flex items-center gap-3 p-3 cursor-pointer border-b last:border-b-0 transition-colors ${
+                            isSelected ? 'bg-accent' : 'hover:bg-muted/50'
+                          }`}
+                          onClick={() => setSelectedExistingLocationId(isSelected ? null : loc.id)}
+                        >
+                          <Home className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium truncate">
+                              {loc.address_line1}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {loc.city}, {loc.state} {loc.zip_code} · Owner: {ownerName}
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <Badge variant="default" className="shrink-0">Selected</Badge>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Relationship type for existing link */}
+              <div className="space-y-2">
+                <Label>Relationship to this Location</Label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  value={existingRelationshipType}
+                  onChange={(e) => setExistingRelationshipType(e.target.value)}
+                >
+                  {RELATIONSHIP_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={linkExistingMutation.isPending || !formData.customer_id || !selectedExistingLocationId}
+                >
+                  {linkExistingMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Linking...
+                    </>
+                  ) : (
+                    <>
+                      <Link2 className="mr-2 h-4 w-4" />
+                      Link Location
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+
+          {/* ========== ADD NEW MODE (or editing) ========== */}
+          {(mode === 'new' || editingLocation) && (
+            <>
 
           {/* Additional Linked Customers */}
           <div className="space-y-3">
@@ -1013,6 +1227,8 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
               )}
             </Button>
           </DialogFooter>
+          </>
+          )}
         </form>
       </DialogContent>
     </Dialog>
