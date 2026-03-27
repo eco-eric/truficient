@@ -720,7 +720,7 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
               ))}
             </select>
             
-            {!editingLocation && formData.customer_id && hasBillingAddress && (
+            {!editingLocation && mode === 'new' && formData.customer_id && hasBillingAddress && (
               <Button
                 type="button"
                 variant="outline"
@@ -733,6 +733,101 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
               </Button>
             )}
           </div>
+
+          {/* ========== LINK EXISTING MODE ========== */}
+          {mode === 'existing' && !editingLocation && (
+            <>
+              <div className="space-y-3">
+                <Label>Search Existing Locations</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by address, city, or customer name..."
+                    value={existingLocationSearch}
+                    onChange={(e) => setExistingLocationSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+
+                <div className="border rounded-lg max-h-[300px] overflow-y-auto">
+                  {filteredExistingLocations.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      {existingLocationSearch ? 'No locations found' : 'No locations available'}
+                    </div>
+                  ) : (
+                    filteredExistingLocations.map((loc: any) => {
+                      const isSelected = selectedExistingLocationId === loc.id;
+                      const ownerName = loc.customer
+                        ? `${loc.customer.first_name || ''} ${loc.customer.last_name || ''}`.trim() || loc.customer.company_name
+                        : 'Unknown';
+                      return (
+                        <div
+                          key={loc.id}
+                          className={`flex items-center gap-3 p-3 cursor-pointer border-b last:border-b-0 transition-colors ${
+                            isSelected ? 'bg-accent' : 'hover:bg-muted/50'
+                          }`}
+                          onClick={() => setSelectedExistingLocationId(isSelected ? null : loc.id)}
+                        >
+                          <Home className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium truncate">
+                              {loc.address_line1}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {loc.city}, {loc.state} {loc.zip_code} · Owner: {ownerName}
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <Badge variant="default" className="shrink-0">Selected</Badge>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Relationship type for existing link */}
+              <div className="space-y-2">
+                <Label>Relationship to this Location</Label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  value={existingRelationshipType}
+                  onChange={(e) => setExistingRelationshipType(e.target.value)}
+                >
+                  {RELATIONSHIP_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={linkExistingMutation.isPending || !formData.customer_id || !selectedExistingLocationId}
+                >
+                  {linkExistingMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Linking...
+                    </>
+                  ) : (
+                    <>
+                      <Link2 className="mr-2 h-4 w-4" />
+                      Link Location
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+
+          {/* ========== ADD NEW MODE (or editing) ========== */}
+          {(mode === 'new' || editingLocation) && (
+            <>
 
           {/* Additional Linked Customers */}
           <div className="space-y-3">
