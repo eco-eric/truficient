@@ -520,9 +520,61 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
     },
   });
 
+  // Link existing location mutation
+  const linkExistingMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedExistingLocationId || !formData.customer_id) {
+        throw new Error('Please select a customer and a location');
+      }
+
+      // Check if this link already exists
+      const { data: existing } = await supabase
+        .from('crm_location_customers')
+        .select('id')
+        .eq('location_id', selectedExistingLocationId)
+        .eq('customer_id', formData.customer_id)
+        .maybeSingle();
+
+      if (existing) {
+        throw new Error('This customer is already linked to this location');
+      }
+
+      const { error } = await supabase
+        .from('crm_location_customers')
+        .insert({
+          location_id: selectedExistingLocationId,
+          customer_id: formData.customer_id,
+          relationship_type: existingRelationshipType,
+          is_primary_contact: false,
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_locations'] });
+      queryClient.invalidateQueries({ queryKey: ['all_crm_locations'] });
+      queryClient.invalidateQueries({ queryKey: ['crm_location_customers'] });
+      toast({
+        title: 'Success',
+        description: 'Customer linked to existing location',
+      });
+      onOpenChange(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    saveMutation.mutate();
+    if (mode === 'existing') {
+      linkExistingMutation.mutate();
+    } else {
+      saveMutation.mutate();
+    }
   };
 
   const handleCopyBillingAddress = async () => {
