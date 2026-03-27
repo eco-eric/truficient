@@ -670,12 +670,38 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
           <DialogDescription>
             {editingLocation 
               ? 'Update the service location details.'
-              : 'Add a new service address for a customer. Use the property lookup to automatically fill details.'}
+              : 'Add a new location or link a customer to an existing one.'}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Customer Selection */}
+          {/* Mode Toggle - only show when adding new (not editing) */}
+          {!editingLocation && (
+            <div className="flex gap-2 p-1 bg-muted rounded-lg w-fit">
+              <Button
+                type="button"
+                size="sm"
+                variant={mode === 'new' ? 'default' : 'ghost'}
+                onClick={() => setMode('new')}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add New
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={mode === 'existing' ? 'default' : 'ghost'}
+                onClick={() => setMode('existing')}
+                className="gap-2"
+              >
+                <Link2 className="h-4 w-4" />
+                Link Existing
+              </Button>
+            </div>
+          )}
+
+          {/* Customer Selection - always shown */}
           <div className="space-y-2">
             <Label htmlFor="customer">Customer *</Label>
             <select
