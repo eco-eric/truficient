@@ -724,13 +724,12 @@ export default function JobDetail() {
                 <CardTitle className="text-lg">Financials</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Quoted Amount</p>
-                  <p className="text-2xl font-bold flex items-center gap-1">
-                    <DollarSign className="h-5 w-5" />
-                    {job.quoted_amount?.toLocaleString() || '0'}
-                  </p>
-                </div>
+                <InlineEditableAmount
+                  value={job.quoted_amount}
+                  jobId={job.id}
+                  field="quoted_amount"
+                  label="Quoted Amount"
+                />
                 {job.final_amount && job.final_amount !== job.quoted_amount && (
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">Final Amount</p>
