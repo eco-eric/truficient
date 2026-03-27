@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { ArrowLeft, Calendar, DollarSign, MapPin, User, Phone, Mail, ChevronRight, Users, Pencil, ExternalLink, Save, Copy, Trash2 } from 'lucide-react';
+import { ArrowLeft, Calendar, DollarSign, MapPin, User, Phone, Mail, ChevronRight, Users, Pencil, ExternalLink, Save, Copy, Trash2, Check, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +33,75 @@ import { AIAssistantWidget } from '@/components/admin/ai/AIAssistantWidget';
 import { useUserRole } from '@/hooks/useUserRole';
 import JobTasksCard from '@/components/admin/jobs/JobTasksCard';
 import { LinkedRecordsCard } from '@/components/admin/shared/LinkedRecordsCard';
+
+const InlineEditableAmount = ({ value, jobId, field, label }: { value: number | null; jobId: string; field: string; label: string }) => {
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState('');
+  const queryClient = useQueryClient();
+
+  const saveMutation = useMutation({
+    mutationFn: async (newValue: number) => {
+      const { error } = await supabase.from('crm_jobs').update({ [field]: newValue } as any).eq('id', jobId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_job', jobId] });
+      toast.success(`${label} updated`);
+      setEditing(false);
+    },
+    onError: () => toast.error('Failed to update'),
+  });
+
+  const startEdit = () => {
+    setEditValue(String(value || 0));
+    setEditing(true);
+  };
+
+  const handleSave = () => {
+    const num = parseFloat(editValue);
+    if (isNaN(num) || num < 0) { toast.error('Enter a valid amount'); return; }
+    saveMutation.mutate(num);
+  };
+
+  if (editing) {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="number"
+              step="0.01"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              className="pl-7 text-lg font-bold"
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setEditing(false); }}
+            />
+          </div>
+          <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={handleSave}>
+            <Check className="h-4 w-4" />
+          </Button>
+          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setEditing(false)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 group cursor-pointer" onClick={startEdit}>
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="text-2xl font-bold flex items-center gap-1">
+        <DollarSign className="h-5 w-5" />
+        {value?.toLocaleString() || '0'}
+        <Pencil className="h-3.5 w-3.5 ml-1 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+      </p>
+    </div>
+  );
+};
 
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>();
@@ -723,13 +793,12 @@ export default function JobDetail() {
                 <CardTitle className="text-lg">Financials</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Quoted Amount</p>
-                  <p className="text-2xl font-bold flex items-center gap-1">
-                    <DollarSign className="h-5 w-5" />
-                    {job.quoted_amount?.toLocaleString() || '0'}
-                  </p>
-                </div>
+                <InlineEditableAmount
+                  value={job.quoted_amount}
+                  jobId={job.id}
+                  field="quoted_amount"
+                  label="Quoted Amount"
+                />
                 {job.final_amount && job.final_amount !== job.quoted_amount && (
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">Final Amount</p>
