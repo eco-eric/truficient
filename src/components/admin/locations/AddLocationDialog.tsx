@@ -159,7 +159,7 @@ function CustomerSearchCombobox({ customers, value, onChange }: {
   );
 }
 export function AddLocationDialog({ open, onOpenChange, customers, editingLocation }: AddLocationDialogProps) {
-
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Mode toggle: 'new' or 'existing'
