@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useMemo } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +15,9 @@ import {
   MoreHorizontal,
   Upload,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Link2,
+  Search
 } from 'lucide-react';
 import {
   Dialog,
@@ -58,6 +60,10 @@ interface CustomerLocationsProps {
 export function CustomerLocations({ customerId, locations, customer }: CustomerLocationsProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkSearch, setLinkSearch] = useState('');
+  const [selectedLinkLocationId, setSelectedLinkLocationId] = useState<string | null>(null);
+  const [linkRelationshipType, setLinkRelationshipType] = useState('owner');
   const queryClient = useQueryClient();
 
   // Form state
@@ -197,15 +203,84 @@ export function CustomerLocations({ customerId, locations, customer }: CustomerL
     },
   });
 
+  // Fetch all locations for linking
+  const { data: allLocations = [] } = useQuery({
+    queryKey: ['all_crm_locations_for_customer_linking'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_locations')
+        .select('*, customer:crm_customers(id, first_name, last_name, company_name)')
+        .is('deleted_at', null)
+        .order('address_line1');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: linkDialogOpen,
+  });
+
+  const filteredLinkLocations = useMemo(() => {
+    // Exclude locations already linked to this customer
+    const existingIds = new Set(locations.map(l => l.id));
+    const available = allLocations.filter((l: any) => !existingIds.has(l.id));
+    if (!linkSearch.trim()) return available;
+    const term = linkSearch.toLowerCase();
+    return available.filter((loc: any) => {
+      const address = `${loc.address_line1} ${loc.city} ${loc.zip_code}`.toLowerCase();
+      const customerName = loc.customer
+        ? `${loc.customer.first_name || ''} ${loc.customer.last_name || ''} ${loc.customer.company_name || ''}`.toLowerCase()
+        : '';
+      return address.includes(term) || customerName.includes(term);
+    });
+  }, [allLocations, linkSearch, locations]);
+
+  const linkExistingMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedLinkLocationId) throw new Error('No location selected');
+      const { data: existing } = await supabase
+        .from('crm_location_customers')
+        .select('id')
+        .eq('location_id', selectedLinkLocationId)
+        .eq('customer_id', customerId)
+        .maybeSingle();
+      if (existing) throw new Error('This customer is already linked to this location');
+      const { error } = await supabase
+        .from('crm_location_customers')
+        .insert({
+          location_id: selectedLinkLocationId,
+          customer_id: customerId,
+          relationship_type: linkRelationshipType,
+          is_primary_contact: false,
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_locations', customerId] });
+      toast.success('Location linked successfully');
+      setLinkDialogOpen(false);
+      setSelectedLinkLocationId(null);
+      setLinkSearch('');
+      setLinkRelationshipType('owner');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to link location');
+    },
+  });
+
   return (
     <>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Service Locations</CardTitle>
-          <Button size="sm" onClick={() => { resetForm(); setDialogOpen(true); }}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Location
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => { setLinkSearch(''); setSelectedLinkLocationId(null); setLinkRelationshipType('owner'); setLinkDialogOpen(true); }}>
+              <Link2 className="h-4 w-4 mr-2" />
+              Link Existing
+            </Button>
+            <Button size="sm" onClick={() => { resetForm(); setDialogOpen(true); }}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add New
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {locations.length === 0 ? (
@@ -513,6 +588,89 @@ export function CustomerLocations({ customerId, locations, customer }: CustomerL
                 disabled={saveMutation.isPending || !addressLine1 || !city || !state || !zipCode}
               >
                 {saveMutation.isPending ? 'Saving...' : editingLocation ? 'Update Location' : 'Add Location'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link Existing Location Dialog */}
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Link2 className="h-5 w-5" />
+              Link Existing Location
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by address, city, or customer name..."
+                value={linkSearch}
+                onChange={(e) => setLinkSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            <div className="border rounded-lg max-h-[300px] overflow-y-auto">
+              {filteredLinkLocations.length === 0 ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  {linkSearch ? 'No locations found' : 'No locations available to link'}
+                </div>
+              ) : (
+                filteredLinkLocations.map((loc: any) => {
+                  const isSelected = selectedLinkLocationId === loc.id;
+                  const ownerName = loc.customer
+                    ? `${loc.customer.first_name || ''} ${loc.customer.last_name || ''}`.trim() || loc.customer.company_name
+                    : 'Unknown';
+                  return (
+                    <div
+                      key={loc.id}
+                      className={`flex items-center gap-3 p-3 cursor-pointer border-b last:border-b-0 transition-colors ${
+                        isSelected ? 'bg-accent' : 'hover:bg-muted/50'
+                      }`}
+                      onClick={() => setSelectedLinkLocationId(isSelected ? null : loc.id)}
+                    >
+                      <Home className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">{loc.address_line1}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {loc.city}, {loc.state} {loc.zip_code} · Owner: {ownerName}
+                        </div>
+                      </div>
+                      {isSelected && <Badge variant="default" className="shrink-0">Selected</Badge>}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Relationship Type</Label>
+              <Select value={linkRelationshipType} onValueChange={setLinkRelationshipType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="owner">Owner</SelectItem>
+                  <SelectItem value="spouse">Spouse</SelectItem>
+                  <SelectItem value="tenant">Tenant</SelectItem>
+                  <SelectItem value="gc">General Contractor</SelectItem>
+                  <SelectItem value="property_manager">Property Manager</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>Cancel</Button>
+              <Button
+                onClick={() => linkExistingMutation.mutate()}
+                disabled={!selectedLinkLocationId || linkExistingMutation.isPending}
+              >
+                {linkExistingMutation.isPending ? 'Linking...' : 'Link Location'}
               </Button>
             </div>
           </div>
