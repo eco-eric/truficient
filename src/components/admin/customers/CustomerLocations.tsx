@@ -60,6 +60,10 @@ interface CustomerLocationsProps {
 export function CustomerLocations({ customerId, locations, customer }: CustomerLocationsProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkSearch, setLinkSearch] = useState('');
+  const [selectedLinkLocationId, setSelectedLinkLocationId] = useState<string | null>(null);
+  const [linkRelationshipType, setLinkRelationshipType] = useState('owner');
   const queryClient = useQueryClient();
 
   // Form state
