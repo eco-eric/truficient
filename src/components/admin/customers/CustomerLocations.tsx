@@ -266,7 +266,7 @@ export function CustomerLocations({ customerId, locations, customer }: CustomerL
     },
   });
 
-
+  return (
     <>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
