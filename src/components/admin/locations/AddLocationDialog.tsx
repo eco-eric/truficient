@@ -158,9 +158,8 @@ function CustomerSearchCombobox({ customers, value, onChange }: {
     </Popover>
   );
 }
+export function AddLocationDialog({ open, onOpenChange, customers, editingLocation }: AddLocationDialogProps) {
 
-
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Mode toggle: 'new' or 'existing'
