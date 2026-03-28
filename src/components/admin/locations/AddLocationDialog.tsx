@@ -706,22 +706,24 @@ export function AddLocationDialog({ open, onOpenChange, customers, editingLocati
 
           {/* Customer Selection - always shown */}
           <div className="space-y-2">
-            <Label htmlFor="customer">Customer *</Label>
-            <select
-              id="customer"
-              required
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              value={formData.customer_id}
-              onChange={(e) => setFormData(prev => ({ ...prev, customer_id: e.target.value }))}
-              disabled={!!editingLocation}
-            >
-              <option value="">Select a customer...</option>
-              {customers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.company_name || `${customer.first_name || ''} ${customer.last_name || ''}`.trim()} {customer.email && `(${customer.email})`}
-                </option>
-              ))}
-            </select>
+            <Label>Customer *</Label>
+            {editingLocation ? (
+              <Input
+                value={
+                  (() => {
+                    const c = customers.find(c => c.id === formData.customer_id);
+                    return c ? (c.company_name || `${c.first_name || ''} ${c.last_name || ''}`.trim()) : '';
+                  })()
+                }
+                disabled
+              />
+            ) : (
+              <CustomerSearchCombobox
+                customers={customers}
+                value={formData.customer_id}
+                onChange={(id) => setFormData(prev => ({ ...prev, customer_id: id }))}
+              />
+            )}
             
             {!editingLocation && mode === 'new' && formData.customer_id && hasBillingAddress && (
               <Button
