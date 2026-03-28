@@ -203,7 +203,70 @@ export function CustomerLocations({ customerId, locations, customer }: CustomerL
     },
   });
 
-  return (
+  // Fetch all locations for linking
+  const { data: allLocations = [] } = useQuery({
+    queryKey: ['all_crm_locations_for_customer_linking'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_locations')
+        .select('*, customer:crm_customers(id, first_name, last_name, company_name)')
+        .is('deleted_at', null)
+        .order('address_line1');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: linkDialogOpen,
+  });
+
+  const filteredLinkLocations = useMemo(() => {
+    // Exclude locations already linked to this customer
+    const existingIds = new Set(locations.map(l => l.id));
+    const available = allLocations.filter((l: any) => !existingIds.has(l.id));
+    if (!linkSearch.trim()) return available;
+    const term = linkSearch.toLowerCase();
+    return available.filter((loc: any) => {
+      const address = `${loc.address_line1} ${loc.city} ${loc.zip_code}`.toLowerCase();
+      const customerName = loc.customer
+        ? `${loc.customer.first_name || ''} ${loc.customer.last_name || ''} ${loc.customer.company_name || ''}`.toLowerCase()
+        : '';
+      return address.includes(term) || customerName.includes(term);
+    });
+  }, [allLocations, linkSearch, locations]);
+
+  const linkExistingMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedLinkLocationId) throw new Error('No location selected');
+      const { data: existing } = await supabase
+        .from('crm_location_customers')
+        .select('id')
+        .eq('location_id', selectedLinkLocationId)
+        .eq('customer_id', customerId)
+        .maybeSingle();
+      if (existing) throw new Error('This customer is already linked to this location');
+      const { error } = await supabase
+        .from('crm_location_customers')
+        .insert({
+          location_id: selectedLinkLocationId,
+          customer_id: customerId,
+          relationship_type: linkRelationshipType,
+          is_primary_contact: false,
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_locations', customerId] });
+      toast.success('Location linked successfully');
+      setLinkDialogOpen(false);
+      setSelectedLinkLocationId(null);
+      setLinkSearch('');
+      setLinkRelationshipType('owner');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to link location');
+    },
+  });
+
+
     <>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
