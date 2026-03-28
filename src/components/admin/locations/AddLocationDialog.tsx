@@ -102,7 +102,64 @@ const COUNTY_APPRAISAL_LINKS = [
   { county: 'Grayson', url: 'https://www.graysonappraisal.org' },
 ];
 
-export function AddLocationDialog({ open, onOpenChange, customers, editingLocation }: AddLocationDialogProps) {
+function CustomerSearchCombobox({ customers, value, onChange }: {
+  customers: CrmCustomer[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const sorted = useMemo(() =>
+    [...customers].sort((a, b) => {
+      const nameA = a.company_name || `${a.first_name || ''} ${a.last_name || ''}`.trim();
+      const nameB = b.company_name || `${b.first_name || ''} ${b.last_name || ''}`.trim();
+      return nameA.localeCompare(nameB);
+    }), [customers]);
+
+  const selectedName = useMemo(() => {
+    if (!value) return null;
+    const c = customers.find(c => c.id === value);
+    return c ? (c.company_name || `${c.first_name || ''} ${c.last_name || ''}`.trim()) : null;
+  }, [value, customers]);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
+          {selectedName || 'Search customers...'}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[400px] p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+        <Command>
+          <CommandInput placeholder="Type a name to search..." />
+          <CommandList>
+            <CommandEmpty>No customers found.</CommandEmpty>
+            <CommandGroup>
+              {sorted.map(c => {
+                const name = c.company_name || `${c.first_name || ''} ${c.last_name || ''}`.trim();
+                return (
+                  <CommandItem
+                    key={c.id}
+                    value={name}
+                    onSelect={() => { onChange(c.id); setOpen(false); }}
+                  >
+                    <Check className={cn('mr-2 h-4 w-4', value === c.id ? 'opacity-100' : 'opacity-0')} />
+                    <div>
+                      <p className="text-sm font-medium">{name}</p>
+                      {c.email && <p className="text-xs text-muted-foreground">{c.email}</p>}
+                    </div>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
