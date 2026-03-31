@@ -93,14 +93,36 @@ const CustomerDetail = () => {
   const { data: locations } = useQuery({
     queryKey: ['crm_locations', id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch directly owned locations
+      const { data: ownedLocations, error: ownedError } = await supabase
         .from('crm_locations')
         .select('*')
         .eq('customer_id', id)
         .is('deleted_at', null)
         .order('is_primary', { ascending: false });
-      if (error) throw error;
-      return data;
+      if (ownedError) throw ownedError;
+
+      // Fetch locations linked via junction table
+      const { data: linkedEntries, error: linkedError } = await supabase
+        .from('crm_location_customers')
+        .select('location_id')
+        .eq('customer_id', id!);
+      if (linkedError) throw linkedError;
+
+      const linkedLocationIds = (linkedEntries || [])
+        .map(e => e.location_id)
+        .filter(lid => !(ownedLocations || []).some(ol => ol.id === lid));
+
+      if (linkedLocationIds.length === 0) return ownedLocations || [];
+
+      const { data: linkedLocations, error: linkedLocError } = await supabase
+        .from('crm_locations')
+        .select('*')
+        .in('id', linkedLocationIds)
+        .is('deleted_at', null);
+      if (linkedLocError) throw linkedLocError;
+
+      return [...(ownedLocations || []), ...(linkedLocations || [])];
     },
     enabled: !!id,
   });
