@@ -153,6 +153,7 @@ const FinancingOptions = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["financing_options"] });
+      queryClient.invalidateQueries({ queryKey: ["financing_options_disclosure"] });
       toast.success(editingOption ? "Financing option updated" : "Financing option created");
       setDialogOpen(false);
       resetForm();
@@ -167,6 +168,7 @@ const FinancingOptions = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["financing_options"] });
+      queryClient.invalidateQueries({ queryKey: ["financing_options_disclosure"] });
       toast.success("Financing option deleted");
     },
     onError: (e: Error) => toast.error(e?.message || "Failed to delete"),
