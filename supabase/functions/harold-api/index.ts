@@ -260,13 +260,12 @@ function getToolDefinitions() {
       type: "function",
       function: {
         name: "search_customers",
-        description: "Search CRM customers by name, email, phone, or address.",
+        description: "Search for customers by any combination of name, email, phone, or address. Always use this before concluding a customer doesn't exist. Supports partial matching and fuzzy token splitting.",
         parameters: {
           type: "object",
           properties: {
-            query: { type: "string", description: "Search term" },
+            query: { type: "string", description: "Free-text search: can be a name, partial name, address, street, city, email, or phone. Multi-word queries are automatically split and searched individually." },
             status: { type: "string", enum: ["lead", "prospect", "active", "inactive", "former"] },
-            limit: { type: "number", description: "Max results (default 10)" },
           },
           required: ["query"],
         },
