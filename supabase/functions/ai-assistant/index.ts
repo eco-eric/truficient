@@ -677,34 +677,110 @@ const tools = [
 // PHASE 1: READ TOOL EXECUTION FUNCTIONS
 // ============================================================
 
-async function executeSearchCustomers(supabase: any, input: { query: string; status?: string; limit?: number }) {
-  const limit = Math.min(input.limit || 10, 25);
-  let query = supabase
-    .from("crm_customers")
-    .select(`id, first_name, last_name, email, phone, customer_status, customer_type, lead_source, tags, created_at, updated_at, crm_locations(id, address_line1, city, state, zip_code, is_primary, square_footage, year_built)`)
-    .is("deleted_at", null)
-    .limit(limit);
-
+async function executeSearchCustomers(supabase: any, input: { query: string; status?: string }) {
   const searchTerm = input.query.trim();
-  if (searchTerm && searchTerm !== "%" && searchTerm !== "*") {
-    query = query.or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
+  const tokens = searchTerm.split(/\s+/).filter((t: string) => t.length > 1);
+  const results: Map<string, any> = new Map();
+
+  const addResult = (customer: any, score: number, reason: string) => {
+    const existing = results.get(customer.id);
+    if (!existing || existing.match_score < score) {
+      results.set(customer.id, { ...customer, match_score: score, match_reason: reason });
+    }
+  };
+
+  const selectFields = `id, first_name, last_name, email, phone, customer_status, customer_type, lead_source, tags, created_at, updated_at, crm_locations(id, address_line1, city, state, zip_code, is_primary, square_footage, year_built)`;
+
+  // Strategy 1: Full query search on name/email/phone
+  let nameQuery = supabase.from("crm_customers").select(selectFields).is("deleted_at", null)
+    .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
+    .limit(10);
+  if (input.status) nameQuery = nameQuery.eq("customer_status", input.status);
+  const { data: nameResults } = await nameQuery;
+
+  (nameResults || []).forEach((c: any) => {
+    const fullName = `${c.first_name || ""} ${c.last_name || ""}`.trim().toLowerCase();
+    const q = searchTerm.toLowerCase();
+    let score = 40;
+    let reason = "partial match";
+    if (fullName === q) { score = 100; reason = "exact full name"; }
+    else if (c.first_name?.toLowerCase() === q) { score = 80; reason = "exact first name"; }
+    else if (c.last_name?.toLowerCase() === q) { score = 70; reason = "exact last name"; }
+    else if (fullName.includes(q)) { score = 55; reason = "name contains query"; }
+    else if (c.email?.toLowerCase().includes(q)) { score = 60; reason = "email match"; }
+    else if (c.phone?.includes(searchTerm)) { score = 60; reason = "phone match"; }
+    addResult(c, score, reason);
+  });
+
+  // Strategy 2: Address/location search (full query)
+  try {
+    let locQuery = supabase.from("crm_locations").select(`id, address_line1, city, state, zip_code, customer_id`)
+      .or(`address_line1.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,zip_code.ilike.%${searchTerm}%`)
+      .limit(10);
+    const { data: locResults } = await locQuery;
+    if (locResults && locResults.length > 0) {
+      const customerIds = [...new Set(locResults.map((l: any) => l.customer_id))];
+      let custQuery = supabase.from("crm_customers").select(selectFields).in("id", customerIds).is("deleted_at", null);
+      if (input.status) custQuery = custQuery.eq("customer_status", input.status);
+      const { data: addrCustomers } = await custQuery;
+      (addrCustomers || []).forEach((c: any) => addResult(c, 40, "address match"));
+    }
+  } catch (_e) { /* address search failed, continue */ }
+
+  // Strategy 3: Token-level search (split query into words)
+  for (const token of tokens) {
+    let tokenQuery = supabase.from("crm_customers").select(selectFields).is("deleted_at", null)
+      .or(`first_name.ilike.%${token}%,last_name.ilike.%${token}%`)
+      .limit(10);
+    if (input.status) tokenQuery = tokenQuery.eq("customer_status", input.status);
+    const { data: tokenResults } = await tokenQuery;
+
+    (tokenResults || []).forEach((c: any) => {
+      const score = c.first_name?.toLowerCase() === token.toLowerCase() ? 75
+        : c.last_name?.toLowerCase() === token.toLowerCase() ? 65
+        : 35;
+      addResult(c, score, `token match on "${token}"`);
+    });
+
+    // Token-level address search
+    try {
+      const { data: tokenLocResults } = await supabase.from("crm_locations")
+        .select(`id, address_line1, city, state, zip_code, customer_id`)
+        .or(`address_line1.ilike.%${token}%,city.ilike.%${token}%`)
+        .limit(5);
+      if (tokenLocResults && tokenLocResults.length > 0) {
+        const customerIds = [...new Set(tokenLocResults.map((l: any) => l.customer_id))];
+        let custQuery = supabase.from("crm_customers").select(selectFields).in("id", customerIds).is("deleted_at", null);
+        if (input.status) custQuery = custQuery.eq("customer_status", input.status);
+        const { data: tokenAddrCustomers } = await custQuery;
+        (tokenAddrCustomers || []).forEach((c: any) => addResult(c, 30, `address token match on "${token}"`));
+      }
+    } catch (_e) { /* token address search failed, continue */ }
   }
-  if (input.status) query = query.eq("customer_status", input.status);
 
-  const { data, error } = await query.order("updated_at", { ascending: false });
-  if (error) throw new Error(`Customer search failed: ${error.message}`);
+  // Sort by score descending
+  const sorted = Array.from(results.values()).sort((a: any, b: any) => b.match_score - a.match_score);
 
-  return {
-    count: data?.length || 0,
-    customers: (data || []).map((c: any) => ({
+  // Normalize output
+  const customers = sorted.map((c: any) => {
+    const locations = Array.isArray(c.crm_locations) ? c.crm_locations : c.crm_locations ? [c.crm_locations] : [];
+    const primaryLoc = locations.find((l: any) => l.is_primary) || locations[0] || null;
+    return {
       id: c.id,
       name: `${c.first_name || ""} ${c.last_name || ""}`.trim(),
       email: c.email, phone: c.phone, status: c.customer_status, type: c.customer_type,
       lead_source: c.lead_source, tags: c.tags,
-      primary_location: c.crm_locations?.find((l: any) => l.is_primary) || c.crm_locations?.[0] || null,
-      location_count: c.crm_locations?.length || 0,
+      match_score: c.match_score, match_reason: c.match_reason,
+      primary_location: primaryLoc,
+      location_count: locations.length,
       last_updated: c.updated_at,
-    })),
+    };
+  });
+
+  return {
+    count: customers.length,
+    customers,
+    strategies_used: ["full_name", "email_phone", "address", "token_split"],
   };
 }
 
