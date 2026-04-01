@@ -71,7 +71,7 @@ export default function JobTasksCard({ jobId }: JobTasksCardProps) {
       description: description.trim() || null,
       priority,
       due_date: dueDate || null,
-      assigned_to: assignedTo || null,
+      assigned_to: assignedTo && assignedTo !== 'unassigned' ? assignedTo : null,
       job_id: jobId,
       created_by: user?.id,
       source: 'manual',
