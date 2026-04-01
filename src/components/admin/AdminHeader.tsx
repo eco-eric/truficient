@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { ExternalLink, User, Menu } from 'lucide-react';
 import { NotificationBell } from './notifications/NotificationBell';
+import { GlobalSearch } from './GlobalSearch';
 import {
   DropdownMenu,
   DropdownMenuContent,
