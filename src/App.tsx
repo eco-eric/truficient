@@ -200,6 +200,7 @@ const router = createBrowserRouter([
         element: <AdminRouteLayout />,
         children: [
           { path: "/admin", element: <ProtectedRoute><AdminDashboard /></ProtectedRoute> },
+          { path: "/admin/search", element: <ProtectedRoute><AdminSearchResults /></ProtectedRoute> },
           { path: "/admin/abandoned-carts", element: <ProtectedRoute><AdminAbandonedCarts /></ProtectedRoute> },
           { path: "/admin/customers", element: <ProtectedRoute><AdminCustomers /></ProtectedRoute> },
           { path: "/admin/companies", element: <ProtectedRoute><AdminCompanies /></ProtectedRoute> },
