@@ -57,3 +57,6 @@ verify_jwt = false
 
 [functions.bach-mcp-server]
 verify_jwt = false
+
+[functions.global-search]
+verify_jwt = false
