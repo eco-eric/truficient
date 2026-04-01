@@ -569,16 +569,82 @@ async function executeTool(serviceClient: any, toolName: string, input: any): Pr
 
   switch (toolName) {
     case "search_customers": {
-      const limit = Math.min(input.limit || 10, 25);
-      let query = serviceClient.from("crm_customers").select("*, crm_locations(*)").is("deleted_at", null).limit(limit);
-      if (input.status) query = query.eq("customer_status", input.status);
-      if (input.query) {
-        const q = `%${input.query}%`;
-        query = query.or(`first_name.ilike.${q},last_name.ilike.${q},email.ilike.${q},phone.ilike.${q},company_name.ilike.${q}`);
+      const searchTerm = (input.query || "").trim();
+      const tokens = searchTerm.split(/\s+/).filter((t: string) => t.length > 1);
+      const results: Map<string, any> = new Map();
+
+      const addResult = (customer: any, score: number, reason: string) => {
+        const existing = results.get(customer.id);
+        if (!existing || existing.match_score < score) {
+          results.set(customer.id, { ...customer, match_score: score, match_reason: reason });
+        }
+      };
+
+      // Strategy 1: Full query on name/email/phone
+      let nameQ = serviceClient.from("crm_customers").select("*, crm_locations(*)").is("deleted_at", null)
+        .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,company_name.ilike.%${searchTerm}%`)
+        .limit(10);
+      if (input.status) nameQ = nameQ.eq("customer_status", input.status);
+      const { data: nameResults } = await nameQ;
+
+      (nameResults || []).forEach((c: any) => {
+        const fullName = `${c.first_name || ""} ${c.last_name || ""}`.trim().toLowerCase();
+        const q = searchTerm.toLowerCase();
+        let score = 40; let reason = "partial match";
+        if (fullName === q) { score = 100; reason = "exact full name"; }
+        else if (c.first_name?.toLowerCase() === q) { score = 80; reason = "exact first name"; }
+        else if (c.last_name?.toLowerCase() === q) { score = 70; reason = "exact last name"; }
+        else if (fullName.includes(q)) { score = 55; reason = "name contains query"; }
+        else if (c.email?.toLowerCase().includes(q)) { score = 60; reason = "email match"; }
+        else if (c.phone?.includes(searchTerm)) { score = 60; reason = "phone match"; }
+        addResult(c, score, reason);
+      });
+
+      // Strategy 2: Address search
+      try {
+        const { data: locResults } = await serviceClient.from("crm_locations")
+          .select("id, address_line1, city, state, zip_code, customer_id")
+          .or(`address_line1.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,zip_code.ilike.%${searchTerm}%`)
+          .limit(10);
+        if (locResults && locResults.length > 0) {
+          const customerIds = [...new Set(locResults.map((l: any) => l.customer_id))];
+          let custQ = serviceClient.from("crm_customers").select("*, crm_locations(*)").in("id", customerIds).is("deleted_at", null);
+          if (input.status) custQ = custQ.eq("customer_status", input.status);
+          const { data: addrCustomers } = await custQ;
+          (addrCustomers || []).forEach((c: any) => addResult(c, 40, "address match"));
+        }
+      } catch (_e) { /* continue */ }
+
+      // Strategy 3: Token-level search
+      for (const token of tokens) {
+        let tQ = serviceClient.from("crm_customers").select("*, crm_locations(*)").is("deleted_at", null)
+          .or(`first_name.ilike.%${token}%,last_name.ilike.%${token}%`)
+          .limit(10);
+        if (input.status) tQ = tQ.eq("customer_status", input.status);
+        const { data: tokenResults } = await tQ;
+        (tokenResults || []).forEach((c: any) => {
+          const score = c.first_name?.toLowerCase() === token.toLowerCase() ? 75
+            : c.last_name?.toLowerCase() === token.toLowerCase() ? 65 : 35;
+          addResult(c, score, `token match on "${token}"`);
+        });
+
+        try {
+          const { data: tokenLocResults } = await serviceClient.from("crm_locations")
+            .select("id, address_line1, city, state, zip_code, customer_id")
+            .or(`address_line1.ilike.%${token}%,city.ilike.%${token}%`)
+            .limit(5);
+          if (tokenLocResults && tokenLocResults.length > 0) {
+            const customerIds = [...new Set(tokenLocResults.map((l: any) => l.customer_id))];
+            let custQ = serviceClient.from("crm_customers").select("*, crm_locations(*)").in("id", customerIds).is("deleted_at", null);
+            if (input.status) custQ = custQ.eq("customer_status", input.status);
+            const { data: tAddrCust } = await custQ;
+            (tAddrCust || []).forEach((c: any) => addResult(c, 30, `address token match on "${token}"`));
+          }
+        } catch (_e) { /* continue */ }
       }
-      const { data, error } = await query;
-      if (error) throw error;
-      return { customers: data || [], count: data?.length || 0 };
+
+      const sorted = Array.from(results.values()).sort((a: any, b: any) => b.match_score - a.match_score);
+      return { customers: sorted, count: sorted.length, strategies_used: ["full_name", "email_phone", "address", "token_split"] };
     }
 
     case "get_customer_details": {
