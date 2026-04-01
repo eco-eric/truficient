@@ -71,7 +71,7 @@ export default function JobTasksCard({ jobId }: JobTasksCardProps) {
       description: description.trim() || null,
       priority,
       due_date: dueDate || null,
-      assigned_to: assignedTo || null,
+      assigned_to: assignedTo && assignedTo !== 'unassigned' ? assignedTo : null,
       job_id: jobId,
       created_by: user?.id,
       source: 'manual',
@@ -201,7 +201,7 @@ export default function JobTasksCard({ jobId }: JobTasksCardProps) {
                 <SelectValue placeholder="Assign to team member..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Unassigned</SelectItem>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
                 {teamMembers.map((m: any) => (
                   <SelectItem key={m.id} value={m.user_id || m.id}>
                     {m.first_name} {m.last_name || ''} ({m.role})
