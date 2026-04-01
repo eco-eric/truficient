@@ -112,13 +112,12 @@ const tools = [
     type: "function" as const,
     function: {
       name: "search_customers",
-      description: "Search for customers in the CRM by name, email, phone number, address, or status. Returns matching customer records with their primary location.",
+      description: "Search for customers by any combination of name, email, phone, or address. Always use this before concluding a customer doesn't exist. Supports partial matching and fuzzy token splitting.",
       parameters: {
         type: "object",
         properties: {
-          query: { type: "string", description: "Search term — name, email, phone, or partial address" },
+          query: { type: "string", description: "Free-text search: can be a name, partial name, address, street, city, email, or phone. Multi-word queries are automatically split and searched individually." },
           status: { type: "string", enum: ["lead", "prospect", "active", "inactive", "former"], description: "Optional filter by customer lifecycle status" },
-          limit: { type: "number", description: "Max results (default 10, max 25)" },
         },
         required: ["query"],
       },
