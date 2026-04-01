@@ -41,6 +41,7 @@ export const AdminHeader = ({ title, onMenuClick }: AdminHeaderProps) => {
       </div>
       
       <div className="flex items-center gap-2 lg:gap-4 flex-shrink-0">
+        <GlobalSearch />
         <NotificationBell />
         <Button variant="outline" size="sm" asChild className="hidden sm:flex">
           <Link to="/" target="_blank">
