@@ -108,7 +108,7 @@ export default function JobAppointmentDialog({
         teamId: appointment.assigned_team_id || '',
         notes: appointment.notes || '',
         attendeeIds: appointment.attendee_member_ids || [],
-        location: ''
+        location: location || ''
       }));
     } else {
       calendarIdsInitRef.current = null;
