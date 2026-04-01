@@ -135,7 +135,7 @@ export function CustomerTable({ onEdit, onDelete }: CustomerTableProps) {
   const filteredCustomers = customers?.filter((customer) => {
     if (!search) return true;
     const searchLower = search.toLowerCase();
-    const fullName = `${customer.first_name || ''} ${customer.last_name || ''}`.toLowerCase();
+    const fullName = `${(customer.first_name || '').trim()} ${(customer.last_name || '').trim()}`.toLowerCase();
     return (
       fullName.includes(searchLower) ||
       customer.email?.toLowerCase().includes(searchLower) ||
