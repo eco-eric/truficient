@@ -253,8 +253,9 @@ export function CustomerLocations({ customerId, locations, customer }: CustomerL
         });
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['crm_locations', customerId] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['crm_locations', customerId] });
+      await queryClient.refetchQueries({ queryKey: ['crm_locations', customerId] });
       toast.success('Location linked successfully');
       setLinkDialogOpen(false);
       setSelectedLinkLocationId(null);
