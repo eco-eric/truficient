@@ -22,7 +22,7 @@ function highlightMatch(text: string, query: string) {
   return (
     <>
       {text.slice(0, idx)}
-      <mark className="bg-amber-200 text-[#1e3a5f] rounded-sm px-0.5">{text.slice(idx, idx + query.length)}</mark>
+      <mark className="bg-accent text-accent-foreground rounded-sm px-0.5">{text.slice(idx, idx + query.length)}</mark>
       {text.slice(idx + query.length)}
     </>
   );
