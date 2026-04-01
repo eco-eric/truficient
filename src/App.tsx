@@ -106,6 +106,7 @@ import InvoiceExpenses from "./pages/admin/invoicing/InvoiceExpenses";
 import InvoiceReports from "./pages/admin/invoicing/InvoiceReports";
 import InvoiceSettings from "./pages/admin/invoicing/InvoiceSettings";
 import { Navigate } from "react-router-dom";
+import AdminSearchResults from "./pages/admin/SearchResults";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { TrackingScripts } from "./components/tracking/TrackingScripts";
 import { ScrollToTop } from "./components/ScrollToTop";
@@ -199,6 +200,7 @@ const router = createBrowserRouter([
         element: <AdminRouteLayout />,
         children: [
           { path: "/admin", element: <ProtectedRoute><AdminDashboard /></ProtectedRoute> },
+          { path: "/admin/search", element: <ProtectedRoute><AdminSearchResults /></ProtectedRoute> },
           { path: "/admin/abandoned-carts", element: <ProtectedRoute><AdminAbandonedCarts /></ProtectedRoute> },
           { path: "/admin/customers", element: <ProtectedRoute><AdminCustomers /></ProtectedRoute> },
           { path: "/admin/companies", element: <ProtectedRoute><AdminCompanies /></ProtectedRoute> },
