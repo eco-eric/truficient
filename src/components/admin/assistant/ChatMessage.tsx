@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import DOMPurify from 'dompurify';
 import { ChevronDown, ChevronUp, AlertCircle, RotateCcw, CheckCircle2, Calendar, RefreshCw, XCircle, Sparkles, Volume2, VolumeX, Loader2 } from 'lucide-react';
 import type { ChatMessage as ChatMessageType } from './AssistantContext';
 import { ConfirmationCard } from './ConfirmationCard';
