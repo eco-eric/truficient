@@ -90,32 +90,16 @@ export const AddToPipelineDialog = ({
     },
   });
 
-  // Fetch customers not already in pipeline (for new entries)
+  // Fetch all customers (allow same customer in multiple pipeline entries)
   const { data: customers = [] } = useQuery({
-    queryKey: ['pipeline-available-customers', editingEntry?.customer_id],
+    queryKey: ['pipeline-available-customers'],
     queryFn: async () => {
-      const { data: existingEntries } = await supabase
-        .from('crm_pipeline_entries')
-        .select('customer_id');
-      
-      const existingIds = existingEntries?.map(e => e.customer_id) || [];
-      
-      if (editingEntry) {
-        const idx = existingIds.indexOf(editingEntry.customer_id);
-        if (idx > -1) existingIds.splice(idx, 1);
-      }
-
-      let query = supabase
+      const { data, error } = await supabase
         .from('crm_customers')
         .select('id, first_name, last_name, company_name, customer_type')
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
-      if (existingIds.length > 0) {
-        query = query.not('id', 'in', `(${existingIds.join(',')})`);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
