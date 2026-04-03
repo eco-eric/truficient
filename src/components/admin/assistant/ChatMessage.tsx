@@ -77,14 +77,15 @@ export const ChatMessage = ({ message, isLatestAssistant, onConfirm, onCancel, o
 
     return cleaned.split('\n').map((line, i) => {
       let formatted = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      const sanitize = (html: string) => DOMPurify.sanitize(html, { ALLOWED_TAGS: ['strong', 'em', 'br'] });
       if (/^[📞📧📍🏠📅💰🔧👷⚠️✅🔗🔄❌]/.test(line)) {
-        return <p key={i} className="text-sm my-0.5" dangerouslySetInnerHTML={{ __html: formatted }} />;
+        return <p key={i} className="text-sm my-0.5" dangerouslySetInnerHTML={{ __html: sanitize(formatted) }} />;
       }
       if (line.startsWith('• ') || line.startsWith('- ')) {
-        return <p key={i} className="text-sm pl-3 my-0.5" dangerouslySetInnerHTML={{ __html: `• ${formatted.slice(2)}` }} />;
+        return <p key={i} className="text-sm pl-3 my-0.5" dangerouslySetInnerHTML={{ __html: sanitize(`• ${formatted.slice(2)}`) }} />;
       }
       if (line.trim() === '') return <br key={i} />;
-      return <p key={i} className="text-sm my-0.5" dangerouslySetInnerHTML={{ __html: formatted }} />;
+      return <p key={i} className="text-sm my-0.5" dangerouslySetInnerHTML={{ __html: sanitize(formatted) }} />;
     });
   };
 
