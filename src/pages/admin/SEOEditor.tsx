@@ -65,6 +65,16 @@ const SEOEditor = () => {
     canonical_url: '',
     robots: 'index, follow',
     structured_data: null,
+    page_type: 'Core Page',
+    target_keyword: '',
+    cluster: 'Core Site',
+    index_status: 'Pending',
+    gsc_impressions: 0,
+    gsc_clicks: 0,
+    avg_position: null,
+    internal_links: 0,
+    schema_applied: false,
+    last_content_update: null,
   });
 
   useEffect(() => {
