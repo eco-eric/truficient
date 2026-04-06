@@ -1082,7 +1082,105 @@ async function handleToolsCall(
   try {
     let result: any;
 
-    if (toolName === "ask_bach") {
+    // Direct execution for location page tools (no need to route through Bach)
+    if (toolName === "list_location_pages") {
+      let query = supabase.from("seo_location_pages")
+        .select("id, neighborhood, city, state, zip_code, cluster, url_slug, primary_service, h1_title, published, schema_enabled, add_to_service_areas_hub, created_at");
+      if (args.cluster) query = query.eq("cluster", args.cluster);
+      if (args.published !== undefined) query = query.eq("published", args.published);
+      const limit = Math.min(args.limit || 50, 200);
+      query = query.order("neighborhood").limit(limit);
+      const { data, error } = await query;
+      if (error) throw new Error(`list_location_pages: ${error.message}`);
+      result = { message: JSON.stringify({ pages: data || [], count: (data || []).length }) };
+    } else if (toolName === "get_location_page") {
+      let query = supabase.from("seo_location_pages").select("*");
+      if (args.id) query = query.eq("id", args.id);
+      else if (args.url_slug) query = query.eq("url_slug", args.url_slug);
+      else throw new Error("Provide either id or url_slug");
+      const { data, error } = await query.single();
+      if (error) throw new Error(`get_location_page: ${error.message}`);
+      // Also fetch linked SEO data
+      let seoData = null;
+      if ((data as any).page_seo_id) {
+        const { data: seo } = await supabase.from("page_seo").select("meta_title, meta_description, target_keyword, index_status").eq("id", (data as any).page_seo_id).single();
+        seoData = seo;
+      }
+      result = { message: JSON.stringify({ ...data, seo: seoData }) };
+    } else if (toolName === "create_location_page") {
+      // 1. Create page_seo entry
+      const pageName = args.h1_title || `${args.primary_service || 'HVAC Services'} in ${args.neighborhood}`;
+      const { data: seoEntry, error: seoError } = await supabase.from("page_seo").insert({
+        page_path: args.url_slug,
+        page_name: pageName,
+        meta_title: args.meta_title || null,
+        meta_description: args.meta_description || null,
+        page_type: args.page_type || "Neighborhood Hub",
+        target_keyword: args.target_keyword || null,
+        cluster: args.cluster || null,
+        index_status: "Pending",
+        schema_applied: args.schema_enabled !== false,
+        robots: "index, follow",
+      }).select("id").single();
+      if (seoError) throw new Error(`create page_seo: ${seoError.message}`);
+      // 2. Create location page
+      const { data: locData, error: locError } = await supabase.from("seo_location_pages").insert({
+        page_seo_id: (seoEntry as any).id,
+        neighborhood: args.neighborhood,
+        city: args.city || "Dallas",
+        state: args.state || "TX",
+        zip_code: args.zip_code || null,
+        cluster: args.cluster || null,
+        page_type: args.page_type || "Neighborhood Hub",
+        url_slug: args.url_slug,
+        h1_title: args.h1_title || null,
+        housing_stock: args.housing_stock || null,
+        local_landmark: args.local_landmark || null,
+        utility_note: args.utility_note || null,
+        primary_service: args.primary_service || null,
+        recommended_system: args.recommended_system || null,
+        case_study_url: args.case_study_url || null,
+        template: args.template || "Standard Neighborhood Hub",
+        schema_enabled: args.schema_enabled !== false,
+        schema_description: args.schema_description || null,
+        published: args.published !== false,
+        add_to_service_areas_hub: true,
+      }).select("id, url_slug").single();
+      if (locError) throw new Error(`create location page: ${locError.message}`);
+      result = { message: `Location page created: ${args.neighborhood} at ${args.url_slug} (ID: ${(locData as any).id})` };
+    } else if (toolName === "update_location_page") {
+      const updateFields: any = {};
+      const seoFields: any = {};
+      const locationFields = ["neighborhood", "city", "state", "zip_code", "cluster", "page_type", "url_slug", "h1_title", "housing_stock", "local_landmark", "utility_note", "primary_service", "recommended_system", "case_study_url", "template", "schema_enabled", "schema_description", "published", "add_to_service_areas_hub"];
+      for (const f of locationFields) {
+        if (args[f] !== undefined) updateFields[f] = args[f];
+      }
+      if (args.meta_title !== undefined) seoFields.meta_title = args.meta_title;
+      if (args.meta_description !== undefined) seoFields.meta_description = args.meta_description;
+      
+      if (Object.keys(updateFields).length > 0) {
+        const { error } = await supabase.from("seo_location_pages").update(updateFields).eq("id", args.id);
+        if (error) throw new Error(`update location page: ${error.message}`);
+      }
+      // Update linked page_seo if SEO fields provided
+      if (Object.keys(seoFields).length > 0) {
+        const { data: loc } = await supabase.from("seo_location_pages").select("page_seo_id").eq("id", args.id).single();
+        if (loc && (loc as any).page_seo_id) {
+          await supabase.from("page_seo").update(seoFields).eq("id", (loc as any).page_seo_id);
+        }
+      }
+      result = { message: `Location page ${args.id} updated successfully.` };
+    } else if (toolName === "delete_location_page") {
+      // Get page_seo_id first
+      const { data: loc } = await supabase.from("seo_location_pages").select("page_seo_id, neighborhood").eq("id", args.id).single();
+      if (!loc) throw new Error("Location page not found");
+      const { error } = await supabase.from("seo_location_pages").delete().eq("id", args.id);
+      if (error) throw new Error(`delete location page: ${error.message}`);
+      if ((loc as any).page_seo_id) {
+        await supabase.from("page_seo").delete().eq("id", (loc as any).page_seo_id);
+      }
+      result = { message: `Location page "${(loc as any).neighborhood}" deleted.` };
+    } else if (toolName === "ask_bach") {
       result = await executeAskBach(supabase, args.message, args.context);
     } else if (toolName === "get_daily_briefing") {
       result = await executeBriefingTool(supabase);
