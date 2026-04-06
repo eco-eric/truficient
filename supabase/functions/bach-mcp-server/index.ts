@@ -853,6 +853,12 @@ const MCP_RESOURCES = [
     description: "Most recent Bach morning briefing data",
     mimeType: "application/json",
   },
+  {
+    uri: "seo://location-pages",
+    name: "SEO Location Pages",
+    description: "All published SEO location pages with cluster, service, and slug info",
+    mimeType: "application/json",
+  },
 ];
 
 function handleResourcesList(id: string | number | null) {
