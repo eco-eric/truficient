@@ -706,6 +706,7 @@ async function executeToolViaBach(
     "update_pipeline_entry", "schedule_appointment", "reschedule_appointment",
     "cancel_appointment", "intake_lead", "review_submissions", "scan_watch_list",
     "draft_estimate", "update_prices", "update_seo",
+    "create_location_page", "update_location_page", "delete_location_page",
   ]);
 
   if (writeTools.has(toolName)) {
