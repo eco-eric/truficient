@@ -201,6 +201,9 @@ const router = createBrowserRouter([
       // Public estimate preview
       { path: "/estimate/preview/:id", element: <PublicEstimatePreview /> },
       
+      // Dynamic SEO location pages (catch-all for location slugs)
+      { path: "/:locationSlug", element: <LocationPage /> },
+      
       // Admin Routes
       { path: "/admin/login", element: <AdminLogin /> },
       {
