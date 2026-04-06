@@ -4257,9 +4257,16 @@ export type Database = {
       }
       page_seo: {
         Row: {
+          avg_position: number | null
           canonical_url: string | null
+          cluster: string | null
           created_at: string | null
+          gsc_clicks: number | null
+          gsc_impressions: number | null
           id: string
+          index_status: string | null
+          internal_links: number | null
+          last_content_update: string | null
           meta_description: string | null
           meta_title: string | null
           og_description: string | null
@@ -4267,14 +4274,24 @@ export type Database = {
           og_title: string | null
           page_name: string
           page_path: string
+          page_type: string | null
           robots: string | null
+          schema_applied: boolean | null
           structured_data: Json | null
+          target_keyword: string | null
           updated_at: string | null
         }
         Insert: {
+          avg_position?: number | null
           canonical_url?: string | null
+          cluster?: string | null
           created_at?: string | null
+          gsc_clicks?: number | null
+          gsc_impressions?: number | null
           id?: string
+          index_status?: string | null
+          internal_links?: number | null
+          last_content_update?: string | null
           meta_description?: string | null
           meta_title?: string | null
           og_description?: string | null
@@ -4282,14 +4299,24 @@ export type Database = {
           og_title?: string | null
           page_name: string
           page_path: string
+          page_type?: string | null
           robots?: string | null
+          schema_applied?: boolean | null
           structured_data?: Json | null
+          target_keyword?: string | null
           updated_at?: string | null
         }
         Update: {
+          avg_position?: number | null
           canonical_url?: string | null
+          cluster?: string | null
           created_at?: string | null
+          gsc_clicks?: number | null
+          gsc_impressions?: number | null
           id?: string
+          index_status?: string | null
+          internal_links?: number | null
+          last_content_update?: string | null
           meta_description?: string | null
           meta_title?: string | null
           og_description?: string | null
@@ -4297,8 +4324,11 @@ export type Database = {
           og_title?: string | null
           page_name?: string
           page_path?: string
+          page_type?: string | null
           robots?: string | null
+          schema_applied?: boolean | null
           structured_data?: Json | null
+          target_keyword?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -4359,6 +4389,92 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
+      }
+      seo_location_pages: {
+        Row: {
+          add_to_service_areas_hub: boolean | null
+          case_study_url: string | null
+          city: string
+          cluster: string | null
+          created_at: string | null
+          h1_title: string | null
+          housing_stock: string | null
+          id: string
+          local_landmark: string | null
+          neighborhood: string
+          page_seo_id: string | null
+          page_type: string
+          primary_service: string | null
+          published: boolean | null
+          recommended_system: string | null
+          schema_description: string | null
+          schema_enabled: boolean | null
+          state: string
+          template: string | null
+          updated_at: string | null
+          url_slug: string
+          utility_note: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          add_to_service_areas_hub?: boolean | null
+          case_study_url?: string | null
+          city?: string
+          cluster?: string | null
+          created_at?: string | null
+          h1_title?: string | null
+          housing_stock?: string | null
+          id?: string
+          local_landmark?: string | null
+          neighborhood: string
+          page_seo_id?: string | null
+          page_type?: string
+          primary_service?: string | null
+          published?: boolean | null
+          recommended_system?: string | null
+          schema_description?: string | null
+          schema_enabled?: boolean | null
+          state?: string
+          template?: string | null
+          updated_at?: string | null
+          url_slug: string
+          utility_note?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          add_to_service_areas_hub?: boolean | null
+          case_study_url?: string | null
+          city?: string
+          cluster?: string | null
+          created_at?: string | null
+          h1_title?: string | null
+          housing_stock?: string | null
+          id?: string
+          local_landmark?: string | null
+          neighborhood?: string
+          page_seo_id?: string | null
+          page_type?: string
+          primary_service?: string | null
+          published?: boolean | null
+          recommended_system?: string | null
+          schema_description?: string | null
+          schema_enabled?: boolean | null
+          state?: string
+          template?: string | null
+          updated_at?: string | null
+          url_slug?: string
+          utility_note?: string | null
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seo_location_pages_page_seo_id_fkey"
+            columns: ["page_seo_id"]
+            isOneToOne: false
+            referencedRelation: "page_seo"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       social_link_clicks: {
         Row: {
