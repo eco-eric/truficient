@@ -167,7 +167,7 @@ const router = createBrowserRouter([
       { path: "/service-areas/mid-cities-area", element: <MidCitiesArea /> },
       { path: "/service-areas/south-dallas-area", element: <SouthDallasArea /> },
       { path: "/service-areas/:clusterSlug", element: <ClusterSubHub /> },
-      { path: "/*", element: <LocationPage /> },
+      { path: "/:locationSlug", element: <LocationPage /> },
       { path: "/hvac-estimate", element: <HvacEstimate /> },
       { path: "/heat-pump-advantage", element: <HeatPumpAdvantage /> },
       { path: "/estimators/sizing", element: <SizingCalculator /> },
