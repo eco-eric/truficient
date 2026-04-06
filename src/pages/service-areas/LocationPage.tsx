@@ -33,16 +33,21 @@ interface SeoData {
 }
 
 const LocationPage = () => {
-  const { '*': slug } = useParams();
-  const fullSlug = `/${slug}/`;
+  const { locationSlug } = useParams<{ locationSlug: string }>();
   const [location, setLocation] = useState<LocationData | null>(null);
   const [seo, setSeo] = useState<SeoData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!locationSlug) { setLoading(false); return; }
     const fetchData = async () => {
-      // Try with and without trailing slash
-      const slugVariants = [fullSlug, `/${slug}`, slug, `${slug}/`];
+      // Try with and without leading/trailing slashes to match DB format
+      const slugVariants = [
+        `/${locationSlug}/`,
+        `/${locationSlug}`,
+        locationSlug,
+        `${locationSlug}/`,
+      ];
       let found = false;
       for (const s of slugVariants) {
         const { data, error } = await supabase
@@ -70,7 +75,7 @@ const LocationPage = () => {
       setLoading(false);
     };
     fetchData();
-  }, [slug]);
+  }, [locationSlug]);
 
   // Apply SEO meta tags
   useEffect(() => {
