@@ -1036,6 +1036,17 @@ async function readResource(uri: string, supabase: any): Promise<any> {
       return data;
     }
 
+    case "seo://location-pages": {
+      const { data, error } = await supabase
+        .from("seo_location_pages")
+        .select("id, neighborhood, city, state, cluster, url_slug, primary_service, published, schema_enabled, created_at")
+        .order("cluster")
+        .order("neighborhood")
+        .limit(200);
+      if (error) throw new Error(`location-pages: ${error.message}`);
+      return data;
+    }
+
     default:
       throw new Error(`Unknown resource URI: ${uri}`);
   }
