@@ -30,7 +30,21 @@ interface PageSEO {
   canonical_url: string | null;
   robots: string | null;
   structured_data: any;
+  page_type: string | null;
+  target_keyword: string | null;
+  cluster: string | null;
+  index_status: string | null;
+  gsc_impressions: number | null;
+  gsc_clicks: number | null;
+  avg_position: number | null;
+  internal_links: number | null;
+  schema_applied: boolean | null;
+  last_content_update: string | null;
 }
+
+const PAGE_TYPES = ['Core Page', 'Neighborhood Hub', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Energy Content'];
+const CLUSTERS = ['Core Site', 'Oak Cliff', 'East Dallas', 'North Dallas', 'Downtown Dallas', 'South Dallas', 'Outer Ring'];
+const INDEX_STATUSES = ['Indexed', 'Pending', 'Not Indexed', 'Excluded'];
 
 const SEOEditor = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,6 +65,16 @@ const SEOEditor = () => {
     canonical_url: '',
     robots: 'index, follow',
     structured_data: null,
+    page_type: 'Core Page',
+    target_keyword: '',
+    cluster: 'Core Site',
+    index_status: 'Pending',
+    gsc_impressions: 0,
+    gsc_clicks: 0,
+    avg_position: null,
+    internal_links: 0,
+    schema_applied: false,
+    last_content_update: null,
   });
 
   useEffect(() => {
@@ -115,6 +139,16 @@ const SEOEditor = () => {
         canonical_url: seo.canonical_url || null,
         robots: seo.robots || 'index, follow',
         structured_data: seo.structured_data || null,
+        page_type: seo.page_type || 'Core Page',
+        target_keyword: seo.target_keyword || null,
+        cluster: seo.cluster || null,
+        index_status: seo.index_status || 'Pending',
+        gsc_impressions: seo.gsc_impressions || 0,
+        gsc_clicks: seo.gsc_clicks || 0,
+        avg_position: seo.avg_position || null,
+        internal_links: seo.internal_links || 0,
+        schema_applied: seo.schema_applied || false,
+        last_content_update: seo.last_content_update || null,
       };
 
       if (isNew) {
@@ -250,6 +284,75 @@ const SEOEditor = () => {
                   onChange={(e) => setSeo(prev => ({ ...prev, page_path: e.target.value }))}
                   placeholder="e.g., /, /about, /contact"
                 />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <div className="space-y-2">
+                <Label>Page Type</Label>
+                <Select value={seo.page_type || 'Core Page'} onValueChange={(v) => setSeo(prev => ({ ...prev, page_type: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PAGE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Cluster</Label>
+                <Select value={seo.cluster || 'Core Site'} onValueChange={(v) => setSeo(prev => ({ ...prev, cluster: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CLUSTERS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Index Status</Label>
+                <Select value={seo.index_status || 'Pending'} onValueChange={(v) => setSeo(prev => ({ ...prev, index_status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {INDEX_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="targetKeyword">Target Keyword</Label>
+                <Input id="targetKeyword" value={seo.target_keyword || ''} onChange={(e) => setSeo(prev => ({ ...prev, target_keyword: e.target.value }))} placeholder="Primary SEO keyword" />
+              </div>
+              <div className="flex items-center gap-4 pt-6">
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={seo.schema_applied || false} onChange={(e) => setSeo(prev => ({ ...prev, schema_applied: e.target.checked }))} className="rounded" />
+                  Schema Applied
+                </label>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* GSC Metrics */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Search Console Metrics</CardTitle>
+            <CardDescription>Weekly Google Search Console data (manual entry)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label>GSC Impressions</Label>
+                <Input type="number" value={seo.gsc_impressions ?? 0} onChange={(e) => setSeo(prev => ({ ...prev, gsc_impressions: parseInt(e.target.value) || 0 }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>GSC Clicks</Label>
+                <Input type="number" value={seo.gsc_clicks ?? 0} onChange={(e) => setSeo(prev => ({ ...prev, gsc_clicks: parseInt(e.target.value) || 0 }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Avg Position</Label>
+                <Input type="number" step="0.1" value={seo.avg_position ?? ''} onChange={(e) => setSeo(prev => ({ ...prev, avg_position: parseFloat(e.target.value) || null }))} placeholder="e.g., 12.3" />
+              </div>
+              <div className="space-y-2">
+                <Label>Internal Links</Label>
+                <Input type="number" value={seo.internal_links ?? 0} onChange={(e) => setSeo(prev => ({ ...prev, internal_links: parseInt(e.target.value) || 0 }))} />
               </div>
             </div>
           </CardContent>

@@ -27,6 +27,9 @@ import NorthDallasArea from "./pages/service-areas/NorthDallasArea";
 import FriscoMcKinneyArea from "./pages/service-areas/FriscoMcKinneyArea";
 import MidCitiesArea from "./pages/service-areas/MidCitiesArea";
 import SouthDallasArea from "./pages/service-areas/SouthDallasArea";
+import ServiceAreasHub from "./pages/service-areas/ServiceAreasHub";
+import ClusterSubHub from "./pages/service-areas/ClusterSubHub";
+import LocationPage from "./pages/service-areas/LocationPage";
 import Careers from "./pages/Careers";
 import Financing from "./pages/Financing";
 import FreeHvacAgeCheckerFB from "./pages/landing/FreeHvacAgeCheckerFB";
@@ -46,6 +49,7 @@ import AdminBlogPosts from "./pages/admin/BlogPosts";
 import AdminBlogPostEditor from "./pages/admin/BlogPostEditor";
 import AdminSEOManagement from "./pages/admin/SEOManagement";
 import AdminSEOEditor from "./pages/admin/SEOEditor";
+import AdminLocationPageBuilder from "./pages/admin/LocationPageBuilder";
 import AdminCalculators from "./pages/admin/Calculators";
 import AdminCalculatorEditor from "./pages/admin/CalculatorEditor";
 import AdminUsers from "./pages/admin/Users";
@@ -156,11 +160,14 @@ const router = createBrowserRouter([
       { path: "/residential-services", element: <ResidentialServices /> },
       { path: "/commercial-services", element: <CommercialServices /> },
       { path: "/contact", element: <Contact /> },
+      { path: "/service-areas", element: <ServiceAreasHub /> },
       { path: "/service-areas/dallas-area", element: <DallasArea /> },
       { path: "/service-areas/north-dallas-area", element: <NorthDallasArea /> },
       { path: "/service-areas/frisco-mckinney-area", element: <FriscoMcKinneyArea /> },
       { path: "/service-areas/mid-cities-area", element: <MidCitiesArea /> },
       { path: "/service-areas/south-dallas-area", element: <SouthDallasArea /> },
+      { path: "/service-areas/:clusterSlug", element: <ClusterSubHub /> },
+      
       { path: "/hvac-estimate", element: <HvacEstimate /> },
       { path: "/heat-pump-advantage", element: <HeatPumpAdvantage /> },
       { path: "/estimators/sizing", element: <SizingCalculator /> },
@@ -194,6 +201,9 @@ const router = createBrowserRouter([
       // Public estimate preview
       { path: "/estimate/preview/:id", element: <PublicEstimatePreview /> },
       
+      // Dynamic SEO location pages (catch-all for location slugs)
+      { path: "/:locationSlug", element: <LocationPage /> },
+      
       // Admin Routes
       { path: "/admin/login", element: <AdminLogin /> },
       {
@@ -222,6 +232,7 @@ const router = createBrowserRouter([
           { path: "/admin/blog/:id", element: <ProtectedRoute><AdminBlogPostEditor /></ProtectedRoute> },
           { path: "/admin/seo", element: <ProtectedRoute><AdminSEOManagement /></ProtectedRoute> },
           { path: "/admin/seo/:id", element: <ProtectedRoute><AdminSEOEditor /></ProtectedRoute> },
+          { path: "/admin/seo/location/:id", element: <ProtectedRoute><AdminLocationPageBuilder /></ProtectedRoute> },
           { path: "/admin/calculators", element: <ProtectedRoute><AdminCalculators /></ProtectedRoute> },
           { path: "/admin/calculators/:id", element: <ProtectedRoute><AdminCalculatorEditor /></ProtectedRoute> },
           { path: "/admin/system-pricing", element: <ProtectedRoute><AdminSystemPricing /></ProtectedRoute> },
