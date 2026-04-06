@@ -30,7 +30,21 @@ interface PageSEO {
   canonical_url: string | null;
   robots: string | null;
   structured_data: any;
+  page_type: string | null;
+  target_keyword: string | null;
+  cluster: string | null;
+  index_status: string | null;
+  gsc_impressions: number | null;
+  gsc_clicks: number | null;
+  avg_position: number | null;
+  internal_links: number | null;
+  schema_applied: boolean | null;
+  last_content_update: string | null;
 }
+
+const PAGE_TYPES = ['Core Page', 'Neighborhood Hub', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Energy Content'];
+const CLUSTERS = ['Core Site', 'Oak Cliff', 'East Dallas', 'North Dallas', 'Downtown Dallas', 'South Dallas', 'Outer Ring'];
+const INDEX_STATUSES = ['Indexed', 'Pending', 'Not Indexed', 'Excluded'];
 
 const SEOEditor = () => {
   const { id } = useParams<{ id: string }>();
