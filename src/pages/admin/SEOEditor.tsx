@@ -139,6 +139,16 @@ const SEOEditor = () => {
         canonical_url: seo.canonical_url || null,
         robots: seo.robots || 'index, follow',
         structured_data: seo.structured_data || null,
+        page_type: seo.page_type || 'Core Page',
+        target_keyword: seo.target_keyword || null,
+        cluster: seo.cluster || null,
+        index_status: seo.index_status || 'Pending',
+        gsc_impressions: seo.gsc_impressions || 0,
+        gsc_clicks: seo.gsc_clicks || 0,
+        avg_position: seo.avg_position || null,
+        internal_links: seo.internal_links || 0,
+        schema_applied: seo.schema_applied || false,
+        last_content_update: seo.last_content_update || null,
       };
 
       if (isNew) {
