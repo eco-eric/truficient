@@ -46,6 +46,7 @@ import AdminBlogPosts from "./pages/admin/BlogPosts";
 import AdminBlogPostEditor from "./pages/admin/BlogPostEditor";
 import AdminSEOManagement from "./pages/admin/SEOManagement";
 import AdminSEOEditor from "./pages/admin/SEOEditor";
+import AdminLocationPageBuilder from "./pages/admin/LocationPageBuilder";
 import AdminCalculators from "./pages/admin/Calculators";
 import AdminCalculatorEditor from "./pages/admin/CalculatorEditor";
 import AdminUsers from "./pages/admin/Users";
