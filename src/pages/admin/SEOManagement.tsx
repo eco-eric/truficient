@@ -56,7 +56,53 @@ interface PageSEO {
 
 type SortField = 'status' | 'avg_position' | 'gsc_clicks' | 'last_content_update' | 'page_name';
 
-const SEOManagement = () => {
+const SitemapButton = () => {
+  const [regenerating, setRegenerating] = useState(false);
+  const [lastSnapshot, setLastSnapshot] = useState<{ url_count: number; created_at: string } | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from('sitemap_snapshots')
+      .select('url_count, created_at')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) setLastSnapshot(data[0]);
+      });
+  }, []);
+
+  const handleRegenerate = async () => {
+    setRegenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('regenerate-sitemap');
+      if (error) throw error;
+      toast.success(`Sitemap regenerated: ${data.url_count} URLs`, {
+        description: `Static: ${data.breakdown.static} · Location: ${data.breakdown.location} · Blog: ${data.breakdown.blog} · Equipment: ${data.breakdown.equipment}`,
+      });
+      setLastSnapshot({ url_count: data.url_count, created_at: data.generated_at });
+    } catch (err: any) {
+      toast.error('Failed to regenerate sitemap', { description: err.message });
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <Button variant="outline" onClick={handleRegenerate} disabled={regenerating}>
+        <RefreshCw className={`h-4 w-4 mr-2 ${regenerating ? 'animate-spin' : ''}`} />
+        {regenerating ? 'Regenerating...' : 'Regenerate Sitemap'}
+      </Button>
+      {lastSnapshot && (
+        <span className="text-xs text-muted-foreground">
+          Last: {format(new Date(lastSnapshot.created_at), 'MMM d, h:mm a')} · {lastSnapshot.url_count} URLs
+        </span>
+      )}
+    </div>
+  );
+};
+
+
   const [loading, setLoading] = useState(true);
   const [pages, setPages] = useState<PageSEO[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
