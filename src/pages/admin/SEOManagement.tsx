@@ -156,7 +156,7 @@ const SEOManagement = () => {
   const totalPages = pages.length;
   const optimizedCount = pages.filter(p => getSEOStatus(p).label === 'Good').length;
   const needsAttentionCount = totalPages - optimizedCount;
-  const locationPages = pages.filter(p => p.page_type !== 'Core Page');
+  const locationPages = pages.filter(p => p.page_type === 'location');
   const indexedCount = pages.filter(p => p.index_status === 'Indexed').length;
   const notIndexedCount = pages.filter(p => p.index_status !== 'Indexed').length;
   const missingSchemaCount = pages.filter(p => !p.schema_applied).length;
