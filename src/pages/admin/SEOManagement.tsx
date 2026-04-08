@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,7 +28,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Loader2, Search, Pencil, Plus, Check, X, ExternalLink, ArrowUpDown, MapPin, FileText, ChevronDown } from 'lucide-react';
+import { Loader2, Search, Pencil, Plus, Check, X, ExternalLink, ArrowUpDown, MapPin, FileText, ChevronDown, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 const PAGE_TYPES = ['Core Page', 'Neighborhood Hub', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Energy Content', 'Equipment'];
 const CLUSTERS = ['Core Site', 'Oak Cliff', 'East Dallas', 'North Dallas', 'Downtown Dallas', 'South Dallas', 'Outer Ring'];
@@ -199,29 +200,32 @@ const SEOManagement = () => {
             />
           </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="bg-[#1e3a5f] hover:bg-[#1e3a5f]/90">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Page
-                <ChevronDown className="h-4 w-4 ml-2" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link to="/admin/seo/new" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Core Page
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/admin/seo/location/new" className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  Location Page
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-2">
+            <SitemapButton />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="bg-[#1e3a5f] hover:bg-[#1e3a5f]/90">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Page
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to="/admin/seo/new" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Core Page
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/admin/seo/location/new" className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Location Page
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         {/* Summary Cards */}
