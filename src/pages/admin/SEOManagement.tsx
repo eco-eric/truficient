@@ -30,7 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Loader2, Search, Pencil, Plus, Check, X, ExternalLink, ArrowUpDown, MapPin, FileText, ChevronDown } from 'lucide-react';
 
-const PAGE_TYPES = ['Core Page', 'Neighborhood Hub', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Energy Content'];
+const PAGE_TYPES = ['Core Page', 'Neighborhood Hub', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Energy Content', 'Equipment'];
 const CLUSTERS = ['Core Site', 'Oak Cliff', 'East Dallas', 'North Dallas', 'Downtown Dallas', 'South Dallas', 'Outer Ring'];
 const INDEX_STATUSES = ['Indexed', 'Pending', 'Not Indexed', 'Excluded'];
 
