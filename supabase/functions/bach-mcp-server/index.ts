@@ -589,6 +589,61 @@ const MCP_TOOLS = [
       required: ["id"],
     },
   },
+  // === KNOWLEDGE BASE TOOLS ===
+  {
+    name: "list_knowledge_base",
+    description: "List all knowledge base instruction documents. Optionally filter by category or tag.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        category: { type: "string", description: "Filter by category" },
+        tag: { type: "string", description: "Filter by tag" },
+        active_only: { type: "boolean", description: "Only active docs (default true)" },
+      },
+    },
+  },
+  {
+    name: "get_knowledge_doc",
+    description: "Get the full content of a knowledge base document by slug or ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        slug: { type: "string", description: "Document slug" },
+        id: { type: "string", description: "Document UUID (alternative to slug)" },
+      },
+    },
+  },
+  {
+    name: "update_knowledge_doc",
+    description: "Update an existing knowledge base document's content, title, category, tags, or active status.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "UUID of the document" },
+        slug: { type: "string", description: "Slug (alternative to id)" },
+        title: { type: "string", description: "New title" },
+        content: { type: "string", description: "New content" },
+        category: { type: "string", description: "New category" },
+        tags: { type: "array", items: { type: "string" }, description: "New tags" },
+        is_active: { type: "boolean", description: "Active status" },
+      },
+    },
+  },
+  {
+    name: "create_knowledge_doc",
+    description: "Create a new knowledge base instruction document.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Document title" },
+        slug: { type: "string", description: "URL-safe slug for referencing" },
+        category: { type: "string", description: "Category (e.g. general, process, pricing, scheduling)" },
+        content: { type: "string", description: "Full content/instructions" },
+        tags: { type: "array", items: { type: "string" }, description: "Tags" },
+      },
+      required: ["title", "slug", "content"],
+    },
+  },
   // === NATURAL LANGUAGE PASSTHROUGH ===
   {
     name: "ask_bach",
