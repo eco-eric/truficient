@@ -6,6 +6,22 @@ const NotFound = () => {
 
   useEffect(() => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
+    
+    // Set noindex for 404 pages so Google doesn't index them
+    let robotsMeta = document.querySelector('meta[name="robots"]') as HTMLMetaElement;
+    if (!robotsMeta) {
+      robotsMeta = document.createElement('meta');
+      robotsMeta.name = 'robots';
+      document.head.appendChild(robotsMeta);
+    }
+    const prevRobots = robotsMeta.content;
+    robotsMeta.content = 'noindex, nofollow';
+    
+    document.title = 'Page Not Found | Truficient Energy Solutions';
+
+    return () => {
+      robotsMeta.content = prevRobots || 'index, follow';
+    };
   }, [location.pathname]);
 
   return (
