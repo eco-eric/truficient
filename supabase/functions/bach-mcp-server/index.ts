@@ -1108,6 +1108,17 @@ async function readResource(uri: string, supabase: any): Promise<any> {
       return data;
     }
 
+    case "knowledge://documents": {
+      const { data, error } = await supabase
+        .from("knowledge_base")
+        .select("id, title, slug, category, content, tags, is_active, created_at, updated_at")
+        .eq("is_active", true)
+        .order("category")
+        .order("title");
+      if (error) throw new Error(`knowledge docs: ${error.message}`);
+      return data;
+    }
+
     default:
       throw new Error(`Unknown resource URI: ${uri}`);
   }
