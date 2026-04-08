@@ -89,9 +89,9 @@ const SEOManagement = () => {
   const getSEOStatus = (page: PageSEO) => {
     const hasTitle = page.meta_title && page.meta_title.length > 0;
     const hasDescription = page.meta_description && page.meta_description.length > 0;
-    const titleOk = hasTitle && page.meta_title!.length <= 60;
-    const descOk = hasDescription && page.meta_description!.length <= 160;
-    if (hasTitle && hasDescription && titleOk && descOk) return { label: 'Good', className: 'bg-green-100 text-green-800', order: 0 };
+    const titleInRange = hasTitle && page.meta_title!.length >= 20 && page.meta_title!.length <= 70;
+    const descInRange = hasDescription && page.meta_description!.length >= 50 && page.meta_description!.length <= 165;
+    if (hasTitle && hasDescription && titleInRange && descInRange) return { label: 'Good', className: 'bg-green-100 text-green-800', order: 0 };
     if (hasTitle && hasDescription) return { label: 'Needs Review', className: 'bg-amber-100 text-amber-800', order: 1 };
     return { label: 'Needs Attention', className: 'bg-red-100 text-red-800', order: 2 };
   };
@@ -156,7 +156,7 @@ const SEOManagement = () => {
   const totalPages = pages.length;
   const optimizedCount = pages.filter(p => getSEOStatus(p).label === 'Good').length;
   const needsAttentionCount = totalPages - optimizedCount;
-  const locationPages = pages.filter(p => p.page_type !== 'Core Page');
+  const locationPages = pages.filter(p => p.page_type === 'location');
   const indexedCount = pages.filter(p => p.index_status === 'Indexed').length;
   const notIndexedCount = pages.filter(p => p.index_status !== 'Indexed').length;
   const missingSchemaCount = pages.filter(p => !p.schema_applied).length;
