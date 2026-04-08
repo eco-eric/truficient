@@ -85,6 +85,57 @@ export const usePageSEO = (customPath?: string) => {
             }
             canonical.setAttribute('href', (data as any).canonical_url);
           }
+
+          // Inject HVACBusiness JSON-LD schema for core pages
+          const schemaId = 'page-seo-jsonld';
+          let existingSchema = document.getElementById(schemaId);
+          if (!existingSchema) {
+            const hvacSchema = {
+              "@context": "https://schema.org",
+              "@type": "HVACBusiness",
+              "name": "Truficient Energy Solutions",
+              "url": "https://truficient.com",
+              "logo": "https://truficient.com/logo.png",
+              "telephone": "214-238-4349",
+              "email": "info@truficient.com",
+              "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "Dallas",
+                "addressLocality": "Dallas",
+                "addressRegion": "TX",
+                "postalCode": "75201",
+                "addressCountry": "US"
+              },
+              "geo": {
+                "@type": "GeoCoordinates",
+                "latitude": 32.7767,
+                "longitude": -96.7970
+              },
+              "areaServed": {
+                "@type": "City",
+                "name": "Dallas",
+                "sameAs": "https://en.wikipedia.org/wiki/Dallas"
+              },
+              "sameAs": [
+                "https://www.facebook.com/truficient",
+                "https://www.google.com/maps/place/Truficient+Energy+Solutions"
+              ],
+              "openingHoursSpecification": [
+                {
+                  "@type": "OpeningHoursSpecification",
+                  "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+                  "opens": "08:00",
+                  "closes": "18:00"
+                }
+              ],
+              "priceRange": "$$"
+            };
+            const script = document.createElement('script');
+            script.id = schemaId;
+            script.type = 'application/ld+json';
+            script.textContent = JSON.stringify(hvacSchema);
+            document.head.appendChild(script);
+          }
         }
       } catch (error) {
         console.error('Error fetching SEO settings:', error);
