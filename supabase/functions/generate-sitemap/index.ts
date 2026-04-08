@@ -16,22 +16,37 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch all published equipment pages
-    const { data: equipmentPages, error } = await supabase
-      .from('equipment_pages')
-      .select('slug, updated_at')
-      .eq('published', true)
-      .order('updated_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching equipment pages:', error);
-      throw error;
-    }
-
     const baseUrl = 'https://www.truficient.com';
     const today = new Date().toISOString().split('T')[0];
 
-    // Static pages from the existing sitemap
+    // Fetch all dynamic content in parallel
+    const [locationRes, blogRes, equipmentRes] = await Promise.all([
+      supabase
+        .from('seo_location_pages')
+        .select('url_slug, updated_at, page_type')
+        .eq('published', true)
+        .order('updated_at', { ascending: false }),
+      supabase
+        .from('blog_posts')
+        .select('slug, updated_at, published_at')
+        .eq('status', 'published')
+        .order('published_at', { ascending: false }),
+      supabase
+        .from('equipment_pages')
+        .select('slug, updated_at')
+        .eq('published', true)
+        .order('updated_at', { ascending: false }),
+    ]);
+
+    if (locationRes.error) console.error('Location pages error:', locationRes.error);
+    if (blogRes.error) console.error('Blog posts error:', blogRes.error);
+    if (equipmentRes.error) console.error('Equipment pages error:', equipmentRes.error);
+
+    const locationPages = locationRes.data || [];
+    const blogPosts = blogRes.data || [];
+    const equipmentPages = equipmentRes.data || [];
+
+    // Static pages
     const staticPages = [
       { loc: '/', changefreq: 'weekly', priority: '1.0' },
       { loc: '/about', changefreq: 'monthly', priority: '0.8' },
@@ -48,6 +63,7 @@ Deno.serve(async (req) => {
       { loc: '/estimators/savings', changefreq: 'monthly', priority: '0.8' },
       { loc: '/scanner', changefreq: 'weekly', priority: '0.8' },
       { loc: '/equipment', changefreq: 'weekly', priority: '0.7' },
+      { loc: '/service-areas', changefreq: 'weekly', priority: '0.8' },
       { loc: '/service-areas/dallas-area', changefreq: 'monthly', priority: '0.7' },
       { loc: '/service-areas/north-dallas-area', changefreq: 'monthly', priority: '0.7' },
       { loc: '/service-areas/frisco-mckinney-area', changefreq: 'monthly', priority: '0.7' },
@@ -59,12 +75,11 @@ Deno.serve(async (req) => {
       { loc: '/terms-of-service', changefreq: 'yearly', priority: '0.3' },
     ];
 
-    // Generate XML
+    // Build XML
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Static Pages -->`;
 
-    // Add static pages
     for (const page of staticPages) {
       xml += `
   <url>
@@ -74,17 +89,57 @@ Deno.serve(async (req) => {
   </url>`;
     }
 
-    // Add equipment pages section
-    if (equipmentPages && equipmentPages.length > 0) {
+    // Location / SEO pages
+    if (locationPages.length > 0) {
       xml += `
-  
-  <!-- Equipment Pages (${equipmentPages.length} total) -->`;
-      
-      for (const page of equipmentPages) {
-        const lastmod = page.updated_at 
+
+  <!-- Location Pages (${locationPages.length} total) -->`;
+      for (const page of locationPages) {
+        const slug = page.url_slug.replace(/^\/|\/$/g, '');
+        const lastmod = page.updated_at
           ? new Date(page.updated_at).toISOString().split('T')[0]
           : today;
-        
+        const priority = page.page_type?.includes('Hub') ? '0.8' : '0.7';
+        xml += `
+  <url>
+    <loc>${baseUrl}/${slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>${priority}</priority>
+  </url>`;
+      }
+    }
+
+    // Blog posts
+    if (blogPosts.length > 0) {
+      xml += `
+
+  <!-- Blog Posts (${blogPosts.length} total) -->`;
+      for (const post of blogPosts) {
+        const lastmod = post.updated_at
+          ? new Date(post.updated_at).toISOString().split('T')[0]
+          : post.published_at
+          ? new Date(post.published_at).toISOString().split('T')[0]
+          : today;
+        xml += `
+  <url>
+    <loc>${baseUrl}/blog/${post.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>`;
+      }
+    }
+
+    // Equipment pages
+    if (equipmentPages.length > 0) {
+      xml += `
+
+  <!-- Equipment Pages (${equipmentPages.length} total) -->`;
+      for (const page of equipmentPages) {
+        const lastmod = page.updated_at
+          ? new Date(page.updated_at).toISOString().split('T')[0]
+          : today;
         xml += `
   <url>
     <loc>${baseUrl}/equipment/${page.slug}</loc>
@@ -97,6 +152,8 @@ Deno.serve(async (req) => {
 
     xml += `
 </urlset>`;
+
+    console.log(`Sitemap generated: ${staticPages.length} static + ${locationPages.length} location + ${blogPosts.length} blog + ${equipmentPages.length} equipment = ${staticPages.length + locationPages.length + blogPosts.length + equipmentPages.length} total URLs`);
 
     return new Response(xml, {
       status: 200,

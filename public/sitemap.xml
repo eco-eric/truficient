@@ -85,6 +85,11 @@
   
   <!-- Service Areas -->
   <url>
+    <loc>https://www.truficient.com/service-areas</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://www.truficient.com/service-areas/dallas-area</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -106,6 +111,26 @@
   </url>
   <url>
     <loc>https://www.truficient.com/service-areas/south-dallas-area</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- Location Pages -->
+  <url>
+    <loc>https://www.truficient.com/residential-hvac-oak-cliff-dallas</loc>
+    <lastmod>2026-04-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.truficient.com/heat-pump-replacement-oak-cliff-dallas</loc>
+    <lastmod>2026-04-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.truficient.com/mini-split-installation-oak-cliff-dallas</loc>
+    <lastmod>2026-04-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
