@@ -4432,14 +4432,18 @@ export type Database = {
       seo_location_pages: {
         Row: {
           add_to_service_areas_hub: boolean | null
+          audience: string | null
           case_study_url: string | null
           city: string
           cluster: string | null
+          content: string | null
           created_at: string | null
           h1_title: string | null
           housing_stock: string | null
           id: string
           local_landmark: string | null
+          meta_description: string | null
+          meta_title: string | null
           neighborhood: string
           page_seo_id: string | null
           page_type: string
@@ -4448,6 +4452,8 @@ export type Database = {
           recommended_system: string | null
           schema_description: string | null
           schema_enabled: boolean | null
+          schema_json: Json | null
+          search_intent: string | null
           state: string
           template: string | null
           updated_at: string | null
@@ -4457,14 +4463,18 @@ export type Database = {
         }
         Insert: {
           add_to_service_areas_hub?: boolean | null
+          audience?: string | null
           case_study_url?: string | null
           city?: string
           cluster?: string | null
+          content?: string | null
           created_at?: string | null
           h1_title?: string | null
           housing_stock?: string | null
           id?: string
           local_landmark?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
           neighborhood: string
           page_seo_id?: string | null
           page_type?: string
@@ -4473,6 +4483,8 @@ export type Database = {
           recommended_system?: string | null
           schema_description?: string | null
           schema_enabled?: boolean | null
+          schema_json?: Json | null
+          search_intent?: string | null
           state?: string
           template?: string | null
           updated_at?: string | null
@@ -4482,14 +4494,18 @@ export type Database = {
         }
         Update: {
           add_to_service_areas_hub?: boolean | null
+          audience?: string | null
           case_study_url?: string | null
           city?: string
           cluster?: string | null
+          content?: string | null
           created_at?: string | null
           h1_title?: string | null
           housing_stock?: string | null
           id?: string
           local_landmark?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
           neighborhood?: string
           page_seo_id?: string | null
           page_type?: string
@@ -4498,6 +4514,8 @@ export type Database = {
           recommended_system?: string | null
           schema_description?: string | null
           schema_enabled?: boolean | null
+          schema_json?: Json | null
+          search_intent?: string | null
           state?: string
           template?: string | null
           updated_at?: string | null
