@@ -21,7 +21,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Plus, Search, BookOpen, Pencil, Trash2, Copy } from 'lucide-react';
 
-const CATEGORIES = ['general', 'process', 'pricing', 'scheduling', 'customer-service', 'technical', 'sales', 'hr'];
+const CATEGORIES = ['general', 'process', 'pricing', 'scheduling', 'customer-service', 'technical', 'sales', 'hr', 'seo'];
 
 interface KBEntry {
   id: string;
