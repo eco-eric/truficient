@@ -589,6 +589,61 @@ const MCP_TOOLS = [
       required: ["id"],
     },
   },
+  // === KNOWLEDGE BASE TOOLS ===
+  {
+    name: "list_knowledge_base",
+    description: "List all knowledge base instruction documents. Optionally filter by category or tag.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        category: { type: "string", description: "Filter by category" },
+        tag: { type: "string", description: "Filter by tag" },
+        active_only: { type: "boolean", description: "Only active docs (default true)" },
+      },
+    },
+  },
+  {
+    name: "get_knowledge_doc",
+    description: "Get the full content of a knowledge base document by slug or ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        slug: { type: "string", description: "Document slug" },
+        id: { type: "string", description: "Document UUID (alternative to slug)" },
+      },
+    },
+  },
+  {
+    name: "update_knowledge_doc",
+    description: "Update an existing knowledge base document's content, title, category, tags, or active status.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "UUID of the document" },
+        slug: { type: "string", description: "Slug (alternative to id)" },
+        title: { type: "string", description: "New title" },
+        content: { type: "string", description: "New content" },
+        category: { type: "string", description: "New category" },
+        tags: { type: "array", items: { type: "string" }, description: "New tags" },
+        is_active: { type: "boolean", description: "Active status" },
+      },
+    },
+  },
+  {
+    name: "create_knowledge_doc",
+    description: "Create a new knowledge base instruction document.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Document title" },
+        slug: { type: "string", description: "URL-safe slug for referencing" },
+        category: { type: "string", description: "Category (e.g. general, process, pricing, scheduling)" },
+        content: { type: "string", description: "Full content/instructions" },
+        tags: { type: "array", items: { type: "string" }, description: "Tags" },
+      },
+      required: ["title", "slug", "content"],
+    },
+  },
   // === NATURAL LANGUAGE PASSTHROUGH ===
   {
     name: "ask_bach",
@@ -859,6 +914,12 @@ const MCP_RESOURCES = [
     description: "All published SEO location pages with cluster, service, and slug info",
     mimeType: "application/json",
   },
+  {
+    uri: "knowledge://documents",
+    name: "Knowledge Base Documents",
+    description: "All active instruction documents from the knowledge base",
+    mimeType: "application/json",
+  },
 ];
 
 function handleResourcesList(id: string | number | null) {
@@ -1047,6 +1108,17 @@ async function readResource(uri: string, supabase: any): Promise<any> {
       return data;
     }
 
+    case "knowledge://documents": {
+      const { data, error } = await supabase
+        .from("knowledge_base")
+        .select("id, title, slug, category, content, tags, is_active, created_at, updated_at")
+        .eq("is_active", true)
+        .order("category")
+        .order("title");
+      if (error) throw new Error(`knowledge docs: ${error.message}`);
+      return data;
+    }
+
     default:
       throw new Error(`Unknown resource URI: ${uri}`);
   }
@@ -1197,6 +1269,45 @@ async function handleToolsCall(
         await supabase.from("page_seo").delete().eq("id", (loc as any).page_seo_id);
       }
       result = { message: `Location page "${(loc as any).neighborhood}" deleted.` };
+    } else if (toolName === "list_knowledge_base") {
+      let query = supabase.from("knowledge_base")
+        .select("id, title, slug, category, tags, is_active, created_at, updated_at");
+      if (args.active_only !== false) query = query.eq("is_active", true);
+      if (args.category) query = query.eq("category", args.category);
+      query = query.order("category").order("title");
+      const { data, error } = await query;
+      if (error) throw new Error(`list_knowledge_base: ${error.message}`);
+      let filtered = data || [];
+      if (args.tag) filtered = filtered.filter((d: any) => d.tags?.includes(args.tag));
+      result = { message: JSON.stringify({ documents: filtered, count: filtered.length }) };
+    } else if (toolName === "get_knowledge_doc") {
+      let query = supabase.from("knowledge_base").select("*");
+      if (args.id) query = query.eq("id", args.id);
+      else if (args.slug) query = query.eq("slug", args.slug);
+      else throw new Error("Provide either id or slug");
+      const { data, error } = await query.single();
+      if (error) throw new Error(`get_knowledge_doc: ${error.message}`);
+      result = { message: JSON.stringify(data) };
+    } else if (toolName === "update_knowledge_doc") {
+      const updateFields: any = {};
+      for (const f of ["title", "content", "category", "tags", "is_active"]) {
+        if (args[f] !== undefined) updateFields[f] = args[f];
+      }
+      if (Object.keys(updateFields).length === 0) throw new Error("No fields to update");
+      let query = supabase.from("knowledge_base").update(updateFields);
+      if (args.id) query = query.eq("id", args.id);
+      else if (args.slug) query = query.eq("slug", args.slug);
+      else throw new Error("Provide either id or slug");
+      const { error } = await query;
+      if (error) throw new Error(`update_knowledge_doc: ${error.message}`);
+      result = { message: `Knowledge doc updated successfully.` };
+    } else if (toolName === "create_knowledge_doc") {
+      const { data, error } = await supabase.from("knowledge_base").insert({
+        title: args.title, slug: args.slug, content: args.content,
+        category: args.category || "general", tags: args.tags || [],
+      }).select("id, slug").single();
+      if (error) throw new Error(`create_knowledge_doc: ${error.message}`);
+      result = { message: `Knowledge doc created: "${args.title}" (slug: ${(data as any).slug}, id: ${(data as any).id})` };
     } else if (toolName === "ask_bach") {
       result = await executeAskBach(supabase, args.message, args.context);
     } else if (toolName === "get_daily_briefing") {

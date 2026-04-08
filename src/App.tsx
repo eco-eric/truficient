@@ -98,6 +98,7 @@ import AdminRolePermissions from "./pages/admin/RolePermissions";
 import AdminCompanies from "./pages/admin/Companies";
 import AdminCompanyDetail from "./pages/admin/CompanyDetail";
 import AdminTasks from "./pages/admin/Tasks";
+import AdminKnowledgeBase from "./pages/admin/KnowledgeBase";
 import AdminTimesheets from "./pages/admin/Timesheets";
 import InvoicingMissionControl from "./pages/admin/invoicing/InvoicingMissionControl";
 import InvoicesList from "./pages/admin/invoicing/InvoicesList";
@@ -280,6 +281,7 @@ const router = createBrowserRouter([
           { path: "/admin/invoice-reports", element: <ProtectedRoute><InvoiceReports /></ProtectedRoute> },
           { path: "/admin/invoice-settings", element: <ProtectedRoute><InvoiceSettings /></ProtectedRoute> },
           { path: "/admin/invoice-customers", element: <Navigate to="/admin/invoice-clients" replace /> },
+          { path: "/admin/knowledge-base", element: <ProtectedRoute><AdminKnowledgeBase /></ProtectedRoute> },
         ],
       },
       
