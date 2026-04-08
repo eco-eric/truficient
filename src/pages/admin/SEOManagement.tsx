@@ -102,7 +102,7 @@ const SitemapButton = () => {
   );
 };
 
-
+const SEOManagement = () => {
   const [loading, setLoading] = useState(true);
   const [pages, setPages] = useState<PageSEO[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
