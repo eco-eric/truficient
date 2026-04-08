@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Loader2, MapPin, Phone, CheckCircle, ImageIcon, Calculator, ScanLine } from 'lucide-react';
+import EstimatorCards from '@/components/home/EstimatorCards';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -340,6 +341,7 @@ const LocationPage = () => {
           </>
         )}
       </main>
+      <EstimatorCards />
       <Footer />
     </div>
   );
@@ -357,7 +359,7 @@ function ToolLinksSection({ neighborhood }: { neighborhood: string }) {
     {
       icon: Calculator,
       label: 'Get an Instant Estimate',
-      href: '/estimator/',
+      href: '/hvac-estimate',
       description: 'Answer a few questions about your home and get a ballpark cost for your project.',
     },
     {
