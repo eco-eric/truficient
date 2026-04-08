@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import ReactMarkdown from 'react-markdown';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
-import { Loader2, MapPin, Phone, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Loader2, MapPin, Phone, CheckCircle, ImageIcon, Calculator, ScanLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface LocationData {
   id: string;
@@ -24,13 +26,20 @@ interface LocationData {
   template: string | null;
   schema_enabled: boolean;
   schema_description: string | null;
+  schema_json: Record<string, unknown> | null;
   page_seo_id: string | null;
+  content: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
 }
 
 interface SeoData {
   meta_title: string | null;
   meta_description: string | null;
 }
+
+const PHONE = '214-238-4349';
+const PHONE_TEL = 'tel:2142384349';
 
 const LocationPage = () => {
   const { locationSlug } = useParams<{ locationSlug: string }>();
@@ -41,7 +50,6 @@ const LocationPage = () => {
   useEffect(() => {
     if (!locationSlug) { setLoading(false); return; }
     const fetchData = async () => {
-      // Try with and without leading/trailing slashes to match DB format
       const slugVariants = [
         `/${locationSlug}/`,
         `/${locationSlug}`,
@@ -59,7 +67,6 @@ const LocationPage = () => {
         if (!error && data) {
           setLocation(data as unknown as LocationData);
           found = true;
-          // Fetch SEO data
           if ((data as any).page_seo_id) {
             const { data: seoData } = await supabase
               .from('page_seo' as any)
@@ -77,60 +84,52 @@ const LocationPage = () => {
     fetchData();
   }, [locationSlug]);
 
-  // Apply SEO meta tags
+  // Apply SEO meta tags — prefer location-level meta, fall back to page_seo
   useEffect(() => {
-    if (seo?.meta_title) document.title = seo.meta_title;
-    if (seo?.meta_description) {
+    const title = location?.meta_title || seo?.meta_title;
+    const desc = location?.meta_description || seo?.meta_description;
+    if (title) document.title = title;
+    if (desc) {
       let meta = document.querySelector('meta[name="description"]');
       if (!meta) { meta = document.createElement('meta'); meta.setAttribute('name', 'description'); document.head.appendChild(meta); }
-      meta.setAttribute('content', seo.meta_description);
+      meta.setAttribute('content', desc);
     }
-  }, [seo]);
+  }, [seo, location]);
 
-  // Inject JSON-LD schema
+  // Inject JSON-LD schema — prefer custom schema_json, fall back to generated
   useEffect(() => {
-    if (location?.schema_enabled) {
-      const schema = {
-        "@context": "https://schema.org",
-        "@type": "HVACBusiness",
-        "name": "Truficient Energy Solutions",
-        "url": `https://truficient.com${location.url_slug}`,
-        "telephone": "972-598-9154",
-        "address": {
-          "@type": "PostalAddress",
-          "addressLocality": location.neighborhood,
-          "addressRegion": location.state,
-          "postalCode": location.zip_code || "",
-          "addressCountry": "US"
-        },
-        "areaServed": {
-          "@type": "City",
-          "name": `${location.neighborhood}, ${location.city}, ${location.state}`
-        },
-        "description": location.schema_description || `Professional ${location.primary_service || 'HVAC'} services in ${location.neighborhood}, ${location.city}, ${location.state}`,
-        "priceRange": "$$",
-        "hasOfferCatalog": {
-          "@type": "OfferCatalog",
-          "name": "HVAC Services",
-          "itemListElement": [{
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Service",
-              "name": location.primary_service || "HVAC Services"
-            }
-          }]
-        }
-      };
-      const scriptId = 'location-jsonld';
-      let existing = document.getElementById(scriptId);
-      if (existing) existing.remove();
-      const script = document.createElement('script');
-      script.id = scriptId;
-      script.type = 'application/ld+json';
-      script.textContent = JSON.stringify(schema);
-      document.head.appendChild(script);
-      return () => { document.getElementById(scriptId)?.remove(); };
-    }
+    if (!location?.schema_enabled) return;
+    
+    const schema = location.schema_json || {
+      "@context": "https://schema.org",
+      "@type": "HVACBusiness",
+      "name": "Truficient Energy Solutions",
+      "url": `https://truficient.com${location.url_slug}`,
+      "telephone": PHONE,
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": location.neighborhood,
+        "addressRegion": location.state,
+        "postalCode": location.zip_code || "",
+        "addressCountry": "US"
+      },
+      "areaServed": {
+        "@type": "City",
+        "name": `${location.neighborhood}, ${location.city}, ${location.state}`
+      },
+      "description": location.schema_description || `Professional ${location.primary_service || 'HVAC'} services in ${location.neighborhood}, ${location.city}, ${location.state}`,
+      "priceRange": "$$"
+    };
+
+    const scriptId = 'location-jsonld';
+    let existing = document.getElementById(scriptId);
+    if (existing) existing.remove();
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify(schema);
+    document.head.appendChild(script);
+    return () => { document.getElementById(scriptId)?.remove(); };
   }, [location]);
 
   if (loading) {
@@ -162,29 +161,12 @@ const LocationPage = () => {
   }
 
   const clusterSlug = location.cluster?.toLowerCase().replace(/\s+/g, '-');
+  const hasFullContent = !!location.content;
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow">
-        {/* Hero */}
-        <section className="bg-primary text-primary-foreground py-16">
-          <div className="container mx-auto px-4 text-center">
-            <h1 className="text-4xl font-bold mb-4">{location.h1_title || `${location.primary_service} in ${location.neighborhood}`}</h1>
-            <p className="text-lg opacity-90 max-w-2xl mx-auto">
-              Professional HVAC services for {location.neighborhood}, {location.city}, {location.state}
-            </p>
-            <div className="mt-6">
-              <Button size="lg" variant="secondary" asChild>
-                <a href="tel:972-598-9154" className="flex items-center gap-2">
-                  <Phone className="h-5 w-5" />
-                  Call 972-598-9154
-                </a>
-              </Button>
-            </div>
-          </div>
-        </section>
-
         {/* Breadcrumbs */}
         <div className="container mx-auto px-4 py-4">
           <nav className="text-sm text-muted-foreground flex items-center gap-1 flex-wrap">
@@ -198,104 +180,212 @@ const LocationPage = () => {
               </>
             )}
             <span>/</span>
-            <span className="text-foreground">{location.neighborhood}</span>
+            <span className="text-foreground">{location.h1_title || location.neighborhood}</span>
           </nav>
         </div>
 
-        {/* Content */}
-        <section className="py-8">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Main content */}
-              <div className="lg:col-span-2 space-y-8">
-                <div className="prose max-w-none">
-                  <h2>{location.primary_service || 'HVAC Services'} in {location.neighborhood}</h2>
-                  <p>
-                    Truficient Energy Solutions provides expert {(location.primary_service || 'HVAC').toLowerCase()} services
-                    to homeowners and businesses in {location.neighborhood}, {location.city}.
-                    {location.housing_stock && ` The area is known for its ${location.housing_stock}, which often require specialized HVAC solutions.`}
-                  </p>
-                  {location.local_landmark && (
-                    <p>
-                      Located near {location.local_landmark}, our team is familiar with the unique comfort needs of this neighborhood.
-                    </p>
-                  )}
-                  {location.utility_note && (
-                    <p>
-                      <strong>Utility Information:</strong> {location.utility_note}
-                    </p>
-                  )}
-                </div>
-
-                {location.recommended_system && (
-                  <div className="bg-accent/50 rounded-lg p-6">
-                    <h3 className="font-bold text-lg mb-2">Recommended System</h3>
-                    <p className="text-muted-foreground">{location.recommended_system}</p>
-                  </div>
-                )}
-
-                <div>
-                  <h3 className="font-bold text-lg mb-4">Why Choose Truficient?</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {['Licensed & Insured Technicians', 'Free In-Home Estimates', 'Energy-Efficient Solutions', 'Same-Day Service Available'].map(item => (
-                      <div key={item} className="flex items-center gap-2">
-                        <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-                        <span className="text-sm">{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {location.case_study_url && (
-                  <div className="border rounded-lg p-4">
-                    <p className="text-sm text-muted-foreground mb-2">Related reading:</p>
-                    <Link to={location.case_study_url} className="text-primary hover:underline font-medium">
-                      View our case study →
-                    </Link>
-                  </div>
-                )}
+        {hasFullContent ? (
+          // Full markdown content rendering
+          <article className="container mx-auto px-4 pb-16">
+            <div className="max-w-3xl mx-auto">
+              <div className="prose prose-lg max-w-none
+                prose-headings:text-foreground prose-p:text-muted-foreground
+                prose-a:text-primary prose-strong:text-foreground
+                prose-h1:text-3xl prose-h1:md:text-4xl prose-h1:font-bold prose-h1:mb-6
+                prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
+                prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
+                prose-li:text-muted-foreground
+                prose-hr:border-border prose-hr:my-8
+              ">
+                <ReactMarkdown
+                  components={{
+                    a: ({ href, children, ...props }) => {
+                      // Convert #contact links to the contact form / phone CTA
+                      if (href === '#contact') {
+                        return (
+                          <Link to="/hvac-estimate" className="text-primary hover:underline font-medium" {...props}>
+                            {children}
+                          </Link>
+                        );
+                      }
+                      // Convert tel: links to use correct phone
+                      if (href?.startsWith('tel:')) {
+                        return (
+                          <a href={PHONE_TEL} className="text-primary hover:underline font-medium" {...props}>
+                            {children}
+                          </a>
+                        );
+                      }
+                      // Internal links
+                      if (href?.startsWith('/')) {
+                        return (
+                          <Link to={href} className="text-primary hover:underline" {...props}>
+                            {children}
+                          </Link>
+                        );
+                      }
+                      return <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
+                    },
+                  }}
+                >
+                  {location.content!}
+                </ReactMarkdown>
               </div>
 
-              {/* Sidebar */}
-              <div className="space-y-6">
-                <div className="bg-card border rounded-lg p-6">
-                  <h3 className="font-bold mb-4">Get a Free Estimate</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Contact us for a free, no-obligation estimate for your {location.neighborhood} property.
-                  </p>
-                  <div className="space-y-3">
-                    <Button className="w-full" asChild>
-                      <a href="tel:972-598-9154" className="flex items-center justify-center gap-2">
-                        <Phone className="h-4 w-4" />
-                        972-598-9154
-                      </a>
-                    </Button>
-                    <Button variant="outline" className="w-full" asChild>
-                      <Link to="/hvac-estimate">Request Online Estimate</Link>
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="bg-card border rounded-lg p-6">
-                  <h3 className="font-bold mb-3 flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-primary" />
-                    Service Area Info
-                  </h3>
-                  <dl className="space-y-2 text-sm">
-                    <div><dt className="text-muted-foreground">Neighborhood</dt><dd className="font-medium">{location.neighborhood}</dd></div>
-                    <div><dt className="text-muted-foreground">City</dt><dd className="font-medium">{location.city}, {location.state}</dd></div>
-                    {location.zip_code && <div><dt className="text-muted-foreground">ZIP Code</dt><dd className="font-medium">{location.zip_code}</dd></div>}
-                    {location.cluster && <div><dt className="text-muted-foreground">Region</dt><dd className="font-medium">{location.cluster}</dd></div>}
-                  </dl>
-                </div>
-              </div>
+              {/* Tool Links Section — per SEO instructions */}
+              <ToolLinksSection neighborhood={location.neighborhood} />
             </div>
-          </div>
-        </section>
+          </article>
+        ) : (
+          // Legacy field-based rendering
+          <>
+            <section className="bg-primary text-primary-foreground py-16">
+              <div className="container mx-auto px-4 text-center">
+                <h1 className="text-4xl font-bold mb-4">{location.h1_title || `${location.primary_service} in ${location.neighborhood}`}</h1>
+                <p className="text-lg opacity-90 max-w-2xl mx-auto">
+                  Professional HVAC services for {location.neighborhood}, {location.city}, {location.state}
+                </p>
+                <div className="mt-6">
+                  <Button size="lg" variant="secondary" asChild>
+                    <a href={PHONE_TEL} className="flex items-center gap-2">
+                      <Phone className="h-5 w-5" />
+                      Call {PHONE}
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </section>
+
+            <section className="py-8">
+              <div className="container mx-auto px-4">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className="lg:col-span-2 space-y-8">
+                    <div className="prose max-w-none">
+                      <h2>{location.primary_service || 'HVAC Services'} in {location.neighborhood}</h2>
+                      <p>
+                        Truficient Energy Solutions provides expert {(location.primary_service || 'HVAC').toLowerCase()} services
+                        to homeowners and businesses in {location.neighborhood}, {location.city}.
+                        {location.housing_stock && ` The area is known for its ${location.housing_stock}, which often require specialized HVAC solutions.`}
+                      </p>
+                      {location.local_landmark && (
+                        <p>Located near {location.local_landmark}, our team is familiar with the unique comfort needs of this neighborhood.</p>
+                      )}
+                      {location.utility_note && (
+                        <p><strong>Utility Information:</strong> {location.utility_note}</p>
+                      )}
+                    </div>
+                    {location.recommended_system && (
+                      <div className="bg-accent/50 rounded-lg p-6">
+                        <h3 className="font-bold text-lg mb-2">Recommended System</h3>
+                        <p className="text-muted-foreground">{location.recommended_system}</p>
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="font-bold text-lg mb-4">Why Choose Truficient?</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {['Licensed & Insured Technicians', 'Free In-Home Estimates', 'Energy-Efficient Solutions', 'Same-Day Service Available'].map(item => (
+                          <div key={item} className="flex items-center gap-2">
+                            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                            <span className="text-sm">{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {location.case_study_url && (
+                      <div className="border rounded-lg p-4">
+                        <p className="text-sm text-muted-foreground mb-2">Related reading:</p>
+                        <Link to={location.case_study_url} className="text-primary hover:underline font-medium">View our case study →</Link>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-6">
+                    <div className="bg-card border rounded-lg p-6">
+                      <h3 className="font-bold mb-4">Get a Free Estimate</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Contact us for a free, no-obligation estimate for your {location.neighborhood} property.
+                      </p>
+                      <div className="space-y-3">
+                        <Button className="w-full" asChild>
+                          <a href={PHONE_TEL} className="flex items-center justify-center gap-2">
+                            <Phone className="h-4 w-4" />
+                            {PHONE}
+                          </a>
+                        </Button>
+                        <Button variant="outline" className="w-full" asChild>
+                          <Link to="/hvac-estimate">Request Online Estimate</Link>
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="bg-card border rounded-lg p-6">
+                      <h3 className="font-bold mb-3 flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-primary" />
+                        Service Area Info
+                      </h3>
+                      <dl className="space-y-2 text-sm">
+                        <div><dt className="text-muted-foreground">Neighborhood</dt><dd className="font-medium">{location.neighborhood}</dd></div>
+                        <div><dt className="text-muted-foreground">City</dt><dd className="font-medium">{location.city}, {location.state}</dd></div>
+                        {location.zip_code && <div><dt className="text-muted-foreground">ZIP Code</dt><dd className="font-medium">{location.zip_code}</dd></div>}
+                        {location.cluster && <div><dt className="text-muted-foreground">Region</dt><dd className="font-medium">{location.cluster}</dd></div>}
+                      </dl>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Tool Links for legacy pages too */}
+            <div className="container mx-auto px-4 pb-16">
+              <ToolLinksSection neighborhood={location.neighborhood} />
+            </div>
+          </>
+        )}
       </main>
       <Footer />
     </div>
   );
 };
+
+/** Three tool links required on every location page per SEO instructions */
+function ToolLinksSection({ neighborhood }: { neighborhood: string }) {
+  const tools = [
+    {
+      icon: ImageIcon,
+      label: `See Our ${neighborhood} Installations`,
+      href: '/gallery/',
+      description: `Browse photos from real mini-split and heat pump installations in ${neighborhood} homes.`,
+    },
+    {
+      icon: Calculator,
+      label: 'Get an Instant Estimate',
+      href: '/estimator/',
+      description: 'Answer a few questions about your home and get a ballpark cost for your project.',
+    },
+    {
+      icon: ScanLine,
+      label: "Scan Your Home's Efficiency",
+      href: '/scanner/',
+      description: "Find out where your home is losing conditioned air and what upgrades make the most sense.",
+    },
+  ];
+
+  return (
+    <section className="mt-12 pt-8 border-t border-border">
+      <h2 className="text-xl font-bold mb-6 text-foreground">Tools to Help You Decide</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {tools.map((tool) => (
+          <Link key={tool.href} to={tool.href}>
+            <Card className="h-full hover:shadow-md transition-shadow hover:border-primary/40">
+              <CardContent className="p-5 flex flex-col items-start gap-3">
+                <tool.icon className="h-6 w-6 text-primary" />
+                <h3 className="font-semibold text-sm text-foreground">{tool.label}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">{tool.description}</p>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export default LocationPage;
