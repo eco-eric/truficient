@@ -914,6 +914,12 @@ const MCP_RESOURCES = [
     description: "All published SEO location pages with cluster, service, and slug info",
     mimeType: "application/json",
   },
+  {
+    uri: "knowledge://documents",
+    name: "Knowledge Base Documents",
+    description: "All active instruction documents from the knowledge base",
+    mimeType: "application/json",
+  },
 ];
 
 function handleResourcesList(id: string | number | null) {
