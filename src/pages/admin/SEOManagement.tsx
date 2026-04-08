@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,7 +28,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Loader2, Search, Pencil, Plus, Check, X, ExternalLink, ArrowUpDown, MapPin, FileText, ChevronDown } from 'lucide-react';
+import { Loader2, Search, Pencil, Plus, Check, X, ExternalLink, ArrowUpDown, MapPin, FileText, ChevronDown, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 const PAGE_TYPES = ['Core Page', 'Neighborhood Hub', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Energy Content', 'Equipment'];
 const CLUSTERS = ['Core Site', 'Oak Cliff', 'East Dallas', 'North Dallas', 'Downtown Dallas', 'South Dallas', 'Outer Ring'];
@@ -54,6 +55,52 @@ interface PageSEO {
 }
 
 type SortField = 'status' | 'avg_position' | 'gsc_clicks' | 'last_content_update' | 'page_name';
+
+const SitemapButton = () => {
+  const [regenerating, setRegenerating] = useState(false);
+  const [lastSnapshot, setLastSnapshot] = useState<{ url_count: number; created_at: string } | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from('sitemap_snapshots')
+      .select('url_count, created_at')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) setLastSnapshot(data[0]);
+      });
+  }, []);
+
+  const handleRegenerate = async () => {
+    setRegenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('regenerate-sitemap');
+      if (error) throw error;
+      toast.success(`Sitemap regenerated: ${data.url_count} URLs`, {
+        description: `Static: ${data.breakdown.static} · Location: ${data.breakdown.location} · Blog: ${data.breakdown.blog} · Equipment: ${data.breakdown.equipment}`,
+      });
+      setLastSnapshot({ url_count: data.url_count, created_at: data.generated_at });
+    } catch (err: any) {
+      toast.error('Failed to regenerate sitemap', { description: err.message });
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <Button variant="outline" onClick={handleRegenerate} disabled={regenerating}>
+        <RefreshCw className={`h-4 w-4 mr-2 ${regenerating ? 'animate-spin' : ''}`} />
+        {regenerating ? 'Regenerating...' : 'Regenerate Sitemap'}
+      </Button>
+      {lastSnapshot && (
+        <span className="text-xs text-muted-foreground">
+          Last: {format(new Date(lastSnapshot.created_at), 'MMM d, h:mm a')} · {lastSnapshot.url_count} URLs
+        </span>
+      )}
+    </div>
+  );
+};
 
 const SEOManagement = () => {
   const [loading, setLoading] = useState(true);
@@ -199,29 +246,32 @@ const SEOManagement = () => {
             />
           </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="bg-[#1e3a5f] hover:bg-[#1e3a5f]/90">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Page
-                <ChevronDown className="h-4 w-4 ml-2" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link to="/admin/seo/new" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Core Page
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/admin/seo/location/new" className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  Location Page
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-2">
+            <SitemapButton />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="bg-[#1e3a5f] hover:bg-[#1e3a5f]/90">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Page
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to="/admin/seo/new" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Core Page
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/admin/seo/location/new" className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Location Page
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         {/* Summary Cards */}

@@ -4533,6 +4533,27 @@ export type Database = {
           },
         ]
       }
+      sitemap_snapshots: {
+        Row: {
+          created_at: string
+          id: string
+          url_count: number
+          xml_content: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          url_count?: number
+          xml_content: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          url_count?: number
+          xml_content?: string
+        }
+        Relationships: []
+      }
       social_link_clicks: {
         Row: {
           clicked_at: string

@@ -60,3 +60,6 @@ verify_jwt = false
 
 [functions.global-search]
 verify_jwt = false
+
+[functions.regenerate-sitemap]
+verify_jwt = false
