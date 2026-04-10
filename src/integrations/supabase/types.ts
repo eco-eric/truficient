@@ -3705,6 +3705,8 @@ export type Database = {
           is_featured: boolean | null
           media_type: string | null
           sort_order: number | null
+          source: string | null
+          source_id: string | null
           thumbnail_url: string | null
           title: string
           updated_at: string | null
@@ -3719,6 +3721,8 @@ export type Database = {
           is_featured?: boolean | null
           media_type?: string | null
           sort_order?: number | null
+          source?: string | null
+          source_id?: string | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string | null
@@ -3733,6 +3737,8 @@ export type Database = {
           is_featured?: boolean | null
           media_type?: string | null
           sort_order?: number | null
+          source?: string | null
+          source_id?: string | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string | null
