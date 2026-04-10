@@ -97,40 +97,90 @@ const LocationPage = () => {
     }
   }, [seo, location]);
 
-  // Inject JSON-LD schema — prefer custom schema_json, fall back to generated
+  // Inject JSON-LD schemas — HVACBusiness + Service + FAQPage
   useEffect(() => {
-    if (!location?.schema_enabled) return;
-    
-    const schema = location.schema_json || {
-      "@context": "https://schema.org",
-      "@type": "HVACBusiness",
-      "name": "Truficient Energy Solutions",
-      "url": `https://truficient.com${location.url_slug}`,
-      "telephone": PHONE,
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": location.neighborhood,
-        "addressRegion": location.state,
-        "postalCode": location.zip_code || "",
-        "addressCountry": "US"
-      },
-      "areaServed": {
-        "@type": "City",
-        "name": `${location.neighborhood}, ${location.city}, ${location.state}`
-      },
-      "description": location.schema_description || `Professional ${location.primary_service || 'HVAC'} services in ${location.neighborhood}, ${location.city}, ${location.state}`,
-      "priceRange": "$$"
-    };
+    if (!location) return;
 
-    const scriptId = 'location-jsonld';
-    let existing = document.getElementById(scriptId);
-    if (existing) existing.remove();
-    const script = document.createElement('script');
-    script.id = scriptId;
-    script.type = 'application/ld+json';
-    script.textContent = JSON.stringify(schema);
-    document.head.appendChild(script);
-    return () => { document.getElementById(scriptId)?.remove(); };
+    const schemas: Record<string, object> = {};
+
+    // 1. HVACBusiness schema (existing)
+    if (location.schema_enabled) {
+      schemas['location-jsonld'] = location.schema_json || {
+        "@context": "https://schema.org",
+        "@type": "HVACBusiness",
+        "name": "Truficient Energy Solutions",
+        "url": `https://truficient.com${location.url_slug}`,
+        "telephone": PHONE,
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": location.neighborhood,
+          "addressRegion": location.state,
+          "postalCode": location.zip_code || "",
+          "addressCountry": "US"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": `${location.neighborhood}, ${location.city}, ${location.state}`
+        },
+        "description": location.schema_description || `Professional ${location.primary_service || 'HVAC'} services in ${location.neighborhood}, ${location.city}, ${location.state}`,
+        "priceRange": "$$"
+      };
+    }
+
+    // 2. Service schema
+    if (location.primary_service) {
+      schemas['location-service-jsonld'] = {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "serviceType": location.primary_service,
+        "provider": {
+          "@type": "HVACBusiness",
+          "name": "Truficient Energy Solutions",
+          "telephone": PHONE,
+          "url": "https://truficient.com"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": `${location.neighborhood}, ${location.city}, ${location.state}`
+        },
+        "url": `https://truficient.com${location.url_slug}`
+      };
+    }
+
+    // 3. FAQPage schema — parse from markdown content
+    if (location.content) {
+      const faqs = parseFAQsFromMarkdown(location.content);
+      if (faqs.length > 0) {
+        schemas['location-faq-jsonld'] = {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": faqs.map(faq => ({
+            "@type": "Question",
+            "name": faq.question,
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": faq.answer
+            }
+          }))
+        };
+      }
+    }
+
+    // Inject all schemas
+    const scriptIds = Object.keys(schemas);
+    scriptIds.forEach(id => {
+      let existing = document.getElementById(id);
+      if (existing) existing.remove();
+      const script = document.createElement('script');
+      script.id = id;
+      script.type = 'application/ld+json';
+      script.textContent = JSON.stringify(schemas[id]);
+      document.head.appendChild(script);
+    });
+
+    return () => {
+      scriptIds.forEach(id => document.getElementById(id)?.remove());
+    };
   }, [location]);
 
   if (loading) {
