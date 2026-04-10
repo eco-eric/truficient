@@ -1008,6 +1008,10 @@ const AdminGallery = () => {
             </Card>
           )}
         </TabsContent>
+
+        <TabsContent value="workedge">
+          <WorkEdgeMediaBrowser />
+        </TabsContent>
       </Tabs>
     </AdminLayout>
   );
