@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="slides-format" content="viewport">
+<title>Dallas Heat Island Effect — Truficient Energy Solutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<style type="text/tailwindcss">
+@theme {
+  --color-bg: #0a120b;
+  --color-bg-deep: #050a06;
+  --color-surface: #112214;
+  --color-text: #e8f5e9;
+  --color-text-secondary: #a5d6a7;
+  --color-text-muted: #558b2f;
+  --color-accent-1: #4caf50;
+  --color-accent-2: #ff7043;
+  --color-accent-3: #ffd54f;
+  --color-glass-bg: rgba(255,255,255,0.05);
+  --color-glass-border: rgba(76,175,80,0.15);
+  --color-vignette: rgba(0,0,0,0.55);
+  --font-display: 'Playfair Display', serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+</style>
+<style>
+  :root {
+    --color-bg: #0a120b;
+    --color-text: #e8f5e9;
+    --glow-color-rgb: 76,175,80;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { background: var(--color-bg); margin: 0; }
+  body { font-family: 'DM Sans', sans-serif; color: var(--color-text); overflow: hidden; height: 100vh; width: 100vw; }
+  .deck { width: 100vw; height: 100vh; position: relative; }
+  .slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--color-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transform: scale(0.95); transition: opacity 0.7s ease, transform 0.7s ease; pointer-events: none; overflow: hidden; }
+  .slide.active { opacity: 1; transform: scale(1); pointer-events: all; }
+  .slide > .content { position: relative; z-index: 2; width: 100%; max-width: 1100px; padding: clamp(1.5rem, 4vw, 3.5rem); }
+  .nav-controls { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 16px; z-index: 100; background: rgba(10,18,11,0.8); backdrop-filter: blur(12px); padding: 10px 24px; border-radius: 40px; border: 1px solid rgba(76,175,80,0.2); }
+  .nav-btn { width: 38px; height: 38px; border: none; background: rgba(76,175,80,0.1); color: #4caf50; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
+  .nav-btn:hover { background: rgba(76,175,80,0.25); }
+  .slide-dots { display: flex; gap: 8px; }
+  .slide-dots .dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(76,175,80,0.2); cursor: pointer; transition: background 0.3s, transform 0.3s; }
+  .slide-dots .dot.active { background: #4caf50; transform: scale(1.3); }
+  .slide-counter { font-size: 0.78rem; color: #558b2f; min-width: 38px; text-align: center; }
+  .reveal { opacity: 0; transform: translateY(22px); }
+  .text-glow { text-shadow: 0 0 20px rgba(76,175,80,0.55), 0 0 40px rgba(76,175,80,0.22); }
+  .stat-glow { text-shadow: 0 0 30px rgba(255,112,67,0.7), 0 0 60px rgba(255,112,67,0.3); }
+  @keyframes glow-pulse {
+    0%,100% { text-shadow: 0 0 22px rgba(76,175,80,0.55), 0 0 44px rgba(76,175,80,0.2); }
+    50% { text-shadow: 0 0 35px rgba(76,175,80,0.85), 0 0 65px rgba(76,175,80,0.35); }
+  }
+  .glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
+  @keyframes heat-pulse {
+    0%,100% { text-shadow: 0 0 22px rgba(255,112,67,0.6); }
+    50% { text-shadow: 0 0 45px rgba(255,112,67,1), 0 0 80px rgba(255,80,0,0.4); }
+  }
+  .heat-pulse { animation: heat-pulse 2.5s ease-in-out infinite; }
+  @keyframes float-slow {
+    0% { transform: translate(0,0) scale(1); }
+    25% { transform: translate(60px,-50px) scale(1.12); }
+    50% { transform: translate(-40px,40px) scale(0.9); }
+    75% { transform: translate(50px,20px) scale(1.08); }
+    100% { transform: translate(0,0) scale(1); }
+  }
+  @keyframes float-drift {
+    0% { transform: translate(0,0) scale(1) rotate(0deg); }
+    33% { transform: translate(-50px,-60px) scale(1.15) rotate(3deg); }
+    66% { transform: translate(40px,30px) scale(0.88) rotate(-2deg); }
+    100% { transform: translate(0,0) scale(1) rotate(0deg); }
+  }
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+  .gradient-mesh { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(80px); animation: float-slow 10s ease-in-out infinite; }
+  .blob:nth-child(2) { animation: float-drift 14s ease-in-out infinite; }
+  .blob:nth-child(3) { animation: float-slow 18s ease-in-out infinite reverse; }
+  .slide::before { content:''; position:absolute; inset:0; z-index:1; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); background-repeat:repeat; background-size:256px 256px; opacity:0.03; mix-blend-mode:overlay; }
+  .slide::after { content:''; position:absolute; inset:0; z-index:1; pointer-events:none; background:radial-gradient(ellipse at center, transparent 50%, var(--color-vignette) 100%); }
+  .bar-fill { border-radius: 0 6px 6px 0; transition: width 0.8s ease; }
+  .bar-track { background: rgba(255,255,255,0.06); border-radius: 6px; overflow: hidden; }
+  .hbar-label { font-size: 0.8rem; color: #a5d6a7; min-width: 140px; }
+  .hbar-val { font-size: 0.82rem; font-weight: 700; color: #ffd54f; min-width: 44px; text-align: right; }
+  @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .donut-ring { stroke-dasharray: 251.3; stroke-dashoffset: 251.3; stroke-linecap: round; transition: stroke-dashoffset 1.2s ease; }
+  .line-path { stroke-dashoffset: 0; }
+  .radar-shape { stroke-dashoffset: 0; }
+</style>
+</head>
+<body>
+<div class="mouse-spotlight" style="position:fixed;inset:0;z-index:99;pointer-events:none;"></div>
+
+<div class="deck">
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 1 — TITLE
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide slide-1 active" data-slide="1">
+  <div class="gradient-mesh">
+    <div class="blob" style="width:550px;height:550px;top:-120px;right:-80px;background:#ff5722;opacity:0.13;"></div>
+    <div class="blob" style="width:350px;height:350px;bottom:-60px;left:-60px;background:#4caf50;opacity:0.14;"></div>
+    <div class="blob" style="width:220px;height:220px;top:35%;left:10%;background:#ffd54f;opacity:0.09;"></div>
+  </div>
+  <canvas class="particle-canvas" style="position:absolute;inset:0;z-index:1;"></canvas>
+  <div class="content text-center">
+    <div style="font-size:100px;margin-bottom:1rem;animation:float 3.5s ease-in-out infinite;" class="reveal">🏙️🔥</div>
+    <h1 class="font-display text-[clamp(2.4rem,5.5vw,4.5rem)] font-black bg-linear-to-br from-accent-2 via-accent-3 to-accent-1 bg-clip-text text-transparent tracking-tight mb-4 reveal">Dallas Is Burning From the Inside Out</h1>
+    <p class="text-[clamp(0.9rem,1.4vw,1.3rem)] font-light text-text-muted tracking-[5px] uppercase reveal mb-6">Urban Heat Island Effect · Energy Crisis · The HVAC Solution</p>
+    <div class="reveal" style="display:inline-block;background:rgba(76,175,80,0.1);border:1px solid rgba(76,175,80,0.25);border-radius:50px;padding:0.5rem 1.8rem;">
+      <span style="color:#a5d6a7;font-size:0.9rem;letter-spacing:3px;text-transform:uppercase;">Truficient Energy Solutions — Dallas, TX</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 2 — THE BIG NUMBERS
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide slide-2" data-slide="2">
+  <div class="gradient-mesh">
+    <div class="blob" style="width:400px;height:400px;top:-80px;right:-60px;background:#ff5722;opacity:0.09;"></div>
+    <div class="blob" style="width:280px;height:280px;bottom:-40px;left:-40px;background:#4caf50;opacity:0.07;"></div>
+  </div>
+  <div class="content">
+    <p class="text-text-muted uppercase tracking-[4px] text-sm mb-2 reveal">The Scale of the Problem</p>
+    <h2 class="font-display text-[clamp(2rem,4vw,3rem)] font-bold text-text mb-8 reveal">Dallas by the Numbers</h2>
+    <div class="grid grid-cols-3 gap-6 reveal">
+      <div style="background:rgba(255,87,34,0.1);border:1px solid rgba(255,87,34,0.25);border-radius:16px;padding:1.8rem;text-align:center;transition:transform 0.3s;" onmouseover="this.style.transform='translateY(-6px)'" onmouseout="this.style.transform=''">
+        <div class="stat-glow" style="font-size:clamp(2.5rem,5vw,4rem);font-weight:900;color:#ff7043;" data-count="110" data-suffix="°F">0°F</div>
+        <div style="color:#a5d6a7;font-size:0.85rem;margin-top:0.5rem;line-height:1.4;">Peak temp recorded in<br>Bishop Arts, Aug 2023</div>
+      </div>
+      <div style="background:rgba(255,213,79,0.08);border:1px solid rgba(255,213,79,0.2);border-radius:16px;padding:1.8rem;text-align:center;transition:transform 0.3s;" onmouseover="this.style.transform='translateY(-6px)'" onmouseout="this.style.transform=''">
+        <div class="heat-pulse" style="font-size:clamp(2.5rem,5vw,4rem);font-weight:900;color:#ffd54f;" data-count="12" data-suffix="°F">0°F</div>
+        <div style="color:#a5d6a7;font-size:0.85rem;margin-top:0.5rem;line-height:1.4;">Hotter than coolest zones<br>at the same moment</div>
+      </div>
+      <div style="background:rgba(76,175,80,0.08);border:1px solid rgba(76,175,80,0.2);border-radius:16px;padding:1.8rem;text-align:center;transition:transform 0.3s;" onmouseover="this.style.transform='translateY(-6px)'" onmouseout="this.style.transform=''">
+        <div class="glow-pulse" style="font-size:clamp(2.5rem,5vw,4rem);font-weight:900;color:#66bb6a;" data-count="890">0</div>
+        <div style="color:#a5d6a7;font-size:0.85rem;margin-top:0.5rem;line-height:1.4;">Sq. miles of new impervious<br>surface since 1990</div>
+      </div>
+    </div>
+    <div class="grid grid-cols-3 gap-6 mt-5 reveal">
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:1.2rem;text-align:center;">
+        <div style="font-size:2rem;font-weight:800;color:#ef9a9a;" data-count="85508" data-suffix=" MW">0 MW</div>
+        <div style="color:#a5d6a7;font-size:0.8rem;margin-top:0.3rem;">ERCOT all-time peak<br>Aug 10, 2023</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:1.2rem;text-align:center;">
+        <div style="font-size:2rem;font-weight:800;color:#ffb74d;" data-count="35" data-suffix="%">0%</div>
+        <div style="color:#a5d6a7;font-size:0.8rem;margin-top:0.3rem;">Dallas is impervious<br>surface coverage</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:1.2rem;text-align:center;">
+        <div style="font-size:2rem;font-weight:800;color:#4fc3f7;" data-count="2" data-suffix="nd">0nd</div>
+        <div style="color:#a5d6a7;font-size:0.8rem;margin-top:0.3rem;">Fastest-warming city<br>in the US (after Phoenix)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 3 — NEIGHBORHOOD HEAT MAP / BAR
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide slide-3" data-slide="3">
+  <div class="gradient-mesh">
+    <div class="blob" style="width:380px;height:380px;top:-60px;right:-50px;background:#ff5722;opacity:0.08;"></div>
+    <div class="blob" style="width:240px;height:240px;bottom:-40px;left:-30px;background:#4caf50;opacity:0.06;"></div>
+  </div>
+  <div class="content">
+    <p class="text-text-muted uppercase tracking-[4px] text-sm mb-1 reveal">NOAA Mapping Campaign — Dallas Aug 5, 2023 · 60,000 measurements</p>
+    <h2 class="font-display text-[clamp(1.8rem,3.5vw,2.6rem)] font-bold text-text mb-5 reveal">Neighborhood Temperatures at the Same Moment</h2>
+    <div class="reveal" style="display:flex;flex-direction:column;gap:8px;">
+      <!-- Bar rows: label | bar | temp -->
+      <div id="nbhd-bars"></div>
+    </div>
+    <p class="reveal mt-4 text-sm" style="color:#558b2f;">▲ Phase II (2024) expanded to 250 sq miles across 21 routes — differentials grew to <strong style="color:#ffd54f;">12°F</strong> between hottest and coolest areas</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 4 — THE FEEDBACK LOOP
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide slide-4" data-slide="4">
+  <div class="gradient-mesh">
+    <div class="blob" style="width:500px;height:500px;top:-100px;left:-80px;background:#ff5722;opacity:0.11;"></div>
+    <div class="blob" style="width:300px;height:300px;bottom:-60px;right:-40px;background:#ffd54f;opacity:0.09;"></div>
+  </div>
+  <canvas class="particle-canvas-ambient" style="position:absolute;inset:0;z-index:1;"></canvas>
+  <div class="content">
+    <p class="text-text-muted uppercase tracking-[4px] text-sm mb-1 reveal">The Vicious Cycle</p>
+    <h2 class="font-display text-[clamp(1.8rem,3.5vw,2.6rem)] font-bold mb-6 reveal">
+      <span class="bg-linear-to-r from-accent-2 to-accent-3 bg-clip-text text-transparent">Every AC Condenser Makes It Worse</span>
+    </h2>
+    <div class="grid grid-cols-3 gap-5 reveal">
+      <div style="grid-column:1/4;background:rgba(255,87,34,0.06);border:1px solid rgba(255,87,34,0.18);border-radius:12px;padding:1rem 1.5rem;display:flex;align-items:center;gap:1rem;">
+        <span style="font-size:2rem;">🌆</span>
+        <div>
+          <div style="font-weight:700;color:#ff8a65;">Step 1: Heat Island Raises Outdoor Temps</div>
+          <div style="font-size:0.85rem;color:#a5d6a7;">Dark asphalt and concrete absorb 95% of solar energy. 1,400 acres of parking lots in Dallas act as a solar battery.</div>
+        </div>
+        <span style="font-size:1.5rem;margin-left:auto;color:#ff5722;">→</span>
+      </div>
+      <div style="grid-column:1/4;background:rgba(255,213,79,0.06);border:1px solid rgba(255,213,79,0.18);border-radius:12px;padding:1rem 1.5rem;display:flex;align-items:center;gap:1rem;">
+        <span style="font-size:2rem;">⚙️</span>
+        <div>
+          <div style="font-weight:700;color:#ffd54f;">Step 2: Thousands of AC Units Run at 100% Capacity</div>
+          <div style="font-size:0.85rem;color:#a5d6a7;">Single-stage systems cannot modulate — they blast at full power, cycling on/off, creating peak-demand spikes on ERCOT.</div>
+        </div>
+        <span style="font-size:1.5rem;margin-left:auto;color:#ffd54f;">→</span>
+      </div>
+      <div style="grid-column:1/4;background:rgba(239,83,80,0.09);border:1px solid rgba(239,83,80,0.22);border-radius:12px;padding:1rem 1.5rem;display:flex;align-items:center;gap:1rem;">
+        <span style="font-size:2rem;">💨</span>
+        <div>
+          <div style="font-weight:700;color:#ef9a9a;">Step 3: Condensers Dump Waste Heat Outside</div>
+          <div style="font-size:0.85rem;color:#a5d6a7;">ASU research: AC waste heat raises nighttime temps by <strong style="color:#ff7043;">+1°C</strong>. Concentrated condensers reduce COP of nearby units by <strong style="color:#ff7043;">17%</strong>.</div>
+        </div>
+        <span style="font-size:1.5rem;margin-left:auto;color:#ef5350;">↩</span>
+      </div>
+    </div>
+    <div class="reveal mt-4 text-center" style="background:rgba(255,112,67,0.1);border:1px solid rgba(255,112,67,0.25);border-radius:12px;padding:0.9rem;">
+      <span style="color:#ff8a65;font-size:0.9rem;">Each 1°C rise in ambient temperature = <strong style="color:#ffd54f;">0.5–5% more energy demand</strong> · ERCOT: 42 days over 80,000 MW in summer 2023 · Wholesale prices spiked to <strong style="color:#ffd54f;">$654/MWh</strong></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 5 — GRID & ENERGY COSTS
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide slide-5" data-slide="5">
+  <div class="gradient-mesh">
+    <div class="blob" style="width:360px;height:360px;top:-60px;right:-40px;background:#ffd54f;opacity:0.08;"></div>
+    <div class="blob" style="width:260px;height:260px;bottom:-40px;left:-30px;background:#4caf50;opacity:0.07;"></div>
+  </div>
+  <div class="content">
+    <p class="text-text-muted uppercase tracking-[4px] text-sm mb-1 reveal">ERCOT & The Texas Grid</p>
+    <h2 class="font-display text-[clamp(1.8rem,3.5vw,2.6rem)] font-bold text-text mb-6 reveal">The Grid Under Heat Island Stress</h2>
+    <div class="grid grid-cols-2 gap-6 reveal">
+      <div>
+        <div style="margin-bottom:1rem;">
+          <p style="color:#a5d6a7;font-size:0.82rem;margin-bottom:0.5rem;font-weight:600;text-transform:uppercase;letter-spacing:2px;">ERCOT Peak Demand — Annual Records</p>
+          <!-- SVG Line Chart -->
+          <svg viewBox="0 0 400 180" style="width:100%;height:auto;" id="ercot-svg">
+            <defs>
+              <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#66bb6a" stop-opacity="0.5"/>
+                <stop offset="100%" stop-color="#66bb6a" stop-opacity="0.02"/>
+              </linearGradient>
+            </defs>
+            <path d="M30,145 L95,148 L160,143 L225,106 L290,20 L355,38" stroke="#66bb6a" stroke-width="2.5" fill="none" class="line-path" id="ercot-line"/>
+            <path d="M30,145 L95,148 L160,143 L225,106 L290,20 L355,38 L355,165 L30,165 Z" fill="url(#lineGrad)" class="line-area" style="opacity:1;"/>
+            <!-- dots -->
+            <g class="line-dots" style="opacity:1;">
+              <circle cx="30"  cy="145" r="4" fill="#a5d6a7"/>
+              <circle cx="95"  cy="148" r="4" fill="#a5d6a7"/>
+              <circle cx="160" cy="143" r="4" fill="#a5d6a7"/>
+              <circle cx="225" cy="106" r="4" fill="#a5d6a7"/>
+              <circle cx="290" cy="20"  r="6" fill="#ff7043"/>
+              <circle cx="355" cy="38"  r="4" fill="#a5d6a7"/>
+            </g>
+            <!-- labels -->
+            <text x="30" y="162" fill="#81c784" font-size="10" text-anchor="middle">2019</text>
+            <text x="95" y="162" fill="#81c784" font-size="10" text-anchor="middle">2020</text>
+            <text x="160" y="162" fill="#81c784" font-size="10" text-anchor="middle">2021</text>
+            <text x="225" y="162" fill="#81c784" font-size="10" text-anchor="middle">2022</text>
+            <text x="290" y="162" fill="#ff7043" font-size="10" text-anchor="middle">2023</text>
+            <text x="355" y="162" fill="#81c784" font-size="10" text-anchor="middle">2025</text>
+            <text x="290" y="14" fill="#ff8a65" font-size="9" text-anchor="middle" font-weight="bold">85,508 MW</text>
+            <text x="290" y="4" fill="#ef9a9a" font-size="8.5" text-anchor="middle">All-Time Record</text>
+          </svg>
+        </div>
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:0.85rem;">
+          <div style="color:#ffd54f;font-weight:700;font-size:0.9rem;margin-bottom:0.4rem;">📈 Demand Growth</div>
+          <div style="color:#a5d6a7;font-size:0.82rem;line-height:1.5;">+23% above 2021 levels by 2025 · Data center build-out accelerating load · Wind + Solar now 36% of ERCOT output — but peaks at evening when heat island is worst</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="background:rgba(239,83,80,0.1);border-left:3px solid #ef5350;border-radius:0 10px 10px 0;padding:1rem 1.2rem;">
+          <div style="font-weight:700;color:#ef9a9a;font-size:0.95rem;">Average Summer Wholesale Price 2023</div>
+          <div style="font-size:2rem;font-weight:900;color:#ff7043;" data-count="97" data-suffix="/MWh" data-prefix="$">$0/MWh</div>
+          <div style="font-size:0.8rem;color:#a5d6a7;">vs. $28/MWh in summer 2024 — a 3.5× spike driven by heat island demand</div>
+        </div>
+        <div style="background:rgba(255,213,79,0.08);border-left:3px solid #ffd54f;border-radius:0 10px 10px 0;padding:1rem 1.2rem;">
+          <div style="font-weight:700;color:#ffd54f;font-size:0.95rem;">Day-Ahead Peak Price Spike (2024)</div>
+          <div style="font-size:2rem;font-weight:900;color:#ffd54f;" data-count="654" data-suffix="/MWh" data-prefix="$">$0/MWh</div>
+          <div style="font-size:0.8rem;color:#a5d6a7;">Peak hour price on record-demand days — directly tied to heat island AC load</div>
+        </div>
+        <div style="background:rgba(76,175,80,0.07);border-left:3px solid #4caf50;border-radius:0 10px 10px 0;padding:1rem 1.2rem;">
+          <div style="font-weight:700;color:#66bb6a;font-size:0.95rem;">UHI Annual Economic Cost in Dallas</div>
+          <div style="font-size:1.6rem;font-weight:800;color:#a5d6a7;">Hundreds of <strong style="color:#4caf50;">$M/year</strong></div>
+          <div style="font-size:0.8rem;color:#a5d6a7;">Cool roofs + trees alone could save $40–50M annually per Texas Trees Foundation study</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 6 — TREES & GREEN INFRASTRUCTURE
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide slide-6" data-slide="6">
+  <div class="gradient-mesh">
+    <div class="blob" style="width:400px;height:400px;top:-70px;right:-50px;background:#2e7d32;opacity:0.13;"></div>
+    <div class="blob" style="width:260px;height:260px;bottom:-40px;left:-30px;background:#81c784;opacity:0.1;"></div>
+  </div>
+  <div class="content">
+    <p class="text-text-muted uppercase tracking-[4px] text-sm mb-1 reveal">Nature as Infrastructure</p>
+    <h2 class="font-display text-[clamp(1.8rem,3.5vw,2.6rem)] font-bold mb-5 reveal">
+      <span class="bg-linear-to-r from-accent-1 to-accent-3 bg-clip-text text-transparent">Trees: The Free Cooling System Dallas Is Losing</span>
+    </h2>
+    <div class="grid grid-cols-3 gap-5 reveal">
+      <div style="background:rgba(46,125,50,0.1);border:1px solid rgba(76,175,80,0.2);border-radius:14px;padding:1.4rem;text-align:center;">
+        <div style="font-size:2.8rem;margin-bottom:0.5rem;">🌳</div>
+        <div style="font-size:2.2rem;font-weight:900;color:#4caf50;" class="glow-pulse">10°F</div>
+        <div style="font-size:0.82rem;color:#a5d6a7;margin-top:0.4rem;">Cooling provided by adequate tree canopy on a city block (American Forests)</div>
+      </div>
+      <div style="background:rgba(255,213,79,0.07);border:1px solid rgba(255,213,79,0.18);border-radius:14px;padding:1.4rem;text-align:center;">
+        <div style="font-size:2.8rem;margin-bottom:0.5rem;">📊</div>
+        <div style="font-size:2.2rem;font-weight:900;color:#ffd54f;">32%</div>
+        <div style="font-size:0.82rem;color:#a5d6a7;margin-top:0.4rem;">Dallas canopy today (2021) — city goal is 37% by 2040 via Texas Trees Foundation</div>
+      </div>
+      <div style="background:rgba(255,87,34,0.08);border:1px solid rgba(255,87,34,0.18);border-radius:14px;padding:1.4rem;text-align:center;">
+        <div style="font-size:2.8rem;margin-bottom:0.5rem;">🅿️</div>
+        <div style="font-size:2.2rem;font-weight:900;color:#ff7043;">1,400</div>
+        <div style="font-size:0.82rem;color:#a5d6a7;margin-top:0.4rem;">Acres of parking lots inside Dallas city limits — absorbing 95% of solar radiation</div>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-5 mt-5 reveal">
+      <div style="background:rgba(255,255,255,0.03);border-left:3px solid #4caf50;padding:1rem 1.2rem;border-radius:0 10px 10px 0;">
+        <div style="font-weight:700;color:#66bb6a;margin-bottom:0.4rem;">🏡 The Oak Cliff Paradox</div>
+        <div style="font-size:0.83rem;color:#a5d6a7;line-height:1.5;">The 1995 TCU study (Dr. Ken Morgan) found Oak Cliff's tree-lined residential streets were among Dallas's <strong style="color:#a5d6a7;">coolest zones</strong> — yet Bishop Arts on Jefferson Blvd. (just blocks away, with exposed pavement) is one of the <strong style="color:#ff8a65;">three hottest heat islands</strong> in the city. Same zip code, 10°F difference.</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);border-left:3px solid #ffd54f;padding:1rem 1.2rem;border-radius:0 10px 10px 0;">
+        <div style="font-weight:700;color:#ffd54f;margin-bottom:0.4rem;">🌊 Cool Zones: Trinity Corridor</div>
+        <div style="font-size:0.83rem;color:#a5d6a7;line-height:1.5;">In both Phase I and Phase II studies, areas near the <strong style="color:#a5d6a7;">Trinity River, Great Trinity Forest, and Cedar Crest Golf Course</strong> consistently registered the coolest temperatures in the city. Nature-based cooling is not theoretical — it's in the data.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 7 — WHY INVERTER HVAC BREAKS THE CYCLE
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide slide-7" data-slide="7">
+  <div class="gradient-mesh">
+    <div class="blob" style="width:380px;height:380px;top:-70px;right:-50px;background:#4caf50;opacity:0.1;"></div>
+    <div class="blob" style="width:240px;height:240px;bottom:-40px;left:-30px;background:#1565c0;opacity:0.08;"></div>
+  </div>
+  <div class="content">
+    <p class="text-text-muted uppercase tracking-[4px] text-sm mb-1 reveal">The Technology Solution</p>
+    <h2 class="font-display text-[clamp(1.8rem,3.5vw,2.6rem)] font-bold mb-5 reveal">How Inverter HVAC Breaks the Heat Island Cycle</h2>
+    <div class="grid grid-cols-2 gap-6 reveal">
+      <div>
+        <div style="background:rgba(239,83,80,0.08);border:1px solid rgba(239,83,80,0.2);border-radius:12px;padding:1.2rem;margin-bottom:1rem;">
+          <div style="font-weight:700;color:#ef9a9a;margin-bottom:0.5rem;">❌ Single-Stage Legacy System</div>
+          <ul style="font-size:0.83rem;color:#a5d6a7;line-height:1.8;list-style:none;padding:0;">
+            <li>⚠️ Runs at 100% capacity or off — no in-between</li>
+            <li>⚠️ Maximum waste heat discharged in bursts</li>
+            <li>⚠️ Loses 30%+ of cooling through leaky attic ducts</li>
+            <li>⚠️ SEER2 14 = $370/year in cooling costs</li>
+            <li>⚠️ COP drops sharply as outdoor temp rises above 95°F</li>
+          </ul>
+        </div>
+        <div style="background:rgba(76,175,80,0.08);border:1px solid rgba(76,175,80,0.2);border-radius:12px;padding:1.2rem;">
+          <div style="font-weight:700;color:#66bb6a;margin-bottom:0.5rem;">✅ Inverter Variable-Speed System</div>
+          <ul style="font-size:0.83rem;color:#a5d6a7;line-height:1.8;list-style:none;padding:0;">
+            <li>✅ Modulates 15%–185% of rated capacity continuously</li>
+            <li>✅ Lower, more distributed waste heat output</li>
+            <li>✅ Ductless eliminates 100% of duct-loss penalty</li>
+            <li>✅ SEER2 23 = $180/year — <strong style="color:#4caf50;">saves $190/yr</strong></li>
+            <li>✅ Maintains high COP even at 107°F outdoor temps</li>
+          </ul>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1.1rem;">
+          <div style="font-size:0.8rem;color:#558b2f;text-transform:uppercase;letter-spacing:2px;margin-bottom:0.5rem;">Energy Savings</div>
+          <div style="font-size:1.8rem;font-weight:900;color:#4caf50;" data-count="75" data-suffix="% less electricity">0%</div>
+          <div style="font-size:0.8rem;color:#a5d6a7;">Inverter vs. single-stage for same cooling load</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1.1rem;">
+          <div style="font-size:0.8rem;color:#558b2f;text-transform:uppercase;letter-spacing:2px;margin-bottom:0.5rem;">Duct Elimination</div>
+          <div style="font-size:1.8rem;font-weight:900;color:#ffd54f;">30%+</div>
+          <div style="font-size:0.8rem;color:#a5d6a7;">Cooling lost through attic duct leakage in traditional Dallas homes — eliminated by ductless mini-splits</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1.1rem;">
+          <div style="font-size:0.8rem;color:#558b2f;text-transform:uppercase;letter-spacing:2px;margin-bottom:0.5rem;">Grid Impact</div>
+          <div style="font-size:1.8rem;font-weight:900;color:#4fc3f7;">Lower Peak Draw</div>
+          <div style="font-size:0.8rem;color:#a5d6a7;">Running continuously at partial load instead of cycling at 100% — reduces neighborhood-level demand spikes on ERCOT</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 8 — BRAND COMPARISON
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide slide-8" data-slide="8">
+  <div class="gradient-mesh">
+    <div class="blob" style="width:360px;height:360px;top:-60px;right:-40px;background:#4caf50;opacity:0.09;"></div>
+    <div class="blob" style="width:250px;height:250px;bottom:-40px;left:-30px;background:#1565c0;opacity:0.08;"></div>
+  </div>
+  <div class="content">
+    <p class="text-text-muted uppercase tracking-[4px] text-sm mb-1 reveal">Truficient's Premium Partners</p>
+    <h2 class="font-display text-[clamp(1.8rem,3.5vw,2.6rem)] font-bold mb-5 reveal">Mitsubishi · Daikin · Gree — The Right Tools for Dallas Heat Islands</h2>
+    <div class="grid grid-cols-3 gap-5 reveal">
+      <!-- Mitsubishi -->
+      <div style="background:rgba(46,125,50,0.12);border:1.5px solid rgba(76,175,80,0.3);border-radius:14px;padding:1.4rem;position:relative;transition:transform 0.3s;" onmouseover="this.style.transform='translateY(-6px)'" onmouseout="this.style.transform=''">
+        <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#2e7d32;color:white;padding:3px 14px;border-radius:50px;font-size:0.7rem;font-weight:700;letter-spacing:2px;">TRUFICIENT DIAMOND</div>
+        <div style="text-align:center;margin-bottom:0.8rem;">
+          <div style="font-size:2rem;">🇯🇵</div>
+          <div style="font-size:1.1rem;font-weight:800;color:#66bb6a;">Mitsubishi Electric</div>
+          <div style="font-size:0.75rem;color:#558b2f;">Founded 1959 · Pioneer of ductless mini-split</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;"><span style="font-size:0.8rem;color:#a5d6a7;">Max SEER2</span><strong style="color:#4caf50;">23.1</strong></div>
+          <div style="display:flex;justify-content:space-between;"><span style="font-size:0.8rem;color:#a5d6a7;">Max HSPF2</span><strong style="color:#4caf50;">13.5</strong></div>
+          <div style="display:flex;justify-content:space-between;"><span style="font-size:0.8rem;color:#a5d6a7;">Warranty</span><strong style="color:#4caf50;">12 Years</strong></div>
+          <div style="display:flex;justify-content:space-between;"><span style="font-size:0.8rem;color:#a5d6a7;">Est. Annual Cost</span><strong style="color:#4caf50;">~$180</strong></div>
+          <div style="display:flex;justify-content:space-between;"><span style="font-size:0.8rem;color:#a5d6a7;">Refrigerant</span><strong style="color:#4caf50;">R-454B (ultra-low GWP)</strong></div>
+        </div>
+        <div style="margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid rgba(76,175,80,0.15);font-size:0.78rem;color:#81c784;">Kumo Cloud smart controls · Hyper-Heating INVERTER · 10yr savings vs. Gree: <strong style="color:#ffd54f;">+$700</strong></div>
+      </div>
+      <!-- Daikin -->
+      <div style="background:rgba(21,101,192,0.1);border:1.5px solid rgba(33,150,243,0.25);border-radius:14px;padding:1.4rem;transition:transform 0.3s;" onmouseover="this.style.transform='translateY(-6px)'" onmouseout="this.style.transform=''">
+        <div style="text-align:center;margin-bottom:0.8rem;">
+          <div style="font-size:2rem;">🏭</div>
+          <div style="font-size:1.1rem;font-weight:800;color:#4fc3f7;">Daikin</div>
+          <div style="font-size:0.75rem;color:#558b2f;">Invented VRF/VRV in 1982 · Commercial leader</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;"><span style="font-size:0.8rem;color:#a5d6a7;">Max SEER2</span><strong style="color:#4fc3f7;">20.3</strong></div>
+          <div style="display:flex;justify-content:space-between;"><span style="font-size:0.8rem;color:#a5d6a7;">Max HSPF2</span><strong style="color:#4fc3f7;">12.5</strong></div>
+          <div style="display:flex;justify-content:space-between;"><span style="font-size:0.8rem;color:#a5d6a7;">Warranty</span><strong style="color:#4fc3f7;">12 Years</strong></div>
+          <div style="display:flex;justify-content:space-between;"><span style="font-size:0.8rem;color:#a5d6a7;">Est. Annual Cost</span><strong style="color:#4fc3f7;">~$235</strong></div>
+          <div style="display:flex;justify-content:space-between;"><span style="font-size:0.8rem;color:#a5d6a7;">Commercial</span><strong style="color:#4fc3f7;">VRV IV (up to 64 units)</strong></div>
+        </div>
+        <div style="margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid rgba(33,150,243,0.15);font-size:0.78rem;color:#81c784;">VRF heat recovery mode: simultaneously cool one zone, heat another — zero outdoor waste heat</div>
+      </div>
+      <!-- Gree -->
+      <div style="background:rgba(230,81,0,0.08);border:1.5px solid rgba(255,112,67,0.22);border-radius:14px;padding:1.4rem;transition:transform 0.3s;" onmouseover="this.style.transform='translateY(-6px)'" onmouseout="this.style.transform=''">
+        <div style="text-align:center;margin-bottom:0.8rem;">
+          <div style="font-size:2rem;">🌐</div>
+          <div style="font-size:1.1rem;font-weight:800;color:#ff8a65;">Gree</div>
+          <div style="font-size:0.75rem;color:#558b2f;">World's largest AC manufacturer</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;"><span style="font-size:0.8rem;color:#a5d6a7;">Max SEER2</span><strong style="color:#ff8a65;">20.0</strong></div>
+          <div style="display:flex;justify-content:space-between;"><span style="font-size:0.8rem;color:#a5d6a7;">Max HSPF2</span><strong style="color:#ff8a65;">10.5</strong></div>
+          <div style="display:flex;justify-content:space-between;"><span style="font-size:0.8rem;color:#a5d6a7;">Warranty</span><strong style="color:#ff8a65;">5–7 Years</strong></div>
+          <div style="display:flex;justify-content:space-between;"><span style="font-size:0.8rem;color:#a5d6a7;">Est. Annual Cost</span><strong style="color:#ff8a65;">~$250</strong></div>
+          <div style="display:flex;justify-content:space-between;"><span style="font-size:0.8rem;color:#a5d6a7;">Smart Controls</span><strong style="color:#ff8a65;">Gree+ Wi-Fi</strong></div>
+        </div>
+        <div style="margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid rgba(255,112,67,0.15);font-size:0.78rem;color:#81c784;">Still 30% more efficient than legacy 14 SEER2 — best value entry point for heat island neighborhoods</div>
+      </div>
+    </div>
+    <div class="reveal mt-4 text-center">
+      <span style="font-size:0.82rem;color:#558b2f;">All three brands use inverter variable-speed technology — even at entry efficiency, they represent a dramatic improvement over single-stage systems dominating older Dallas housing stock</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 9 — NEIGHBORHOOD SOLUTIONS MAP
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide slide-9" data-slide="9">
+  <div class="gradient-mesh">
+    <div class="blob" style="width:360px;height:360px;top:-60px;left:-40px;background:#ff5722;opacity:0.09;"></div>
+    <div class="blob" style="width:260px;height:260px;bottom:-40px;right:-30px;background:#4caf50;opacity:0.07;"></div>
+  </div>
+  <div class="content">
+    <p class="text-text-muted uppercase tracking-[4px] text-sm mb-1 reveal">Where Truficient Works</p>
+    <h2 class="font-display text-[clamp(1.6rem,3vw,2.4rem)] font-bold mb-4 reveal">Central Dallas Heat Island Neighborhoods — The Truficient Service Zone</h2>
+    <div class="grid grid-cols-2 gap-4 reveal">
+      <div>
+        <p style="font-size:0.8rem;color:#558b2f;text-transform:uppercase;letter-spacing:2px;margin-bottom:0.7rem;">🔥 Most Severe Heat Islands</p>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(183,28,28,0.12);border:1px solid rgba(239,83,80,0.2);border-radius:8px;padding:0.65rem 0.9rem;">
+            <span style="font-size:1.2rem;">⚠️</span>
+            <div>
+              <strong style="color:#ef9a9a;font-size:0.88rem;">West Dallas / Bishop Arts</strong>
+              <div style="font-size:0.76rem;color:#a5d6a7;">110°F peak · Environmental justice zone · Industrial legacy · Minimal canopy</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(183,28,28,0.1);border:1px solid rgba(239,83,80,0.18);border-radius:8px;padding:0.65rem 0.9rem;">
+            <span style="font-size:1.2rem;">🏥</span>
+            <div>
+              <strong style="color:#ef9a9a;font-size:0.88rem;">Medical District (Harry Hines)</strong>
+              <div style="font-size:0.76rem;color:#a5d6a7;">107°F+ · Commercial pavement corridor · Top 3 hottest in Phase I study</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(198,40,40,0.08);border:1px solid rgba(239,83,80,0.15);border-radius:8px;padding:0.65rem 0.9rem;">
+            <span style="font-size:1.2rem;">🏙️</span>
+            <div>
+              <strong style="color:#ef9a9a;font-size:0.88rem;">Downtown / Deep Ellum</strong>
+              <div style="font-size:0.76rem;color:#a5d6a7;">Urban canyon effect · Rooftop heat mass · Minimal ground-level vegetation</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(198,40,40,0.07);border:1px solid rgba(239,83,80,0.13);border-radius:8px;padding:0.65rem 0.9rem;">
+            <span style="font-size:1.2rem;">🏗️</span>
+            <div>
+              <strong style="color:#ef9a9a;font-size:0.88rem;">Design District / Stemmons</strong>
+              <div style="font-size:0.76rem;color:#a5d6a7;">Warehouse conversions · Large paved lots · I-35 heat corridor</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p style="font-size:0.8rem;color:#558b2f;text-transform:uppercase;letter-spacing:2px;margin-bottom:0.7rem;">🟡 Elevated Heat Island Risk</p>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(255,143,0,0.08);border:1px solid rgba(255,143,0,0.2);border-radius:8px;padding:0.65rem 0.9rem;">
+            <span style="font-size:1.2rem;">✈️</span>
+            <div>
+              <strong style="color:#ffb74d;font-size:0.88rem;">Love Field / Oak Lawn</strong>
+              <div style="font-size:0.76rem;color:#a5d6a7;">Airport tarmac · I-35W exposure · Dense commercial strip — but Turtle Creek provides buffer</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(255,143,0,0.07);border:1px solid rgba(255,143,0,0.18);border-radius:8px;padding:0.65rem 0.9rem;">
+            <span style="font-size:1.2rem;">🏘️</span>
+            <div>
+              <strong style="color:#ffb74d;font-size:0.88rem;">Uptown / Cedar Springs</strong>
+              <div style="font-size:0.76rem;color:#a5d6a7;">High-density new construction · Urban canyon corridors · Rapid commercial expansion</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(255,143,0,0.06);border:1px solid rgba(255,143,0,0.15);border-radius:8px;padding:0.65rem 0.9rem;">
+            <span style="font-size:1.2rem;">🏢</span>
+            <div>
+              <strong style="color:#ffb74d;font-size:0.88rem;">Ledbetter Gardens / Westmoreland</strong>
+              <div style="font-size:0.76rem;color:#a5d6a7;">Phase II newly identified · Historically underinvested · Environmental justice concerns</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(76,175,80,0.07);border:1px solid rgba(76,175,80,0.15);border-radius:8px;padding:0.65rem 0.9rem;">
+            <span style="font-size:1.2rem;">🌊</span>
+            <div>
+              <strong style="color:#81c784;font-size:0.88rem;">Cool Zone: Trinity River Corridor</strong>
+              <div style="font-size:0.76rem;color:#a5d6a7;">Consistently the coolest area in both studies — Great Trinity Forest acts as natural AC unit</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:0.8rem;background:rgba(76,175,80,0.07);border:1px solid rgba(76,175,80,0.15);border-radius:8px;padding:0.7rem 1rem;font-size:0.8rem;color:#a5d6a7;">
+          <strong style="color:#66bb6a;">Truficient Note:</strong> Homes in heat island zones need Manual J loads calculated at actual microclimate temps — standard TMY weather data consistently undersizes systems in these neighborhoods.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 10 — WEBSITE PAGE IDEAS
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide slide-10" data-slide="10">
+  <div class="gradient-mesh">
+    <div class="blob" style="width:400px;height:400px;top:-60px;right:-50px;background:#4caf50;opacity:0.1;"></div>
+    <div class="blob" style="width:260px;height:260px;bottom:-40px;left:-30px;background:#ffd54f;opacity:0.08;"></div>
+  </div>
+  <div class="content">
+    <p class="text-text-muted uppercase tracking-[4px] text-sm mb-1 reveal">Content Strategy</p>
+    <h2 class="font-display text-[clamp(1.8rem,3.5vw,2.6rem)] font-bold mb-5 reveal">Truficient Website Pages — Built From This Research</h2>
+    <div class="grid grid-cols-3 gap-4 reveal">
+      <div style="background:rgba(255,87,34,0.09);border:1px solid rgba(255,87,34,0.2);border-radius:12px;padding:1.1rem;transition:transform 0.3s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform=''">
+        <div style="font-size:1.5rem;margin-bottom:0.4rem;">🌡️</div>
+        <div style="font-weight:700;color:#ff8a65;font-size:0.9rem;margin-bottom:0.4rem;">Hero Blog Post</div>
+        <div style="font-size:0.78rem;color:#a5d6a7;line-height:1.5;">"Dallas Is Burning From the Inside Out: The Urban Heat Island Effect Explained" — this full report as a blog post with citations</div>
+      </div>
+      <div style="background:rgba(76,175,80,0.08);border:1px solid rgba(76,175,80,0.2);border-radius:12px;padding:1.1rem;transition:transform 0.3s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform=''">
+        <div style="font-size:1.5rem;margin-bottom:0.4rem;">🏘️</div>
+        <div style="font-weight:700;color:#66bb6a;font-size:0.9rem;margin-bottom:0.4rem;">Neighborhood Pages</div>
+        <div style="font-size:0.78rem;color:#a5d6a7;line-height:1.5;">West Dallas · Bishop Arts · Medical District · Oak Lawn · Deep Ellum — each with local heat data + Truficient CTA</div>
+      </div>
+      <div style="background:rgba(255,213,79,0.07);border:1px solid rgba(255,213,79,0.18);border-radius:12px;padding:1.1rem;transition:transform 0.3s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform=''">
+        <div style="font-size:1.5rem;margin-bottom:0.4rem;">🔥</div>
+        <div style="font-weight:700;color:#ffd54f;font-size:0.9rem;margin-bottom:0.4rem;">"The AC Feedback Loop"</div>
+        <div style="font-size:0.78rem;color:#a5d6a7;line-height:1.5;">Standalone explainer page/blog: "Why Your AC Is Making Your Neighbor's AC Work Harder" — viral potential</div>
+      </div>
+      <div style="background:rgba(21,101,192,0.09);border:1px solid rgba(33,150,243,0.2);border-radius:12px;padding:1.1rem;transition:transform 0.3s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform=''">
+        <div style="font-size:1.5rem;margin-bottom:0.4rem;">⚡</div>
+        <div style="font-weight:700;color:#4fc3f7;font-size:0.9rem;margin-bottom:0.4rem;">ERCOT Grid & You</div>
+        <div style="font-size:0.78rem;color:#a5d6a7;line-height:1.5;">"How Dallas's Power Grid Struggles During Heat Waves (and How Your HVAC Choice Helps)" — ties energy savings to broader grid resilience</div>
+      </div>
+      <div style="background:rgba(46,125,50,0.09);border:1px solid rgba(76,175,80,0.2);border-radius:12px;padding:1.1rem;transition:transform 0.3s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform=''">
+        <div style="font-size:1.5rem;margin-bottom:0.4rem;">🌳</div>
+        <div style="font-weight:700;color:#66bb6a;font-size:0.9rem;margin-bottom:0.4rem;">Trees + HVAC</div>
+        <div style="font-size:0.78rem;color:#a5d6a7;line-height:1.5;">"Your Trees Are Your Free AC — Why Canopy Matters for Your HVAC Bill" — combining outdoor cooling with equipment efficiency</div>
+      </div>
+      <div style="background:rgba(255,112,67,0.08);border:1px solid rgba(255,112,67,0.2);border-radius:12px;padding:1.1rem;transition:transform 0.3s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform=''">
+        <div style="font-size:1.5rem;margin-bottom:0.4rem;">🏆</div>
+        <div style="font-weight:700;color:#ff8a65;font-size:0.9rem;margin-bottom:0.4rem;">Brand Pages</div>
+        <div style="font-size:0.78rem;color:#a5d6a7;line-height:1.5;">Mitsubishi / Daikin / Gree pages tied to UHI: "Why [Brand] is the Right HVAC for Dallas Heat Island Neighborhoods"</div>
+      </div>
+    </div>
+    <div class="reveal mt-4" style="background:rgba(76,175,80,0.07);border:1px solid rgba(76,175,80,0.15);border-radius:10px;padding:0.8rem 1.2rem;text-align:center;">
+      <span style="font-size:0.82rem;color:#a5d6a7;">All content sourced from: City of Dallas/NOAA UHI Studies · ERCOT · Texas Trees Foundation · D Magazine · KERA News · Dallas Observer · Dallas Fed · ASU Research · Truficient.com</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 11 — CLOSE / CTA
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide slide-11" data-slide="11">
+  <div class="gradient-mesh">
+    <div class="blob" style="width:550px;height:550px;top:-100px;right:-80px;background:#4caf50;opacity:0.14;"></div>
+    <div class="blob" style="width:350px;height:350px;bottom:-60px;left:-60px;background:#ff5722;opacity:0.1;"></div>
+    <div class="blob" style="width:220px;height:220px;top:40%;left:12%;background:#ffd54f;opacity:0.09;"></div>
+  </div>
+  <canvas class="particle-canvas" style="position:absolute;inset:0;z-index:1;"></canvas>
+  <div class="content text-center">
+    <div style="font-size:90px;margin-bottom:1rem;animation:float 3.5s ease-in-out infinite;" class="reveal">🌱❄️</div>
+    <h2 class="font-display text-[clamp(2rem,5vw,4rem)] font-black bg-linear-to-br from-accent-1 via-accent-3 to-accent-2 bg-clip-text text-transparent tracking-tight mb-4 reveal">Give Dallas the Professional's Edge</h2>
+    <p class="text-text-secondary text-lg mb-6 max-w-2xl mx-auto reveal">Truficient installs Mitsubishi, Daikin, and Gree inverter systems that consume less electricity, reject less waste heat, and keep your home at 73°F while the street outside hits 107°F.</p>
+    <div class="grid grid-cols-3 gap-4 reveal mb-6 max-w-3xl mx-auto">
+      <div style="background:rgba(76,175,80,0.1);border:1px solid rgba(76,175,80,0.25);border-radius:12px;padding:0.9rem;">
+        <div style="font-size:1.5rem;margin-bottom:0.3rem;">🏆</div>
+        <div style="font-size:0.8rem;font-weight:700;color:#66bb6a;">Diamond Contractor</div>
+        <div style="font-size:0.72rem;color:#558b2f;">Mitsubishi Certified · 12-yr warranty</div>
+      </div>
+      <div style="background:rgba(255,213,79,0.08);border:1px solid rgba(255,213,79,0.2);border-radius:12px;padding:0.9rem;">
+        <div style="font-size:1.5rem;margin-bottom:0.3rem;">⚡</div>
+        <div style="font-size:0.8rem;font-weight:700;color:#ffd54f;">Up to 75% Less Energy</div>
+        <div style="font-size:0.72rem;color:#558b2f;">vs. single-stage legacy systems</div>
+      </div>
+      <div style="background:rgba(255,87,34,0.08);border:1px solid rgba(255,87,34,0.2);border-radius:12px;padding:0.9rem;">
+        <div style="font-size:1.5rem;margin-bottom:0.3rem;">🌡️</div>
+        <div style="font-size:0.8rem;font-weight:700;color:#ff8a65;">Heat Island Specialists</div>
+        <div style="font-size:0.72rem;color:#558b2f;">Engineering-first approach · Dallas-native</div>
+      </div>
+    </div>
+    <div class="reveal" style="display:inline-block;background:linear-gradient(135deg,rgba(76,175,80,0.25),rgba(255,87,34,0.15));border:1px solid rgba(76,175,80,0.35);border-radius:50px;padding:0.75rem 2.5rem;">
+      <span style="font-size:1rem;font-weight:700;color:#a5d6a7;letter-spacing:3px;text-transform:uppercase;">truficient.com · Dallas, TX</span>
+    </div>
+  </div>
+</div>
+
+</div><!-- end .deck -->
+
+<div class="nav-controls">
+  <button class="nav-btn" onclick="changeSlide(-1)">&#8249;</button>
+  <div class="slide-dots" id="dots"></div>
+  <button class="nav-btn" onclick="changeSlide(1)">&#8250;</button>
+  <span class="slide-counter" id="counter">1 / 11</span>
+</div>
+
+<script>
+// ═══ NEIGHBORHOOD BARS (Slide 3) ════════════════════════
+const nbhdData = [
+  { name:"Bishop Arts / W. Dallas", temp:110.1, color:"#b71c1c" },
+  { name:"Downtown Dallas",         temp:107.4, color:"#c62828" },
+  { name:"Medical District",        temp:106.8, color:"#d32f2f" },
+  { name:"Design District",         temp:105.5, color:"#e65100" },
+  { name:"Deep Ellum",              temp:104.8, color:"#f57c00" },
+  { name:"Love Field Area",         temp:104.1, color:"#ff8f00" },
+  { name:"Ledbetter Gardens",       temp:103.2, color:"#ffa000" },
+  { name:"Cedar Crest",             temp:102.1, color:"#388e3c" },
+  { name:"SE Dallas Residential",   temp:101.5, color:"#1976d2" },
+  { name:"Great Trinity Forest",    temp:100.9, color:"#1565c0" },
+];
+const container = document.getElementById('nbhd-bars');
+if (container) {
+  nbhdData.forEach(d => {
+    const pct = ((d.temp - 99) / (111 - 99)) * 100;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;';
+    row.innerHTML = `
+      <span class="hbar-label">${d.name}</span>
+      <div class="bar-track" style="flex:1;height:22px;">
+        <div class="bar-fill" data-width="${pct.toFixed(1)}" style="width:0%;height:100%;background:${d.color}; display:flex;align-items:center;padding-left:8px;"></div>
+      </div>
+      <span class="hbar-val">${d.temp}°F</span>
+    `;
+    container.appendChild(row);
+  });
+}
+
+// ═══ DECK NAVIGATION ════════════════════════════════════
+let current = 1;
+const total = document.querySelectorAll('.slide').length;
+const dotsContainer = document.getElementById('dots');
+const counter = document.getElementById('counter');
+for (let i = 1; i <= total; i++) {
+  const dot = document.createElement('div');
+  dot.className = 'dot' + (i === 1 ? ' active' : '');
+  dot.onclick = () => goToSlide(i);
+  dotsContainer.appendChild(dot);
+}
+function goToSlide(n) {
+  const prev = document.querySelector('.slide.active');
+  const next = document.querySelector(`.slide[data-slide="${n}"]`);
+  if (prev) prev.classList.remove('active');
+  if (next) { next.classList.add('active'); animateSlide(next); }
+  current = n; updateNav();
+}
+function changeSlide(dir) { let n = current + dir; if (n < 1) n = total; if (n > total) n = 1; goToSlide(n); }
+function updateNav() { document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 === current)); counter.textContent = current + ' / ' + total; }
+document.addEventListener('keydown', e => { if (e.key==='ArrowRight'||e.key===' '){e.preventDefault();changeSlide(1);}if(e.key==='ArrowLeft'){e.preventDefault();changeSlide(-1);}});
+let touchX = 0;
+document.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; });
+document.addEventListener('touchend', e => { const d = touchX - e.changedTouches[0].clientX; if (Math.abs(d) > 50) changeSlide(d > 0 ? 1 : -1); });
+
+// ═══ REVEAL + EFFECTS ═══════════════════════════════════
+function animateSlide(slide) {
+  slide.querySelectorAll('.reveal').forEach((el, i) => {
+    el.style.transition = 'none'; el.style.opacity = '0'; el.style.transform = 'translateY(22px)';
+    el.offsetHeight;
+    const delay = i * 0.08;
+    el.style.transition = `opacity 0.38s ease ${delay}s, transform 0.38s ease ${delay}s`;
+    el.style.opacity = '1'; el.style.transform = 'translateY(0)';
+  });
+  animateEffects(slide);
+}
+function animateEffects(slide) {
+  // Counters
+  slide.querySelectorAll('[data-count]:not(.counted)').forEach(el => {
+    el.classList.add('counted');
+    const target = parseInt(el.dataset.count);
+    const suffix = el.dataset.suffix || '', prefix = el.dataset.prefix || '';
+    let cur = 0; const step = target / 45;
+    const timer = setInterval(() => {
+      cur += step;
+      if (cur >= target) { cur = target; clearInterval(timer); }
+      el.textContent = prefix + Math.round(cur).toLocaleString() + suffix;
+    }, 28);
+  });
+  // Bar fills
+  slide.querySelectorAll('.bar-fill:not(.fill-init)').forEach((bar, i) => {
+    bar.classList.add('fill-init');
+    bar.style.width = '0%';
+    bar.style.transition = `width 0.55s ease ${i * 0.07}s`;
+    bar.offsetHeight; bar.style.width = bar.dataset.width + '%';
+  });
+}
+
+// ═══ MOUSE SPOTLIGHT ════════════════════════════════════
+document.addEventListener('mousemove', e => {
+  const s = document.querySelector('.mouse-spotlight');
+  if (s) s.style.background = `radial-gradient(600px circle at ${e.clientX}px ${e.clientY}px, rgba(76,175,80,0.05), transparent 40%)`;
+});
+
+// ═══ PARTICLES ══════════════════════════════════════════
+window.initParticles = function(canvas, opts) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+  const interactive = opts.interactive !== false;
+  const count = opts.count || (interactive ? 55 : 18);
+  let mx = -1000, my = -1000;
+  const particles = Array.from({length: count}, () => ({
+    x: Math.random()*canvas.width, y: Math.random()*canvas.height,
+    vx: (Math.random()-0.5)*0.3, vy: (Math.random()-0.5)*0.3,
+    size: Math.random()*2.5+0.8, alpha: Math.random()*0.35+0.1
+  }));
+  if (interactive) {
+    canvas.addEventListener('mousemove', e => { const r = canvas.getBoundingClientRect(); mx = e.clientX-r.left; my = e.clientY-r.top; });
+    canvas.addEventListener('mouseleave', () => { mx=-1000; my=-1000; });
+  }
+  (function tick() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p => {
+      if (interactive) { const dx=p.x-mx,dy=p.y-my,dist=Math.sqrt(dx*dx+dy*dy); if(dist<120){const f=(120-dist)/120*2;p.vx+=(dx/dist)*f*0.1;p.vy+=(dy/dist)*f*0.1;} }
+      p.vx*=0.98;p.vy*=0.98;p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0)p.x=canvas.width;if(p.x>canvas.width)p.x=0;
+      if(p.y<0)p.y=canvas.height;if(p.y>canvas.height)p.y=0;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+      ctx.fillStyle=`rgba(76,175,80,${p.alpha})`;ctx.fill();
+    });
+    requestAnimationFrame(tick);
+  })();
+};
+document.querySelectorAll('.particle-canvas').forEach(c => initParticles(c, {interactive:true,count:55}));
+document.querySelectorAll('.particle-canvas-ambient').forEach(c => initParticles(c, {interactive:false,count:18}));
+
+// Init first slide
+try { animateSlide(document.querySelector('.slide.active')); } catch(e) {}
+</script>
+</body>
+</html>
