@@ -147,7 +147,7 @@ export default function EquipmentDetail() {
 
     // Build JSON-LD structured data
     // Use equipment image if available, otherwise a brand-logo placeholder
-    const equipmentImage = equipment.image_url
+    const equipmentImage = (equipment as any).image_url
       || `${BASE_URL}/og-image.png`;
 
     const jsonLd = {
