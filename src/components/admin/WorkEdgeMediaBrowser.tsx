@@ -433,7 +433,7 @@ export function WorkEdgeMediaBrowser() {
                   {/* Imported badge */}
                   {isImported && (
                     <div className="absolute bottom-2 right-2">
-                      <Badge variant="default" className="text-xs px-1.5 py-0.5 bg-green-600">
+                      <Badge variant="default" className="text-xs px-1.5 py-0.5">
                         Imported
                       </Badge>
                     </div>
