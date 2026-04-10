@@ -39,6 +39,26 @@ interface SeoData {
   meta_description: string | null;
 }
 
+/** Parse FAQ Q&A pairs from markdown content */
+function parseFAQsFromMarkdown(content: string): { question: string; answer: string }[] {
+  const faqs: { question: string; answer: string }[] = [];
+  // Match ## FAQ or ## Frequently Asked Questions section
+  const faqMatch = content.match(/##\s*(?:FAQ|Frequently Asked Questions)[^\n]*\n([\s\S]*?)(?=\n##\s[^#]|$)/i);
+  if (!faqMatch) return faqs;
+  const faqSection = faqMatch[1];
+  // Parse ### Question / answer pairs or **Question** / answer pairs
+  const qaPairs = faqSection.split(/\n###\s+/).filter(Boolean);
+  for (const pair of qaPairs) {
+    const lines = pair.trim().split('\n');
+    const question = lines[0]?.replace(/^\*\*|\*\*$/g, '').replace(/\??\s*$/, '?').trim();
+    const answer = lines.slice(1).join(' ').replace(/\n/g, ' ').trim();
+    if (question && answer) {
+      faqs.push({ question, answer });
+    }
+  }
+  return faqs;
+}
+
 const PHONE = '214-238-4349';
 const PHONE_TEL = 'tel:2142384349';
 
