@@ -1,63 +1,52 @@
 
 
-## Plan: Add 7 New Location Pages with Full Schema
+# WorkEdge Media → Gallery Browser
 
-### Pages to Add
+## Summary
+Add a "WorkEdge" tab to the admin Gallery page that lets you browse all synced WorkEdge media, search/filter it, and import selected items directly into the public gallery with auto-generated tags (city, ZIP, job type only — no customer PII).
 
-| # | Neighborhood | Slug | Page Type | Cluster | ZIP |
-|---|---|---|---|---|---|
-| 1 | 75206 (Lower Greenville/M Streets) | `/hvac-75206/` | ZIP Code | East Dallas | 75206 |
-| 2 | Casa View / East Dallas | `/hvac-casa-view-east-dallas/` | Residential Service + Neighborhood | East Dallas | 75218 |
-| 3 | West Dallas / Trinity Groves | `/mini-split-installation-west-dallas/` | Residential Service + Neighborhood | Downtown Dallas | 75212 |
-| 4 | Bluffview / Greenway Parks | `/ductless-hvac-bluffview-dallas/` | Residential Service + Neighborhood | North Dallas | 75209 |
-| 5 | Preston Hollow | `/hvac-preston-hollow-dallas/` | Residential Service + Neighborhood | North Dallas | 75225 |
-| 6 | Highland Park (mini-split focus) | `/mini-split-installation-highland-park-dallas/` | Residential Service + Neighborhood | North Dallas | 75205 |
-| 7 | Highland Park & University Park (hub) | `/hvac-highland-park-university-park-dallas/` | Neighborhood Hub | North Dallas | 75205 |
+## Privacy Approach
+- Auto-tags will use **city**, **ZIP code**, and **job type** only (e.g. "Fort Worth", "76116", "AC Replacement")
+- Customer names, addresses, and company names are **excluded** from tags and metadata
+- Job titles that contain addresses (e.g. "Remodel - 6224 Curzon") will NOT be carried into gallery titles — you'll set titles manually or they default to the media type + date
 
-### Step 1 — Insert into `seo_location_pages`
+## Database Changes
 
-Insert 7 records with:
-- Full markdown content (stripped of YAML frontmatter and developer implementation notes)
-- JSON-LD schema from each file's embedded JSON block
-- Meta title and meta description from frontmatter
-- `published = true`, `schema_enabled = true`
-- Correct city (Dallas), state (TX), cluster, zip_code, primary_service, neighborhood values
-
-The dynamic schema injection in `LocationPage.tsx` (already implemented) will automatically generate HVACBusiness + Service + FAQPage JSON-LD for each page.
-
-### Step 2 — Register in `page_seo`
-
-Insert 7 rows into `page_seo` with:
-- `page_path` matching each URL slug
-- `page_type` from frontmatter (e.g., "ZIP Code", "Residential Service + Neighborhood", "Neighborhood Hub")
-- `meta_title` and `meta_description` from frontmatter
-- `schema_applied = true`
-- `index_status = 'Not Indexed'` (new pages)
-
-### Step 3 — Update Dashboard Filter
-
-Add the two new page types to `LOCATION_TYPES` in `src/pages/admin/SEOManagement.tsx`:
-- `Residential Service + Neighborhood`
-- `Neighborhood Hub`
-
-Updated line:
-```typescript
-const LOCATION_TYPES = ['location', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Commercial + Developer', 'Brand Pillar', 'Residential Service + Neighborhood', 'Neighborhood Hub'];
+**1. Add source tracking to `gallery_images`** (migration):
+```sql
+ALTER TABLE gallery_images 
+  ADD COLUMN source TEXT DEFAULT 'manual',
+  ADD COLUMN source_id TEXT;
+CREATE UNIQUE INDEX idx_gallery_source ON gallery_images(source, source_id) WHERE source IS NOT NULL AND source_id IS NOT NULL;
 ```
+This prevents duplicate imports and tracks origin.
 
-### Files Changed
+## New Component: `WorkEdgeMediaBrowser.tsx`
+
+A new component rendered as a tab in the Gallery admin page with:
+
+- **Grid view** of all `workedge_project_media` records (photos/videos), joined with `crm_jobs` and `crm_locations` for city/ZIP context
+- **Search bar** filtering by job number, city, ZIP, or media type
+- **Media type filter** (photos, videos, all)
+- **Multi-select** with checkboxes for batch import
+- **"Import to Gallery" button** that:
+  1. Copies files from `workedge-media` bucket to `gallery-images` bucket
+  2. Creates `gallery_images` records with `source = 'workedge'` and `source_id` = workedge media ID
+  3. Auto-creates/matches `gallery_tags` for the city and ZIP (if available)
+  4. Links tags via `gallery_image_tags`
+  5. Skips already-imported items (checked via `source_id`)
+
+## Gallery Page Update
+
+- Add a "WorkEdge" tab alongside existing "Images" and "Tags" tabs
+- Tab shows the `WorkEdgeMediaBrowser` component
+- Include a "Sync All Projects" button that triggers the existing `workedge-sync` edge function to refresh media from WorkEdge before browsing
+
+## Files Changed
 
 | File | Change |
 |---|---|
-| `src/pages/admin/SEOManagement.tsx` | Add 2 new page types to LOCATION_TYPES |
-| Database (insert) | 7 rows in `seo_location_pages`, 7 rows in `page_seo` |
-
-### Schema Coverage
-
-Each page gets triple-layer schema automatically via the existing `LocationPage.tsx` logic:
-1. **HVACBusiness** — from the embedded JSON-LD in each markdown file (stored in `schema_json`)
-2. **Service** — dynamically generated from `primary_service` field
-3. **FAQPage** — dynamically parsed from any `## FAQ` sections in the markdown content
-
-No code changes needed for schema injection — it is already handled.
+| `src/components/admin/WorkEdgeMediaBrowser.tsx` | New — browse/search/import component |
+| `src/pages/admin/Gallery.tsx` | Add "WorkEdge" tab |
+| 1 migration | Add `source` + `source_id` columns to `gallery_images` |
 
