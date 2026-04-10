@@ -203,7 +203,7 @@ const SEOManagement = () => {
   const totalPages = pages.length;
   const optimizedCount = pages.filter(p => getSEOStatus(p).label === 'Good').length;
   const needsAttentionCount = totalPages - optimizedCount;
-  const LOCATION_TYPES = ['location', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Commercial + Developer'];
+  const LOCATION_TYPES = ['location', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Commercial + Developer', 'Brand Pillar'];
   const locationPages = pages.filter(p => LOCATION_TYPES.includes(p.page_type || ''));
   const indexedCount = pages.filter(p => p.index_status === 'Indexed').length;
   const notIndexedCount = pages.filter(p => p.index_status !== 'Indexed').length;
