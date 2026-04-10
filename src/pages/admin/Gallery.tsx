@@ -31,7 +31,8 @@ import { MediaUpload, MediaType } from '@/components/admin/MediaUpload';
 import { BulkImageUpload } from '@/components/admin/BulkImageUpload';
 import { SortableGalleryItem } from '@/components/admin/SortableGalleryItem';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import { Plus, Pencil, Trash2, Star, Image as ImageIcon, Video, Tag, Loader2, Upload, Grid2X2, Grid3X3, LayoutGrid, Play, ArrowUpDown, Check, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Star, Image as ImageIcon, Video, Tag, Loader2, Upload, Grid2X2, Grid3X3, LayoutGrid, Play, ArrowUpDown, Check, X, Camera } from 'lucide-react';
+import { WorkEdgeMediaBrowser } from '@/components/admin/WorkEdgeMediaBrowser';
 import { toast } from 'sonner';
 import {
   DndContext,
@@ -550,6 +551,10 @@ const AdminGallery = () => {
                 <Tag className="w-4 h-4" />
                 Tags
               </TabsTrigger>
+              <TabsTrigger value="workedge" className="gap-2">
+                <Camera className="w-4 h-4" />
+                WorkEdge
+              </TabsTrigger>
             </TabsList>
 
             {activeTab === 'images' && (
@@ -1002,6 +1007,10 @@ const AdminGallery = () => {
               </Table>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="workedge">
+          <WorkEdgeMediaBrowser />
         </TabsContent>
       </Tabs>
     </AdminLayout>
