@@ -424,8 +424,8 @@ Guidelines:
               equipment_type: publicSpecs.equipment_type,
               specs: publicSpecs,
               custom_content: customContent,
-              seo_title: `${publicSpecs.brand} ${publicSpecs.model_number} Specifications, Manuals & Documentation | Truficient`,
-              seo_description: `Complete specs for ${publicSpecs.brand} ${publicSpecs.model_number} including tonnage, refrigerant type, SEER rating, and downloadable manuals. Free resource from Truficient Energy Solutions.`,
+              seo_title: `${publicSpecs.brand} ${publicSpecs.model_number} Specs & Docs | Truficient`,
+              seo_description: `${publicSpecs.brand} ${publicSpecs.model_number} specs — tonnage, SEER, refrigerant & manuals. Free HVAC resource from Truficient.`,
             });
         }
       }
