@@ -146,12 +146,17 @@ export default function EquipmentDetail() {
     document.head.appendChild(canonicalLink);
 
     // Build JSON-LD structured data
+    // Use equipment image if available, otherwise a brand-logo placeholder
+    const equipmentImage = (equipment as any).image_url
+      || `${BASE_URL}/og-image.png`;
+
     const jsonLd = {
       '@context': 'https://schema.org',
       '@type': 'Product',
       name: `${equipment.brand} ${equipment.model_number}`,
       description: equipment.custom_content || equipment.seo_description || 
         `${equipment.brand} ${equipment.model_number} ${equipment.equipment_type || 'HVAC equipment'} specifications, documentation, and service information.`,
+      image: equipmentImage,
       brand: {
         '@type': 'Brand',
         name: equipment.brand,
@@ -178,22 +183,8 @@ export default function EquipmentDetail() {
           }] : []),
         ],
       }),
-      offers: {
-        '@type': 'Offer',
-        availability: 'https://schema.org/InStock',
-        seller: {
-          '@type': 'LocalBusiness',
-          name: 'Truficient HVAC',
-          url: BASE_URL,
-          telephone: '+1-972-638-1670',
-          address: {
-            '@type': 'PostalAddress',
-            addressLocality: 'Dallas',
-            addressRegion: 'TX',
-            addressCountry: 'US',
-          },
-        },
-      },
+      // Removed 'offers' block — no public pricing, so omitting avoids
+      // Merchant Listing validation errors in Google Search Console
     };
 
     // Inject JSON-LD script
