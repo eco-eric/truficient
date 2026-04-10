@@ -1,82 +1,63 @@
 
 
-## Plan: Fix Equipment Meta Templates + Update Location Page Counts + Enhance Schemas
+## Plan: Add 7 New Location Pages with Full Schema
 
-### Problem Summary
+### Pages to Add
 
-1. **Equipment meta titles/descriptions are too long** — template produces titles up to 114 chars (limit: 70) and descriptions up to 204 chars (limit: 165), flagging ~82 pages as "Needs Attention"
-2. **Location Pages count shows 13 instead of 28** — the dashboard only counts `page_type = 'location'`, missing 15 pages categorized as `Service+City`, `ZIP Code`, `Housing Type`, `Commercial`, `Commercial + Developer`
-3. **Schema is only HVACBusiness** — no Service schema or FAQ schema on any page; all 28 location pages have basic `HVACBusiness` JSON-LD only
+| # | Neighborhood | Slug | Page Type | Cluster | ZIP |
+|---|---|---|---|---|---|
+| 1 | 75206 (Lower Greenville/M Streets) | `/hvac-75206/` | ZIP Code | East Dallas | 75206 |
+| 2 | Casa View / East Dallas | `/hvac-casa-view-east-dallas/` | Residential Service + Neighborhood | East Dallas | 75218 |
+| 3 | West Dallas / Trinity Groves | `/mini-split-installation-west-dallas/` | Residential Service + Neighborhood | Downtown Dallas | 75212 |
+| 4 | Bluffview / Greenway Parks | `/ductless-hvac-bluffview-dallas/` | Residential Service + Neighborhood | North Dallas | 75209 |
+| 5 | Preston Hollow | `/hvac-preston-hollow-dallas/` | Residential Service + Neighborhood | North Dallas | 75225 |
+| 6 | Highland Park (mini-split focus) | `/mini-split-installation-highland-park-dallas/` | Residential Service + Neighborhood | North Dallas | 75205 |
+| 7 | Highland Park & University Park (hub) | `/hvac-highland-park-university-park-dallas/` | Neighborhood Hub | North Dallas | 75205 |
 
----
+### Step 1 — Insert into `seo_location_pages`
 
-### Step 1 — Shorten Equipment Meta Templates
+Insert 7 records with:
+- Full markdown content (stripped of YAML frontmatter and developer implementation notes)
+- JSON-LD schema from each file's embedded JSON block
+- Meta title and meta description from frontmatter
+- `published = true`, `schema_enabled = true`
+- Correct city (Dallas), state (TX), cluster, zip_code, primary_service, neighborhood values
 
-**Edge function** (`supabase/functions/decode-equipment/index.ts`, line 427-428):
+The dynamic schema injection in `LocationPage.tsx` (already implemented) will automatically generate HVACBusiness + Service + FAQPage JSON-LD for each page.
 
-Current:
-- Title: `{Brand} {Model} Specifications, Manuals & Documentation | Truficient` (up to 114 chars)
-- Description: `Complete specs for {Brand} {Model} including tonnage, refrigerant type, SEER rating, and downloadable manuals. Free resource from Truficient Energy Solutions.` (up to 204 chars)
+### Step 2 — Register in `page_seo`
 
-New:
-- Title: `{Brand} {Model} Specs & Docs | Truficient` (≤70 chars)
-- Description: `{Brand} {Model} specs — tonnage, SEER, refrigerant & manuals. Free HVAC resource from Truficient.` (≤165 chars)
+Insert 7 rows into `page_seo` with:
+- `page_path` matching each URL slug
+- `page_type` from frontmatter (e.g., "ZIP Code", "Residential Service + Neighborhood", "Neighborhood Hub")
+- `meta_title` and `meta_description` from frontmatter
+- `schema_applied = true`
+- `index_status = 'Not Indexed'` (new pages)
 
-**Database update**: Bulk-update all 82 existing `page_seo` equipment rows with the shorter template applied to their current brand/model values. Also update the `equipment_pages` table `seo_title` and `seo_description` columns.
+### Step 3 — Update Dashboard Filter
 
-### Step 2 — Fix Location Pages Count on Dashboard
+Add the two new page types to `LOCATION_TYPES` in `src/pages/admin/SEOManagement.tsx`:
+- `Residential Service + Neighborhood`
+- `Neighborhood Hub`
 
-In `src/pages/admin/SEOManagement.tsx` (line 206), change:
+Updated line:
+```typescript
+const LOCATION_TYPES = ['location', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Commercial + Developer', 'Brand Pillar', 'Residential Service + Neighborhood', 'Neighborhood Hub'];
 ```
-const locationPages = pages.filter(p => p.page_type === 'location');
-```
-to include all location-related types:
-```
-const LOCATION_TYPES = ['location', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Commercial + Developer'];
-const locationPages = pages.filter(p => LOCATION_TYPES.includes(p.page_type || ''));
-```
-
-This will correctly show 28 instead of 13.
-
-### Step 3 — Add Service + FAQ Schema to Location Pages
-
-Update `LocationPage.tsx` to inject **multiple JSON-LD schemas** per page:
-
-1. **Keep existing HVACBusiness schema** (already working)
-2. **Add Service schema** — generated from the page's `primary_service` field:
-   ```json
-   {
-     "@context": "https://schema.org",
-     "@type": "Service",
-     "serviceType": "{primary_service}",
-     "provider": { "@type": "HVACBusiness", "name": "Truficient Energy Solutions" },
-     "areaServed": { "@type": "City", "name": "{neighborhood}, {city}, {state}" },
-     "url": "https://truficient.com{url_slug}"
-   }
-   ```
-3. **Add FAQPage schema** — parse FAQ sections from the markdown content (look for `## FAQ` or `## Frequently Asked Questions` headings with Q&A pairs) and generate:
-   ```json
-   {
-     "@context": "https://schema.org",
-     "@type": "FAQPage",
-     "mainEntity": [{ "@type": "Question", "name": "...", "acceptedAnswer": { "@type": "Answer", "text": "..." } }]
-   }
-   ```
-
-This will be done dynamically in the `LocationPage.tsx` component so all current and future pages get the schemas automatically — no per-page manual work needed.
-
-### Step 4 — Mark Schema as Applied in SEO Tracker
-
-Bulk-update the `page_seo` table to set `schema_applied = true` for all 28 location page entries.
-
----
 
 ### Files Changed
 
 | File | Change |
-|------|--------|
-| `supabase/functions/decode-equipment/index.ts` | Shorten title/description template |
-| `src/pages/admin/SEOManagement.tsx` | Fix location page count filter |
-| `src/pages/service-areas/LocationPage.tsx` | Add Service + FAQ JSON-LD injection |
-| Database migration (bulk SQL) | Update 82 equipment meta values + mark 28 location schemas |
+|---|---|
+| `src/pages/admin/SEOManagement.tsx` | Add 2 new page types to LOCATION_TYPES |
+| Database (insert) | 7 rows in `seo_location_pages`, 7 rows in `page_seo` |
+
+### Schema Coverage
+
+Each page gets triple-layer schema automatically via the existing `LocationPage.tsx` logic:
+1. **HVACBusiness** — from the embedded JSON-LD in each markdown file (stored in `schema_json`)
+2. **Service** — dynamically generated from `primary_service` field
+3. **FAQPage** — dynamically parsed from any `## FAQ` sections in the markdown content
+
+No code changes needed for schema injection — it is already handled.
 
