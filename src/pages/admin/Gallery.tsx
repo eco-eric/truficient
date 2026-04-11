@@ -834,6 +834,23 @@ const AdminGallery = () => {
                       onChange={(e) => setTagForm(prev => ({ ...prev, sort_order: parseInt(e.target.value) || 0 }))}
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tag_type">Tag Type</Label>
+                    <select
+                      id="tag_type"
+                      value={tagForm.tag_type}
+                      onChange={(e) => setTagForm(prev => ({ ...prev, tag_type: e.target.value }))}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <option value="">— None —</option>
+                      <option value="geography">Geography</option>
+                      <option value="zip">ZIP Code</option>
+                      <option value="city">City</option>
+                      <option value="service">Service</option>
+                      <option value="system">System/Brand</option>
+                      <option value="property">Property Type</option>
+                    </select>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Switch
                       id="tag_is_active"
