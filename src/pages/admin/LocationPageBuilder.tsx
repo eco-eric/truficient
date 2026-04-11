@@ -260,6 +260,12 @@ const LocationPageBuilder = () => {
         schema_enabled: data.schema_enabled,
         schema_description: data.schema_description || null,
         add_to_service_areas_hub: data.add_to_service_areas_hub,
+        geography_tag: data.geography_tag || null,
+        zip_tag: data.zip_tag || null,
+        city_tag: data.city_tag || 'Dallas',
+        service_tags: data.service_tags.length > 0 ? data.service_tags : null,
+        property_tags: data.property_tags.length > 0 ? data.property_tags : null,
+        gallery_heading: data.gallery_heading || null,
       });
     if (locError) throw locError;
   };
