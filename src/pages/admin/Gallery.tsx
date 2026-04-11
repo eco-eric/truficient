@@ -1040,8 +1040,8 @@ const AdminGallery = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead>Slug</TableHead>
-                    <TableHead>Description</TableHead>
                     <TableHead className="text-center">Images</TableHead>
                     <TableHead className="text-center">Order</TableHead>
                     <TableHead className="text-center">Status</TableHead>
@@ -1052,10 +1052,12 @@ const AdminGallery = () => {
                   {tags.map((tag) => (
                     <TableRow key={tag.id}>
                       <TableCell className="font-medium">{tag.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{tag.slug}</TableCell>
-                      <TableCell className="text-muted-foreground max-w-xs truncate">
-                        {tag.description || '-'}
+                      <TableCell>
+                        {tag.tag_type ? (
+                          <Badge variant="outline" className="text-xs capitalize">{tag.tag_type}</Badge>
+                        ) : <span className="text-muted-foreground text-xs">—</span>}
                       </TableCell>
+                      <TableCell className="text-muted-foreground">{tag.slug}</TableCell>
                       <TableCell className="text-center">{getImageCountForTag(tag.id)}</TableCell>
                       <TableCell className="text-center">{tag.sort_order}</TableCell>
                       <TableCell className="text-center">
