@@ -554,6 +554,52 @@ const LocationPageBuilder = () => {
               </CardContent>
             </Card>
 
+            {/* Gallery Metadata */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Gallery Matching</CardTitle>
+                <CardDescription>Tags used to automatically match gallery photos to this page</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Geography Tag</Label>
+                    <Input value={form.geography_tag} onChange={(e) => update('geography_tag', e.target.value)} placeholder="e.g., oak-cliff" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>ZIP Tag</Label>
+                    <Input value={form.zip_tag} onChange={(e) => update('zip_tag', e.target.value)} placeholder="e.g., 75208" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>City Tag</Label>
+                    <Input value={form.city_tag} onChange={(e) => update('city_tag', e.target.value)} placeholder="e.g., Dallas" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Service Tags (comma-separated)</Label>
+                    <Input
+                      value={form.service_tags.join(', ')}
+                      onChange={(e) => update('service_tags', e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean))}
+                      placeholder="e.g., ductless, ac-replacement"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Property Tags (comma-separated)</Label>
+                    <Input
+                      value={form.property_tags.join(', ')}
+                      onChange={(e) => update('property_tags', e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean))}
+                      placeholder="e.g., residential"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Gallery Heading</Label>
+                  <Input value={form.gallery_heading} onChange={(e) => update('gallery_heading', e.target.value)} placeholder={`Our Work in ${form.neighborhood || 'Neighborhood'}`} />
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Save */}
             <div className="flex justify-end">
               <Button onClick={handleSave} disabled={saving} className="bg-[#1e3a5f] hover:bg-[#1e3a5f]/90">
