@@ -294,68 +294,8 @@ const LocationPage = () => {
         </div>
 
         {hasFullContent ? (
-          // Full markdown content rendering
-          <article className="container mx-auto px-4 pb-16">
-            <div className="max-w-3xl mx-auto">
-              <div className="prose prose-lg max-w-none
-                prose-headings:text-foreground prose-p:text-muted-foreground
-                prose-a:text-primary prose-strong:text-foreground
-                prose-h1:text-3xl prose-h1:md:text-4xl prose-h1:font-bold prose-h1:mb-6
-                prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
-                prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
-                prose-li:text-muted-foreground
-                prose-hr:border-border prose-hr:my-8
-              ">
-                <ReactMarkdown
-                  components={{
-                    a: ({ href, children, ...props }) => {
-                      // Convert #contact links to the contact form / phone CTA
-                      if (href === '#contact') {
-                        return (
-                          <Link to="/hvac-estimate" className="text-primary hover:underline font-medium" {...props}>
-                            {children}
-                          </Link>
-                        );
-                      }
-                      // Convert tel: links to use correct phone
-                      if (href?.startsWith('tel:')) {
-                        return (
-                          <a href={PHONE_TEL} className="text-primary hover:underline font-medium" {...props}>
-                            {children}
-                          </a>
-                        );
-                      }
-                      // Internal links
-                      if (href?.startsWith('/')) {
-                        return (
-                          <Link to={href} className="text-primary hover:underline" {...props}>
-                            {children}
-                          </Link>
-                        );
-                      }
-                      return <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
-                    },
-                  }}
-                >
-                  {location.content!}
-                </ReactMarkdown>
-              </div>
-
-              {/* Dynamic gallery section */}
-              <LocationGallery
-                neighborhood={location.neighborhood}
-                geographyTag={location.geography_tag}
-                zipTag={location.zip_tag}
-                cityTag={location.city_tag}
-                serviceTags={location.service_tags}
-                propertyTags={location.property_tags}
-                galleryHeading={location.gallery_heading}
-              />
-
-              {/* Tool Links Section — per SEO instructions */}
-              <ToolLinksSection neighborhood={location.neighborhood} />
-            </div>
-          </article>
+          // Full markdown content with inline galleries
+          <FullContentWithGallery location={location} />
         ) : (
           // Legacy field-based rendering
           <>
