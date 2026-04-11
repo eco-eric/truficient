@@ -6,6 +6,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Loader2, MapPin, Phone, CheckCircle, ImageIcon, Calculator, ScanLine } from 'lucide-react';
 import EstimatorCards from '@/components/home/EstimatorCards';
+import { LocationGallery } from '@/components/gallery/LocationGallery';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -32,6 +33,12 @@ interface LocationData {
   content: string | null;
   meta_title: string | null;
   meta_description: string | null;
+  geography_tag: string | null;
+  zip_tag: string | null;
+  city_tag: string | null;
+  service_tags: string[] | null;
+  property_tags: string[] | null;
+  gallery_heading: string | null;
 }
 
 interface SeoData {
@@ -303,6 +310,17 @@ const LocationPage = () => {
                 </ReactMarkdown>
               </div>
 
+              {/* Dynamic gallery section */}
+              <LocationGallery
+                neighborhood={location.neighborhood}
+                geographyTag={location.geography_tag}
+                zipTag={location.zip_tag}
+                cityTag={location.city_tag}
+                serviceTags={location.service_tags}
+                propertyTags={location.property_tags}
+                galleryHeading={location.gallery_heading}
+              />
+
               {/* Tool Links Section — per SEO instructions */}
               <ToolLinksSection neighborhood={location.neighborhood} />
             </div>
@@ -404,6 +422,21 @@ const LocationPage = () => {
               </div>
             </section>
 
+            {/* Dynamic gallery for legacy pages too */}
+            <div className="container mx-auto px-4">
+              <div className="max-w-3xl mx-auto">
+                <LocationGallery
+                  neighborhood={location.neighborhood}
+                  geographyTag={location.geography_tag}
+                  zipTag={location.zip_tag}
+                  cityTag={location.city_tag}
+                  serviceTags={location.service_tags}
+                  propertyTags={location.property_tags}
+                  galleryHeading={location.gallery_heading}
+                />
+              </div>
+            </div>
+
             {/* Tool Links for legacy pages too */}
             <div className="container mx-auto px-4 pb-16">
               <ToolLinksSection neighborhood={location.neighborhood} />
@@ -423,7 +456,7 @@ function ToolLinksSection({ neighborhood }: { neighborhood: string }) {
     {
       icon: ImageIcon,
       label: `See Our ${neighborhood} Installations`,
-      href: '/gallery/',
+      href: '#gallery',
       description: `Browse photos from real mini-split and heat pump installations in ${neighborhood} homes.`,
     },
     {

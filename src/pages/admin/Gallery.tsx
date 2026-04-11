@@ -61,6 +61,7 @@ interface GalleryTag {
   description: string | null;
   sort_order: number;
   is_active: boolean;
+  tag_type: string | null;
 }
 
 interface GalleryImage {
@@ -116,6 +117,8 @@ const AdminGallery = () => {
     alt_text: '',
     is_featured: false,
     is_active: true,
+    approved_for_website: false,
+    photo_date: '' as string,
     selectedTags: [] as string[],
   });
 
@@ -128,6 +131,7 @@ const AdminGallery = () => {
     description: '',
     sort_order: 0,
     is_active: true,
+    tag_type: '' as string,
   });
 
   // Fetch tags
@@ -226,6 +230,8 @@ const AdminGallery = () => {
           alt_text: imageData.alt_text || null,
           is_featured: imageData.is_featured,
           is_active: imageData.is_active,
+          approved_for_website: imageData.approved_for_website,
+          photo_date: imageData.photo_date || null,
         })
         .select()
         .single();
@@ -268,6 +274,8 @@ const AdminGallery = () => {
           alt_text: imageData.alt_text || null,
           is_featured: imageData.is_featured,
           is_active: imageData.is_active,
+          approved_for_website: imageData.approved_for_website,
+          photo_date: imageData.photo_date || null,
         })
         .eq('id', id);
       if (error) throw error;
@@ -380,6 +388,7 @@ const AdminGallery = () => {
         description: data.description || null,
         sort_order: data.sort_order,
         is_active: data.is_active,
+        tag_type: data.tag_type || null,
       });
       if (error) throw error;
     },
@@ -404,6 +413,7 @@ const AdminGallery = () => {
           description: data.description || null,
           sort_order: data.sort_order,
           is_active: data.is_active,
+          tag_type: data.tag_type || null,
         })
         .eq('id', id);
       if (error) throw error;
@@ -444,6 +454,8 @@ const AdminGallery = () => {
       alt_text: '',
       is_featured: false,
       is_active: true,
+      approved_for_website: false,
+      photo_date: '',
       selectedTags: [],
     });
   };
@@ -456,6 +468,7 @@ const AdminGallery = () => {
       description: '',
       sort_order: 0,
       is_active: true,
+      tag_type: '',
     });
   };
 
@@ -474,6 +487,8 @@ const AdminGallery = () => {
       alt_text: image.alt_text || '',
       is_featured: image.is_featured,
       is_active: image.is_active,
+      approved_for_website: (image as any).approved_for_website ?? false,
+      photo_date: (image as any).photo_date || '',
       selectedTags: imageTags,
     });
     setImageDialogOpen(true);
@@ -487,6 +502,7 @@ const AdminGallery = () => {
       description: tag.description || '',
       sort_order: tag.sort_order,
       is_active: tag.is_active,
+      tag_type: tag.tag_type || '',
     });
     setTagDialogOpen(true);
   };
@@ -645,23 +661,71 @@ const AdminGallery = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Tags</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {tags.filter(t => t.is_active).map(tag => (
-                        <Badge
-                          key={tag.id}
-                          variant={imageForm.selectedTags.includes(tag.id) ? 'default' : 'outline'}
-                          className="cursor-pointer"
-                          onClick={() => toggleTagSelection(tag.id)}
-                        >
-                          {tag.name}
-                        </Badge>
-                      ))}
-                    </div>
+                    {['system', 'service', 'property', 'geography', 'zip', 'city'].map(type => {
+                      const typeTags = tags.filter(t => t.is_active && t.tag_type === type);
+                      if (typeTags.length === 0) return null;
+                      return (
+                        <div key={type} className="space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground capitalize">{type}</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {typeTags.map(tag => (
+                              <Badge
+                                key={tag.id}
+                                variant={imageForm.selectedTags.includes(tag.id) ? 'default' : 'outline'}
+                                className="cursor-pointer text-xs"
+                                onClick={() => toggleTagSelection(tag.id)}
+                              >
+                                {tag.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {/* Uncategorized tags */}
+                    {(() => {
+                      const uncategorized = tags.filter(t => t.is_active && !t.tag_type);
+                      if (uncategorized.length === 0) return null;
+                      return (
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground">Other</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {uncategorized.map(tag => (
+                              <Badge
+                                key={tag.id}
+                                variant={imageForm.selectedTags.includes(tag.id) ? 'default' : 'outline'}
+                                className="cursor-pointer text-xs"
+                                onClick={() => toggleTagSelection(tag.id)}
+                              >
+                                {tag.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
                     {tags.filter(t => t.is_active).length === 0 && (
                       <p className="text-sm text-muted-foreground">No tags available. Create tags first.</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="photo_date">Photo Date</Label>
+                    <Input
+                      id="photo_date"
+                      type="date"
+                      value={imageForm.photo_date}
+                      onChange={(e) => setImageForm(prev => ({ ...prev, photo_date: e.target.value }))}
+                    />
+                  </div>
+                  <div className="flex items-center gap-6 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id="approved_for_website"
+                        checked={imageForm.approved_for_website}
+                        onCheckedChange={(checked) => setImageForm(prev => ({ ...prev, approved_for_website: checked }))}
+                      />
+                      <Label htmlFor="approved_for_website">Approved for Location Pages</Label>
+                    </div>
                     <div className="flex items-center gap-2">
                       <Switch
                         id="is_featured"
@@ -769,6 +833,23 @@ const AdminGallery = () => {
                       value={tagForm.sort_order}
                       onChange={(e) => setTagForm(prev => ({ ...prev, sort_order: parseInt(e.target.value) || 0 }))}
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tag_type">Tag Type</Label>
+                    <select
+                      id="tag_type"
+                      value={tagForm.tag_type}
+                      onChange={(e) => setTagForm(prev => ({ ...prev, tag_type: e.target.value }))}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <option value="">— None —</option>
+                      <option value="geography">Geography</option>
+                      <option value="zip">ZIP Code</option>
+                      <option value="city">City</option>
+                      <option value="service">Service</option>
+                      <option value="system">System/Brand</option>
+                      <option value="property">Property Type</option>
+                    </select>
                   </div>
                   <div className="flex items-center gap-2">
                     <Switch
@@ -959,8 +1040,8 @@ const AdminGallery = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead>Slug</TableHead>
-                    <TableHead>Description</TableHead>
                     <TableHead className="text-center">Images</TableHead>
                     <TableHead className="text-center">Order</TableHead>
                     <TableHead className="text-center">Status</TableHead>
@@ -971,10 +1052,12 @@ const AdminGallery = () => {
                   {tags.map((tag) => (
                     <TableRow key={tag.id}>
                       <TableCell className="font-medium">{tag.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{tag.slug}</TableCell>
-                      <TableCell className="text-muted-foreground max-w-xs truncate">
-                        {tag.description || '-'}
+                      <TableCell>
+                        {tag.tag_type ? (
+                          <Badge variant="outline" className="text-xs capitalize">{tag.tag_type}</Badge>
+                        ) : <span className="text-muted-foreground text-xs">—</span>}
                       </TableCell>
+                      <TableCell className="text-muted-foreground">{tag.slug}</TableCell>
                       <TableCell className="text-center">{getImageCountForTag(tag.id)}</TableCell>
                       <TableCell className="text-center">{tag.sort_order}</TableCell>
                       <TableCell className="text-center">

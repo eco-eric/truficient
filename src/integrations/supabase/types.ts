@@ -3697,13 +3697,16 @@ export type Database = {
       gallery_images: {
         Row: {
           alt_text: string | null
+          approved_for_website: boolean | null
           created_at: string | null
           description: string | null
           id: string
           image_url: string
           is_active: boolean | null
           is_featured: boolean | null
+          is_legacy: boolean | null
           media_type: string | null
+          photo_date: string | null
           sort_order: number | null
           source: string | null
           source_id: string | null
@@ -3713,13 +3716,16 @@ export type Database = {
         }
         Insert: {
           alt_text?: string | null
+          approved_for_website?: boolean | null
           created_at?: string | null
           description?: string | null
           id?: string
           image_url: string
           is_active?: boolean | null
           is_featured?: boolean | null
+          is_legacy?: boolean | null
           media_type?: string | null
+          photo_date?: string | null
           sort_order?: number | null
           source?: string | null
           source_id?: string | null
@@ -3729,13 +3735,16 @@ export type Database = {
         }
         Update: {
           alt_text?: string | null
+          approved_for_website?: boolean | null
           created_at?: string | null
           description?: string | null
           id?: string
           image_url?: string
           is_active?: boolean | null
           is_featured?: boolean | null
+          is_legacy?: boolean | null
           media_type?: string | null
+          photo_date?: string | null
           sort_order?: number | null
           source?: string | null
           source_id?: string | null
@@ -3754,6 +3763,7 @@ export type Database = {
           name: string
           slug: string
           sort_order: number | null
+          tag_type: string | null
           updated_at: string | null
         }
         Insert: {
@@ -3764,6 +3774,7 @@ export type Database = {
           name: string
           slug: string
           sort_order?: number | null
+          tag_type?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -3774,6 +3785,7 @@ export type Database = {
           name?: string
           slug?: string
           sort_order?: number | null
+          tag_type?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -4441,9 +4453,12 @@ export type Database = {
           audience: string | null
           case_study_url: string | null
           city: string
+          city_tag: string | null
           cluster: string | null
           content: string | null
           created_at: string | null
+          gallery_heading: string | null
+          geography_tag: string | null
           h1_title: string | null
           housing_stock: string | null
           id: string
@@ -4454,27 +4469,33 @@ export type Database = {
           page_seo_id: string | null
           page_type: string
           primary_service: string | null
+          property_tags: string[] | null
           published: boolean | null
           recommended_system: string | null
           schema_description: string | null
           schema_enabled: boolean | null
           schema_json: Json | null
           search_intent: string | null
+          service_tags: string[] | null
           state: string
           template: string | null
           updated_at: string | null
           url_slug: string
           utility_note: string | null
           zip_code: string | null
+          zip_tag: string | null
         }
         Insert: {
           add_to_service_areas_hub?: boolean | null
           audience?: string | null
           case_study_url?: string | null
           city?: string
+          city_tag?: string | null
           cluster?: string | null
           content?: string | null
           created_at?: string | null
+          gallery_heading?: string | null
+          geography_tag?: string | null
           h1_title?: string | null
           housing_stock?: string | null
           id?: string
@@ -4485,27 +4506,33 @@ export type Database = {
           page_seo_id?: string | null
           page_type?: string
           primary_service?: string | null
+          property_tags?: string[] | null
           published?: boolean | null
           recommended_system?: string | null
           schema_description?: string | null
           schema_enabled?: boolean | null
           schema_json?: Json | null
           search_intent?: string | null
+          service_tags?: string[] | null
           state?: string
           template?: string | null
           updated_at?: string | null
           url_slug: string
           utility_note?: string | null
           zip_code?: string | null
+          zip_tag?: string | null
         }
         Update: {
           add_to_service_areas_hub?: boolean | null
           audience?: string | null
           case_study_url?: string | null
           city?: string
+          city_tag?: string | null
           cluster?: string | null
           content?: string | null
           created_at?: string | null
+          gallery_heading?: string | null
+          geography_tag?: string | null
           h1_title?: string | null
           housing_stock?: string | null
           id?: string
@@ -4516,18 +4543,21 @@ export type Database = {
           page_seo_id?: string | null
           page_type?: string
           primary_service?: string | null
+          property_tags?: string[] | null
           published?: boolean | null
           recommended_system?: string | null
           schema_description?: string | null
           schema_enabled?: boolean | null
           schema_json?: Json | null
           search_intent?: string | null
+          service_tags?: string[] | null
           state?: string
           template?: string | null
           updated_at?: string | null
           url_slug?: string
           utility_note?: string | null
           zip_code?: string | null
+          zip_tag?: string | null
         }
         Relationships: [
           {

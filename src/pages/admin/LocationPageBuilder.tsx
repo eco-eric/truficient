@@ -55,6 +55,12 @@ interface LocationPageForm {
   schema_enabled: boolean;
   schema_description: string;
   add_to_service_areas_hub: boolean;
+  geography_tag: string;
+  zip_tag: string;
+  city_tag: string;
+  service_tags: string[];
+  property_tags: string[];
+  gallery_heading: string;
 }
 
 interface CsvRow extends Omit<LocationPageForm, 'schema_enabled' | 'add_to_service_areas_hub'> {
@@ -83,6 +89,12 @@ const defaultForm: LocationPageForm = {
   schema_enabled: true,
   schema_description: '',
   add_to_service_areas_hub: true,
+  geography_tag: '',
+  zip_tag: '',
+  city_tag: 'Dallas',
+  service_tags: [],
+  property_tags: [],
+  gallery_heading: '',
 };
 
 const LocationPageBuilder = () => {
@@ -134,6 +146,12 @@ const LocationPageBuilder = () => {
         schema_enabled: d.schema_enabled ?? true,
         schema_description: d.schema_description || '',
         add_to_service_areas_hub: d.add_to_service_areas_hub ?? true,
+        geography_tag: d.geography_tag || '',
+        zip_tag: d.zip_tag || '',
+        city_tag: d.city_tag || 'Dallas',
+        service_tags: d.service_tags || [],
+        property_tags: d.property_tags || [],
+        gallery_heading: d.gallery_heading || '',
       });
       // Also fetch linked page_seo data
       if (d.page_seo_id) {
@@ -242,6 +260,12 @@ const LocationPageBuilder = () => {
         schema_enabled: data.schema_enabled,
         schema_description: data.schema_description || null,
         add_to_service_areas_hub: data.add_to_service_areas_hub,
+        geography_tag: data.geography_tag || null,
+        zip_tag: data.zip_tag || null,
+        city_tag: data.city_tag || 'Dallas',
+        service_tags: data.service_tags.length > 0 ? data.service_tags : null,
+        property_tags: data.property_tags.length > 0 ? data.property_tags : null,
+        gallery_heading: data.gallery_heading || null,
       });
     if (locError) throw locError;
   };
@@ -305,6 +329,12 @@ const LocationPageBuilder = () => {
           schema_enabled: true,
           schema_description: '',
           add_to_service_areas_hub: true,
+          geography_tag: '',
+          zip_tag: '',
+          city_tag: 'Dallas',
+          service_tags: [],
+          property_tags: [],
+          gallery_heading: '',
         });
         success++;
       } catch { failed++; }
@@ -520,6 +550,52 @@ const LocationPageBuilder = () => {
                 <div className="flex items-center gap-2">
                   <Switch checked={form.add_to_service_areas_hub} onCheckedChange={(v) => update('add_to_service_areas_hub', v)} />
                   <Label>Add to /service-areas/ master hub</Label>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Gallery Metadata */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Gallery Matching</CardTitle>
+                <CardDescription>Tags used to automatically match gallery photos to this page</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Geography Tag</Label>
+                    <Input value={form.geography_tag} onChange={(e) => update('geography_tag', e.target.value)} placeholder="e.g., oak-cliff" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>ZIP Tag</Label>
+                    <Input value={form.zip_tag} onChange={(e) => update('zip_tag', e.target.value)} placeholder="e.g., 75208" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>City Tag</Label>
+                    <Input value={form.city_tag} onChange={(e) => update('city_tag', e.target.value)} placeholder="e.g., Dallas" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Service Tags (comma-separated)</Label>
+                    <Input
+                      value={form.service_tags.join(', ')}
+                      onChange={(e) => update('service_tags', e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean))}
+                      placeholder="e.g., ductless, ac-replacement"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Property Tags (comma-separated)</Label>
+                    <Input
+                      value={form.property_tags.join(', ')}
+                      onChange={(e) => update('property_tags', e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean))}
+                      placeholder="e.g., residential"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Gallery Heading</Label>
+                  <Input value={form.gallery_heading} onChange={(e) => update('gallery_heading', e.target.value)} placeholder={`Our Work in ${form.neighborhood || 'Neighborhood'}`} />
                 </div>
               </CardContent>
             </Card>
