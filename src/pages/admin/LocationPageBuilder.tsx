@@ -146,6 +146,12 @@ const LocationPageBuilder = () => {
         schema_enabled: d.schema_enabled ?? true,
         schema_description: d.schema_description || '',
         add_to_service_areas_hub: d.add_to_service_areas_hub ?? true,
+        geography_tag: d.geography_tag || '',
+        zip_tag: d.zip_tag || '',
+        city_tag: d.city_tag || 'Dallas',
+        service_tags: d.service_tags || [],
+        property_tags: d.property_tags || [],
+        gallery_heading: d.gallery_heading || '',
       });
       // Also fetch linked page_seo data
       if (d.page_seo_id) {
@@ -317,6 +323,12 @@ const LocationPageBuilder = () => {
           schema_enabled: true,
           schema_description: '',
           add_to_service_areas_hub: true,
+          geography_tag: '',
+          zip_tag: '',
+          city_tag: 'Dallas',
+          service_tags: [],
+          property_tags: [],
+          gallery_heading: '',
         });
         success++;
       } catch { failed++; }
