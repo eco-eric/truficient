@@ -31,7 +31,7 @@ import { MediaUpload, MediaType } from '@/components/admin/MediaUpload';
 import { BulkImageUpload } from '@/components/admin/BulkImageUpload';
 import { SortableGalleryItem } from '@/components/admin/SortableGalleryItem';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import { Plus, Pencil, Trash2, Star, Image as ImageIcon, Video, Tag, Loader2, Upload, Grid2X2, Grid3X3, LayoutGrid, Play, ArrowUpDown, Check, X, Camera } from 'lucide-react';
+import { Plus, Pencil, Trash2, Star, Image as ImageIcon, Video, Tag, Loader2, Upload, Grid2X2, Grid3X3, LayoutGrid, Play, ArrowUpDown, Check, X, Camera, Sparkles } from 'lucide-react';
 import { WorkEdgeMediaBrowser } from '@/components/admin/WorkEdgeMediaBrowser';
 import { toast } from 'sonner';
 import {
@@ -642,7 +642,42 @@ const AdminGallery = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="description">Description</Label>
+                      {imageForm.image_url && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 gap-1 text-xs"
+                          disabled={aiDescribing}
+                          onClick={async () => {
+                            setAiDescribing(true);
+                            try {
+                              const { data, error } = await supabase.functions.invoke('gallery-ai-describe', {
+                                body: { imageUrl: imageForm.image_url },
+                              });
+                              if (error) throw error;
+                              if (data?.description) {
+                                setImageForm(prev => ({
+                                  ...prev,
+                                  description: data.description,
+                                  alt_text: data.alt_text || prev.alt_text,
+                                }));
+                                toast.success('AI suggestion applied');
+                              }
+                            } catch (e: any) {
+                              toast.error('AI describe failed: ' + (e?.message || 'Unknown error'));
+                            } finally {
+                              setAiDescribing(false);
+                            }
+                          }}
+                        >
+                          {aiDescribing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                          AI Suggest
+                        </Button>
+                      )}
+                    </div>
                     <Textarea
                       id="description"
                       value={imageForm.description}
