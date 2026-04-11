@@ -450,6 +450,8 @@ const AdminGallery = () => {
       alt_text: '',
       is_featured: false,
       is_active: true,
+      approved_for_website: false,
+      photo_date: '',
       selectedTags: [],
     });
   };
@@ -462,6 +464,7 @@ const AdminGallery = () => {
       description: '',
       sort_order: 0,
       is_active: true,
+      tag_type: '',
     });
   };
 
@@ -480,6 +483,8 @@ const AdminGallery = () => {
       alt_text: image.alt_text || '',
       is_featured: image.is_featured,
       is_active: image.is_active,
+      approved_for_website: (image as any).approved_for_website ?? false,
+      photo_date: (image as any).photo_date || '',
       selectedTags: imageTags,
     });
     setImageDialogOpen(true);
@@ -493,6 +498,7 @@ const AdminGallery = () => {
       description: tag.description || '',
       sort_order: tag.sort_order,
       is_active: tag.is_active,
+      tag_type: tag.tag_type || '',
     });
     setTagDialogOpen(true);
   };
