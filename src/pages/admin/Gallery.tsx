@@ -91,6 +91,7 @@ const AdminGallery = () => {
   const [thumbnailSize, setThumbnailSize] = useState<ThumbnailSize>('medium');
   const [isReorderMode, setIsReorderMode] = useState(false);
   const [reorderedImages, setReorderedImages] = useState<GalleryImage[]>([]);
+  const [aiDescribing, setAiDescribing] = useState(false);
   
   // DnD sensors
   const sensors = useSensors(
