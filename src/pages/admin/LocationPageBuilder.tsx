@@ -55,6 +55,12 @@ interface LocationPageForm {
   schema_enabled: boolean;
   schema_description: string;
   add_to_service_areas_hub: boolean;
+  geography_tag: string;
+  zip_tag: string;
+  city_tag: string;
+  service_tags: string[];
+  property_tags: string[];
+  gallery_heading: string;
 }
 
 interface CsvRow extends Omit<LocationPageForm, 'schema_enabled' | 'add_to_service_areas_hub'> {
@@ -83,6 +89,12 @@ const defaultForm: LocationPageForm = {
   schema_enabled: true,
   schema_description: '',
   add_to_service_areas_hub: true,
+  geography_tag: '',
+  zip_tag: '',
+  city_tag: 'Dallas',
+  service_tags: [],
+  property_tags: [],
+  gallery_heading: '',
 };
 
 const LocationPageBuilder = () => {
