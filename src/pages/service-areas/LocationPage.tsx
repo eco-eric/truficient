@@ -393,7 +393,7 @@ const LocationPage = () => {
               </div>
             </section>
 
-            {/* Dynamic gallery for legacy pages too */}
+            {/* Dynamic gallery for legacy pages */}
             <div className="container mx-auto px-4">
               <div className="max-w-3xl mx-auto">
                 <LocationGallery
@@ -404,6 +404,7 @@ const LocationPage = () => {
                   serviceTags={location.service_tags}
                   propertyTags={location.property_tags}
                   galleryHeading={location.gallery_heading}
+                  maxPhotos={4}
                 />
               </div>
             </div>
