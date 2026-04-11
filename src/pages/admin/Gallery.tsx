@@ -230,6 +230,8 @@ const AdminGallery = () => {
           alt_text: imageData.alt_text || null,
           is_featured: imageData.is_featured,
           is_active: imageData.is_active,
+          approved_for_website: imageData.approved_for_website,
+          photo_date: imageData.photo_date || null,
         })
         .select()
         .single();
@@ -272,6 +274,8 @@ const AdminGallery = () => {
           alt_text: imageData.alt_text || null,
           is_featured: imageData.is_featured,
           is_active: imageData.is_active,
+          approved_for_website: imageData.approved_for_website,
+          photo_date: imageData.photo_date || null,
         })
         .eq('id', id);
       if (error) throw error;
