@@ -7,8 +7,39 @@ import Footer from '@/components/layout/Footer';
 import { Loader2, MapPin, Phone, CheckCircle, ImageIcon, Calculator, ScanLine } from 'lucide-react';
 import EstimatorCards from '@/components/home/EstimatorCards';
 import { LocationGallery } from '@/components/gallery/LocationGallery';
+import { useLocationGalleryPhotos } from '@/hooks/useLocationGalleryPhotos';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+
+/**
+ * Split markdown content at specific paragraph boundaries.
+ * A "paragraph" is a text block between \n\n that doesn't start with #, -, *, |, >
+ */
+function splitMarkdownByParagraphs(content: string, splitAfter: number[]): string[] {
+  const blocks = content.split(/\n\n+/);
+  const chunks: string[] = [];
+  let paragraphCount = 0;
+  let currentChunk: string[] = [];
+  let splitIndex = 0;
+
+  for (const block of blocks) {
+    currentChunk.push(block);
+    const trimmed = block.trim();
+    // Count as paragraph if it starts with a letter, digit, bracket, or quote mark
+    if (trimmed && /^[a-zA-Z0-9\["'(]/.test(trimmed)) {
+      paragraphCount++;
+    }
+    if (splitIndex < splitAfter.length && paragraphCount >= splitAfter[splitIndex]) {
+      chunks.push(currentChunk.join('\n\n'));
+      currentChunk = [];
+      splitIndex++;
+    }
+  }
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk.join('\n\n'));
+  }
+  return chunks;
+}
 
 interface LocationData {
   id: string;
