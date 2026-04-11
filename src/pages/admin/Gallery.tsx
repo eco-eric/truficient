@@ -661,23 +661,71 @@ const AdminGallery = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Tags</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {tags.filter(t => t.is_active).map(tag => (
-                        <Badge
-                          key={tag.id}
-                          variant={imageForm.selectedTags.includes(tag.id) ? 'default' : 'outline'}
-                          className="cursor-pointer"
-                          onClick={() => toggleTagSelection(tag.id)}
-                        >
-                          {tag.name}
-                        </Badge>
-                      ))}
-                    </div>
+                    {['system', 'service', 'property', 'geography', 'zip', 'city'].map(type => {
+                      const typeTags = tags.filter(t => t.is_active && t.tag_type === type);
+                      if (typeTags.length === 0) return null;
+                      return (
+                        <div key={type} className="space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground capitalize">{type}</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {typeTags.map(tag => (
+                              <Badge
+                                key={tag.id}
+                                variant={imageForm.selectedTags.includes(tag.id) ? 'default' : 'outline'}
+                                className="cursor-pointer text-xs"
+                                onClick={() => toggleTagSelection(tag.id)}
+                              >
+                                {tag.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {/* Uncategorized tags */}
+                    {(() => {
+                      const uncategorized = tags.filter(t => t.is_active && !t.tag_type);
+                      if (uncategorized.length === 0) return null;
+                      return (
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground">Other</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {uncategorized.map(tag => (
+                              <Badge
+                                key={tag.id}
+                                variant={imageForm.selectedTags.includes(tag.id) ? 'default' : 'outline'}
+                                className="cursor-pointer text-xs"
+                                onClick={() => toggleTagSelection(tag.id)}
+                              >
+                                {tag.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
                     {tags.filter(t => t.is_active).length === 0 && (
                       <p className="text-sm text-muted-foreground">No tags available. Create tags first.</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="photo_date">Photo Date</Label>
+                    <Input
+                      id="photo_date"
+                      type="date"
+                      value={imageForm.photo_date}
+                      onChange={(e) => setImageForm(prev => ({ ...prev, photo_date: e.target.value }))}
+                    />
+                  </div>
+                  <div className="flex items-center gap-6 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id="approved_for_website"
+                        checked={imageForm.approved_for_website}
+                        onCheckedChange={(checked) => setImageForm(prev => ({ ...prev, approved_for_website: checked }))}
+                      />
+                      <Label htmlFor="approved_for_website">Approved for Location Pages</Label>
+                    </div>
                     <div className="flex items-center gap-2">
                       <Switch
                         id="is_featured"
