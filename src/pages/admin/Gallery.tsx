@@ -61,6 +61,7 @@ interface GalleryTag {
   description: string | null;
   sort_order: number;
   is_active: boolean;
+  tag_type: string | null;
 }
 
 interface GalleryImage {
@@ -116,6 +117,8 @@ const AdminGallery = () => {
     alt_text: '',
     is_featured: false,
     is_active: true,
+    approved_for_website: false,
+    photo_date: '' as string,
     selectedTags: [] as string[],
   });
 
@@ -128,6 +131,7 @@ const AdminGallery = () => {
     description: '',
     sort_order: 0,
     is_active: true,
+    tag_type: '' as string,
   });
 
   // Fetch tags
@@ -380,6 +384,7 @@ const AdminGallery = () => {
         description: data.description || null,
         sort_order: data.sort_order,
         is_active: data.is_active,
+        tag_type: data.tag_type || null,
       });
       if (error) throw error;
     },
@@ -404,6 +409,7 @@ const AdminGallery = () => {
           description: data.description || null,
           sort_order: data.sort_order,
           is_active: data.is_active,
+          tag_type: data.tag_type || null,
         })
         .eq('id', id);
       if (error) throw error;
