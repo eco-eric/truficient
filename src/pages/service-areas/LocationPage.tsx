@@ -7,8 +7,39 @@ import Footer from '@/components/layout/Footer';
 import { Loader2, MapPin, Phone, CheckCircle, ImageIcon, Calculator, ScanLine } from 'lucide-react';
 import EstimatorCards from '@/components/home/EstimatorCards';
 import { LocationGallery } from '@/components/gallery/LocationGallery';
+import { useLocationGalleryPhotos } from '@/hooks/useLocationGalleryPhotos';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+
+/**
+ * Split markdown content at specific paragraph boundaries.
+ * A "paragraph" is a text block between \n\n that doesn't start with #, -, *, |, >
+ */
+function splitMarkdownByParagraphs(content: string, splitAfter: number[]): string[] {
+  const blocks = content.split(/\n\n+/);
+  const chunks: string[] = [];
+  let paragraphCount = 0;
+  let currentChunk: string[] = [];
+  let splitIndex = 0;
+
+  for (const block of blocks) {
+    currentChunk.push(block);
+    const trimmed = block.trim();
+    // Count as paragraph if it starts with a letter, digit, bracket, or quote mark
+    if (trimmed && /^[a-zA-Z0-9\["'(]/.test(trimmed)) {
+      paragraphCount++;
+    }
+    if (splitIndex < splitAfter.length && paragraphCount >= splitAfter[splitIndex]) {
+      chunks.push(currentChunk.join('\n\n'));
+      currentChunk = [];
+      splitIndex++;
+    }
+  }
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk.join('\n\n'));
+  }
+  return chunks;
+}
 
 interface LocationData {
   id: string;
@@ -263,68 +294,8 @@ const LocationPage = () => {
         </div>
 
         {hasFullContent ? (
-          // Full markdown content rendering
-          <article className="container mx-auto px-4 pb-16">
-            <div className="max-w-3xl mx-auto">
-              <div className="prose prose-lg max-w-none
-                prose-headings:text-foreground prose-p:text-muted-foreground
-                prose-a:text-primary prose-strong:text-foreground
-                prose-h1:text-3xl prose-h1:md:text-4xl prose-h1:font-bold prose-h1:mb-6
-                prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
-                prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
-                prose-li:text-muted-foreground
-                prose-hr:border-border prose-hr:my-8
-              ">
-                <ReactMarkdown
-                  components={{
-                    a: ({ href, children, ...props }) => {
-                      // Convert #contact links to the contact form / phone CTA
-                      if (href === '#contact') {
-                        return (
-                          <Link to="/hvac-estimate" className="text-primary hover:underline font-medium" {...props}>
-                            {children}
-                          </Link>
-                        );
-                      }
-                      // Convert tel: links to use correct phone
-                      if (href?.startsWith('tel:')) {
-                        return (
-                          <a href={PHONE_TEL} className="text-primary hover:underline font-medium" {...props}>
-                            {children}
-                          </a>
-                        );
-                      }
-                      // Internal links
-                      if (href?.startsWith('/')) {
-                        return (
-                          <Link to={href} className="text-primary hover:underline" {...props}>
-                            {children}
-                          </Link>
-                        );
-                      }
-                      return <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
-                    },
-                  }}
-                >
-                  {location.content!}
-                </ReactMarkdown>
-              </div>
-
-              {/* Dynamic gallery section */}
-              <LocationGallery
-                neighborhood={location.neighborhood}
-                geographyTag={location.geography_tag}
-                zipTag={location.zip_tag}
-                cityTag={location.city_tag}
-                serviceTags={location.service_tags}
-                propertyTags={location.property_tags}
-                galleryHeading={location.gallery_heading}
-              />
-
-              {/* Tool Links Section — per SEO instructions */}
-              <ToolLinksSection neighborhood={location.neighborhood} />
-            </div>
-          </article>
+          // Full markdown content with inline galleries
+          <FullContentWithGallery location={location} />
         ) : (
           // Legacy field-based rendering
           <>
@@ -422,7 +393,7 @@ const LocationPage = () => {
               </div>
             </section>
 
-            {/* Dynamic gallery for legacy pages too */}
+            {/* Dynamic gallery for legacy pages */}
             <div className="container mx-auto px-4">
               <div className="max-w-3xl mx-auto">
                 <LocationGallery
@@ -433,6 +404,7 @@ const LocationPage = () => {
                   serviceTags={location.service_tags}
                   propertyTags={location.property_tags}
                   galleryHeading={location.gallery_heading}
+                  maxPhotos={4}
                 />
               </div>
             </div>
@@ -450,7 +422,108 @@ const LocationPage = () => {
   );
 };
 
-/** Three tool links required on every location page per SEO instructions */
+/** Markdown link renderer shared by all content sections */
+const markdownComponents = {
+  a: ({ href, children, ...props }: any) => {
+    if (href === '#contact') {
+      return <Link to="/hvac-estimate" className="text-primary hover:underline font-medium" {...props}>{children}</Link>;
+    }
+    if (href?.startsWith('tel:')) {
+      return <a href={PHONE_TEL} className="text-primary hover:underline font-medium" {...props}>{children}</a>;
+    }
+    if (href?.startsWith('/')) {
+      return <Link to={href} className="text-primary hover:underline" {...props}>{children}</Link>;
+    }
+    return <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
+  },
+};
+
+/** Full-content pages with inline gallery placement */
+function FullContentWithGallery({ location }: { location: LocationData }) {
+  const { data: photos = [], isLoading } = useLocationGalleryPhotos({
+    geographyTag: location.geography_tag,
+    zipTag: location.zip_tag,
+    cityTag: location.city_tag,
+    serviceTags: location.service_tags,
+    propertyTags: location.property_tags,
+  });
+
+  const chunks = splitMarkdownByParagraphs(location.content!, [1, 3]);
+
+  const proseClasses = `prose prose-lg max-w-none
+    prose-headings:text-foreground prose-p:text-muted-foreground
+    prose-a:text-primary prose-strong:text-foreground
+    prose-h1:text-3xl prose-h1:md:text-4xl prose-h1:font-bold prose-h1:mb-6
+    prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
+    prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
+    prose-li:text-muted-foreground
+    prose-hr:border-border prose-hr:my-8`;
+
+  return (
+    <article className="container mx-auto px-4 pb-16">
+      <div className="max-w-3xl mx-auto">
+        {/* Chunk 1: up to paragraph 1 */}
+        {chunks[0] && (
+          <div className={proseClasses}>
+            <ReactMarkdown components={markdownComponents}>{chunks[0]}</ReactMarkdown>
+          </div>
+        )}
+
+        {/* First inline gallery: 4 photos after paragraph 1 */}
+        <LocationGallery
+          neighborhood={location.neighborhood}
+          geographyTag={location.geography_tag}
+          zipTag={location.zip_tag}
+          cityTag={location.city_tag}
+          serviceTags={location.service_tags}
+          propertyTags={location.property_tags}
+          galleryHeading={location.gallery_heading}
+          photos={photos}
+          isLoading={isLoading}
+          maxPhotos={4}
+          offset={0}
+          compact
+        />
+
+        {/* Chunk 2: paragraphs 2-3 */}
+        {chunks[1] && (
+          <div className={proseClasses}>
+            <ReactMarkdown components={markdownComponents}>{chunks[1]}</ReactMarkdown>
+          </div>
+        )}
+
+        {/* Second inline gallery: next 4 photos after paragraph 3 */}
+        {photos.length > 4 && (
+          <LocationGallery
+            neighborhood={location.neighborhood}
+            geographyTag={location.geography_tag}
+            zipTag={location.zip_tag}
+            cityTag={location.city_tag}
+            serviceTags={location.service_tags}
+            propertyTags={location.property_tags}
+            photos={photos}
+            isLoading={isLoading}
+            maxPhotos={4}
+            offset={4}
+            compact
+          />
+        )}
+
+        {/* Chunk 3: rest of content */}
+        {chunks[2] && (
+          <div className={proseClasses}>
+            <ReactMarkdown components={markdownComponents}>{chunks[2]}</ReactMarkdown>
+          </div>
+        )}
+
+        {/* Tool Links Section */}
+        <ToolLinksSection neighborhood={location.neighborhood} />
+      </div>
+    </article>
+  );
+}
+
+
 function ToolLinksSection({ neighborhood }: { neighborhood: string }) {
   const tools = [
     {
