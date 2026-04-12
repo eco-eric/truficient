@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Upload, Trash2, Loader2, ImageIcon, Video, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { compressImage } from "@/utils/imageCompression";
+import { extractExifData, matchGpsToLocation, type ExifData, type MatchedLocationTags } from "@/utils/exifExtractor";
 import { generateVideoThumbnail, createThumbnailFile } from "@/utils/videoThumbnail";
 
 export type MediaType = 'image' | 'video';
@@ -14,7 +15,7 @@ interface MediaUploadProps {
   currentUrl: string | null;
   currentMediaType?: MediaType;
   currentThumbnailUrl?: string | null;
-  onUpload: (url: string, mediaType: MediaType, thumbnailUrl?: string) => void;
+  onUpload: (url: string, mediaType: MediaType, thumbnailUrl?: string, exifData?: ExifData, locationMatch?: MatchedLocationTags) => void;
   onRemove: () => void;
   folder?: string;
   className?: string;
@@ -84,6 +85,17 @@ export const MediaUpload = ({
       let fileToUpload: File = file;
       const mediaType = detectMediaType(file);
       let thumbnailUrl: string | undefined;
+      let exifData: ExifData | undefined;
+      let locationMatch: MatchedLocationTags | undefined;
+
+      // Extract EXIF before compression (compression strips it)
+      if (isImage) {
+        setUploadStatus('Reading photo metadata...');
+        exifData = await extractExifData(file);
+        if (exifData.latitude != null && exifData.longitude != null) {
+          locationMatch = matchGpsToLocation(exifData.latitude, exifData.longitude);
+        }
+      }
 
       // Compress images only
       if (isImage) {
@@ -169,7 +181,7 @@ export const MediaUpload = ({
         .from(bucketName)
         .getPublicUrl(fileName);
 
-      onUpload(urlData.publicUrl, mediaType, thumbnailUrl);
+      onUpload(urlData.publicUrl, mediaType, thumbnailUrl, exifData, locationMatch);
       
       // Show success message
       if (isImage && fileToUpload.size < file.size) {

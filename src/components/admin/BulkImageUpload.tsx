@@ -19,11 +19,13 @@ import { Upload, X, Loader2, ImageIcon, Check, Star, Video, Play } from "lucide-
 import { cn } from "@/lib/utils";
 import { compressImage } from "@/utils/imageCompression";
 import { generateVideoThumbnail, createThumbnailFile } from "@/utils/videoThumbnail";
+import { extractExifData, matchGpsToLocation, type ExifData, type MatchedLocationTags } from "@/utils/exifExtractor";
 
 interface GalleryTag {
   id: string;
   name: string;
   is_active: boolean;
+  tag_type?: string;
 }
 
 type MediaType = 'image' | 'video';
@@ -39,6 +41,8 @@ interface UploadedMedia {
   status: 'pending' | 'uploading' | 'uploaded' | 'error';
   error?: string;
   mediaType: MediaType;
+  photoDate?: string;
+  exifLocation?: MatchedLocationTags;
 }
 
 interface BulkImageUploadProps {
@@ -117,6 +121,12 @@ export const BulkImageUpload = ({
     // Process images - compress them
     const processedImages: UploadedMedia[] = await Promise.all(
       imageFiles.map(async (file) => {
+        // Extract EXIF before compression strips it
+        const exifData = await extractExifData(file);
+        const locationMatch = (exifData.latitude != null && exifData.longitude != null)
+          ? matchGpsToLocation(exifData.latitude, exifData.longitude)
+          : undefined;
+        
         const compressed = await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.85 });
         return {
           id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -127,6 +137,8 @@ export const BulkImageUpload = ({
           is_featured: false,
           status: 'pending' as const,
           mediaType: 'image' as MediaType,
+          photoDate: exifData.dateTaken || undefined,
+          exifLocation: locationMatch,
         };
       })
     );
@@ -167,6 +179,10 @@ export const BulkImageUpload = ({
       
       if (originalSize > compressedSize) {
         toast.success(`Images optimized! Saved ${savedMB}MB`);
+      }
+      const geoCount = processedImages.filter(m => m.exifLocation?.zipCode).length;
+      if (geoCount > 0) {
+        toast.info(`📍 GPS data found in ${geoCount} photo${geoCount > 1 ? 's' : ''} — location tags will be auto-applied`);
       }
     }
     
@@ -287,6 +303,7 @@ export const BulkImageUpload = ({
         is_featured: item.is_featured,
         is_active: true,
         sort_order: index,
+        photo_date: item.photoDate || null,
       }));
 
       const { data: insertedMedia, error: insertError } = await supabase
@@ -301,7 +318,19 @@ export const BulkImageUpload = ({
       
       insertedMedia?.forEach((dbItem, index) => {
         const originalItem = uploadedMedia[index];
-        const tagsToApply = [...new Set([...originalItem.selectedTags, ...applyToAllTags])];
+        const tagsToApply = new Set([...originalItem.selectedTags, ...applyToAllTags]);
+        
+        // Auto-add EXIF location tags
+        if (originalItem.exifLocation) {
+          if (originalItem.exifLocation.zipCode) {
+            const zipTag = tags.find(t => t.tag_type === 'zip' && t.name === originalItem.exifLocation!.zipCode);
+            if (zipTag) tagsToApply.add(zipTag.id);
+          }
+          if (originalItem.exifLocation.city) {
+            const cityTag = tags.find(t => t.tag_type === 'city' && t.name.toLowerCase() === originalItem.exifLocation!.city!.toLowerCase());
+            if (cityTag) tagsToApply.add(cityTag.id);
+          }
+        }
         
         tagsToApply.forEach(tagId => {
           tagRelations.push({
