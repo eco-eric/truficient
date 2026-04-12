@@ -327,6 +327,8 @@ const Gallery = () => {
                                 src={image.thumbnail_url}
                                 alt={image.alt_text || image.title}
                                 loading="lazy"
+                                width={400}
+                                height={400}
                                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                               />
                             ) : (
@@ -348,6 +350,8 @@ const Gallery = () => {
                             src={image.image_url}
                             alt={image.alt_text || image.title}
                             loading="lazy"
+                            width={400}
+                            height={400}
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                           />
                         )}
