@@ -13,6 +13,9 @@ import galleryYard from "@/assets/gallery/outdoor-unit-yard.webp";
 import galleryAirHandler from "@/assets/gallery/air-handler-closet.webp";
 import "./smart-group-march-v2.css";
 
+// Load Google Fonts asynchronously to avoid render-blocking
+const GOOGLE_FONTS_URL = "https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@400;500;600&display=swap";
+
 const galleryItems = [
   { src: galleryAttic, tag: "New Install", caption: "Goodman SD — Richardson, TX" },
   { src: galleryOutdoorSide, tag: "Fence-Line SD", caption: "Side Discharge — Plano, TX" },
@@ -41,6 +44,17 @@ export default function SmartGroupMarchV2Landing() {
   const [showSticky, setShowSticky] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const formSectionRef = useRef<HTMLElement>(null);
+
+  // Load Google Fonts asynchronously (non-render-blocking)
+  useEffect(() => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = GOOGLE_FONTS_URL;
+    link.media = "print";
+    link.onload = () => { link.media = "all"; };
+    document.head.appendChild(link);
+    return () => { document.head.removeChild(link); };
+  }, []);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
