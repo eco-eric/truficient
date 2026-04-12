@@ -1,50 +1,22 @@
 
 
-# Inline Gallery Placement on Location Pages
+# Sticky Table Header for SEO Management Page
 
 ## Summary
-Split the markdown content into sections and interleave gallery photo grids between paragraphs instead of placing all photos at the bottom. First batch of 4 photos appears after paragraph 1; if more photos are available, a second batch of 4 appears after paragraph 3.
+Make the table header row in the SEO Management page stick to the top when scrolling, so column labels remain visible.
 
-## What Changes
+## Changes
 
-### 1. Update `LocationGallery` component
-- Add a `maxPhotos` prop (default keeps current behavior of 9)
-- Add a `compact` prop to control spacing/heading style for inline use
-- The component already handles scoring and sorting; just need to respect the limit
+### 1. Update the table container (`src/pages/admin/SEOManagement.tsx`)
+- Add `max-height` and `overflow-y-auto` to the table's wrapping `<div>` so the table scrolls within a fixed-height container
+- This keeps the header visible while the body scrolls
 
-### 2. Split markdown content in `LocationPage.tsx`
-Instead of rendering the full markdown in one `<ReactMarkdown>` block, split `location.content` by the **second-level heading** boundaries or by counting top-level paragraphs (lines separated by double newlines that aren't headings/lists).
+### 2. Make `TableHeader` sticky
+- Add `sticky top-0 z-10 bg-white` classes to the `<TableHeader>` element on line 380
+- This pins the header row to the top of the scrollable container
 
-The approach:
-- Parse the markdown string to find paragraph break points (split on `\n\n` and count non-heading, non-list blocks)
-- Create 2-3 content chunks: **before paragraph 2**, **paragraphs 2-3**, **rest**
-- Render: Chunk 1 → Gallery (4 photos) → Chunk 2 → Gallery (next 4 photos, if available) → Chunk 3 + ToolLinks
-
-### 3. Update `LocationGallery` to support `offset` + `limit`
-- Add `offset` prop so the second gallery instance skips the first 4 photos
-- First instance: `offset=0, maxPhotos=4`
-- Second instance: `offset=4, maxPhotos=4` (only renders if photos exist beyond offset)
-- Share the same query via a shared hook or pass photos as props to avoid duplicate fetches
-
-### 4. Refactor to shared query hook
-Create a `useLocationGalleryPhotos` hook that both gallery instances share (using the same React Query cache key). Each `LocationGallery` instance slices from the shared result.
-
-### 5. Legacy pages (field-based)
-Apply the same pattern: first gallery after the intro paragraph, second gallery after the "Why Choose Truficient" section.
-
-## Technical Detail
-
-**Content splitting logic:**
-```text
-splitMarkdownByParagraphs(content, [1, 3])
-  → [chunk0_paragraphs_0-1, chunk1_paragraphs_1-3, chunk2_rest]
-```
-
-A "paragraph" = a block of text between `\n\n` boundaries that starts with a letter or `[` (not `#`, `-`, `*`, `|`, `>`). This avoids counting headings or lists as paragraphs.
-
-**Files modified:**
+### Files Modified
 | File | Change |
 |------|--------|
-| `src/components/gallery/LocationGallery.tsx` | Add `maxPhotos`, `offset` props; extract query into shared hook |
-| `src/pages/service-areas/LocationPage.tsx` | Split markdown into chunks; render two gallery instances inline |
+| `src/pages/admin/SEOManagement.tsx` | Add sticky classes to `TableHeader`, add `max-h-[calc(100vh-300px)] overflow-y-auto` to table container div |
 
