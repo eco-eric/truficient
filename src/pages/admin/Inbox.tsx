@@ -278,12 +278,20 @@ export default function AdminInbox() {
   const composeMutation = useMutation({
     mutationFn: async () => {
       if (!composeTo || !composeSubject || !composeBody) throw new Error("Missing fields");
+      // Append signature if selected
+      const selectedSig = signatures.find((s: any) => s.id === composeSignatureId);
+      const bodyWithSig = selectedSig
+        ? `${composeBody}\n\n---\n${selectedSig.signature_html.replace(/<[^>]*>/g, '')}`
+        : composeBody;
+      const htmlWithSig = selectedSig
+        ? `<p>${composeBody.replace(/\n/g, "<br>")}</p><br/><hr/>${selectedSig.signature_html}`
+        : `<p>${composeBody.replace(/\n/g, "<br>")}</p>`;
       const { data, error } = await supabase.functions.invoke("send-crm-email", {
         body: {
           to: composeTo,
           subject: composeSubject,
-          bodyText: composeBody,
-          bodyHtml: `<p>${composeBody.replace(/\n/g, "<br>")}</p>`,
+          bodyText: bodyWithSig,
+          bodyHtml: htmlWithSig,
           customerId: composeCustomerId,
         },
       });
@@ -297,6 +305,8 @@ export default function AdminInbox() {
       setComposeCustomerId(null);
       setComposeSubject("");
       setComposeBody("");
+      setComposeSignatureId("");
+      setComposeTemplateId("");
       queryClient.invalidateQueries({ queryKey: ["crm-emails"] });
     },
     onError: (err: Error) => {
