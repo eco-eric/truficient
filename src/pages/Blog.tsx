@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { cardImageUrl } from '@/lib/imageUtils';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Header from '@/components/layout/Header';
