@@ -70,6 +70,7 @@ export const navSections: NavSection[] = [
       { label: 'Pipeline', href: '/admin/pipeline', icon: Kanban, permissionKey: 'nav.pipeline' },
       { label: 'DFW Watch List', href: '/admin/dfw-watchlist', icon: Target, permissionKey: 'nav.dfw-watchlist' },
       { label: 'Inbox', href: '/admin/inbox', icon: Mail, permissionKey: 'nav.inbox' },
+      { label: 'Email Settings', href: '/admin/email-settings', icon: Settings, permissionKey: 'nav.email-settings' },
     ],
   },
   {

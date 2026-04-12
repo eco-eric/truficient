@@ -2973,6 +2973,36 @@ export type Database = {
         }
         Relationships: []
       }
+      email_signatures: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          signature_html: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          signature_html?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          signature_html?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       equipment_documentation: {
         Row: {
           brand: string

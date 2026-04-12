@@ -55,6 +55,8 @@ export default function AdminInbox() {
   const [composeCustomerId, setComposeCustomerId] = useState<string | null>(null);
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
+  const [composeSignatureId, setComposeSignatureId] = useState<string>("");
+  const [composeTemplateId, setComposeTemplateId] = useState<string>("");
   const threadEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch all emails
@@ -78,6 +80,34 @@ export default function AdminInbox() {
       const { data, error } = await supabase
         .from("crm_customers")
         .select("id, first_name, last_name, email");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch email signatures
+  const { data: signatures = [] } = useQuery({
+    queryKey: ["email-signatures-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("email_signatures")
+        .select("*")
+        .eq("is_active", true)
+        .order("is_default", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch email templates
+  const { data: emailTemplates = [] } = useQuery({
+    queryKey: ["crm-email-templates-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("crm_email_templates")
+        .select("*")
+        .eq("is_active", true)
+        .order("name");
       if (error) throw error;
       return data;
     },
@@ -248,12 +278,20 @@ export default function AdminInbox() {
   const composeMutation = useMutation({
     mutationFn: async () => {
       if (!composeTo || !composeSubject || !composeBody) throw new Error("Missing fields");
+      // Append signature if selected
+      const selectedSig = signatures.find((s: any) => s.id === composeSignatureId);
+      const bodyWithSig = selectedSig
+        ? `${composeBody}\n\n---\n${selectedSig.signature_html.replace(/<[^>]*>/g, '')}`
+        : composeBody;
+      const htmlWithSig = selectedSig
+        ? `<p>${composeBody.replace(/\n/g, "<br>")}</p><br/><hr/>${selectedSig.signature_html}`
+        : `<p>${composeBody.replace(/\n/g, "<br>")}</p>`;
       const { data, error } = await supabase.functions.invoke("send-crm-email", {
         body: {
           to: composeTo,
           subject: composeSubject,
-          bodyText: composeBody,
-          bodyHtml: `<p>${composeBody.replace(/\n/g, "<br>")}</p>`,
+          bodyText: bodyWithSig,
+          bodyHtml: htmlWithSig,
           customerId: composeCustomerId,
         },
       });
@@ -267,6 +305,8 @@ export default function AdminInbox() {
       setComposeCustomerId(null);
       setComposeSubject("");
       setComposeBody("");
+      setComposeSignatureId("");
+      setComposeTemplateId("");
       queryClient.invalidateQueries({ queryKey: ["crm-emails"] });
     },
     onError: (err: Error) => {
@@ -280,6 +320,23 @@ export default function AdminInbox() {
       setComposeCustomerId(customerId);
       setComposeTo(customer.email || "");
     }
+  };
+
+  const handleComposeSelectTemplate = (templateId: string) => {
+    setComposeTemplateId(templateId);
+    const template = emailTemplates.find((t: any) => t.id === templateId);
+    if (template) {
+      setComposeSubject(template.subject);
+      // Strip HTML tags for plain text body
+      setComposeBody(template.body_html.replace(/<[^>]*>/g, ''));
+    }
+  };
+
+  // Auto-select default signature when compose opens
+  const handleOpenCompose = () => {
+    setIsComposeOpen(true);
+    const defaultSig = signatures.find((s: any) => s.is_default);
+    if (defaultSig) setComposeSignatureId(defaultSig.id);
   };
 
   return (
@@ -304,7 +361,7 @@ export default function AdminInbox() {
                   className="pl-8 h-9"
                 />
               </div>
-              <Button size="sm" variant="outline" onClick={() => setIsComposeOpen(true)}>
+              <Button size="sm" variant="outline" onClick={handleOpenCompose}>
                 <PenSquare className="h-4 w-4" />
               </Button>
               <Button size="sm" variant="outline" onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending}>
@@ -501,6 +558,36 @@ export default function AdminInbox() {
                 onChange={(e) => { setComposeTo(e.target.value); setComposeCustomerId(null); }}
                 className="mt-2"
               />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Template</Label>
+                <Select onValueChange={handleComposeSelectTemplate} value={composeTemplateId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select template..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {emailTemplates.map((t: any) => (
+                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Signature</Label>
+                <Select onValueChange={setComposeSignatureId} value={composeSignatureId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select signature..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {signatures.map((s: any) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name} {s.is_default ? "(Default)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div>
               <Label>Subject</Label>
