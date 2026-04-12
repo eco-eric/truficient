@@ -1,145 +1,154 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Outlet, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import Index from "./pages/Index";
-import About from "./pages/About";
-import ResidentialServices from "./pages/services/ResidentialServices";
-import CommercialServices from "./pages/services/CommercialServices";
-import DuctlessServices from "./pages/services/DuctlessServices";
-import HvacEstimate from "./pages/HvacEstimate";
-import HeatPumpAdvantage from "./pages/HeatPumpAdvantage";
-import SizingCalculator from "./pages/estimators/SizingCalculator";
-import CostEstimator from "./pages/estimators/CostEstimator";
-import SavingsCalculator from "./pages/estimators/SavingsCalculator";
-import DuctlessEstimator from "./pages/estimators/ductless/DuctlessEstimator";
-import DuctedEstimator from "./pages/estimators/ducted/DuctedEstimator";
-import SmartGroupEntry from "./pages/estimators/SmartGroupEntry";
-import Contact from "./pages/Contact";
-import NotFound from "./pages/NotFound";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import CookieConsent from "./components/CookieConsent";
-import DallasArea from "./pages/service-areas/DallasArea";
-import NorthDallasArea from "./pages/service-areas/NorthDallasArea";
-import FriscoMcKinneyArea from "./pages/service-areas/FriscoMcKinneyArea";
-import MidCitiesArea from "./pages/service-areas/MidCitiesArea";
-import SouthDallasArea from "./pages/service-areas/SouthDallasArea";
-import ServiceAreasHub from "./pages/service-areas/ServiceAreasHub";
-import ClusterSubHub from "./pages/service-areas/ClusterSubHub";
-import LocationPage from "./pages/service-areas/LocationPage";
-import Careers from "./pages/Careers";
-import Financing from "./pages/Financing";
-import FreeHvacAgeCheckerFB from "./pages/landing/FreeHvacAgeCheckerFB";
-import CampaignLandingPage from "./pages/landing/CampaignLandingPage";
-import SmartGroupMarchLanding from "./pages/landing/SmartGroupMarchLanding";
-import SmartGroupMarchV2Landing from "./pages/landing/SmartGroupMarchV2Landing";
-import SmartGroupMarchGoogleLanding from "./pages/landing/SmartGroupMarchGoogleLanding";
-import PublicEstimatePreview from "./pages/PublicEstimatePreview";
-
-// Admin imports
-import { AdminRouteLayout } from "./components/admin/AdminRouteLayout";
-import AdminLogin from "./pages/admin/Login";
-import AdminDashboard from "./pages/admin/Dashboard";
-import AdminUnifiedSubmissions from "./pages/admin/UnifiedSubmissions";
-import AdminSettings from "./pages/admin/Settings";
-import AdminBlogPosts from "./pages/admin/BlogPosts";
-import AdminBlogPostEditor from "./pages/admin/BlogPostEditor";
-import AdminSEOManagement from "./pages/admin/SEOManagement";
-import AdminSEOEditor from "./pages/admin/SEOEditor";
-import AdminLocationPageBuilder from "./pages/admin/LocationPageBuilder";
-import AdminCalculators from "./pages/admin/Calculators";
-import AdminCalculatorEditor from "./pages/admin/CalculatorEditor";
-import AdminUsers from "./pages/admin/Users";
-import AdminSocialMediaTracker from "./pages/admin/SocialMediaTracker";
-import AdminAnalyticsTracking from "./pages/admin/AnalyticsTracking";
-import AdminGHLTags from "./pages/admin/GHLTags";
-import AdminLandingPageForms from "./pages/admin/LandingPageForms";
-import AdminLandingPageFormEditor from "./pages/admin/LandingPageFormEditor";
-// AdminLandingPageSubmissions removed - now handled by UnifiedSubmissions
-import AdminSystemPricing from "./pages/admin/SystemPricing";
-import AdminMaterials from "./pages/admin/Materials";
-import AdminLaborRates from "./pages/admin/LaborRates";
-import AdminCosts from "./pages/admin/AdminCosts";
-import AdminEstimates from "./pages/admin/Estimates";
-import AdminEstimateBuilder from "./pages/admin/EstimateBuilder";
-import AdminEstimateTemplates from "./pages/admin/EstimateTemplates";
-import AdminTemplateBuilder from "./pages/admin/TemplateBuilder";
-import AdminGHLConversations from "./pages/admin/GHLConversations";
-import AdminButtonClicks from "./pages/admin/ButtonClicks";
-import AdminScannerAnalytics from "./pages/admin/ScannerAnalytics";
-import AdminDuctlessConfig from "./pages/admin/DuctlessConfig";
-import AdminGallery from "./pages/admin/Gallery";
-import AdminFinancingOptions from "./pages/admin/FinancingOptions";
-import AdminEquipmentLibrary from "./pages/admin/EquipmentLibrary";
-import AdminDFWWatchList from "./pages/admin/DFWWatchList";
-import AdminCustomerEquipment from "./pages/admin/CustomerEquipment";
-import AdminIndividualEquipmentPricing from "./pages/admin/IndividualEquipmentPricing";
-import AdminTrashBin from "./pages/admin/TrashBin";
-import AdminAbandonedCarts from "./pages/admin/AbandonedCarts";
-import AdminCustomers from "./pages/admin/Customers";
-import AdminCustomerDetail from "./pages/admin/CustomerDetail";
-import AdminLocations from "./pages/admin/Locations";
-import AdminPipeline from "./pages/admin/Pipeline";
-import AdminLeadSourcesConfig from "./pages/admin/LeadSourcesConfig";
-import AdminCampaignTagsConfig from "./pages/admin/CampaignTagsConfig";
-import AdminJobs from "./pages/admin/Jobs";
-import AdminJobDetail from "./pages/admin/JobDetail";
-import AdminJobTypesConfig from "./pages/admin/JobTypesConfig";
-import AdminTeams from "./pages/admin/Teams";
-import AdminWorkEdgeProjects from "./pages/admin/WorkEdgeProjects";
-import AdminCalendar from "./pages/admin/Calendar";
-import AdminCalendarSettings from "./pages/admin/CalendarSettings";
-import AdminAISettings from "./pages/admin/AISettings";
-import AdminAutomations from "./pages/admin/Automations";
-import AdminRolePermissions from "./pages/admin/RolePermissions";
-import AdminCompanies from "./pages/admin/Companies";
-import AdminCompanyDetail from "./pages/admin/CompanyDetail";
-import AdminTasks from "./pages/admin/Tasks";
-import AdminInbox from "./pages/admin/Inbox";
-import AdminEmailTemplates from "./pages/admin/EmailTemplates";
-import AdminEmailSettings from "./pages/admin/EmailSettings";
-import AdminKnowledgeBase from "./pages/admin/KnowledgeBase";
-import AdminTimesheets from "./pages/admin/Timesheets";
-import InvoicingMissionControl from "./pages/admin/invoicing/InvoicingMissionControl";
-import InvoicesList from "./pages/admin/invoicing/InvoicesList";
-import OttoEstimatesList from "./pages/admin/invoicing/OttoEstimatesList";
-import InvoiceClients from "./pages/admin/invoicing/InvoiceClients";
-import PaymentsList from "./pages/admin/invoicing/PaymentsList";
-import InvoiceTemplates from "./pages/admin/invoicing/InvoiceTemplates";
-import InvoiceCatalog from "./pages/admin/invoicing/InvoiceCatalog";
-import InvoiceExpenses from "./pages/admin/invoicing/InvoiceExpenses";
-import InvoiceReports from "./pages/admin/invoicing/InvoiceReports";
-import InvoiceSettings from "./pages/admin/invoicing/InvoiceSettings";
-import { Navigate } from "react-router-dom";
-import AdminSearchResults from "./pages/admin/SearchResults";
-import { ProtectedRoute } from "./components/admin/ProtectedRoute";
-import { TrackingScripts } from "./components/tracking/TrackingScripts";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { TrackingScripts } from "./components/tracking/TrackingScripts";
+import CookieConsent from "./components/CookieConsent";
+import { Loader2 } from "lucide-react";
 
-// Blog imports
-import Blog from "./pages/Blog";
-import BlogPost from "./pages/BlogPost";
+// Critical path — loaded eagerly (homepage)
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
 
-// Public pages
-import Gallery from "./pages/Gallery";
-import Scanner from "./pages/scanner/Scanner";
-import EquipmentReport from "./pages/scanner/EquipmentReport";
-import EquipmentLibrary from "./pages/equipment/EquipmentLibrary";
-import EquipmentDetail from "./pages/equipment/EquipmentDetail";
+// Lazy-loaded public pages
+const About = lazy(() => import("./pages/About"));
+const ResidentialServices = lazy(() => import("./pages/services/ResidentialServices"));
+const CommercialServices = lazy(() => import("./pages/services/CommercialServices"));
+const DuctlessServices = lazy(() => import("./pages/services/DuctlessServices"));
+const HvacEstimate = lazy(() => import("./pages/HvacEstimate"));
+const HeatPumpAdvantage = lazy(() => import("./pages/HeatPumpAdvantage"));
+const SizingCalculator = lazy(() => import("./pages/estimators/SizingCalculator"));
+const CostEstimator = lazy(() => import("./pages/estimators/CostEstimator"));
+const SavingsCalculator = lazy(() => import("./pages/estimators/SavingsCalculator"));
+const DuctlessEstimator = lazy(() => import("./pages/estimators/ductless/DuctlessEstimator"));
+const DuctedEstimator = lazy(() => import("./pages/estimators/ducted/DuctedEstimator"));
+const SmartGroupEntry = lazy(() => import("./pages/estimators/SmartGroupEntry"));
+const Contact = lazy(() => import("./pages/Contact"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const DallasArea = lazy(() => import("./pages/service-areas/DallasArea"));
+const NorthDallasArea = lazy(() => import("./pages/service-areas/NorthDallasArea"));
+const FriscoMcKinneyArea = lazy(() => import("./pages/service-areas/FriscoMcKinneyArea"));
+const MidCitiesArea = lazy(() => import("./pages/service-areas/MidCitiesArea"));
+const SouthDallasArea = lazy(() => import("./pages/service-areas/SouthDallasArea"));
+const ServiceAreasHub = lazy(() => import("./pages/service-areas/ServiceAreasHub"));
+const ClusterSubHub = lazy(() => import("./pages/service-areas/ClusterSubHub"));
+const LocationPage = lazy(() => import("./pages/service-areas/LocationPage"));
+const Careers = lazy(() => import("./pages/Careers"));
+const Financing = lazy(() => import("./pages/Financing"));
+const FreeHvacAgeCheckerFB = lazy(() => import("./pages/landing/FreeHvacAgeCheckerFB"));
+const CampaignLandingPage = lazy(() => import("./pages/landing/CampaignLandingPage"));
+const SmartGroupMarchLanding = lazy(() => import("./pages/landing/SmartGroupMarchLanding"));
+const SmartGroupMarchV2Landing = lazy(() => import("./pages/landing/SmartGroupMarchV2Landing"));
+const SmartGroupMarchGoogleLanding = lazy(() => import("./pages/landing/SmartGroupMarchGoogleLanding"));
+const PublicEstimatePreview = lazy(() => import("./pages/PublicEstimatePreview"));
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
+const Gallery = lazy(() => import("./pages/Gallery"));
+const Scanner = lazy(() => import("./pages/scanner/Scanner"));
+const EquipmentReport = lazy(() => import("./pages/scanner/EquipmentReport"));
+const EquipmentLibrary = lazy(() => import("./pages/equipment/EquipmentLibrary"));
+const EquipmentDetail = lazy(() => import("./pages/equipment/EquipmentDetail"));
+
+// Lazy-loaded admin pages
+const AdminRouteLayout = lazy(() => import("./components/admin/AdminRouteLayout").then(m => ({ default: m.AdminRouteLayout })));
+const AdminLogin = lazy(() => import("./pages/admin/Login"));
+const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
+const AdminUnifiedSubmissions = lazy(() => import("./pages/admin/UnifiedSubmissions"));
+const AdminSettings = lazy(() => import("./pages/admin/Settings"));
+const AdminBlogPosts = lazy(() => import("./pages/admin/BlogPosts"));
+const AdminBlogPostEditor = lazy(() => import("./pages/admin/BlogPostEditor"));
+const AdminSEOManagement = lazy(() => import("./pages/admin/SEOManagement"));
+const AdminSEOEditor = lazy(() => import("./pages/admin/SEOEditor"));
+const AdminLocationPageBuilder = lazy(() => import("./pages/admin/LocationPageBuilder"));
+const AdminCalculators = lazy(() => import("./pages/admin/Calculators"));
+const AdminCalculatorEditor = lazy(() => import("./pages/admin/CalculatorEditor"));
+const AdminUsers = lazy(() => import("./pages/admin/Users"));
+const AdminSocialMediaTracker = lazy(() => import("./pages/admin/SocialMediaTracker"));
+const AdminAnalyticsTracking = lazy(() => import("./pages/admin/AnalyticsTracking"));
+const AdminGHLTags = lazy(() => import("./pages/admin/GHLTags"));
+const AdminLandingPageForms = lazy(() => import("./pages/admin/LandingPageForms"));
+const AdminLandingPageFormEditor = lazy(() => import("./pages/admin/LandingPageFormEditor"));
+const AdminSystemPricing = lazy(() => import("./pages/admin/SystemPricing"));
+const AdminMaterials = lazy(() => import("./pages/admin/Materials"));
+const AdminLaborRates = lazy(() => import("./pages/admin/LaborRates"));
+const AdminCosts = lazy(() => import("./pages/admin/AdminCosts"));
+const AdminEstimates = lazy(() => import("./pages/admin/Estimates"));
+const AdminEstimateBuilder = lazy(() => import("./pages/admin/EstimateBuilder"));
+const AdminEstimateTemplates = lazy(() => import("./pages/admin/EstimateTemplates"));
+const AdminTemplateBuilder = lazy(() => import("./pages/admin/TemplateBuilder"));
+const AdminGHLConversations = lazy(() => import("./pages/admin/GHLConversations"));
+const AdminButtonClicks = lazy(() => import("./pages/admin/ButtonClicks"));
+const AdminScannerAnalytics = lazy(() => import("./pages/admin/ScannerAnalytics"));
+const AdminDuctlessConfig = lazy(() => import("./pages/admin/DuctlessConfig"));
+const AdminGallery = lazy(() => import("./pages/admin/Gallery"));
+const AdminFinancingOptions = lazy(() => import("./pages/admin/FinancingOptions"));
+const AdminEquipmentLibrary = lazy(() => import("./pages/admin/EquipmentLibrary"));
+const AdminDFWWatchList = lazy(() => import("./pages/admin/DFWWatchList"));
+const AdminCustomerEquipment = lazy(() => import("./pages/admin/CustomerEquipment"));
+const AdminIndividualEquipmentPricing = lazy(() => import("./pages/admin/IndividualEquipmentPricing"));
+const AdminTrashBin = lazy(() => import("./pages/admin/TrashBin"));
+const AdminAbandonedCarts = lazy(() => import("./pages/admin/AbandonedCarts"));
+const AdminCustomers = lazy(() => import("./pages/admin/Customers"));
+const AdminCustomerDetail = lazy(() => import("./pages/admin/CustomerDetail"));
+const AdminLocations = lazy(() => import("./pages/admin/Locations"));
+const AdminPipeline = lazy(() => import("./pages/admin/Pipeline"));
+const AdminLeadSourcesConfig = lazy(() => import("./pages/admin/LeadSourcesConfig"));
+const AdminCampaignTagsConfig = lazy(() => import("./pages/admin/CampaignTagsConfig"));
+const AdminJobs = lazy(() => import("./pages/admin/Jobs"));
+const AdminJobDetail = lazy(() => import("./pages/admin/JobDetail"));
+const AdminJobTypesConfig = lazy(() => import("./pages/admin/JobTypesConfig"));
+const AdminTeams = lazy(() => import("./pages/admin/Teams"));
+const AdminWorkEdgeProjects = lazy(() => import("./pages/admin/WorkEdgeProjects"));
+const AdminCalendar = lazy(() => import("./pages/admin/Calendar"));
+const AdminCalendarSettings = lazy(() => import("./pages/admin/CalendarSettings"));
+const AdminAISettings = lazy(() => import("./pages/admin/AISettings"));
+const AdminAutomations = lazy(() => import("./pages/admin/Automations"));
+const AdminRolePermissions = lazy(() => import("./pages/admin/RolePermissions"));
+const AdminCompanies = lazy(() => import("./pages/admin/Companies"));
+const AdminCompanyDetail = lazy(() => import("./pages/admin/CompanyDetail"));
+const AdminTasks = lazy(() => import("./pages/admin/Tasks"));
+const AdminInbox = lazy(() => import("./pages/admin/Inbox"));
+const AdminEmailTemplates = lazy(() => import("./pages/admin/EmailTemplates"));
+const AdminEmailSettings = lazy(() => import("./pages/admin/EmailSettings"));
+const AdminKnowledgeBase = lazy(() => import("./pages/admin/KnowledgeBase"));
+const AdminTimesheets = lazy(() => import("./pages/admin/Timesheets"));
+const AdminSearchResults = lazy(() => import("./pages/admin/SearchResults"));
+const InvoicingMissionControl = lazy(() => import("./pages/admin/invoicing/InvoicingMissionControl"));
+const InvoicesList = lazy(() => import("./pages/admin/invoicing/InvoicesList"));
+const OttoEstimatesList = lazy(() => import("./pages/admin/invoicing/OttoEstimatesList"));
+const InvoiceClients = lazy(() => import("./pages/admin/invoicing/InvoiceClients"));
+const PaymentsList = lazy(() => import("./pages/admin/invoicing/PaymentsList"));
+const InvoiceTemplates = lazy(() => import("./pages/admin/invoicing/InvoiceTemplates"));
+const InvoiceCatalog = lazy(() => import("./pages/admin/invoicing/InvoiceCatalog"));
+const InvoiceExpenses = lazy(() => import("./pages/admin/invoicing/InvoiceExpenses"));
+const InvoiceReports = lazy(() => import("./pages/admin/invoicing/InvoiceReports"));
+const InvoiceSettings = lazy(() => import("./pages/admin/invoicing/InvoiceSettings"));
+
+// Eagerly loaded (small, needed everywhere)
+import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes - data is fresh, won't refetch unless stale
-      gcTime: 10 * 60 * 1000,   // 10 minutes - keep unused data in cache
-      refetchOnWindowFocus: false, // Don't refetch when window regains focus
-      retry: 1, // Only retry once on failure
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      retry: 1,
     },
   },
 });
+
+// Lightweight loading fallback
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+  </div>
+);
 
 // Root layout component that includes global elements
 const RootLayout = () => (
@@ -147,8 +156,17 @@ const RootLayout = () => (
     <ScrollToTop />
     <TrackingScripts />
     <CookieConsent />
-    <Outlet />
+    <Suspense fallback={<PageLoader />}>
+      <Outlet />
+    </Suspense>
   </>
+);
+
+// Admin layout wrapper with its own Suspense
+const LazyAdminLayout = () => (
+  <Suspense fallback={<PageLoader />}>
+    <AdminRouteLayout />
+  </Suspense>
 );
 
 const router = createBrowserRouter([
@@ -160,7 +178,6 @@ const router = createBrowserRouter([
       { path: "/services/residential", element: <ResidentialServices /> },
       { path: "/services/commercial", element: <CommercialServices /> },
       { path: "/services/ductless", element: <DuctlessServices /> },
-      // Legacy redirects - keep old URLs working
       { path: "/residential-services", element: <ResidentialServices /> },
       { path: "/commercial-services", element: <CommercialServices /> },
       { path: "/contact", element: <Contact /> },
@@ -185,7 +202,6 @@ const router = createBrowserRouter([
       { path: "/privacy-policy", element: <PrivacyPolicy /> },
       { path: "/terms-of-service", element: <TermsOfService /> },
       
-      // Blog Routes
       { path: "/blog", element: <Blog /> },
       { path: "/blog/:slug", element: <BlogPost /> },
       { path: "/gallery", element: <Gallery /> },
@@ -198,20 +214,17 @@ const router = createBrowserRouter([
       { path: "/smart-group-march-F-26v2", element: <SmartGroupMarchV2Landing /> },
       { path: "/smart-group-march-G-26", element: <SmartGroupMarchGoogleLanding /> },
       
-      // Campaign landing pages (go.truficient.com subdomain)
       { path: "/smart-group-march", element: <CampaignLandingPage /> },
       { path: "/smart-group-march-g", element: <CampaignLandingPage /> },
       
-      // Public estimate preview
       { path: "/estimate/preview/:id", element: <PublicEstimatePreview /> },
       
-      // Dynamic SEO location pages (catch-all for location slugs)
       { path: "/:locationSlug", element: <LocationPage /> },
       
       // Admin Routes
       { path: "/admin/login", element: <AdminLogin /> },
       {
-        element: <AdminRouteLayout />,
+        element: <LazyAdminLayout />,
         children: [
           { path: "/admin", element: <ProtectedRoute><AdminDashboard /></ProtectedRoute> },
           { path: "/admin/search", element: <ProtectedRoute><AdminSearchResults /></ProtectedRoute> },
