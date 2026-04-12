@@ -180,6 +180,10 @@ export const BulkImageUpload = ({
       if (originalSize > compressedSize) {
         toast.success(`Images optimized! Saved ${savedMB}MB`);
       }
+      const geoCount = processedImages.filter(m => m.exifLocation?.zipCode).length;
+      if (geoCount > 0) {
+        toast.info(`📍 GPS data found in ${geoCount} photo${geoCount > 1 ? 's' : ''} — location tags will be auto-applied`);
+      }
     }
     
     if (videoFiles.length > 0) {
