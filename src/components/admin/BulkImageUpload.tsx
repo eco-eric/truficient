@@ -298,6 +298,7 @@ export const BulkImageUpload = ({
         is_featured: item.is_featured,
         is_active: true,
         sort_order: index,
+        photo_date: item.photoDate || null,
       }));
 
       const { data: insertedMedia, error: insertError } = await supabase
