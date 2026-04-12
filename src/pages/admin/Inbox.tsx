@@ -8,8 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Mail, Send, Sparkles, RefreshCw, ArrowLeft, User, Search, Loader2 } from "lucide-react";
+import { Mail, Send, Sparkles, RefreshCw, ArrowLeft, User, Search, Loader2, PenSquare } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +50,11 @@ export default function AdminInbox() {
   const [replySubject, setReplySubject] = useState("");
   const [replyBody, setReplyBody] = useState("");
   const [showMobileThread, setShowMobileThread] = useState(false);
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [composeTo, setComposeTo] = useState("");
+  const [composeCustomerId, setComposeCustomerId] = useState<string | null>(null);
+  const [composeSubject, setComposeSubject] = useState("");
+  const [composeBody, setComposeBody] = useState("");
   const threadEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch all emails
@@ -230,11 +238,48 @@ export default function AdminInbox() {
   const handleSelectConversation = (conv: Conversation) => {
     setSelectedConversation(conv);
     setShowMobileThread(true);
-    // Pre-fill reply subject
     const lastEmail = conv.emails[conv.emails.length - 1];
     const subj = lastEmail.subject || "";
     setReplySubject(subj.startsWith("Re:") ? subj : `Re: ${subj}`);
     setReplyBody("");
+  };
+
+  // Compose new email mutation
+  const composeMutation = useMutation({
+    mutationFn: async () => {
+      if (!composeTo || !composeSubject || !composeBody) throw new Error("Missing fields");
+      const { data, error } = await supabase.functions.invoke("send-crm-email", {
+        body: {
+          to: composeTo,
+          subject: composeSubject,
+          bodyText: composeBody,
+          bodyHtml: `<p>${composeBody.replace(/\n/g, "<br>")}</p>`,
+          customerId: composeCustomerId,
+        },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: "Email sent successfully" });
+      setIsComposeOpen(false);
+      setComposeTo("");
+      setComposeCustomerId(null);
+      setComposeSubject("");
+      setComposeBody("");
+      queryClient.invalidateQueries({ queryKey: ["crm-emails"] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to send email", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleComposeSelectCustomer = (customerId: string) => {
+    const customer = customers.find((c) => c.id === customerId);
+    if (customer) {
+      setComposeCustomerId(customerId);
+      setComposeTo(customer.email || "");
+    }
   };
 
   return (
@@ -259,6 +304,9 @@ export default function AdminInbox() {
                   className="pl-8 h-9"
                 />
               </div>
+              <Button size="sm" variant="outline" onClick={() => setIsComposeOpen(true)}>
+                <PenSquare className="h-4 w-4" />
+              </Button>
               <Button size="sm" variant="outline" onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending}>
                 <RefreshCw className={cn("h-4 w-4", syncMutation.isPending && "animate-spin")} />
               </Button>
@@ -425,6 +473,64 @@ export default function AdminInbox() {
           )}
         </div>
       </div>
+
+      {/* Compose Dialog */}
+      <Dialog open={isComposeOpen} onOpenChange={setIsComposeOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Compose Email</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>To (select customer or type email)</Label>
+              <Select onValueChange={handleComposeSelectCustomer} value={composeCustomerId || ""}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a customer..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {customers.filter((c) => c.email).map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {`${c.first_name || ""} ${c.last_name || ""}`.trim() || c.email} — {c.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Or type email address..."
+                value={composeTo}
+                onChange={(e) => { setComposeTo(e.target.value); setComposeCustomerId(null); }}
+                className="mt-2"
+              />
+            </div>
+            <div>
+              <Label>Subject</Label>
+              <Input
+                value={composeSubject}
+                onChange={(e) => setComposeSubject(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Message</Label>
+              <Textarea
+                value={composeBody}
+                onChange={(e) => setComposeBody(e.target.value)}
+                className="min-h-[150px]"
+                placeholder="Write your email..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsComposeOpen(false)}>Cancel</Button>
+            <Button
+              onClick={() => composeMutation.mutate()}
+              disabled={composeMutation.isPending || !composeTo || !composeSubject || !composeBody}
+            >
+              {composeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
+              Send
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
