@@ -623,12 +623,36 @@ const AdminGallery = () => {
                       currentUrl={imageForm.image_url}
                       currentMediaType={imageForm.media_type}
                       currentThumbnailUrl={imageForm.thumbnail_url}
-                      onUpload={(url, mediaType, thumbnailUrl) => setImageForm(prev => ({ 
-                        ...prev, 
-                        image_url: url, 
-                        media_type: mediaType,
-                        thumbnail_url: thumbnailUrl || null
-                      }))}
+                      onUpload={(url, mediaType, thumbnailUrl, exifData, locationMatch) => {
+                        setImageForm(prev => {
+                          const updates: any = { 
+                            image_url: url, 
+                            media_type: mediaType,
+                            thumbnail_url: thumbnailUrl || null,
+                          };
+                          // Auto-fill photo date from EXIF
+                          if (exifData?.dateTaken && !prev.photo_date) {
+                            updates.photo_date = exifData.dateTaken;
+                          }
+                          // Auto-select matching zip and city tags
+                          if (locationMatch) {
+                            const newTags = [...prev.selectedTags];
+                            if (locationMatch.zipCode) {
+                              const zipTag = tags.find(t => t.tag_type === 'zip' && t.name === locationMatch.zipCode);
+                              if (zipTag && !newTags.includes(zipTag.id)) newTags.push(zipTag.id);
+                            }
+                            if (locationMatch.city) {
+                              const cityTag = tags.find(t => t.tag_type === 'city' && t.name.toLowerCase() === locationMatch.city!.toLowerCase());
+                              if (cityTag && !newTags.includes(cityTag.id)) newTags.push(cityTag.id);
+                            }
+                            if (newTags.length > prev.selectedTags.length) {
+                              updates.selectedTags = newTags;
+                              toast.info(`Auto-tagged: ${[locationMatch.city, locationMatch.zipCode].filter(Boolean).join(', ')}`);
+                            }
+                          }
+                          return { ...prev, ...updates };
+                        });
+                      }}
                       onRemove={() => setImageForm(prev => ({ ...prev, image_url: '', thumbnail_url: null, media_type: 'image' }))}
                       acceptedTypes="all"
                     />
