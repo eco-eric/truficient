@@ -55,6 +55,8 @@ export default function AdminInbox() {
   const [composeCustomerId, setComposeCustomerId] = useState<string | null>(null);
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
+  const [composeSignatureId, setComposeSignatureId] = useState<string>("");
+  const [composeTemplateId, setComposeTemplateId] = useState<string>("");
   const threadEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch all emails
