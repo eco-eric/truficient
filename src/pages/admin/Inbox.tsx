@@ -111,6 +111,8 @@ export default function AdminInbox() {
       if (error) throw error;
       return data;
     },
+  });
+
   // Group emails into conversations by customer or email
   const conversations: Conversation[] = (() => {
     const groups = new Map<string, EmailLog[]>();
