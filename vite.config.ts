@@ -25,4 +25,47 @@ export default defineConfig(({ mode }) => ({
     },
     dedupe: ["react", "react-dom"],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core React runtime
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          // Data layer
+          "vendor-query": ["@tanstack/react-query"],
+          // Supabase client
+          "vendor-supabase": ["@supabase/supabase-js"],
+          // UI framework
+          "vendor-radix": [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-popover",
+            "@radix-ui/react-tabs",
+            "@radix-ui/react-toast",
+            "@radix-ui/react-tooltip",
+            "@radix-ui/react-select",
+            "@radix-ui/react-accordion",
+            "@radix-ui/react-checkbox",
+            "@radix-ui/react-label",
+            "@radix-ui/react-toggle",
+            "@radix-ui/react-toggle-group",
+            "@radix-ui/react-slot",
+          ],
+          // Animation
+          "vendor-motion": ["framer-motion"],
+          // Charts (only needed on admin)
+          "vendor-recharts": ["recharts"],
+          // Rich text editor (admin only)
+          "vendor-tiptap": [
+            "@tiptap/react",
+            "@tiptap/starter-kit",
+            "@tiptap/extension-image",
+            "@tiptap/extension-link",
+            "@tiptap/extension-placeholder",
+            "@tiptap/extension-underline",
+          ],
+        },
+      },
+    },
+  },
 }));
