@@ -98,6 +98,8 @@ import AdminRolePermissions from "./pages/admin/RolePermissions";
 import AdminCompanies from "./pages/admin/Companies";
 import AdminCompanyDetail from "./pages/admin/CompanyDetail";
 import AdminTasks from "./pages/admin/Tasks";
+import AdminInbox from "./pages/admin/Inbox";
+import AdminEmailTemplates from "./pages/admin/EmailTemplates";
 import AdminKnowledgeBase from "./pages/admin/KnowledgeBase";
 import AdminTimesheets from "./pages/admin/Timesheets";
 import InvoicingMissionControl from "./pages/admin/invoicing/InvoicingMissionControl";
@@ -270,6 +272,8 @@ const router = createBrowserRouter([
           { path: "/admin/automations", element: <ProtectedRoute><AdminAutomations /></ProtectedRoute> },
           { path: "/admin/permissions", element: <ProtectedRoute><AdminRolePermissions /></ProtectedRoute> },
           { path: "/admin/tasks", element: <ProtectedRoute><AdminTasks /></ProtectedRoute> },
+          { path: "/admin/inbox", element: <ProtectedRoute><AdminInbox /></ProtectedRoute> },
+          { path: "/admin/email-templates", element: <ProtectedRoute><AdminEmailTemplates /></ProtectedRoute> },
           { path: "/admin/invoicing", element: <ProtectedRoute><InvoicingMissionControl /></ProtectedRoute> },
           { path: "/admin/invoices", element: <ProtectedRoute><InvoicesList /></ProtectedRoute> },
           { path: "/admin/otto-estimates", element: <ProtectedRoute><OttoEstimatesList /></ProtectedRoute> },
