@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
+import { cardImageUrl } from '@/lib/imageUtils';
 
 interface BlogPost {
   id: string;
@@ -85,9 +86,12 @@ const BlogSection = () => {
                   <Card className="overflow-hidden hover-lift group bg-card h-full">
                     <div className="relative overflow-hidden">
                       <img
-                        src={post.featured_image || '/placeholder.svg'}
+                        src={cardImageUrl(post.featured_image)}
                         alt={post.title}
                         className="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-500"
+                        loading="lazy"
+                        width={600}
+                        height={240}
                         onError={(e) => {
                           e.currentTarget.src = '/placeholder.svg';
                         }}

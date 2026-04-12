@@ -291,7 +291,7 @@ const BlogPostPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            src={post.featured_image}
+            src={displayUrl(post.featured_image)}
             alt={post.featured_image_alt || post.title}
             className="w-full max-w-4xl mx-auto rounded-lg shadow-lg aspect-video object-cover"
           />
