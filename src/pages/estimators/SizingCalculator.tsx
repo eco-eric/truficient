@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
 import { Ruler, Home, Thermometer, Wind, Phone, CalendarCheck, CheckCircle, ScanLine, Settings, Compass, Trees, Gauge } from "lucide-react";
-import carrierPlate from '@/assets/data-plates/carrier.jpg';
-import tranePlate from '@/assets/data-plates/trane.jpg';
-import lennoxPlate from '@/assets/data-plates/lennox.jpg';
-import goodmanPlate from '@/assets/data-plates/goodman.jpg';
+import carrierPlate from '@/assets/data-plates/carrier.webp';
+import tranePlate from '@/assets/data-plates/trane.webp';
+import lennoxPlate from '@/assets/data-plates/lennox.webp';
+import goodmanPlate from '@/assets/data-plates/goodman.webp';
 import { Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";

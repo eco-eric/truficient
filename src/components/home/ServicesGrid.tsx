@@ -3,13 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { useButtonTracking } from '@/hooks/useButtonTracking';
-import heatPumpImage from '@/assets/heat-pump-installation.png';
-import acRepairImage from '@/assets/ac-repair.jpg';
-import designInstallImage from '@/assets/design-and-install.jpg';
-import commercialServicesImage from '@/assets/commercial-services.jpg';
-import ductlessServicesImage from '@/assets/ductless-services.jpg';
-import heatingRepairImage from '@/assets/heating-repair.jpg';
-import acReplacementImage from '@/assets/ac-replacement.jpg';
+import heatPumpImage from '@/assets/heat-pump-installation.webp';
+import acRepairImage from '@/assets/ac-repair.webp';
+import designInstallImage from '@/assets/design-and-install.webp';
+import commercialServicesImage from '@/assets/commercial-services.webp';
+import ductlessServicesImage from '@/assets/ductless-services.webp';
+import heatingRepairImage from '@/assets/heating-repair.webp';
+import acReplacementImage from '@/assets/ac-replacement.webp';
 
 const services = [
   {
@@ -106,6 +106,9 @@ const ServicesGrid = () => {
                     src={service.image}
                     alt={service.title}
                     className="w-full h-56 object-cover object-center group-hover:scale-110 transition-transform duration-500"
+                    loading="lazy"
+                    width={400}
+                    height={224}
                   />
                 </div>
                 <CardContent className="p-6">
