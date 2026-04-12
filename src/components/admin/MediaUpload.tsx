@@ -15,7 +15,7 @@ interface MediaUploadProps {
   currentUrl: string | null;
   currentMediaType?: MediaType;
   currentThumbnailUrl?: string | null;
-  onUpload: (url: string, mediaType: MediaType, thumbnailUrl?: string) => void;
+  onUpload: (url: string, mediaType: MediaType, thumbnailUrl?: string, exifData?: ExifData, locationMatch?: MatchedLocationTags) => void;
   onRemove: () => void;
   folder?: string;
   className?: string;
