@@ -19,6 +19,7 @@ import { Upload, X, Loader2, ImageIcon, Check, Star, Video, Play } from "lucide-
 import { cn } from "@/lib/utils";
 import { compressImage } from "@/utils/imageCompression";
 import { generateVideoThumbnail, createThumbnailFile } from "@/utils/videoThumbnail";
+import { extractExifData, matchGpsToLocation, type ExifData, type MatchedLocationTags } from "@/utils/exifExtractor";
 
 interface GalleryTag {
   id: string;
