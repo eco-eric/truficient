@@ -322,6 +322,23 @@ export default function AdminInbox() {
     }
   };
 
+  const handleComposeSelectTemplate = (templateId: string) => {
+    setComposeTemplateId(templateId);
+    const template = emailTemplates.find((t: any) => t.id === templateId);
+    if (template) {
+      setComposeSubject(template.subject);
+      // Strip HTML tags for plain text body
+      setComposeBody(template.body_html.replace(/<[^>]*>/g, ''));
+    }
+  };
+
+  // Auto-select default signature when compose opens
+  const handleOpenCompose = () => {
+    setIsComposeOpen(true);
+    const defaultSig = signatures.find((s: any) => s.is_default);
+    if (defaultSig) setComposeSignatureId(defaultSig.id);
+  };
+
   return (
     <AdminLayout
       title="Inbox"
