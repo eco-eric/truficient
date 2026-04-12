@@ -1,0 +1,432 @@
+import { useState, useEffect, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "@/hooks/use-toast";
+import { Mail, Send, Sparkles, RefreshCw, ArrowLeft, User, Search, Loader2 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { cn } from "@/lib/utils";
+
+type EmailLog = {
+  id: string;
+  customer_id: string | null;
+  direction: string;
+  subject: string | null;
+  body_html: string | null;
+  body_text: string | null;
+  from_email: string;
+  to_email: string;
+  status: string;
+  is_read: boolean;
+  sent_at: string | null;
+  received_at: string | null;
+  created_at: string;
+};
+
+type Conversation = {
+  customer_id: string | null;
+  email: string;
+  customer_name: string | null;
+  last_subject: string | null;
+  last_time: string;
+  unread_count: number;
+  emails: EmailLog[];
+};
+
+export default function AdminInbox() {
+  const queryClient = useQueryClient();
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [filter, setFilter] = useState<"all" | "unread" | "awaiting" | "sent">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [replySubject, setReplySubject] = useState("");
+  const [replyBody, setReplyBody] = useState("");
+  const [showMobileThread, setShowMobileThread] = useState(false);
+  const threadEndRef = useRef<HTMLDivElement>(null);
+
+  // Fetch all emails
+  const { data: emails = [], isLoading } = useQuery({
+    queryKey: ["crm-emails"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("crm_email_log")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return data as EmailLog[];
+    },
+  });
+
+  // Fetch customers for name mapping
+  const { data: customers = [] } = useQuery({
+    queryKey: ["crm-customers-email-map"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("crm_customers")
+        .select("id, first_name, last_name, email");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Group emails into conversations by customer or email
+  const conversations: Conversation[] = (() => {
+    const groups = new Map<string, EmailLog[]>();
+
+    emails.forEach((email) => {
+      const key = email.customer_id || (email.direction === "inbound" ? email.from_email : email.to_email);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(email);
+    });
+
+    return Array.from(groups.entries()).map(([key, emailList]) => {
+      const sorted = [...emailList].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      const last = sorted[sorted.length - 1];
+      const contactEmail = last.direction === "inbound" ? last.from_email : last.to_email;
+      const customer = customers.find((c) => c.id === last.customer_id || c.email === contactEmail);
+      const unreadCount = emailList.filter((e) => !e.is_read && e.direction === "inbound").length;
+
+      return {
+        customer_id: last.customer_id,
+        email: contactEmail,
+        customer_name: customer ? `${customer.first_name || ""} ${customer.last_name || ""}`.trim() : null,
+        last_subject: last.subject,
+        last_time: last.sent_at || last.received_at || last.created_at,
+        unread_count: unreadCount,
+        emails: sorted,
+      };
+    }).filter((conv) => {
+      if (filter === "unread") return conv.unread_count > 0;
+      if (filter === "awaiting") {
+        const last = conv.emails[conv.emails.length - 1];
+        return last.direction === "inbound";
+      }
+      if (filter === "sent") {
+        const last = conv.emails[conv.emails.length - 1];
+        return last.direction === "outbound";
+      }
+      return true;
+    }).filter((conv) => {
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        conv.email.toLowerCase().includes(q) ||
+        (conv.customer_name?.toLowerCase().includes(q) ?? false) ||
+        conv.emails.some((e) => e.subject?.toLowerCase().includes(q))
+      );
+    }).sort((a, b) => new Date(b.last_time).getTime() - new Date(a.last_time).getTime());
+  })();
+
+  // Realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel("crm-email-log-realtime")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "crm_email_log" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["crm-emails"] });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
+  // Scroll to bottom on conversation change
+  useEffect(() => {
+    threadEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [selectedConversation]);
+
+  // Send email mutation
+  const sendMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedConversation || !replySubject || !replyBody) throw new Error("Missing fields");
+      const { data, error } = await supabase.functions.invoke("send-crm-email", {
+        body: {
+          to: selectedConversation.email,
+          subject: replySubject,
+          bodyText: replyBody,
+          bodyHtml: `<p>${replyBody.replace(/\n/g, "<br>")}</p>`,
+          customerId: selectedConversation.customer_id,
+        },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: "Email sent successfully" });
+      setReplyBody("");
+      queryClient.invalidateQueries({ queryKey: ["crm-emails"] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to send email", description: err.message, variant: "destructive" });
+    },
+  });
+
+  // AI draft mutation
+  const draftMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedConversation) throw new Error("No conversation selected");
+      const threadContext = selectedConversation.emails
+        .slice(-5)
+        .map((e) => `[${e.direction}] ${e.subject}: ${e.body_text?.substring(0, 200) || ""}`)
+        .join("\n");
+
+      const { data, error } = await supabase.functions.invoke("generate-email-draft", {
+        body: {
+          customerId: selectedConversation.customer_id,
+          threadContext,
+        },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      if (data.subject) setReplySubject(data.subject);
+      if (data.body) setReplyBody(data.body);
+      toast({ title: "Draft generated" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to generate draft", description: err.message, variant: "destructive" });
+    },
+  });
+
+  // Sync Gmail mutation
+  const syncMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("sync-gmail-replies");
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast({ title: `Synced ${data?.synced || 0} new emails` });
+      queryClient.invalidateQueries({ queryKey: ["crm-emails"] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Sync failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  // Mark emails as read when conversation is selected
+  useEffect(() => {
+    if (!selectedConversation) return;
+    const unreadIds = selectedConversation.emails
+      .filter((e) => !e.is_read && e.direction === "inbound")
+      .map((e) => e.id);
+    if (unreadIds.length === 0) return;
+
+    supabase
+      .from("crm_email_log")
+      .update({ is_read: true })
+      .in("id", unreadIds)
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["crm-emails"] });
+      });
+  }, [selectedConversation?.email]);
+
+  const handleSelectConversation = (conv: Conversation) => {
+    setSelectedConversation(conv);
+    setShowMobileThread(true);
+    // Pre-fill reply subject
+    const lastEmail = conv.emails[conv.emails.length - 1];
+    const subj = lastEmail.subject || "";
+    setReplySubject(subj.startsWith("Re:") ? subj : `Re: ${subj}`);
+    setReplyBody("");
+  };
+
+  return (
+    <AdminLayout
+      title="Inbox"
+      description="Two-way email communication hub"
+      icon={Mail}
+    >
+      <div className="flex h-[calc(100vh-200px)] border rounded-lg overflow-hidden bg-background">
+        {/* Left panel - Conversation list */}
+        <div className={cn(
+          "w-full md:w-[360px] border-r flex flex-col",
+          showMobileThread && "hidden md:flex"
+        )}>
+          {/* Search + Sync */}
+          <div className="p-3 border-b space-y-2">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search emails..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 h-9"
+                />
+              </div>
+              <Button size="sm" variant="outline" onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending}>
+                <RefreshCw className={cn("h-4 w-4", syncMutation.isPending && "animate-spin")} />
+              </Button>
+            </div>
+            <Tabs value={filter} onValueChange={(v) => setFilter(v as any)}>
+              <TabsList className="w-full h-8">
+                <TabsTrigger value="all" className="text-xs flex-1">All</TabsTrigger>
+                <TabsTrigger value="unread" className="text-xs flex-1">Unread</TabsTrigger>
+                <TabsTrigger value="awaiting" className="text-xs flex-1">Awaiting</TabsTrigger>
+                <TabsTrigger value="sent" className="text-xs flex-1">Sent</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          {/* Conversation list */}
+          <ScrollArea className="flex-1">
+            {isLoading ? (
+              <div className="p-8 text-center text-muted-foreground">Loading...</div>
+            ) : conversations.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">No conversations found</div>
+            ) : (
+              conversations.map((conv) => (
+                <button
+                  key={conv.customer_id || conv.email}
+                  onClick={() => handleSelectConversation(conv)}
+                  className={cn(
+                    "w-full text-left p-3 border-b hover:bg-muted/50 transition-colors",
+                    selectedConversation?.email === conv.email && "bg-muted"
+                  )}
+                >
+                  <div className="flex items-start gap-2">
+                    <div className="flex-shrink-0 mt-0.5">
+                      {conv.unread_count > 0 && (
+                        <div className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-baseline">
+                        <span className={cn("text-sm truncate", conv.unread_count > 0 && "font-semibold")}>
+                          {conv.customer_name || conv.email}
+                        </span>
+                        <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
+                          {formatDistanceToNow(new Date(conv.last_time), { addSuffix: true })}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        {conv.last_subject || "(no subject)"}
+                      </p>
+                      {!conv.customer_name && (
+                        <p className="text-xs text-muted-foreground/60 truncate">{conv.email}</p>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))
+            )}
+          </ScrollArea>
+        </div>
+
+        {/* Right panel - Thread view */}
+        <div className={cn(
+          "flex-1 flex flex-col",
+          !showMobileThread && "hidden md:flex"
+        )}>
+          {selectedConversation ? (
+            <>
+              {/* Thread header */}
+              <div className="p-3 border-b flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden h-8 w-8"
+                  onClick={() => setShowMobileThread(false)}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <User className="h-8 w-8 text-muted-foreground p-1 border rounded-full" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {selectedConversation.customer_name || selectedConversation.email}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">{selectedConversation.email}</p>
+                </div>
+                {selectedConversation.customer_id && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={`/admin/customers/${selectedConversation.customer_id}`}>View Profile</a>
+                  </Button>
+                )}
+              </div>
+
+              {/* Email thread */}
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-4 max-w-3xl mx-auto">
+                  {selectedConversation.emails.map((email) => (
+                    <div
+                      key={email.id}
+                      className={cn(
+                        "max-w-[80%] rounded-lg p-3",
+                        email.direction === "outbound"
+                          ? "ml-auto bg-primary text-primary-foreground"
+                          : "mr-auto bg-muted"
+                      )}
+                    >
+                      <p className="text-xs font-medium mb-1 opacity-80">{email.subject || "(no subject)"}</p>
+                      <div
+                        className="text-sm whitespace-pre-wrap"
+                        dangerouslySetInnerHTML={{
+                          __html: email.body_text || email.body_html?.replace(/<[^>]*>/g, "") || "(empty)",
+                        }}
+                      />
+                      <p className="text-xs mt-2 opacity-60">
+                        {email.sent_at || email.received_at
+                          ? formatDistanceToNow(new Date(email.sent_at || email.received_at!), { addSuffix: true })
+                          : ""}
+                      </p>
+                    </div>
+                  ))}
+                  <div ref={threadEndRef} />
+                </div>
+              </ScrollArea>
+
+              {/* Reply composer */}
+              <div className="border-t p-3 space-y-2">
+                <Input
+                  placeholder="Subject"
+                  value={replySubject}
+                  onChange={(e) => setReplySubject(e.target.value)}
+                  className="h-8 text-sm"
+                />
+                <Textarea
+                  placeholder="Write your reply..."
+                  value={replyBody}
+                  onChange={(e) => setReplyBody(e.target.value)}
+                  className="min-h-[80px] text-sm"
+                />
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => draftMutation.mutate()}
+                    disabled={draftMutation.isPending}
+                  >
+                    {draftMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Sparkles className="h-4 w-4 mr-1" />}
+                    Draft with AI
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => sendMutation.mutate()}
+                    disabled={sendMutation.isPending || !replyBody || !replySubject}
+                  >
+                    {sendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
+                    Send
+                  </Button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <Mail className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                <p>Select a conversation to view</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </AdminLayout>
+  );
+}
