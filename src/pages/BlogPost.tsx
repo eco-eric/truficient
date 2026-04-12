@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Header from '@/components/layout/Header';
@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Calendar, ArrowLeft, Tag, User } from 'lucide-react';
+import { Loader2, Calendar, ArrowLeft, Tag, User, Maximize2, Minimize2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface BlogPost {
