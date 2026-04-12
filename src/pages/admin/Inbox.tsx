@@ -85,6 +85,32 @@ export default function AdminInbox() {
     },
   });
 
+  // Fetch email signatures
+  const { data: signatures = [] } = useQuery({
+    queryKey: ["email-signatures-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("email_signatures")
+        .select("*")
+        .eq("is_active", true)
+        .order("is_default", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch email templates
+  const { data: emailTemplates = [] } = useQuery({
+    queryKey: ["crm-email-templates-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("crm_email_templates")
+        .select("*")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
   // Group emails into conversations by customer or email
   const conversations: Conversation[] = (() => {
     const groups = new Map<string, EmailLog[]>();
