@@ -13,6 +13,9 @@ import galleryYard from "@/assets/gallery/outdoor-unit-yard.webp";
 import galleryAirHandler from "@/assets/gallery/air-handler-closet.webp";
 import "./smart-group-march-v2.css";
 
+// Load Google Fonts asynchronously to avoid render-blocking
+const GOOGLE_FONTS_URL = "https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@400;500;600&display=swap";
+
 const galleryItems = [
   { src: galleryAttic, tag: "New Install", caption: "Goodman SD — Richardson, TX" },
   { src: galleryOutdoorSide, tag: "Fence-Line SD", caption: "Side Discharge — Plano, TX" },

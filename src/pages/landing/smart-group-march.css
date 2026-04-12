@@ -1,5 +1,5 @@
 /* Campaign-specific styles for March Group Buy Landing Page */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@400;500;600&display=swap');
+/* Google Fonts loaded asynchronously via component useEffect */
 
 :root {
   --gb-navy: #003366;
