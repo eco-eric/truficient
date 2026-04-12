@@ -45,6 +45,17 @@ export default function SmartGroupMarchV2Landing() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const formSectionRef = useRef<HTMLElement>(null);
 
+  // Load Google Fonts asynchronously (non-render-blocking)
+  useEffect(() => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = GOOGLE_FONTS_URL;
+    link.media = "print";
+    link.onload = () => { link.media = "all"; };
+    document.head.appendChild(link);
+    return () => { document.head.removeChild(link); };
+  }, []);
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
