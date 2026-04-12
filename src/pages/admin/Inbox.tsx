@@ -292,7 +292,7 @@ export default function AdminInbox() {
                   <div className="flex items-start gap-2">
                     <div className="flex-shrink-0 mt-0.5">
                       {conv.unread_count > 0 && (
-                        <div className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                        <div className="h-2.5 w-2.5 rounded-full bg-accent" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
