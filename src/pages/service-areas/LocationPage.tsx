@@ -143,7 +143,7 @@ const LocationPage = () => {
     fetchData();
   }, [locationSlug]);
 
-  // Apply SEO meta tags — prefer location-level meta, fall back to page_seo
+  // Apply SEO meta tags + self-referencing canonical
   useEffect(() => {
     const title = location?.meta_title || seo?.meta_title;
     const desc = location?.meta_description || seo?.meta_description;
@@ -153,7 +153,31 @@ const LocationPage = () => {
       if (!meta) { meta = document.createElement('meta'); meta.setAttribute('name', 'description'); document.head.appendChild(meta); }
       meta.setAttribute('content', desc);
     }
-  }, [seo, location]);
+
+    // Self-referencing canonical tag — each location page canonicalizes to itself
+    if (location?.url_slug) {
+      const slug = location.url_slug.startsWith('/') ? location.url_slug : `/${location.url_slug}`;
+      const canonicalUrl = `https://truficient.com${slug}`;
+      let canonical = document.querySelector('link[rel="canonical"]');
+      if (!canonical) {
+        canonical = document.createElement('link');
+        canonical.setAttribute('rel', 'canonical');
+        document.head.appendChild(canonical);
+      }
+      canonical.setAttribute('href', canonicalUrl);
+    }
+
+    // Remove the global HVACBusiness JSON-LD (from usePageSEO) since location pages have their own
+    const globalSchema = document.getElementById('page-seo-jsonld');
+    if (globalSchema) globalSchema.remove();
+
+    return () => {
+      const canonical = document.querySelector('link[rel="canonical"]');
+      if (canonical && canonical.getAttribute('href')?.includes(locationSlug || '')) {
+        canonical.remove();
+      }
+    };
+  }, [seo, location, locationSlug]);
 
   // Inject JSON-LD schemas — HVACBusiness + Service + FAQPage
   useEffect(() => {
