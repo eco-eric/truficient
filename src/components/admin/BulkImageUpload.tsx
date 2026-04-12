@@ -25,6 +25,7 @@ interface GalleryTag {
   id: string;
   name: string;
   is_active: boolean;
+  tag_type?: string;
 }
 
 type MediaType = 'image' | 'video';
