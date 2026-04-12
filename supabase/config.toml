@@ -63,3 +63,12 @@ verify_jwt = false
 
 [functions.regenerate-sitemap]
 verify_jwt = false
+
+[functions.send-crm-email]
+verify_jwt = false
+
+[functions.sync-gmail-replies]
+verify_jwt = false
+
+[functions.generate-email-draft]
+verify_jwt = false
