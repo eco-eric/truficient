@@ -50,6 +50,11 @@ export default function AdminInbox() {
   const [replySubject, setReplySubject] = useState("");
   const [replyBody, setReplyBody] = useState("");
   const [showMobileThread, setShowMobileThread] = useState(false);
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [composeTo, setComposeTo] = useState("");
+  const [composeCustomerId, setComposeCustomerId] = useState<string | null>(null);
+  const [composeSubject, setComposeSubject] = useState("");
+  const [composeBody, setComposeBody] = useState("");
   const threadEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch all emails
