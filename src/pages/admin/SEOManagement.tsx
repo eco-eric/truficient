@@ -377,7 +377,7 @@ const SEOManagement = () => {
         ) : (
           <div className="rounded-md border bg-white overflow-x-auto max-h-[calc(100vh-300px)] overflow-y-auto">
             <Table>
-              <TableHeader className="sticky top-0 z-20 bg-white shadow-[0_1px_0_0_hsl(var(--border))]">
+              <TableHeader className="sticky top-0 z-20 bg-white [&_th]:bg-white shadow-[0_1px_0_0_hsl(var(--border))]">
                 <TableRow>
                   <TableHead>Page</TableHead>
                   <TableHead>Type</TableHead>
