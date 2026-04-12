@@ -240,8 +240,6 @@ export default function AdminInbox() {
   return (
     <AdminLayout
       title="Inbox"
-      description="Two-way email communication hub"
-      icon={Mail}
     >
       <div className="flex h-[calc(100vh-200px)] border rounded-lg overflow-hidden bg-background">
         {/* Left panel - Conversation list */}

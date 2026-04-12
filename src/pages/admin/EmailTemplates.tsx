@@ -115,7 +115,7 @@ export default function AdminEmailTemplates() {
   };
 
   return (
-    <AdminLayout title="Email Templates" description="Manage CRM email templates" icon={FileText}>
+    <AdminLayout title="Email Templates">
       <div className="flex justify-end mb-4">
         <Button onClick={openNew}>
           <Plus className="h-4 w-4 mr-2" /> New Template
