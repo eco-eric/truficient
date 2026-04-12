@@ -304,6 +304,9 @@ export default function AdminInbox() {
                   className="pl-8 h-9"
                 />
               </div>
+              <Button size="sm" variant="outline" onClick={() => setIsComposeOpen(true)}>
+                <PenSquare className="h-4 w-4" />
+              </Button>
               <Button size="sm" variant="outline" onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending}>
                 <RefreshCw className={cn("h-4 w-4", syncMutation.isPending && "animate-spin")} />
               </Button>
