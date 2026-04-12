@@ -85,6 +85,17 @@ export const MediaUpload = ({
       let fileToUpload: File = file;
       const mediaType = detectMediaType(file);
       let thumbnailUrl: string | undefined;
+      let exifData: ExifData | undefined;
+      let locationMatch: MatchedLocationTags | undefined;
+
+      // Extract EXIF before compression (compression strips it)
+      if (isImage) {
+        setUploadStatus('Reading photo metadata...');
+        exifData = await extractExifData(file);
+        if (exifData.latitude != null && exifData.longitude != null) {
+          locationMatch = matchGpsToLocation(exifData.latitude, exifData.longitude);
+        }
+      }
 
       // Compress images only
       if (isImage) {
