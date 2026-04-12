@@ -181,7 +181,7 @@ export const MediaUpload = ({
         .from(bucketName)
         .getPublicUrl(fileName);
 
-      onUpload(urlData.publicUrl, mediaType, thumbnailUrl);
+      onUpload(urlData.publicUrl, mediaType, thumbnailUrl, exifData, locationMatch);
       
       // Show success message
       if (isImage && fileToUpload.size < file.size) {
