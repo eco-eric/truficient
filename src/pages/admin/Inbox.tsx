@@ -238,11 +238,48 @@ export default function AdminInbox() {
   const handleSelectConversation = (conv: Conversation) => {
     setSelectedConversation(conv);
     setShowMobileThread(true);
-    // Pre-fill reply subject
     const lastEmail = conv.emails[conv.emails.length - 1];
     const subj = lastEmail.subject || "";
     setReplySubject(subj.startsWith("Re:") ? subj : `Re: ${subj}`);
     setReplyBody("");
+  };
+
+  // Compose new email mutation
+  const composeMutation = useMutation({
+    mutationFn: async () => {
+      if (!composeTo || !composeSubject || !composeBody) throw new Error("Missing fields");
+      const { data, error } = await supabase.functions.invoke("send-crm-email", {
+        body: {
+          to: composeTo,
+          subject: composeSubject,
+          bodyText: composeBody,
+          bodyHtml: `<p>${composeBody.replace(/\n/g, "<br>")}</p>`,
+          customerId: composeCustomerId,
+        },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: "Email sent successfully" });
+      setIsComposeOpen(false);
+      setComposeTo("");
+      setComposeCustomerId(null);
+      setComposeSubject("");
+      setComposeBody("");
+      queryClient.invalidateQueries({ queryKey: ["crm-emails"] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to send email", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleComposeSelectCustomer = (customerId: string) => {
+    const customer = customers.find((c) => c.id === customerId);
+    if (customer) {
+      setComposeCustomerId(customerId);
+      setComposeTo(customer.email || "");
+    }
   };
 
   return (
