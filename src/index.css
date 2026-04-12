@@ -248,28 +248,7 @@
   @apply my-6 border-border;
 }
 
-/* Blog iframe wrapper — always expanded, no toggle */
+/* Blog iframe wrapper — adds visual polish to the existing aspect-ratio container from blog HTML */
 .blog-iframe-wrapper {
   @apply my-8 rounded-xl overflow-hidden border border-border shadow-lg;
-}
-
-.blog-iframe-wrapper .blog-iframe-inner {
-  position: relative;
-  width: 100%;
-  height: 90vh;
-  min-height: 700px;
-}
-
-.blog-iframe-wrapper .blog-iframe-inner iframe {
-  width: 100% !important;
-  height: 100% !important;
-  border: none !important;
-  display: block;
-}
-
-@media (max-width: 768px) {
-  .blog-iframe-wrapper .blog-iframe-inner {
-    height: 85vh;
-    min-height: 550px;
-  }
 }
