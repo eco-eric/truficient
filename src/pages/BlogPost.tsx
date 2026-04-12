@@ -292,9 +292,7 @@ const BlogPostPage = () => {
             )}
             
             {post.content ? (
-              <div 
-                dangerouslySetInnerHTML={{ __html: post.content }}
-              />
+              <BlogContent html={post.content} />
             ) : (
               <p className="text-muted-foreground italic">No content available.</p>
             )}
