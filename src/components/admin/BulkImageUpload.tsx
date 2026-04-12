@@ -40,6 +40,8 @@ interface UploadedMedia {
   status: 'pending' | 'uploading' | 'uploaded' | 'error';
   error?: string;
   mediaType: MediaType;
+  photoDate?: string;
+  exifLocation?: MatchedLocationTags;
 }
 
 interface BulkImageUploadProps {
