@@ -35,7 +35,8 @@ import {
   Wrench,
   Camera,
   Shield,
-  Building2
+  Building2,
+  Mail
 } from 'lucide-react';
 
 export interface NavItem {
@@ -68,6 +69,7 @@ export const navSections: NavSection[] = [
       { label: 'Submissions', href: '/admin/submissions', icon: FileText, permissionKey: 'nav.submissions' },
       { label: 'Pipeline', href: '/admin/pipeline', icon: Kanban, permissionKey: 'nav.pipeline' },
       { label: 'DFW Watch List', href: '/admin/dfw-watchlist', icon: Target, permissionKey: 'nav.dfw-watchlist' },
+      { label: 'Inbox', href: '/admin/inbox', icon: Mail, permissionKey: 'nav.inbox' },
     ],
   },
   {
@@ -133,6 +135,7 @@ export const navSections: NavSection[] = [
       { label: 'Landing Pages', href: '/admin/landing-pages', icon: FileInput, permissionKey: 'nav.landing-pages' },
       { label: 'GHL Tags', href: '/admin/ghl-tags', icon: Tag, permissionKey: 'nav.ghl-tags' },
       { label: 'GHL Conversations', href: '/admin/ghl-conversations', icon: MessageSquare, permissionKey: 'nav.ghl-conversations' },
+      { label: 'Email Templates', href: '/admin/email-templates', icon: Mail, permissionKey: 'nav.email-templates' },
     ],
   },
   {
