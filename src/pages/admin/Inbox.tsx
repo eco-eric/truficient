@@ -473,6 +473,64 @@ export default function AdminInbox() {
           )}
         </div>
       </div>
+
+      {/* Compose Dialog */}
+      <Dialog open={isComposeOpen} onOpenChange={setIsComposeOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Compose Email</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>To (select customer or type email)</Label>
+              <Select onValueChange={handleComposeSelectCustomer} value={composeCustomerId || ""}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a customer..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {customers.filter((c) => c.email).map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {`${c.first_name || ""} ${c.last_name || ""}`.trim() || c.email} — {c.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Or type email address..."
+                value={composeTo}
+                onChange={(e) => { setComposeTo(e.target.value); setComposeCustomerId(null); }}
+                className="mt-2"
+              />
+            </div>
+            <div>
+              <Label>Subject</Label>
+              <Input
+                value={composeSubject}
+                onChange={(e) => setComposeSubject(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Message</Label>
+              <Textarea
+                value={composeBody}
+                onChange={(e) => setComposeBody(e.target.value)}
+                className="min-h-[150px]"
+                placeholder="Write your email..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsComposeOpen(false)}>Cancel</Button>
+            <Button
+              onClick={() => composeMutation.mutate()}
+              disabled={composeMutation.isPending || !composeTo || !composeSubject || !composeBody}
+            >
+              {composeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
+              Send
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
