@@ -8,6 +8,13 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 async function getAccessToken(): Promise<string> {
+  console.log('Attempting Gmail token refresh...', {
+    hasClientId: !!GMAIL_CLIENT_ID,
+    hasClientSecret: !!GMAIL_CLIENT_SECRET,
+    hasRefreshToken: !!GMAIL_REFRESH_TOKEN,
+    clientIdLength: GMAIL_CLIENT_ID?.length,
+    refreshTokenLength: GMAIL_REFRESH_TOKEN?.length,
+  })
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -19,7 +26,10 @@ async function getAccessToken(): Promise<string> {
     }),
   })
   const data = await res.json()
-  if (!data.access_token) throw new Error('Failed to refresh Gmail token')
+  if (!data.access_token) {
+    console.error('Gmail token refresh failed:', JSON.stringify(data))
+    throw new Error('Failed to refresh Gmail token: ' + (data.error_description || data.error || 'unknown'))
+  }
   return data.access_token
 }
 
