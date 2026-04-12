@@ -247,3 +247,52 @@
 .ProseMirror hr {
   @apply my-6 border-border;
 }
+
+/* Blog iframe expandable wrapper */
+.blog-iframe-wrapper {
+  @apply my-8 rounded-xl overflow-hidden border border-border shadow-lg;
+  transition: all 0.3s ease;
+}
+
+.blog-iframe-wrapper .blog-iframe-inner {
+  position: relative;
+  width: 100%;
+  height: 70vh;
+  min-height: 500px;
+  transition: height 0.3s ease;
+}
+
+.blog-iframe-wrapper.expanded .blog-iframe-inner {
+  height: 90vh;
+  min-height: 700px;
+}
+
+.blog-iframe-wrapper .blog-iframe-inner iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  display: block;
+}
+
+.blog-iframe-toolbar {
+  @apply flex items-center justify-center py-2 bg-muted/50 border-t border-border;
+}
+
+.blog-iframe-expand-btn {
+  @apply inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg
+         text-muted-foreground hover:text-foreground hover:bg-muted
+         transition-colors cursor-pointer;
+  background: none;
+  border: none;
+}
+
+@media (max-width: 768px) {
+  .blog-iframe-wrapper .blog-iframe-inner {
+    height: 50vh;
+    min-height: 350px;
+  }
+  .blog-iframe-wrapper.expanded .blog-iframe-inner {
+    height: 85vh;
+    min-height: 550px;
+  }
+}

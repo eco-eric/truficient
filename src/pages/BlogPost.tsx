@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Header from '@/components/layout/Header';
@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Calendar, ArrowLeft, Tag, User } from 'lucide-react';
+import { Loader2, Calendar, ArrowLeft, Tag, User, Maximize2, Minimize2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface BlogPost {
@@ -31,6 +31,49 @@ interface BlogPost {
   og_image: string | null;
   updated_at: string | null;
 }
+
+// Component that wraps iframes in expandable containers
+const BlogContent = ({ html }: { html: string }) => {
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!contentRef.current) return;
+
+    const iframes = contentRef.current.querySelectorAll('iframe');
+    iframes.forEach((iframe) => {
+      if (iframe.parentElement?.classList.contains('blog-iframe-inner')) return;
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'blog-iframe-wrapper not-prose';
+
+      const inner = document.createElement('div');
+      inner.className = 'blog-iframe-inner';
+
+      const btnBar = document.createElement('div');
+      btnBar.className = 'blog-iframe-toolbar';
+
+      const btn = document.createElement('button');
+      btn.className = 'blog-iframe-expand-btn';
+      btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg> <span>Expand</span>`;
+      btn.addEventListener('click', () => {
+        const isExpanded = wrapper.classList.toggle('expanded');
+        const label = btn.querySelector('span');
+        if (label) label.textContent = isExpanded ? 'Collapse' : 'Expand';
+        btn.innerHTML = isExpanded
+          ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg> <span>Collapse</span>`
+          : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg> <span>Expand</span>`;
+      });
+
+      btnBar.appendChild(btn);
+      iframe.parentElement?.insertBefore(wrapper, iframe);
+      inner.appendChild(iframe);
+      wrapper.appendChild(inner);
+      wrapper.appendChild(btnBar);
+    });
+  }, [html]);
+
+  return <div ref={contentRef} dangerouslySetInnerHTML={{ __html: html }} />;
+};
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -292,9 +335,7 @@ const BlogPostPage = () => {
             )}
             
             {post.content ? (
-              <div 
-                dangerouslySetInnerHTML={{ __html: post.content }}
-              />
+              <BlogContent html={post.content} />
             ) : (
               <p className="text-muted-foreground italic">No content available.</p>
             )}
