@@ -313,7 +313,19 @@ export const BulkImageUpload = ({
       
       insertedMedia?.forEach((dbItem, index) => {
         const originalItem = uploadedMedia[index];
-        const tagsToApply = [...new Set([...originalItem.selectedTags, ...applyToAllTags])];
+        const tagsToApply = new Set([...originalItem.selectedTags, ...applyToAllTags]);
+        
+        // Auto-add EXIF location tags
+        if (originalItem.exifLocation) {
+          if (originalItem.exifLocation.zipCode) {
+            const zipTag = tags.find(t => (t as any).tag_type === 'zip' && t.name === originalItem.exifLocation!.zipCode);
+            if (zipTag) tagsToApply.add(zipTag.id);
+          }
+          if (originalItem.exifLocation.city) {
+            const cityTag = tags.find(t => (t as any).tag_type === 'city' && t.name.toLowerCase() === originalItem.exifLocation!.city!.toLowerCase());
+            if (cityTag) tagsToApply.add(cityTag.id);
+          }
+        }
         
         tagsToApply.forEach(tagId => {
           tagRelations.push({
