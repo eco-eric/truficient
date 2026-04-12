@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import truficientLogo from "@/assets/truficient-logo.png";
+import truficientLogo from "@/assets/truficient-logo.webp";
 
 const SmartGroupEntry = () => {
   const [zip, setZip] = useState("");

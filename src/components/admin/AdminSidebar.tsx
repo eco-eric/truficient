@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
-import truficientLogo from '@/assets/truficient-logo.png';
+import truficientLogo from '@/assets/truficient-logo.webp';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useRolePermissions, hasPermission } from '@/hooks/useRolePermissions';
 import { navSections } from './adminNavConfig';

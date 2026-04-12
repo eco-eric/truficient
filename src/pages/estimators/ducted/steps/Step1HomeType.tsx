@@ -4,7 +4,7 @@ import { SelectableCard } from "../../ductless/components/SelectableCard";
 import { useEstimator } from "../context/EstimatorContext";
 import { HOME_TYPE_OPTIONS, type HomeType } from "../types";
 import { Home, Building2, Building, Caravan, Columns2, HelpCircle } from "lucide-react";
-import truficientLogo from "@/assets/truficient-logo.png";
+import truficientLogo from "@/assets/truficient-logo.webp";
 import { Link } from "react-router-dom";
 
 // Icon mapping for home types

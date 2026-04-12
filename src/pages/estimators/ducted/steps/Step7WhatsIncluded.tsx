@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { StepContainer } from "../../ductless/components/StepContainer";
 import { CTAButton } from "../../ductless/components/CTAButton";
 import { useEstimator } from "../context/EstimatorContext";
-import ownerImage from "@/assets/owner-eric.jpg";
+import ownerImage from "@/assets/owner-eric.webp";
 import {
   Zap,
   Wind,

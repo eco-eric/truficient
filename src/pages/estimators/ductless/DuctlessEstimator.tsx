@@ -14,7 +14,7 @@ import { AddOnsSelector } from "./steps/AddOnsSelector";
 import { QuoteSummary } from "./steps/QuoteSummary";
 import { ThankYou } from "./steps/ThankYou";
 import { Link } from "react-router-dom";
-import truficientLogo from "@/assets/truficient-logo.png";
+import truficientLogo from "@/assets/truficient-logo.webp";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 
