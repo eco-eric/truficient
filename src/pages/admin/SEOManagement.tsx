@@ -375,9 +375,9 @@ const SEOManagement = () => {
             {pages.length === 0 ? 'No pages configured' : 'No pages match your filters'}
           </div>
         ) : (
-          <div className="rounded-md border bg-white overflow-x-auto">
+          <div className="rounded-md border bg-white overflow-x-auto max-h-[calc(100vh-300px)] overflow-y-auto">
             <Table>
-              <TableHeader>
+              <TableHeader className="sticky top-0 z-10 bg-white">
                 <TableRow>
                   <TableHead>Page</TableHead>
                   <TableHead>Type</TableHead>
