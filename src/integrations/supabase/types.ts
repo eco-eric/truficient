@@ -1113,6 +1113,120 @@ export type Database = {
           },
         ]
       }
+      crm_email_log: {
+        Row: {
+          body_html: string | null
+          body_text: string | null
+          created_at: string
+          customer_id: string | null
+          direction: string
+          from_email: string
+          gmail_message_id: string | null
+          gmail_thread_id: string | null
+          id: string
+          is_read: boolean
+          received_at: string | null
+          resend_message_id: string | null
+          sent_at: string | null
+          status: string
+          subject: string | null
+          template_id: string | null
+          to_email: string
+          updated_at: string
+        }
+        Insert: {
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string
+          customer_id?: string | null
+          direction: string
+          from_email: string
+          gmail_message_id?: string | null
+          gmail_thread_id?: string | null
+          id?: string
+          is_read?: boolean
+          received_at?: string | null
+          resend_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          template_id?: string | null
+          to_email: string
+          updated_at?: string
+        }
+        Update: {
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string
+          customer_id?: string | null
+          direction?: string
+          from_email?: string
+          gmail_message_id?: string | null
+          gmail_thread_id?: string | null
+          id?: string
+          is_read?: boolean
+          received_at?: string | null
+          resend_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          template_id?: string | null
+          to_email?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_email_log_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_email_log_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "crm_email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_email_templates: {
+        Row: {
+          body_html: string
+          created_at: string
+          delay_hours: number | null
+          id: string
+          is_active: boolean
+          name: string
+          subject: string
+          trigger_event: string | null
+          updated_at: string
+        }
+        Insert: {
+          body_html?: string
+          created_at?: string
+          delay_hours?: number | null
+          id?: string
+          is_active?: boolean
+          name: string
+          subject: string
+          trigger_event?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body_html?: string
+          created_at?: string
+          delay_hours?: number | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          subject?: string
+          trigger_event?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_interactions: {
         Row: {
           content: string | null
