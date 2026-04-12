@@ -49,6 +49,12 @@ const BlogContent = ({ html }: { html: string }) => {
       const inner = document.createElement('div');
       inner.className = 'blog-iframe-inner';
 
+      // Strip inline dimensions that cause whitespace
+      iframe.removeAttribute('height');
+      iframe.removeAttribute('width');
+      iframe.style.removeProperty('height');
+      iframe.style.removeProperty('width');
+
       iframe.parentElement?.insertBefore(wrapper, iframe);
       inner.appendChild(iframe);
       wrapper.appendChild(inner);
