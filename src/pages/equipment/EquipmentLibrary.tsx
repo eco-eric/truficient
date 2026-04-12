@@ -70,7 +70,7 @@ export default function EquipmentLibrary() {
   const [selectedBrand, setSelectedBrand] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
 
-  usePageSEO('/equipment');
+  usePageSEO('/equipment', { skipGlobalSchema: true });
 
   const { data: equipment, isLoading } = useQuery({
     queryKey: ['equipment-library', selectedBrand, selectedType, searchQuery],

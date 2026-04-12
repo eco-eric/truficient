@@ -12,7 +12,12 @@ interface PageSEO {
   robots: string | null;
 }
 
-export const usePageSEO = (customPath?: string) => {
+interface UsePageSEOOptions {
+  /** Skip injecting the global HVACBusiness JSON-LD schema (e.g. on equipment pages that have their own schema) */
+  skipGlobalSchema?: boolean;
+}
+
+export const usePageSEO = (customPath?: string, options?: UsePageSEOOptions) => {
   const location = useLocation();
   const path = customPath || location.pathname;
   const [seo, setSeo] = useState<PageSEO | null>(null);
@@ -86,10 +91,17 @@ export const usePageSEO = (customPath?: string) => {
             canonical.setAttribute('href', (data as any).canonical_url);
           }
 
-          // Inject HVACBusiness JSON-LD schema for core pages
+          // Inject HVACBusiness JSON-LD schema for core pages (skip on equipment pages)
           const schemaId = 'page-seo-jsonld';
           let existingSchema = document.getElementById(schemaId);
-          if (!existingSchema) {
+          
+          // If skipGlobalSchema is set, remove any previously injected global schema
+          if (options?.skipGlobalSchema && existingSchema) {
+            existingSchema.remove();
+            existingSchema = null;
+          }
+          
+          if (!existingSchema && !options?.skipGlobalSchema) {
             const hvacSchema = {
               "@context": "https://schema.org",
               "@type": "HVACBusiness",
