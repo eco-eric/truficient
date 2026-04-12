@@ -94,6 +94,13 @@ export const usePageSEO = (customPath?: string, options?: UsePageSEOOptions) => 
           // Inject HVACBusiness JSON-LD schema for core pages (skip on equipment pages)
           const schemaId = 'page-seo-jsonld';
           let existingSchema = document.getElementById(schemaId);
+          
+          // If skipGlobalSchema is set, remove any previously injected global schema
+          if (options?.skipGlobalSchema && existingSchema) {
+            existingSchema.remove();
+            existingSchema = null;
+          }
+          
           if (!existingSchema && !options?.skipGlobalSchema) {
             const hvacSchema = {
               "@context": "https://schema.org",
