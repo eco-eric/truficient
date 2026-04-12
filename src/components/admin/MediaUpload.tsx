@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Upload, Trash2, Loader2, ImageIcon, Video, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { compressImage } from "@/utils/imageCompression";
+import { extractExifData, matchGpsToLocation, type ExifData, type MatchedLocationTags } from "@/utils/exifExtractor";
 import { generateVideoThumbnail, createThumbnailFile } from "@/utils/videoThumbnail";
 
 export type MediaType = 'image' | 'video';
