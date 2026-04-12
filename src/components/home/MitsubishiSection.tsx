@@ -53,6 +53,9 @@ const MitsubishiSection = () => {
                   alt="" 
                   className="w-6 h-6 opacity-10"
                   aria-hidden="true"
+                  loading="lazy"
+                  width={24}
+                  height={24}
                 />
               ))}
             </div>
