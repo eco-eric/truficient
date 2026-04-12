@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Check, Wind, Home } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import ductlessImage from '@/assets/ductless-services.jpg';
-import ductedImage from '@/assets/ducted-air-handler.png';
+import ductlessImage from '@/assets/ductless-services.webp';
+import ductedImage from '@/assets/ducted-air-handler.webp';
 
 const estimators = [
   {

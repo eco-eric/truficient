@@ -3,13 +3,13 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useButtonTracking } from "@/hooks/useButtonTracking";
 import GalleryOverlay from "@/components/landing/GalleryOverlay";
-import ownerPhoto from "@/assets/owner-eric.jpg";
-import galleryAttic from "@/assets/gallery/attic-install.jpg";
-import galleryOutdoorSide from "@/assets/gallery/outdoor-units-side.jpg";
-import galleryClosetFurnace from "@/assets/gallery/closet-furnace.jpg";
-import galleryStacked from "@/assets/gallery/stacked-condensers.jpg";
-import galleryYard from "@/assets/gallery/outdoor-unit-yard.jpg";
-import galleryAirHandler from "@/assets/gallery/air-handler-closet.jpg";
+import ownerPhoto from "@/assets/owner-eric.webp";
+import galleryAttic from "@/assets/gallery/attic-install.webp";
+import galleryOutdoorSide from "@/assets/gallery/outdoor-units-side.webp";
+import galleryClosetFurnace from "@/assets/gallery/closet-furnace.webp";
+import galleryStacked from "@/assets/gallery/stacked-condensers.webp";
+import galleryYard from "@/assets/gallery/outdoor-unit-yard.webp";
+import galleryAirHandler from "@/assets/gallery/air-handler-closet.webp";
 import "./smart-group-march.css";
 
 const galleryItems = [

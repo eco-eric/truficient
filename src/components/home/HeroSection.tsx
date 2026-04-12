@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Phone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import heroImage from '@/assets/hero-home-office.jpg';
+import heroImage from '@/assets/hero-home-office.webp';
 import { useButtonTracking } from '@/hooks/useButtonTracking';
 
 const HeroSection = () => {
@@ -68,6 +68,9 @@ const HeroSection = () => {
                 src={heroImage}
                 alt="Man working comfortably in home office with energy-efficient mini-split HVAC" 
                 className="w-full h-[400px] lg:h-[500px] object-cover"
+                fetchPriority="high"
+                width={800}
+                height={500}
               />
               {/* Floating Badge */}
               <div className="absolute bottom-6 left-6 bg-background/95 backdrop-blur-sm rounded-lg p-4 shadow-lg">

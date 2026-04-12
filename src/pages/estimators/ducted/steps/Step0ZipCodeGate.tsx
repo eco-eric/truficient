@@ -8,7 +8,7 @@ import { useEstimator } from "../context/EstimatorContext";
 import { isDfwZipCode, isDfwByCity } from "@/pages/scanner/types";
 import { validateZipCode } from "@/pages/scanner/utils/validateZipCode";
 import { PricingGuarantee } from "@/components/estimators/PricingGuarantee";
-import ductedHeroFamily from "@/assets/ducted-hero-family.jpg";
+import ductedHeroFamily from "@/assets/ducted-hero-family.webp";
 
 export function Step0ZipCodeGate() {
   const { state, setZipCode, setZipLocation, setIsInServiceArea, nextStep } = useEstimator();

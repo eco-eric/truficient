@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import logo from '@/assets/truficient-logo.png';
+import logo from '@/assets/truficient-logo.webp';
 
 interface LandingPageShellProps {
   children: React.ReactNode;

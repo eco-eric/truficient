@@ -5,7 +5,7 @@ import { ScanLine, Calendar, Gauge, FileText, ArrowRight, Camera, MapPin, CheckC
 import { Button } from '@/components/ui/button';
 import { useButtonTracking } from '@/hooks/useButtonTracking';
 import { ScannerCoupon } from '@/pages/scanner/components/ScannerCoupon';
-import logo from '@/assets/truficient-logo.png';
+import logo from '@/assets/truficient-logo.webp';
 
 const benefits = [
   { icon: ScanLine, title: 'Instant ID', text: 'Instantly identify your equipment brand, model & tonnage' },

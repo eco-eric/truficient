@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { usePageSEO } from '@/hooks/usePageSEO';
-import aboutUsStoryImage from '@/assets/about-us-story.png';
+import aboutUsStoryImage from '@/assets/about-us-story.webp';
 
 const credentials = [
   {
@@ -150,6 +150,9 @@ const About = () => {
                   src={aboutUsStoryImage}
                   alt="Truficient HVAC owner presenting"
                   className="w-full h-[400px] object-cover object-top"
+                  loading="lazy"
+                  width={600}
+                  height={400}
                 />
               </div>
             </motion.div>

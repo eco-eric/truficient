@@ -3,7 +3,7 @@ import { useQuote } from "../context/QuoteContext";
 import { motion } from "framer-motion";
 import { ThermometerSnowflake, Wifi, Zap, Clock, Star, DollarSign, Calendar, Gift, CheckCircle } from "lucide-react";
 import { PricingGuarantee } from "@/components/estimators/PricingGuarantee";
-import ductlessHeroImage from "@/assets/ductless-hero-living-room.png";
+import ductlessHeroImage from "@/assets/ductless-hero-living-room.webp";
 
 export const WelcomeHero = () => {
   const { nextStep } = useQuote();

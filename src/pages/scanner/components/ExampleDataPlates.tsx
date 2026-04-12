@@ -5,15 +5,15 @@ import { ArrowRight, ArrowLeft, Info } from 'lucide-react';
 import { useScanner } from '../context/ScannerContext';
 import { ImageLightbox } from '@/components/ui/image-lightbox';
 import { useButtonTracking } from '@/hooks/useButtonTracking';
-import workedgeProLogo from '@/assets/workedge-pro-logo.png';
+import workedgeProLogo from '@/assets/workedge-pro-logo.webp';
 
 // Import real data plate images
-import carrierPlate from '@/assets/data-plates/carrier.jpg';
-import tranePlate from '@/assets/data-plates/trane.jpg';
-import lennoxPlate from '@/assets/data-plates/lennox.jpg';
-import goodmanPlate from '@/assets/data-plates/goodman.jpg';
-import rheemPlate from '@/assets/data-plates/rheem.jpg';
-import mitsubishiPlate from '@/assets/data-plates/mitsubishi.jpg';
+import carrierPlate from '@/assets/data-plates/carrier.webp';
+import tranePlate from '@/assets/data-plates/trane.webp';
+import lennoxPlate from '@/assets/data-plates/lennox.webp';
+import goodmanPlate from '@/assets/data-plates/goodman.webp';
+import rheemPlate from '@/assets/data-plates/rheem.webp';
+import mitsubishiPlate from '@/assets/data-plates/mitsubishi.webp';
 
 // Example data plate information for major brands
 const EXAMPLE_PLATES = [

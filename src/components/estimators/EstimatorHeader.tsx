@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Phone, ArrowLeft } from "lucide-react";
-import truficientLogo from "@/assets/truficient-logo.png";
+import truficientLogo from "@/assets/truficient-logo.webp";
 
 interface EstimatorHeaderProps {
   estimatorType: "Ducted" | "Ductless";

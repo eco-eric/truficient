@@ -3,8 +3,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Home, Snowflake, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import ductlessImage from '@/assets/ductless-wall-mount.png';
-import ductedImage from '@/assets/ducted-air-handler-svz.png';
+import ductlessImage from '@/assets/ductless-wall-mount.webp';
+import ductedImage from '@/assets/ducted-air-handler-svz.webp';
 
 interface EstimatorLinksProps {
   stacked?: boolean;

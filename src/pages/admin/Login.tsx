@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, AlertCircle, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import truficientLogo from '@/assets/truficient-logo.png';
+import truficientLogo from '@/assets/truficient-logo.webp';
 
 export const AdminLogin = () => {
   const [email, setEmail] = useState('');

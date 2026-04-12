@@ -14,7 +14,7 @@ import { Step9EfficiencyTier } from "./steps/Step9EfficiencyTier";
 import { Step10QuoteResults } from "./steps/Step10QuoteResults";
 import { Step11ThankYou } from "./steps/Step11ThankYou";
 import { Link } from "react-router-dom";
-import truficientLogo from "@/assets/truficient-logo.png";
+import truficientLogo from "@/assets/truficient-logo.webp";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useAbandonedCartTracker } from "./hooks/useAbandonedCartTracker";

@@ -1,5 +1,5 @@
 import { useButtonTracking } from '@/hooks/useButtonTracking';
-import workedgeProLogo from '@/assets/workedge-pro-logo.png';
+import workedgeProLogo from '@/assets/workedge-pro-logo.webp';
 
 interface WorkEdgeBannerProps {
   location: string;
