@@ -41,23 +41,13 @@ const BlogContent = ({ html }: { html: string }) => {
 
     const iframes = contentRef.current.querySelectorAll('iframe');
     iframes.forEach((iframe) => {
-      if (iframe.parentElement?.classList.contains('blog-iframe-inner')) return;
+      // Find the parent container — blog HTML already wraps iframes in a
+      // positioned div with padding-bottom for aspect ratio
+      const parent = iframe.parentElement;
+      if (!parent || parent.classList.contains('blog-iframe-styled')) return;
 
-      const wrapper = document.createElement('div');
-      wrapper.className = 'blog-iframe-wrapper not-prose';
-
-      const inner = document.createElement('div');
-      inner.className = 'blog-iframe-inner';
-
-      // Strip inline dimensions that cause whitespace
-      iframe.removeAttribute('height');
-      iframe.removeAttribute('width');
-      iframe.style.removeProperty('height');
-      iframe.style.removeProperty('width');
-
-      iframe.parentElement?.insertBefore(wrapper, iframe);
-      inner.appendChild(iframe);
-      wrapper.appendChild(inner);
+      // Style the existing parent as our wrapper (it already has position:relative + padding-bottom)
+      parent.classList.add('blog-iframe-styled', 'blog-iframe-wrapper', 'not-prose');
     });
   }, [html]);
 
