@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { thumbnailUrl } from '@/lib/imageUtils';
 import { ImageLightbox } from '@/components/ui/image-lightbox';
 import { Loader2 } from 'lucide-react';
 import { useLocationGalleryPhotos, type GalleryPhoto } from '@/hooks/useLocationGalleryPhotos';
@@ -79,7 +80,7 @@ export const LocationGallery = ({
             onClick={() => { setSelectedPhoto(photo); setLightboxOpen(true); }}
           >
             <img
-              src={photo.image_url}
+              src={thumbnailUrl(photo.image_url)}
               alt={photo.alt_text || photo.title}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               loading="lazy"

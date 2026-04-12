@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { cardImageUrl } from '@/lib/imageUtils';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Header from '@/components/layout/Header';
@@ -164,9 +165,12 @@ const Blog = () => {
                       {post.featured_image && (
                         <div className="aspect-video overflow-hidden">
                           <img
-                            src={post.featured_image}
+                            src={cardImageUrl(post.featured_image)}
                             alt={post.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            loading="lazy"
+                            width={600}
+                            height={338}
                           />
                         </div>
                       )}
