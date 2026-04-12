@@ -120,6 +120,12 @@ export const BulkImageUpload = ({
     // Process images - compress them
     const processedImages: UploadedMedia[] = await Promise.all(
       imageFiles.map(async (file) => {
+        // Extract EXIF before compression strips it
+        const exifData = await extractExifData(file);
+        const locationMatch = (exifData.latitude != null && exifData.longitude != null)
+          ? matchGpsToLocation(exifData.latitude, exifData.longitude)
+          : undefined;
+        
         const compressed = await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.85 });
         return {
           id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -130,6 +136,8 @@ export const BulkImageUpload = ({
           is_featured: false,
           status: 'pending' as const,
           mediaType: 'image' as MediaType,
+          photoDate: exifData.dateTaken || undefined,
+          exifLocation: locationMatch,
         };
       })
     );
