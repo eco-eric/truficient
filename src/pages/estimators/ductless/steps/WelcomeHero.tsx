@@ -54,6 +54,9 @@ export const WelcomeHero = () => {
                   src={ductlessHeroImage}
                   alt="Ductless mini-split wall unit above couch in modern living room"
                   className="w-full h-56 sm:h-72 md:h-96 object-cover"
+                  loading="lazy"
+                  width={800}
+                  height={384}
                 />
                 {/* Diamond Contractor Badge */}
                 <div className="absolute top-4 left-4 flex items-center gap-2 bg-white/95 dark:bg-card/95 rounded-full px-3 py-1.5 shadow-lg">

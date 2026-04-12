@@ -129,6 +129,8 @@ export default function GalleryOverlay({ open, onClose }: GalleryOverlayProps) {
                         alt={img.alt_text || img.title || "Gallery image"}
                         loading="lazy"
                         decoding="async"
+                        width={400}
+                        height={300}
                         style={{
                           width: "100%",
                           height: "100%",

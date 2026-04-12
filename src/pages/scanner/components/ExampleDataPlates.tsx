@@ -98,6 +98,9 @@ export function ExampleDataPlates() {
                 src={plate.image} 
                 alt={`${plate.brand} data plate example`}
                 className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                loading="lazy"
+                width={400}
+                height={300}
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                 <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity font-medium text-sm">
