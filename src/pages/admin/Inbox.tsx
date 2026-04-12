@@ -361,7 +361,7 @@ export default function AdminInbox() {
                   className="pl-8 h-9"
                 />
               </div>
-              <Button size="sm" variant="outline" onClick={() => setIsComposeOpen(true)}>
+              <Button size="sm" variant="outline" onClick={handleOpenCompose}>
                 <PenSquare className="h-4 w-4" />
               </Button>
               <Button size="sm" variant="outline" onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending}>
@@ -558,6 +558,36 @@ export default function AdminInbox() {
                 onChange={(e) => { setComposeTo(e.target.value); setComposeCustomerId(null); }}
                 className="mt-2"
               />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Template</Label>
+                <Select onValueChange={handleComposeSelectTemplate} value={composeTemplateId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select template..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {emailTemplates.map((t: any) => (
+                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Signature</Label>
+                <Select onValueChange={setComposeSignatureId} value={composeSignatureId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select signature..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {signatures.map((s: any) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name} {s.is_default ? "(Default)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div>
               <Label>Subject</Label>
