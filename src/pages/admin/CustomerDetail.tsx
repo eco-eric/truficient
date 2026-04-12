@@ -38,6 +38,7 @@ import { AIAssistantWidget } from '@/components/admin/ai/AIAssistantWidget';
 import { CustomerEquipmentTab } from '@/components/admin/customers/CustomerEquipmentTab';
 import { FileAttachments } from '@/components/admin/FileAttachments';
 import { CustomerRelationships } from '@/components/admin/customers/CustomerRelationships';
+import { CustomerEmailHistory } from '@/components/admin/customers/CustomerEmailHistory';
 import JobFormDialog from '@/components/admin/jobs/JobFormDialog';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -396,6 +397,7 @@ const CustomerDetail = () => {
                 <TabsTrigger value="jobs">Jobs ({jobs?.length || 0})</TabsTrigger>
                 <TabsTrigger value="estimates">Estimates ({(estimatesCount || 0) + (submissionLinksCount || 0)})</TabsTrigger>
                 <TabsTrigger value="equipment">Equipment ({equipmentCount})</TabsTrigger>
+                <TabsTrigger value="emails">Emails</TabsTrigger>
                 <TabsTrigger value="files">Files</TabsTrigger>
               </TabsList>
 
@@ -538,6 +540,10 @@ const CustomerDetail = () => {
                   customerId={id!} 
                   locations={(locations || []).map(l => ({ id: l.id, address_line1: l.address_line1, city: l.city }))}
                 />
+              </TabsContent>
+
+              <TabsContent value="emails" className="mt-4">
+                <CustomerEmailHistory customerId={id!} customerEmail={customer.email} />
               </TabsContent>
 
               <TabsContent value="files" className="mt-4">
