@@ -1,100 +1,46 @@
 
 
-# CRM Inbox — Two-Way Email Communication Hub
+## SEO & Performance Fixes — Plan
 
-## Summary
-Build a full CRM inbox at `/admin/inbox` with outbound email sending via Resend, inbound Gmail reply sync, AI draft generation, and a real-time two-panel conversation UI. Also add an email templates management page at `/admin/email-templates`.
+Most of the items in this audit are **already implemented** in the current codebase. Here's the status of each item and what still needs to be done:
 
-## Prerequisites — Secrets Needed
+### Already Done (No Changes Needed)
 
-You mentioned `RESEND_API_KEY` already exists, but I don't see it in the current secrets. We'll need to add:
-- **RESEND_API_KEY** — your Resend API key (truficient.com domain must be verified in Resend)
-- **GMAIL_CLIENT_ID** — from Google Cloud Console
-- **GMAIL_CLIENT_SECRET** — from Google Cloud Console  
-- **GMAIL_REFRESH_TOKEN** — OAuth refresh token for bach@truficient.com
+| # | Item | Status |
+|---|------|--------|
+| 2 | YouTube facade pattern | ✅ `YouTubeFacade.tsx` already loads iframe only on click |
+| 4 | Favicon optimization | ✅ Already 5.5 KB PNG; WebP savings negligible at this size |
+| 5 | Preconnect hints | ✅ `index.html` already has `supabase.co` and `i.ytimg.com`; no Google Fonts preconnect exists |
+| 6 | Exclude admin from GA | ✅ GTM script in `index.html` already checks `!window.location.pathname.startsWith('/admin')` |
 
-I'll prompt you to enter each of these before proceeding with the edge functions that need them.
+### Changes Needed
 
----
+**1. Canonical tags — enhance `usePageSEO` hook**
+The hook already sets canonicals when a `page_seo` record exists, but pages without a DB record get no canonical. Fix: add a fallback canonical using `https://www.truficient.com` + current path + trailing slash, applied on every page load regardless of DB data.
 
-## Database Changes (1 migration)
+- Edit `src/hooks/usePageSEO.ts` to always inject/update a `<link rel="canonical">` with the normalized URL (`https://www.truficient.com${path.replace(/\/$/, '')}/`), even when no `page_seo` row is found.
 
-**New tables:**
-- `crm_email_log` — stores every email sent/received per customer (direction, subject, body, template, status, Gmail IDs, timestamps)
-- `crm_email_templates` — stores email templates with trigger events, delays, active toggles
+**3. Responsive images — resize oversized assets**
+Three images are larger than their display size. Resize them at build-asset level using `cwebp`:
 
-**RLS policies:** Admin/manager full access on both tables via `user_roles` check.
+| Image | Current | Target | Display |
+|-------|---------|--------|---------|
+| `ducted-air-handler.webp` | 1000×625 (85 KB) | 700×438 | 662×448 |
+| `ductless-services.webp` | 1013×633 (51 KB) | 800×500 | 784×413 |
+| `truficient-logo.webp` | 911×463 (11 KB) | Already handled via `truficient-logo-sm.webp` (1.6 KB) |
 
-**Realtime:** Enable `crm_email_log` for realtime subscriptions.
+- Resize the two service images using `cwebp`/`imagemagick` and overwrite the existing files.
+- Add explicit `width`/`height` attributes to their `<img>` tags in `EstimatorCards.tsx`.
 
----
+**5. Preconnect hints — minor adjustment**
+Add `youtube-nocookie.com` preconnect (currently missing; `i.ytimg.com` is already present). The `i.ytimg.com` preconnect is actually useful since the facade thumbnail loads from it, so keep it.
 
-## Edge Functions (3 new)
+- Add `<link rel="preconnect" href="https://www.youtube-nocookie.com" crossorigin />` to `index.html`.
 
-### 1. `send-crm-email`
-- Sends email via Resend API from `bach@truficient.com`
-- Logs to `crm_email_log` (outbound) and `crm_interactions` (type: email)
-- Returns message_id on success
-
-### 2. `sync-gmail-replies`
-- Polls Gmail API for inbound replies to bach@truficient.com
-- Matches sender to `crm_customers.email`
-- Inserts into `crm_email_log` (inbound) and `crm_interactions`
-- Tracks last sync timestamp in a config row
-
-### 3. `generate-email-draft`
-- Accepts customer_id + thread context
-- Calls Lovable AI (no external API key needed) with Bach's persona prompt
-- Returns drafted subject + body
-
----
-
-## New Pages (2)
-
-### `/admin/inbox` — CRM Inbox
-Two-column layout:
-- **Left panel (320px):** Conversation list grouped by customer, search bar, filter tabs (All/Unread/Awaiting Reply/Sent), unread gold dot indicator, relative timestamps
-- **Right panel:** Customer header with link to CRM profile, chronological email thread (outbound = navy right-aligned bubbles, inbound = gray left-aligned), reply composer with pre-filled To/Subject, "Draft with AI" button, "Send Email" button
-- **Realtime:** Subscribe to `crm_email_log` inserts for live updates
-- **Mobile:** Stacked panels with back navigation
-
-### `/admin/email-templates` — Template Management
-- Table of all templates with Name, Trigger, Delay, Active toggle, Edit button
-- Edit dialog for subject, body, trigger event, delay hours
-- HTML preview button
-
----
-
-## Navigation Updates
-
-- Add "Inbox" to CRM section in `adminNavConfig.ts` with Mail icon and dynamic unread count badge
-- Add "Email Templates" to Marketing section
-- Add both routes to `App.tsx` with ProtectedRoute wrappers
-
----
-
-## Files Created/Modified
-
-| File | Action |
-|------|--------|
-| `supabase/migrations/...` | New tables + RLS + realtime |
-| `supabase/functions/send-crm-email/index.ts` | New edge function |
-| `supabase/functions/sync-gmail-replies/index.ts` | New edge function |
-| `supabase/functions/generate-email-draft/index.ts` | New edge function |
-| `src/pages/admin/Inbox.tsx` | New inbox page |
-| `src/pages/admin/EmailTemplates.tsx` | New templates page |
-| `src/components/admin/adminNavConfig.ts` | Add Inbox + Email Templates nav items |
-| `src/App.tsx` | Add routes |
-
----
-
-## Implementation Order
-
-1. Add secrets (RESEND_API_KEY first, then Gmail credentials)
-2. Run database migration
-3. Build & deploy all 3 edge functions
-4. Build Inbox page with full UI
-5. Build Email Templates page
-6. Update nav config and routes
-7. Test end-to-end
+### Files to modify
+- `src/hooks/usePageSEO.ts` — fallback canonical logic
+- `src/assets/ducted-air-handler.webp` — resize to 700px wide
+- `src/assets/ductless-services.webp` — resize to 800px wide
+- `src/components/home/EstimatorCards.tsx` — add width/height to img tags
+- `index.html` — add youtube-nocookie.com preconnect
 
