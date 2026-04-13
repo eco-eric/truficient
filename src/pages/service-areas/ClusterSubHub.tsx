@@ -21,6 +21,9 @@ const CLUSTER_MAP: Record<string, string> = {
   'north-dallas': 'North Dallas',
   'downtown-dallas': 'Downtown Dallas',
   'south-dallas': 'South Dallas',
+  'uptown-oak-lawn': 'Uptown/Oak Lawn',
+  'west-dallas': 'West Dallas',
+  'design-district': 'Design District',
   'outer-ring': 'Outer Ring',
 };
 
