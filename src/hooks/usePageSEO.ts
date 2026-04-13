@@ -25,7 +25,7 @@ export const usePageSEO = (customPath?: string, options?: UsePageSEOOptions) => 
 
   useEffect(() => {
     // Always set a canonical tag, even before/without DB data
-    const normalizedCanonical = `https://www.truficient.com${path.replace(/\/$/, '')}/`;
+    const normalizedCanonical = `https://truficient.com${path.replace(/\/$/, '')}/`;
     let canonical = document.querySelector('link[rel="canonical"]');
     if (!canonical) {
       canonical = document.createElement('link');

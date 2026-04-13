@@ -52,7 +52,7 @@ const EQUIPMENT_TYPE_ICONS: Record<string, React.ReactNode> = {
 import { documentationApi, DocumentResult, getBrandSupportUrl } from '@/lib/api/documentation';
 import { useState, useEffect } from 'react';
 
-const BASE_URL = 'https://www.truficient.com';
+const BASE_URL = 'https://truficient.com';
 
 interface SpecRowProps {
   icon: React.ReactNode;
