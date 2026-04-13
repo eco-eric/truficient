@@ -1117,6 +1117,7 @@ export type Database = {
         Row: {
           body_html: string | null
           body_text: string | null
+          cc_emails: string | null
           created_at: string
           customer_id: string | null
           direction: string
@@ -1137,6 +1138,7 @@ export type Database = {
         Insert: {
           body_html?: string | null
           body_text?: string | null
+          cc_emails?: string | null
           created_at?: string
           customer_id?: string | null
           direction: string
@@ -1157,6 +1159,7 @@ export type Database = {
         Update: {
           body_html?: string | null
           body_text?: string | null
+          cc_emails?: string | null
           created_at?: string
           customer_id?: string | null
           direction?: string
@@ -1194,6 +1197,7 @@ export type Database = {
       crm_email_templates: {
         Row: {
           body_html: string
+          cc_emails: string | null
           created_at: string
           delay_hours: number | null
           id: string
@@ -1205,6 +1209,7 @@ export type Database = {
         }
         Insert: {
           body_html?: string
+          cc_emails?: string | null
           created_at?: string
           delay_hours?: number | null
           id?: string
@@ -1216,6 +1221,7 @@ export type Database = {
         }
         Update: {
           body_html?: string
+          cc_emails?: string | null
           created_at?: string
           delay_hours?: number | null
           id?: string
