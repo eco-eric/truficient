@@ -44,6 +44,56 @@ type Conversation = {
   emails: EmailLog[];
 };
 
+function CustomerSearchCombobox({
+  customers,
+  selectedId,
+  onSelect,
+}: {
+  customers: { id: string; first_name: string | null; last_name: string | null; email: string | null }[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const filtered = customers.filter((c) => c.email);
+  const selected = filtered.find((c) => c.id === selectedId);
+  const displayLabel = selected
+    ? `${selected.first_name || ""} ${selected.last_name || ""}`.trim() + (selected.email ? ` — ${selected.email}` : "")
+    : "Search customers...";
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between font-normal">
+          <span className="truncate">{displayLabel}</span>
+          <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Type a name or email..." />
+          <CommandList>
+            <CommandEmpty>No customers found.</CommandEmpty>
+            <CommandGroup>
+              {filtered.map((c) => {
+                const name = `${c.first_name || ""} ${c.last_name || ""}`.trim();
+                return (
+                  <CommandItem
+                    key={c.id}
+                    value={`${name} ${c.email || ""}`}
+                    onSelect={() => { onSelect(c.id); setOpen(false); }}
+                  >
+                    <span className="truncate">{name || c.email} {name && c.email ? `— ${c.email}` : ""}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export default function AdminInbox() {
   const queryClient = useQueryClient();
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
