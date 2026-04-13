@@ -168,6 +168,20 @@ export function EmailTemplatesTab() {
   const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
   const subjectInputRef = useRef<HTMLInputElement>(null);
 
+  const { data: staffMembers = [] } = useQuery({
+    queryKey: ["crm-staff-for-cc"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("crm_team_members")
+        .select("id, first_name, last_name, email")
+        .eq("is_active", true)
+        .not("email", "is", null)
+        .order("first_name");
+      if (error) throw error;
+      return data as { id: string; first_name: string; last_name: string | null; email: string }[];
+    },
+  });
+
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ["crm-email-templates"],
     queryFn: async () => {
