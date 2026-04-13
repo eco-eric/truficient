@@ -378,12 +378,51 @@ export default function AdminInbox() {
     }
   };
 
+  const resolveMergeTags = (text: string, customerId: string | null) => {
+    const customer = customers?.find((c: any) => c.id === customerId);
+    const replacements: Record<string, string> = {
+      "{{first_name}}": customer?.first_name || "",
+      "{{last_name}}": customer?.last_name || "",
+      "{{email}}": customer?.email || "",
+      "{{phone}}": customer?.phone || "",
+      "{{customer_type}}": customer?.customer_type || "",
+      "{{customer_status}}": customer?.customer_status || "",
+      "{{company_name}}": "Truficient",
+      "{{sender_name}}": "Bach",
+      "{{sender_email}}": "bach@truficient.com",
+    };
+    let result = text;
+    for (const [tag, value] of Object.entries(replacements)) {
+      result = result.replaceAll(tag, value);
+    }
+    return result;
+  };
+
+  const htmlToPlainText = (html: string): string => {
+    let text = html;
+    // Convert block elements to newlines
+    text = text.replace(/<br\s*\/?>/gi, "\n");
+    text = text.replace(/<\/p>/gi, "\n\n");
+    text = text.replace(/<\/div>/gi, "\n");
+    text = text.replace(/<\/h[1-6]>/gi, "\n\n");
+    text = text.replace(/<\/li>/gi, "\n");
+    // Strip remaining tags
+    text = text.replace(/<[^>]*>/g, "");
+    // Decode common entities
+    text = text.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    // Trim excess blank lines
+    text = text.replace(/\n{3,}/g, "\n\n").trim();
+    return text;
+  };
+
   const handleComposeSelectTemplate = (templateId: string) => {
     setComposeTemplateId(templateId);
     const template = emailTemplates.find((t: any) => t.id === templateId);
     if (template) {
-      setComposeSubject(template.subject);
-      setComposeBody(template.body_html.replace(/<[^>]*>/g, ''));
+      const resolvedSubject = resolveMergeTags(template.subject, composeCustomerId);
+      const resolvedBody = resolveMergeTags(template.body_html, composeCustomerId);
+      setComposeSubject(resolvedSubject);
+      setComposeBody(htmlToPlainText(resolvedBody));
       if (template.cc_emails) setComposeCc(template.cc_emails);
     }
   };
