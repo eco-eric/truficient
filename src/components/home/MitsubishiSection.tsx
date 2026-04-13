@@ -3,6 +3,7 @@ import { CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useButtonTracking } from '@/hooks/useButtonTracking';
+import { YouTubeFacade } from '@/components/ui/YouTubeFacade';
 
 const features = [
   { title: 'Residential & Commercial', subtitle: 'Expertise' },
@@ -44,19 +45,10 @@ const MitsubishiSection = () => {
             viewport={{ once: true }}
             className="relative"
           >
-            {/* Decorative favicon grid */}
-            <div className="absolute -left-4 -top-4 grid grid-cols-5 gap-2">
+            {/* Decorative dot grid */}
+            <div className="absolute -left-4 -top-4 grid grid-cols-5 gap-2" aria-hidden="true">
               {[...Array(25)].map((_, i) => (
-                <img 
-                  key={i} 
-                  src="/favicon.png" 
-                  alt="" 
-                  className="w-6 h-6 opacity-10"
-                  aria-hidden="true"
-                  loading="lazy"
-                  width={24}
-                  height={24}
-                />
+                <div key={i} className="w-6 h-6 rounded-full bg-primary/10" />
               ))}
             </div>
             <div className="relative z-10">
@@ -78,13 +70,7 @@ const MitsubishiSection = () => {
             className="relative"
           >
             <div className="relative rounded-2xl overflow-hidden shadow-xl aspect-video">
-              <iframe
-                src="https://www.youtube-nocookie.com/embed/OFbHUbdlLmo"
-                title="Truficient HVAC Video"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="absolute inset-0 w-full h-full"
-              />
+              <YouTubeFacade videoId="OFbHUbdlLmo" title="Truficient HVAC Video" />
             </div>
             <p className="text-center text-sm text-muted-foreground mt-4">Watch our story</p>
           </motion.div>
