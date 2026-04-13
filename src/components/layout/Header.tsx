@@ -178,8 +178,9 @@ const Header = () => {
                 src={truficientLogo} 
                 alt="Truficient HVAC Solutions" 
                 className="h-14 w-auto"
-                width={56}
+                width={110}
                 height={56}
+                fetchPriority="high"
               />
             </Link>
 
