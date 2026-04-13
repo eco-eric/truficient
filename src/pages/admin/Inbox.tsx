@@ -608,6 +608,14 @@ export default function AdminInbox() {
                 className="mt-2"
               />
             </div>
+            <div>
+              <Label>CC (comma-separated)</Label>
+              <Input
+                placeholder="cc1@example.com, cc2@example.com"
+                value={composeCc}
+                onChange={(e) => setComposeCc(e.target.value)}
+              />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Template</Label>
