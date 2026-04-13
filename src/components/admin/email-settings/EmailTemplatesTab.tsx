@@ -10,8 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Eye, Code, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Code, ChevronDown, UserPlus } from "lucide-react";
 import { useEditor, EditorContent } from "@tiptap/react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
@@ -166,6 +167,20 @@ export function EmailTemplatesTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
   const subjectInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: staffMembers = [] } = useQuery({
+    queryKey: ["crm-staff-for-cc"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("crm_team_members")
+        .select("id, first_name, last_name, email")
+        .eq("is_active", true)
+        .not("email", "is", null)
+        .order("first_name");
+      if (error) throw error;
+      return data as { id: string; first_name: string; last_name: string | null; email: string }[];
+    },
+  });
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ["crm-email-templates"],
@@ -358,12 +373,43 @@ export function EmailTemplatesTab() {
               />
             </div>
             <div>
-              <Label>CC (comma-separated emails)</Label>
+              <Label>CC Recipients</Label>
+              <div className="flex gap-2 mb-2">
+                <Select
+                  value=""
+                  onValueChange={(email) => {
+                    const current = editTemplate?.cc_emails || "";
+                    const existing = current.split(",").map((e) => e.trim()).filter(Boolean);
+                    if (!existing.includes(email)) {
+                      const updated = existing.length > 0 ? `${current}, ${email}` : email;
+                      setEditTemplate((p) => ({ ...p, cc_emails: updated }));
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-[220px]">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <UserPlus className="h-3.5 w-3.5" />
+                      <span className="text-sm">Add staff member</span>
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staffMembers.map((m) => (
+                      <SelectItem key={m.id} value={m.email}>
+                        {m.first_name} {m.last_name || ""} — {m.email}
+                      </SelectItem>
+                    ))}
+                    {staffMembers.length === 0 && (
+                      <SelectItem value="_none" disabled>No staff with email found</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
               <Input
                 value={editTemplate?.cc_emails || ""}
                 onChange={(e) => setEditTemplate((p) => ({ ...p, cc_emails: e.target.value }))}
                 placeholder="cc1@example.com, cc2@example.com"
               />
+              <p className="text-xs text-muted-foreground mt-1">Select staff above or type emails manually (comma-separated)</p>
             </div>
             <TemplateBodyEditor
               key={editTemplate?.id || "new"}
