@@ -581,6 +581,17 @@ const CustomerDetail = () => {
           />
         )}
       </Dialog>
+
+      {customer.phone && (
+        <SendSmsDialog
+          open={smsDialogOpen}
+          onOpenChange={setSmsDialogOpen}
+          customerName={getDisplayName(customer)}
+          customerPhone={customer.phone}
+          customerId={customer.id}
+          onSuccess={() => queryClient.invalidateQueries({ queryKey: ['crm_interactions', id] })}
+        />
+      )}
     </AdminLayout>
   );
 };
