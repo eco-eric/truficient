@@ -373,12 +373,43 @@ export function EmailTemplatesTab() {
               />
             </div>
             <div>
-              <Label>CC (comma-separated emails)</Label>
+              <Label>CC Recipients</Label>
+              <div className="flex gap-2 mb-2">
+                <Select
+                  value=""
+                  onValueChange={(email) => {
+                    const current = editTemplate?.cc_emails || "";
+                    const existing = current.split(",").map((e) => e.trim()).filter(Boolean);
+                    if (!existing.includes(email)) {
+                      const updated = existing.length > 0 ? `${current}, ${email}` : email;
+                      setEditTemplate((p) => ({ ...p, cc_emails: updated }));
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-[220px]">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <UserPlus className="h-3.5 w-3.5" />
+                      <span className="text-sm">Add staff member</span>
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staffMembers.map((m) => (
+                      <SelectItem key={m.id} value={m.email}>
+                        {m.first_name} {m.last_name || ""} — {m.email}
+                      </SelectItem>
+                    ))}
+                    {staffMembers.length === 0 && (
+                      <SelectItem value="_none" disabled>No staff with email found</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
               <Input
                 value={editTemplate?.cc_emails || ""}
                 onChange={(e) => setEditTemplate((p) => ({ ...p, cc_emails: e.target.value }))}
                 placeholder="cc1@example.com, cc2@example.com"
               />
+              <p className="text-xs text-muted-foreground mt-1">Select staff above or type emails manually (comma-separated)</p>
             </div>
             <TemplateBodyEditor
               key={editTemplate?.id || "new"}
