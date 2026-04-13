@@ -10,8 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Eye, Code, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Code, ChevronDown, UserPlus } from "lucide-react";
 import { useEditor, EditorContent } from "@tiptap/react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
