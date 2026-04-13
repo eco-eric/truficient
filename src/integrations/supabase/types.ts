@@ -1045,6 +1045,8 @@ export type Database = {
           notes: string | null
           phone: string | null
           preferred_contact_method: string | null
+          sms_opt_in: boolean | null
+          sms_opt_in_date: string | null
           tags: string[] | null
           updated_at: string
           workedge_customer_id: string | null
@@ -1072,6 +1074,8 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           preferred_contact_method?: string | null
+          sms_opt_in?: boolean | null
+          sms_opt_in_date?: string | null
           tags?: string[] | null
           updated_at?: string
           workedge_customer_id?: string | null
@@ -1099,6 +1103,8 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           preferred_contact_method?: string | null
+          sms_opt_in?: boolean | null
+          sms_opt_in_date?: string | null
           tags?: string[] | null
           updated_at?: string
           workedge_customer_id?: string | null
@@ -1245,6 +1251,7 @@ export type Database = {
           logged_by: string | null
           outcome: string | null
           subject: string | null
+          twilio_message_sid: string | null
         }
         Insert: {
           content?: string | null
@@ -1257,6 +1264,7 @@ export type Database = {
           logged_by?: string | null
           outcome?: string | null
           subject?: string | null
+          twilio_message_sid?: string | null
         }
         Update: {
           content?: string | null
@@ -1269,6 +1277,7 @@ export type Database = {
           logged_by?: string | null
           outcome?: string | null
           subject?: string | null
+          twilio_message_sid?: string | null
         }
         Relationships: [
           {
