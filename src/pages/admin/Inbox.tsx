@@ -107,6 +107,7 @@ export default function AdminInbox() {
   const [composeCustomerId, setComposeCustomerId] = useState<string | null>(null);
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
+  const [composeCc, setComposeCc] = useState("");
   const [composeSignatureId, setComposeSignatureId] = useState<string>("");
   const [composeTemplateId, setComposeTemplateId] = useState<string>("");
   const threadEndRef = useRef<HTMLDivElement>(null);
@@ -338,9 +339,11 @@ export default function AdminInbox() {
       const htmlWithSig = selectedSig
         ? `<p>${composeBody.replace(/\n/g, "<br>")}</p><br/><hr/>${selectedSig.signature_html}`
         : `<p>${composeBody.replace(/\n/g, "<br>")}</p>`;
+      const ccList = composeCc.split(",").map(s => s.trim()).filter(Boolean);
       const { data, error } = await supabase.functions.invoke("send-crm-email", {
         body: {
           to: composeTo,
+          cc: ccList.length > 0 ? ccList : undefined,
           subject: composeSubject,
           bodyText: bodyWithSig,
           bodyHtml: htmlWithSig,
@@ -357,6 +360,7 @@ export default function AdminInbox() {
       setComposeCustomerId(null);
       setComposeSubject("");
       setComposeBody("");
+      setComposeCc("");
       setComposeSignatureId("");
       setComposeTemplateId("");
       queryClient.invalidateQueries({ queryKey: ["crm-emails"] });
@@ -379,8 +383,8 @@ export default function AdminInbox() {
     const template = emailTemplates.find((t: any) => t.id === templateId);
     if (template) {
       setComposeSubject(template.subject);
-      // Strip HTML tags for plain text body
       setComposeBody(template.body_html.replace(/<[^>]*>/g, ''));
+      if (template.cc_emails) setComposeCc(template.cc_emails);
     }
   };
 
@@ -602,6 +606,14 @@ export default function AdminInbox() {
                 value={composeTo}
                 onChange={(e) => { setComposeTo(e.target.value); setComposeCustomerId(null); }}
                 className="mt-2"
+              />
+            </div>
+            <div>
+              <Label>CC (comma-separated)</Label>
+              <Input
+                placeholder="cc1@example.com, cc2@example.com"
+                value={composeCc}
+                onChange={(e) => setComposeCc(e.target.value)}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
