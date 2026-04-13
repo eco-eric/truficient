@@ -21,6 +21,7 @@ type EmailTemplate = {
   name: string;
   subject: string;
   body_html: string;
+  cc_emails: string | null;
   trigger_event: string | null;
   delay_hours: number | null;
   is_active: boolean;
@@ -187,6 +188,7 @@ export function EmailTemplatesTab() {
             name: template.name,
             subject: template.subject,
             body_html: template.body_html,
+            cc_emails: template.cc_emails || null,
             trigger_event: template.trigger_event,
             delay_hours: template.delay_hours,
             is_active: template.is_active,
@@ -200,6 +202,7 @@ export function EmailTemplatesTab() {
             name: template.name!,
             subject: template.subject!,
             body_html: template.body_html || "",
+            cc_emails: template.cc_emails || null,
             trigger_event: template.trigger_event,
             delay_hours: template.delay_hours || 0,
             is_active: template.is_active ?? true,
@@ -240,7 +243,7 @@ export function EmailTemplatesTab() {
   });
 
   const openNew = () => {
-    setEditTemplate({ name: "", subject: "", body_html: "", trigger_event: "", delay_hours: 0, is_active: true });
+    setEditTemplate({ name: "", subject: "", body_html: "", cc_emails: "", trigger_event: "", delay_hours: 0, is_active: true });
     setIsDialogOpen(true);
   };
 
@@ -352,6 +355,14 @@ export function EmailTemplatesTab() {
                 ref={subjectInputRef}
                 value={editTemplate?.subject || ""}
                 onChange={(e) => setEditTemplate((p) => ({ ...p, subject: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>CC (comma-separated emails)</Label>
+              <Input
+                value={editTemplate?.cc_emails || ""}
+                onChange={(e) => setEditTemplate((p) => ({ ...p, cc_emails: e.target.value }))}
+                placeholder="cc1@example.com, cc2@example.com"
               />
             </div>
             <TemplateBodyEditor
