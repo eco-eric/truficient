@@ -11,6 +11,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { toast } from "@/hooks/use-toast";
 import { Mail, Send, Sparkles, RefreshCw, ArrowLeft, User, Search, Loader2, PenSquare } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -41,6 +43,56 @@ type Conversation = {
   unread_count: number;
   emails: EmailLog[];
 };
+
+function CustomerSearchCombobox({
+  customers,
+  selectedId,
+  onSelect,
+}: {
+  customers: { id: string; first_name: string | null; last_name: string | null; email: string | null }[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const filtered = customers.filter((c) => c.email);
+  const selected = filtered.find((c) => c.id === selectedId);
+  const displayLabel = selected
+    ? `${selected.first_name || ""} ${selected.last_name || ""}`.trim() + (selected.email ? ` — ${selected.email}` : "")
+    : "Search customers...";
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between font-normal">
+          <span className="truncate">{displayLabel}</span>
+          <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Type a name or email..." />
+          <CommandList>
+            <CommandEmpty>No customers found.</CommandEmpty>
+            <CommandGroup>
+              {filtered.map((c) => {
+                const name = `${c.first_name || ""} ${c.last_name || ""}`.trim();
+                return (
+                  <CommandItem
+                    key={c.id}
+                    value={`${name} ${c.email || ""}`}
+                    onSelect={() => { onSelect(c.id); setOpen(false); }}
+                  >
+                    <span className="truncate">{name || c.email} {name && c.email ? `— ${c.email}` : ""}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export default function AdminInbox() {
   const queryClient = useQueryClient();
@@ -539,21 +591,14 @@ export default function AdminInbox() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>To (select customer or type email)</Label>
-              <Select onValueChange={handleComposeSelectCustomer} value={composeCustomerId || ""}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a customer..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.filter((c) => c.email).map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {`${c.first_name || ""} ${c.last_name || ""}`.trim() || c.email} — {c.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>To (search customer or type email)</Label>
+              <CustomerSearchCombobox
+                customers={customers}
+                selectedId={composeCustomerId}
+                onSelect={handleComposeSelectCustomer}
+              />
               <Input
-                placeholder="Or type email address..."
+                placeholder="Or type email address directly..."
                 value={composeTo}
                 onChange={(e) => { setComposeTo(e.target.value); setComposeCustomerId(null); }}
                 className="mt-2"
