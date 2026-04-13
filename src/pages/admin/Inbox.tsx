@@ -383,8 +383,8 @@ export default function AdminInbox() {
     const template = emailTemplates.find((t: any) => t.id === templateId);
     if (template) {
       setComposeSubject(template.subject);
-      // Strip HTML tags for plain text body
       setComposeBody(template.body_html.replace(/<[^>]*>/g, ''));
+      if (template.cc_emails) setComposeCc(template.cc_emails);
     }
   };
 
