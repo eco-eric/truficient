@@ -541,21 +541,14 @@ export default function AdminInbox() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>To (select customer or type email)</Label>
-              <Select onValueChange={handleComposeSelectCustomer} value={composeCustomerId || ""}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a customer..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.filter((c) => c.email).map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {`${c.first_name || ""} ${c.last_name || ""}`.trim() || c.email} — {c.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>To (search customer or type email)</Label>
+              <CustomerSearchCombobox
+                customers={customers}
+                selectedId={composeCustomerId}
+                onSelect={handleComposeSelectCustomer}
+              />
               <Input
-                placeholder="Or type email address..."
+                placeholder="Or type email address directly..."
                 value={composeTo}
                 onChange={(e) => { setComposeTo(e.target.value); setComposeCustomerId(null); }}
                 className="mt-2"
