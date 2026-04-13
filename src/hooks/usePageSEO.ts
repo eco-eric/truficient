@@ -24,6 +24,16 @@ export const usePageSEO = (customPath?: string, options?: UsePageSEOOptions) => 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Always set a canonical tag, even before/without DB data
+    const normalizedCanonical = `https://www.truficient.com${path.replace(/\/$/, '')}/`;
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute('href', normalizedCanonical);
+
     const fetchSEO = async () => {
       try {
         const { data, error } = await supabase
@@ -35,12 +45,10 @@ export const usePageSEO = (customPath?: string, options?: UsePageSEOOptions) => 
         if (!error && data) {
           setSeo(data as unknown as PageSEO);
           
-          // Apply SEO tags to document
           if ((data as any).meta_title) {
             document.title = (data as any).meta_title;
           }
 
-          // Update meta description
           let descMeta = document.querySelector('meta[name="description"]');
           if (!descMeta) {
             descMeta = document.createElement('meta');
@@ -51,7 +59,6 @@ export const usePageSEO = (customPath?: string, options?: UsePageSEOOptions) => 
             descMeta.setAttribute('content', (data as any).meta_description);
           }
 
-          // Update robots
           let robotsMeta = document.querySelector('meta[name="robots"]');
           if (!robotsMeta) {
             robotsMeta = document.createElement('meta');
@@ -60,12 +67,11 @@ export const usePageSEO = (customPath?: string, options?: UsePageSEOOptions) => 
           }
           robotsMeta.setAttribute('content', (data as any).robots || 'index, follow');
 
-          // Update Open Graph tags
           const ogTags = {
             'og:title': (data as any).og_title || (data as any).meta_title,
             'og:description': (data as any).og_description || (data as any).meta_description,
             'og:image': (data as any).og_image,
-            'og:url': (data as any).canonical_url || window.location.href,
+            'og:url': (data as any).canonical_url || normalizedCanonical,
           };
 
           Object.entries(ogTags).forEach(([property, content]) => {
@@ -80,22 +86,15 @@ export const usePageSEO = (customPath?: string, options?: UsePageSEOOptions) => 
             }
           });
 
-          // Update canonical
-          let canonical = document.querySelector('link[rel="canonical"]');
+          // Override canonical with DB value if provided
           if ((data as any).canonical_url) {
-            if (!canonical) {
-              canonical = document.createElement('link');
-              canonical.setAttribute('rel', 'canonical');
-              document.head.appendChild(canonical);
-            }
-            canonical.setAttribute('href', (data as any).canonical_url);
+            canonical!.setAttribute('href', (data as any).canonical_url);
           }
 
           // Inject HVACBusiness JSON-LD schema for core pages (skip on equipment pages)
           const schemaId = 'page-seo-jsonld';
           let existingSchema = document.getElementById(schemaId);
           
-          // If skipGlobalSchema is set, remove any previously injected global schema
           if (options?.skipGlobalSchema && existingSchema) {
             existingSchema.remove();
             existingSchema = null;
