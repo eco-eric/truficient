@@ -11,13 +11,28 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { to, subject, bodyHtml, bodyText, customerId, templateId } = await req.json()
+    const { to, cc, subject, bodyHtml, bodyText, customerId, templateId } = await req.json()
 
     if (!to || !subject || (!bodyHtml && !bodyText)) {
       return new Response(JSON.stringify({ error: 'Missing required fields: to, subject, and bodyHtml or bodyText' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
+    }
+
+    // Build Resend payload
+    const resendPayload: Record<string, unknown> = {
+      from: 'Bach <bach@truficient.com>',
+      to: [to],
+      subject,
+      html: bodyHtml || undefined,
+      text: bodyText || undefined,
+    }
+
+    // Add CC if provided
+    const ccList = Array.isArray(cc) ? cc.filter(Boolean) : []
+    if (ccList.length > 0) {
+      resendPayload.cc = ccList
     }
 
     // Send via Resend
@@ -27,13 +42,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
-      body: JSON.stringify({
-        from: 'Bach <bach@truficient.com>',
-        to: [to],
-        subject,
-        html: bodyHtml || undefined,
-        text: bodyText || undefined,
-      }),
+      body: JSON.stringify(resendPayload),
     })
 
     const resendData = await resendRes.json()
@@ -57,6 +66,7 @@ Deno.serve(async (req) => {
       body_text: bodyText || null,
       from_email: 'bach@truficient.com',
       to_email: to,
+      cc_emails: ccList.length > 0 ? ccList.join(', ') : null,
       template_id: templateId || null,
       status: 'sent',
       resend_message_id: resendData.id,
