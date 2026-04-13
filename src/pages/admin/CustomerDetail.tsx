@@ -26,6 +26,7 @@ import {
   Plus
 } from 'lucide-react';
 import { useState } from 'react';
+import { SendSmsDialog } from '@/components/admin/customers/SendSmsDialog';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { CustomerFormDialog } from '@/components/admin/customers/CustomerFormDialog';
@@ -57,6 +58,7 @@ const CustomerDetail = () => {
   const navigate = useNavigate();
   const [editOpen, setEditOpen] = useState(false);
   const [jobDialogOpen, setJobDialogOpen] = useState(false);
+  const [smsDialogOpen, setSmsDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const syncCustomerMutation = useMutation({
@@ -291,6 +293,12 @@ const CustomerDetail = () => {
                   <Upload className="h-4 w-4 mr-2" />
                 )}
                 Sync to WorkEdge
+              </Button>
+            )}
+            {customer.phone && (
+              <Button variant="outline" onClick={() => setSmsDialogOpen(true)}>
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Send Text
               </Button>
             )}
             <AIAssistantWidget 
@@ -573,6 +581,17 @@ const CustomerDetail = () => {
           />
         )}
       </Dialog>
+
+      {customer.phone && (
+        <SendSmsDialog
+          open={smsDialogOpen}
+          onOpenChange={setSmsDialogOpen}
+          customerName={getDisplayName(customer)}
+          customerPhone={customer.phone}
+          customerId={customer.id}
+          onSuccess={() => queryClient.invalidateQueries({ queryKey: ['crm_interactions', id] })}
+        />
+      )}
     </AdminLayout>
   );
 };
