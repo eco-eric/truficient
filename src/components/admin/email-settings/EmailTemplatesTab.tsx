@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,13 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Eye } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Code, ChevronDown } from "lucide-react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Link from "@tiptap/extension-link";
+import Underline from "@tiptap/extension-underline";
 
 type EmailTemplate = {
   id: string;
@@ -22,11 +27,144 @@ type EmailTemplate = {
   created_at: string;
 };
 
+const MERGE_TAGS = [
+  {
+    label: "Customer",
+    tags: [
+      { tag: "{{first_name}}", label: "First Name" },
+      { tag: "{{last_name}}", label: "Last Name" },
+      { tag: "{{email}}", label: "Email" },
+      { tag: "{{phone}}", label: "Phone" },
+      { tag: "{{address}}", label: "Full Address" },
+      { tag: "{{customer_type}}", label: "Customer Type" },
+      { tag: "{{customer_status}}", label: "Status" },
+    ],
+  },
+  {
+    label: "Job / Service",
+    tags: [
+      { tag: "{{job_number}}", label: "Job Number" },
+      { tag: "{{job_type}}", label: "Job Type" },
+      { tag: "{{scheduled_date}}", label: "Scheduled Date" },
+      { tag: "{{quoted_amount}}", label: "Quoted Amount" },
+      { tag: "{{job_title}}", label: "Job Title" },
+    ],
+  },
+  {
+    label: "Company / Sender",
+    tags: [
+      { tag: "{{company_name}}", label: "Company Name" },
+      { tag: "{{sender_name}}", label: "Sender Name" },
+      { tag: "{{sender_email}}", label: "Sender Email" },
+      { tag: "{{sender_phone}}", label: "Sender Phone" },
+    ],
+  },
+  {
+    label: "Location / Property",
+    tags: [
+      { tag: "{{property_address}}", label: "Property Address" },
+      { tag: "{{city}}", label: "City" },
+      { tag: "{{state}}", label: "State" },
+      { tag: "{{zip}}", label: "Zip Code" },
+      { tag: "{{county}}", label: "County" },
+    ],
+  },
+];
+
+function MergeTagPicker({ onInsert }: { onInsert: (tag: string) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" type="button">
+          <Code className="h-3.5 w-3.5 mr-1.5" /> Insert Variable <ChevronDown className="h-3.5 w-3.5 ml-1" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-2 max-h-80 overflow-y-auto" align="start">
+        {MERGE_TAGS.map((group) => (
+          <div key={group.label} className="mb-2">
+            <p className="text-xs font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">{group.label}</p>
+            <div className="flex flex-wrap gap-1 px-1">
+              {group.tags.map((t) => (
+                <button
+                  key={t.tag}
+                  type="button"
+                  className="text-xs px-2 py-1 rounded-md bg-muted hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
+                  onClick={() => { onInsert(t.tag); setOpen(false); }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function TemplateBodyEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [showHtml, setShowHtml] = useState(false);
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Link.configure({ openOnClick: false }),
+      Underline,
+    ],
+    content: value,
+    onUpdate: ({ editor }) => onChange(editor.getHTML()),
+  });
+
+  const insertMergeTag = (tag: string) => {
+    if (showHtml) {
+      onChange((value || "") + tag);
+    } else if (editor) {
+      editor.chain().focus().insertContent(tag).run();
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label>Body</Label>
+        <div className="flex items-center gap-2">
+          <MergeTagPicker onInsert={insertMergeTag} />
+          <Button
+            variant="ghost"
+            size="sm"
+            type="button"
+            onClick={() => {
+              if (showHtml && editor) {
+                editor.commands.setContent(value || "");
+              }
+              setShowHtml(!showHtml);
+            }}
+          >
+            {showHtml ? "Visual Editor" : "View HTML"}
+          </Button>
+        </div>
+      </div>
+      {showHtml ? (
+        <Textarea
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          className="min-h-[200px] font-mono text-xs"
+        />
+      ) : (
+        <div className="border rounded-md p-3 min-h-[200px] prose prose-sm max-w-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[180px]">
+          <EditorContent editor={editor} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function EmailTemplatesTab() {
   const queryClient = useQueryClient();
   const [editTemplate, setEditTemplate] = useState<Partial<EmailTemplate> | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
+  const subjectInputRef = useRef<HTMLInputElement>(null);
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ["crm-email-templates"],
@@ -111,10 +249,27 @@ export function EmailTemplatesTab() {
     setIsDialogOpen(true);
   };
 
+  const insertIntoSubject = (tag: string) => {
+    const input = subjectInputRef.current;
+    if (input) {
+      const start = input.selectionStart ?? (editTemplate?.subject?.length || 0);
+      const end = input.selectionEnd ?? start;
+      const current = editTemplate?.subject || "";
+      const newValue = current.slice(0, start) + tag + current.slice(end);
+      setEditTemplate((p) => ({ ...p, subject: newValue }));
+      setTimeout(() => {
+        input.focus();
+        input.setSelectionRange(start + tag.length, start + tag.length);
+      }, 0);
+    } else {
+      setEditTemplate((p) => ({ ...p, subject: (p?.subject || "") + tag }));
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <p className="text-sm text-muted-foreground">Create email templates for different types of leads and outreach.</p>
+        <p className="text-sm text-muted-foreground">Create email templates with merge tags for personalized outreach.</p>
         <Button onClick={openNew}>
           <Plus className="h-4 w-4 mr-2" /> New Template
         </Button>
@@ -176,7 +331,7 @@ export function EmailTemplatesTab() {
 
       {/* Edit/Create Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editTemplate?.id ? "Edit Template" : "New Template"}</DialogTitle>
           </DialogHeader>
@@ -189,20 +344,21 @@ export function EmailTemplatesTab() {
               />
             </div>
             <div>
-              <Label>Subject</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label>Subject</Label>
+                <MergeTagPicker onInsert={insertIntoSubject} />
+              </div>
               <Input
+                ref={subjectInputRef}
                 value={editTemplate?.subject || ""}
                 onChange={(e) => setEditTemplate((p) => ({ ...p, subject: e.target.value }))}
               />
             </div>
-            <div>
-              <Label>Body (HTML)</Label>
-              <Textarea
-                value={editTemplate?.body_html || ""}
-                onChange={(e) => setEditTemplate((p) => ({ ...p, body_html: e.target.value }))}
-                className="min-h-[200px] font-mono text-xs"
-              />
-            </div>
+            <TemplateBodyEditor
+              key={editTemplate?.id || "new"}
+              value={editTemplate?.body_html || ""}
+              onChange={(v) => setEditTemplate((p) => ({ ...p, body_html: v }))}
+            />
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Trigger Event</Label>
