@@ -107,6 +107,7 @@ export default function AdminInbox() {
   const [composeCustomerId, setComposeCustomerId] = useState<string | null>(null);
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
+  const [composeCc, setComposeCc] = useState("");
   const [composeSignatureId, setComposeSignatureId] = useState<string>("");
   const [composeTemplateId, setComposeTemplateId] = useState<string>("");
   const threadEndRef = useRef<HTMLDivElement>(null);
@@ -338,9 +339,11 @@ export default function AdminInbox() {
       const htmlWithSig = selectedSig
         ? `<p>${composeBody.replace(/\n/g, "<br>")}</p><br/><hr/>${selectedSig.signature_html}`
         : `<p>${composeBody.replace(/\n/g, "<br>")}</p>`;
+      const ccList = composeCc.split(",").map(s => s.trim()).filter(Boolean);
       const { data, error } = await supabase.functions.invoke("send-crm-email", {
         body: {
           to: composeTo,
+          cc: ccList.length > 0 ? ccList : undefined,
           subject: composeSubject,
           bodyText: bodyWithSig,
           bodyHtml: htmlWithSig,
@@ -357,6 +360,7 @@ export default function AdminInbox() {
       setComposeCustomerId(null);
       setComposeSubject("");
       setComposeBody("");
+      setComposeCc("");
       setComposeSignatureId("");
       setComposeTemplateId("");
       queryClient.invalidateQueries({ queryKey: ["crm-emails"] });
