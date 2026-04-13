@@ -132,7 +132,7 @@ export default function AdminInbox() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("crm_customers")
-        .select("id, first_name, last_name, email");
+        .select("id, first_name, last_name, email, phone, customer_type, customer_status");
       if (error) throw error;
       return data;
     },
@@ -393,7 +393,7 @@ export default function AdminInbox() {
     };
     let result = text;
     for (const [tag, value] of Object.entries(replacements)) {
-      result = result.replaceAll(tag, value);
+      result = result.split(tag).join(value);
     }
     return result;
   };
