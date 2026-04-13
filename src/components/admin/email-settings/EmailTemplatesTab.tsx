@@ -393,8 +393,8 @@ export function EmailTemplatesTab() {
                     </div>
                   </SelectTrigger>
                   <SelectContent>
-                    {staffMembers.map((m) => (
-                      <SelectItem key={m.id} value={m.email}>
+                    {staffMembers.filter((m) => m.email).map((m) => (
+                      <SelectItem key={m.id} value={m.email!}>
                         {m.first_name} {m.last_name || ""} — {m.email}
                       </SelectItem>
                     ))}
