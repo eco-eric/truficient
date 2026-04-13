@@ -157,7 +157,7 @@ export default function SmartGroupMarchLanding() {
 
       {/* NAV */}
       <nav className="gb-nav">
-        <a href="https://www.truficient.com" className="gb-logo">Truf<span>icient</span></a>
+        <a href="https://truficient.com" className="gb-logo">Truf<span>icient</span></a>
         <a href="tel:2142384349" className="gb-nav-phone">📞 (214) 238-4349</a>
       </nav>
 

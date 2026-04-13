@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const baseUrl = 'https://www.truficient.com';
+    const baseUrl = 'https://truficient.com';
     const today = new Date().toISOString().split('T')[0];
 
     // Fetch all dynamic content in parallel
