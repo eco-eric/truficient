@@ -70,6 +70,8 @@ const EstimatorCards = () => {
                     <img
                       src={estimator.image}
                       alt={estimator.title}
+                      width={estimator.id === 'ducted' ? 700 : 800}
+                      height={estimator.id === 'ducted' ? 438 : 500}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       loading="lazy"
                     />
