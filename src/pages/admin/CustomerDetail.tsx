@@ -26,6 +26,7 @@ import {
   Plus
 } from 'lucide-react';
 import { useState } from 'react';
+import { SendSmsDialog } from '@/components/admin/customers/SendSmsDialog';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { CustomerFormDialog } from '@/components/admin/customers/CustomerFormDialog';
