@@ -3,6 +3,7 @@ import { CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useButtonTracking } from '@/hooks/useButtonTracking';
+import { YouTubeFacade } from '@/components/ui/YouTubeFacade';
 
 const features = [
   { title: 'Residential & Commercial', subtitle: 'Expertise' },
@@ -78,13 +79,7 @@ const MitsubishiSection = () => {
             className="relative"
           >
             <div className="relative rounded-2xl overflow-hidden shadow-xl aspect-video">
-              <iframe
-                src="https://www.youtube-nocookie.com/embed/OFbHUbdlLmo"
-                title="Truficient HVAC Video"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="absolute inset-0 w-full h-full"
-              />
+              <YouTubeFacade videoId="OFbHUbdlLmo" title="Truficient HVAC Video" />
             </div>
             <p className="text-center text-sm text-muted-foreground mt-4">Watch our story</p>
           </motion.div>
