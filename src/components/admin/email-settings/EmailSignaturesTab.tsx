@@ -10,7 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Eye, Star } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Star, Code } from "lucide-react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Link from "@tiptap/extension-link";
+import Underline from "@tiptap/extension-underline";
+import Image from "@tiptap/extension-image";
 
 type EmailSignature = {
   id: string;
@@ -21,6 +26,131 @@ type EmailSignature = {
   created_at: string;
   updated_at: string;
 };
+
+function SignatureEditor({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (html: string) => void;
+}) {
+  const [showHtml, setShowHtml] = useState(false);
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Link.configure({ openOnClick: false }),
+      Underline,
+      Image,
+    ],
+    content: value,
+    onUpdate: ({ editor: e }) => {
+      onChange(e.getHTML());
+    },
+  });
+
+  const handleHtmlChange = (html: string) => {
+    onChange(html);
+    if (editor) {
+      editor.commands.setContent(html);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label>Signature</Label>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="text-xs gap-1.5"
+          onClick={() => setShowHtml(!showHtml)}
+        >
+          <Code className="h-3.5 w-3.5" />
+          {showHtml ? "Visual Editor" : "View HTML"}
+        </Button>
+      </div>
+
+      {showHtml ? (
+        <Textarea
+          value={value}
+          onChange={(e) => handleHtmlChange(e.target.value)}
+          className="min-h-[200px] font-mono text-xs"
+          placeholder="<p>Best regards,<br>Bach Nguyen</p>"
+        />
+      ) : (
+        <div className="border rounded-md">
+          {/* Mini toolbar */}
+          {editor && (
+            <div className="flex flex-wrap gap-0.5 border-b p-1.5 bg-muted/30">
+              <Button
+                type="button"
+                variant={editor.isActive("bold") ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 w-7 p-0 text-xs font-bold"
+                onClick={() => editor.chain().focus().toggleBold().run()}
+              >
+                B
+              </Button>
+              <Button
+                type="button"
+                variant={editor.isActive("italic") ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 w-7 p-0 text-xs italic"
+                onClick={() => editor.chain().focus().toggleItalic().run()}
+              >
+                I
+              </Button>
+              <Button
+                type="button"
+                variant={editor.isActive("underline") ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 w-7 p-0 text-xs underline"
+                onClick={() => editor.chain().focus().toggleUnderline().run()}
+              >
+                U
+              </Button>
+              <div className="w-px bg-border mx-1" />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => {
+                  const url = window.prompt("Link URL:");
+                  if (url) {
+                    editor.chain().focus().setLink({ href: url }).run();
+                  }
+                }}
+              >
+                Link
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => {
+                  const url = window.prompt("Image URL:");
+                  if (url) {
+                    editor.chain().focus().setImage({ src: url }).run();
+                  }
+                }}
+              >
+                Image
+              </Button>
+            </div>
+          )}
+          <EditorContent
+            editor={editor}
+            className="p-3 min-h-[160px] prose prose-sm max-w-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[140px]"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function EmailSignaturesTab() {
   const queryClient = useQueryClient();
@@ -43,7 +173,6 @@ export function EmailSignaturesTab() {
   const saveMutation = useMutation({
     mutationFn: async (sig: Partial<EmailSignature>) => {
       if (sig.is_default) {
-        // Unset other defaults
         await supabase.from("email_signatures").update({ is_default: false }).eq("is_default", true);
       }
       if (sig.id) {
@@ -132,8 +261,10 @@ export function EmailSignaturesTab() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-xs text-muted-foreground line-clamp-3 font-mono bg-muted/50 rounded p-2"
-                  dangerouslySetInnerHTML={{ __html: sig.signature_html.substring(0, 200) }}
+                {/* Show rendered preview on cards instead of raw HTML */}
+                <div
+                  className="text-xs text-muted-foreground line-clamp-3 bg-muted/50 rounded p-2 prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: sig.signature_html.substring(0, 300) }}
                 />
               </CardContent>
             </Card>
@@ -156,15 +287,16 @@ export function EmailSignaturesTab() {
                 placeholder="e.g., Bach - Sales"
               />
             </div>
-            <div>
-              <Label>Signature (HTML)</Label>
-              <Textarea
-                value={editSig?.signature_html || ""}
-                onChange={(e) => setEditSig((p) => ({ ...p, signature_html: e.target.value }))}
-                className="min-h-[200px] font-mono text-xs"
-                placeholder="<p>Best regards,<br/>Bach Nguyen<br/>Truficient HVAC</p>"
+
+            {/* Rich-text editor with optional HTML toggle */}
+            {editSig && (
+              <SignatureEditor
+                key={editSig.id || "new"}
+                value={editSig.signature_html || ""}
+                onChange={(html) => setEditSig((p) => ({ ...p, signature_html: html }))}
               />
-            </div>
+            )}
+
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                 <Switch
@@ -181,12 +313,6 @@ export function EmailSignaturesTab() {
                 <Label>Active</Label>
               </div>
             </div>
-            {editSig?.signature_html && (
-              <div>
-                <Label className="text-xs text-muted-foreground">Preview</Label>
-                <div className="border rounded-md p-3 bg-background" dangerouslySetInnerHTML={{ __html: editSig.signature_html }} />
-              </div>
-            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
@@ -206,7 +332,7 @@ export function EmailSignaturesTab() {
           <DialogHeader>
             <DialogTitle>Preview: {previewSig?.name}</DialogTitle>
           </DialogHeader>
-          <div className="border rounded-md p-4 bg-background" dangerouslySetInnerHTML={{ __html: previewSig?.signature_html || "" }} />
+          <div className="border rounded-md p-4 bg-background prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: previewSig?.signature_html || "" }} />
         </DialogContent>
       </Dialog>
     </div>
