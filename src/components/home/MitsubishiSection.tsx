@@ -88,7 +88,7 @@ const MitsubishiSection = () => {
             <div key={index} className="flex items-start gap-3">
               <CheckCircle className="w-6 h-6 text-secondary flex-shrink-0 mt-0.5" />
               <div>
-                <h4 className="font-bold text-foreground">{feature.title}</h4>
+                <h3 className="font-bold text-foreground text-base">{feature.title}</h3>
                 <p className="text-sm text-muted-foreground">{feature.subtitle}</p>
               </div>
             </div>

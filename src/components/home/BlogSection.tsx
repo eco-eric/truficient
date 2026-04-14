@@ -98,9 +98,9 @@ const BlogSection = () => {
                       />
                     </div>
                     <CardContent className="p-4">
-                      <h4 className="font-bold text-card-foreground mb-2 text-sm leading-tight line-clamp-2">
+                      <h3 className="font-bold text-card-foreground mb-2 text-sm leading-tight line-clamp-2">
                         {post.title}
-                      </h4>
+                      </h3>
                       <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
                         {post.excerpt || 'Read more about this topic...'}
                       </p>

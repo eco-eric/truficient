@@ -37,7 +37,7 @@ const FeaturesBar = () => {
                 <feature.icon className="w-5 h-5 md:w-6 md:h-6 text-secondary" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground text-sm md:text-base">{feature.title}</h3>
+                <p className="font-semibold text-foreground text-sm md:text-base">{feature.title}</p>
                 <p className="text-xs md:text-sm text-muted-foreground">{feature.description}</p>
               </div>
             </motion.div>

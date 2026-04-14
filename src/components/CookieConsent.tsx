@@ -122,11 +122,11 @@ const CookieConsent = () => {
 
             {/* Content */}
             <div className="px-6 py-6">
-              <p className="text-muted-foreground mb-4">
+              <p className="text-card-foreground/80 mb-4">
                 We use cookies to enhance your browsing experience, analyze site traffic, and provide personalized content. 
                 By clicking "Accept All," you consent to our use of cookies. You can customize your preferences or learn more 
                 in our{' '}
-                <Link to="/privacy-policy" className="text-secondary hover:underline font-semibold">
+                <Link to="/privacy-policy" className="text-primary hover:underline font-semibold">
                   Privacy Policy
                 </Link>.
               </p>

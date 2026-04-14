@@ -38,7 +38,7 @@ const HeroSection = () => {
               Your Comfort,<br />
               <span className="text-primary">Our Assurance.</span>
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-lg">
+            <p className="text-lg md:text-xl text-foreground/70 mb-8 max-w-lg">
               Maximize Comfort, Minimize Costs – Your Energy-Efficient HVAC Experts in DFW!
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
