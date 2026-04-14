@@ -16,7 +16,7 @@ interface LocationPage {
   published: boolean;
 }
 
-const CLUSTER_ORDER = ['Oak Cliff', 'East Dallas', 'North Dallas', 'Downtown Dallas', 'South Dallas', 'Uptown/Oak Lawn', 'West Dallas', 'Design District', 'Outer Ring'];
+const CLUSTER_ORDER = ['Oak Cliff', 'East Dallas', 'North Dallas', 'Downtown Dallas', 'South Dallas', 'Uptown/Oak Lawn', 'West Dallas', 'Design District', 'Lakewood', 'Lake Highlands', 'Outer Ring'];
 
 const ServiceAreasHub = () => {
   usePageSEO('/service-areas');
