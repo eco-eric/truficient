@@ -27,6 +27,7 @@ const CLUSTER_MAP: Record<string, string> = {
   'outer-ring': 'Outer Ring',
   'lakewood': 'Lakewood',
   'lake-highlands': 'Lake Highlands',
+  'dallas-uhi-research': 'Dallas UHI Research',
 };
 
 const ClusterSubHub = () => {
