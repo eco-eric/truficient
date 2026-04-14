@@ -100,7 +100,7 @@ const Footer = () => {
                 <div className="text-xs uppercase tracking-wider opacity-80">hvac solutions</div>
               </div>
             </div>
-            <p className="text-sm opacity-80 mb-4">
+            <p className="text-sm opacity-90 mb-4">
               Your trusted HVAC partner in the Dallas-Fort Worth Metroplex. Mitsubishi Diamond Contractor. Licensed,
               insured, and committed to energy efficiency.
             </p>
@@ -129,8 +129,8 @@ const Footer = () => {
 
           {/* Company Links */}
           <div className="text-center sm:text-left">
-            <h4 className="font-bold mb-4 text-lg">COMPANY</h4>
-            <ul className="space-y-1 text-sm opacity-80">
+            <p className="font-bold mb-4 text-lg">COMPANY</p>
+            <ul className="space-y-1 text-sm opacity-90">
               <li>
                 <Link to="/about" className="hover:text-secondary transition-colors inline-block">
                   About Us
@@ -174,8 +174,8 @@ const Footer = () => {
 
           {/* Services Links */}
           <div className="text-center sm:text-left">
-            <h4 className="font-bold mb-4 text-lg">SERVICES</h4>
-            <ul className="space-y-1 text-sm opacity-80">
+            <p className="font-bold mb-4 text-lg">SERVICES</p>
+            <ul className="space-y-1 text-sm opacity-90">
               <li>
                 <Link
                   to="/services/residential"
@@ -221,8 +221,8 @@ const Footer = () => {
 
           {/* Contact Info */}
           <div className="text-center sm:text-left">
-            <h4 className="font-bold mb-4 text-lg">CONTACT</h4>
-            <ul className="space-y-2 text-sm opacity-80">
+            <p className="font-bold mb-4 text-lg">CONTACT</p>
+            <ul className="space-y-2 text-sm opacity-90">
               <li className="flex items-start gap-2 justify-center sm:justify-start">
                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span>
@@ -257,14 +257,14 @@ const Footer = () => {
       {/* Bottom Bar */}
       <div className="border-t border-primary-foreground/20">
         <div className="container mx-auto px-4 py-4">
-          <p className="text-center text-xs sm:text-sm opacity-60">
+          <p className="text-center text-xs sm:text-sm opacity-80">
             © {new Date().getFullYear()} Truficient Energy Solutions. All rights reserved. | TACLB77247C | Licensed &
             Insured |{" "}
-            <Link to="/privacy-policy" className="hover:text-secondary transition-colors">
+            <Link to="/privacy-policy" className="hover:text-secondary transition-colors underline-offset-2 underline decoration-primary-foreground/40">
               Privacy
             </Link>{" "}
             |{" "}
-            <Link to="/terms-of-service" className="hover:text-secondary transition-colors">
+            <Link to="/terms-of-service" className="hover:text-secondary transition-colors underline-offset-2 underline decoration-primary-foreground/40">
               Terms
             </Link>
           </p>
