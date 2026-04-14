@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
 
     // Build Resend payload
     const resendPayload: Record<string, unknown> = {
-      from: 'Bach <bach@truficient.com>',
+      from: 'Truficient <bach@truficient.com>',
       to: [to],
       subject,
       html: bodyHtml || undefined,
