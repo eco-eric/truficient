@@ -25,9 +25,8 @@ interface UseRolePermissionsResult {
 }
 
 export const useRolePermissions = (): UseRolePermissionsResult => {
-  const cached = getCachedPermissions();
-  const [permissions, setPermissions] = useState<Set<string>>(cached ?? new Set());
-  const [loading, setLoading] = useState(!cached);
+  const [permissions, setPermissions] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
   const { role, isSuperAdmin, loading: roleLoading } = useUserRole();
 
   const fetchPermissions = async () => {
