@@ -86,7 +86,7 @@ const RolePermissions = () => {
   }, []);
 
   const togglePermission = async (role: AppRole, permissionKey: string) => {
-    const currentValue = permissions[role][permissionKey] ?? true;
+    const currentValue = permissions[role][permissionKey] ?? false;
     const newValue = !currentValue;
 
     // Optimistic update
@@ -116,7 +116,7 @@ const RolePermissions = () => {
 
       toast({
         title: 'Permission updated',
-        description: `${permissionKey} is now ${newValue ? 'enabled' : 'disabled'} for ${role}`,
+        description: `${permissionKey} is now ${newValue ? 'enabled' : 'disabled'} for ${ROLE_DISPLAY_NAMES[role]}. Affected users must refresh their browser to see changes.`,
       });
     } catch (error) {
       // Revert on error
@@ -229,7 +229,7 @@ const RolePermissions = () => {
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {section.items.map(item => {
-                const isEnabled = permissions[role][item.permissionKey] ?? true;
+                const isEnabled = permissions[role][item.permissionKey] ?? false;
                 const isSaving = saving === item.permissionKey || saving === 'bulk';
 
                 return (
