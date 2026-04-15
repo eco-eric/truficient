@@ -470,7 +470,7 @@ export default function Calendar() {
                       </Link>
                     </Button>
                     <Button asChild size="sm" variant="default">
-                      <Link to={`/admin/jobs/${selectedEvent.data.job.id}?tab=appointments`}>
+                      <Link to={`/admin/jobs/${selectedEvent.data.job.id}?tab=appointments&apt=${selectedEvent.data.id}`}>
                         <CalendarIcon className="h-4 w-4 mr-2" />
                         View Appointment
                       </Link>
