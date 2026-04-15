@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,10 +37,25 @@ export default function JobAppointmentsCard({
   customerPhone,
   location
 }: JobAppointmentsCardProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Auto-open appointment from URL param (e.g. ?tab=appointments&apt=<id>)
+  useEffect(() => {
+    const aptId = searchParams.get('apt');
+    if (aptId && appointments.length > 0) {
+      const found = appointments.find((a: any) => a.id === aptId);
+      if (found) {
+        handleEdit(found);
+        // Clear the apt param so it doesn't re-trigger
+        searchParams.delete('apt');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [appointments, searchParams]);
 
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ['crm_job_appointments', jobId],
