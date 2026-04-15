@@ -43,20 +43,6 @@ export default function JobAppointmentsCard({
   const [editingAppointment, setEditingAppointment] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  // Auto-open appointment from URL param (e.g. ?tab=appointments&apt=<id>)
-  useEffect(() => {
-    const aptId = searchParams.get('apt');
-    if (aptId && appointments.length > 0) {
-      const found = appointments.find((a: any) => a.id === aptId);
-      if (found) {
-        handleEdit(found);
-        // Clear the apt param so it doesn't re-trigger
-        searchParams.delete('apt');
-        setSearchParams(searchParams, { replace: true });
-      }
-    }
-  }, [appointments, searchParams]);
-
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ['crm_job_appointments', jobId],
     queryFn: async () => {
