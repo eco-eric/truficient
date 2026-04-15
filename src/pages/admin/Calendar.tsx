@@ -388,11 +388,11 @@ export default function Calendar() {
 
         {/* Event Detail Dialog */}
         <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader className="pr-10">
-              <DialogTitle className="flex items-center gap-2 pr-2">
-                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: selectedEvent?.color }} />
-                <span className="truncate">{selectedEvent?.title}</span>
+          <DialogContent className="sm:max-w-lg [&>button]:top-3 [&>button]:right-3">
+            <DialogHeader>
+              <DialogTitle className="flex items-start gap-2 mr-8">
+                <div className="w-3 h-3 rounded-full flex-shrink-0 mt-1" style={{ backgroundColor: selectedEvent?.color }} />
+                <span className="break-words">{selectedEvent?.title}</span>
               </DialogTitle>
             </DialogHeader>
             {selectedEvent && (
@@ -460,17 +460,17 @@ export default function Calendar() {
                   </div>
                 )}
 
-                {/* Action buttons */}
+                {/* Action buttons - stacked */}
                 {selectedEvent.type === "job" && selectedEvent.data?.job?.id && (
-                  <div className="border-t pt-3 flex gap-2">
-                    <Button asChild size="sm" variant="outline" className="flex-1">
+                  <div className="border-t pt-3 flex flex-col gap-2">
+                    <Button asChild size="sm" variant="outline">
                       <Link to={`/admin/jobs/${selectedEvent.data.job.id}`}>
                         <ExternalLink className="h-4 w-4 mr-2" />
                         View Job Details
                       </Link>
                     </Button>
-                    <Button asChild size="sm" variant="default" className="flex-1">
-                      <Link to={`/admin/jobs/${selectedEvent.data.job.id}?tab=appointments&apt=${selectedEvent.data.appointmentId || selectedEvent.id}`}>
+                    <Button asChild size="sm" variant="default">
+                      <Link to={`/admin/jobs/${selectedEvent.data.job.id}?tab=appointments`}>
                         <CalendarIcon className="h-4 w-4 mr-2" />
                         View Appointment
                       </Link>
