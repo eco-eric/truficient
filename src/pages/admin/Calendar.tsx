@@ -389,8 +389,8 @@ export default function Calendar() {
         {/* Event Detail Dialog */}
         <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
           <DialogContent className="sm:max-w-lg">
-            <DialogHeader className="pr-8">
-              <DialogTitle className="flex items-center gap-2">
+            <DialogHeader className="pr-10">
+              <DialogTitle className="flex items-center gap-2 pr-2">
                 <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: selectedEvent?.color }} />
                 <span className="truncate">{selectedEvent?.title}</span>
               </DialogTitle>
