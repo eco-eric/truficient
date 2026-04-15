@@ -9,6 +9,19 @@ import { useButtonTracking } from '@/hooks/useButtonTracking';
 const HeroSection = () => {
   const { trackButtonClick } = useButtonTracking();
 
+  // Preload the LCP hero image so the browser discovers it before the render tree
+  useEffect(() => {
+    const existing = document.querySelector('link[data-hero-preload]');
+    if (!existing) {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.type = 'image/webp';
+      link.href = heroImage;
+      link.setAttribute('data-hero-preload', '');
+      document.head.appendChild(link);
+    }
+  }, []);
   const handleScheduleClick = () => {
     trackButtonClick({
       buttonName: 'Schedule Service',
