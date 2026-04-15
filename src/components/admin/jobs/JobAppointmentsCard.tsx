@@ -259,6 +259,7 @@ export default function JobAppointmentsCard({
         customerPhone={customerPhone}
         location={location}
         appointment={editingAppointment}
+        onClone={handleClone}
       />
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
