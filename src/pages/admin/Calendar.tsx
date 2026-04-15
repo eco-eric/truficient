@@ -388,11 +388,11 @@ export default function Calendar() {
 
         {/* Event Detail Dialog */}
         <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader className="pr-8">
               <DialogTitle className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: selectedEvent?.color }} />
-                {selectedEvent?.title}
+                <span className="truncate">{selectedEvent?.title}</span>
               </DialogTitle>
             </DialogHeader>
             {selectedEvent && (
@@ -460,13 +460,19 @@ export default function Calendar() {
                   </div>
                 )}
 
-                {/* Action button */}
+                {/* Action buttons */}
                 {selectedEvent.type === "job" && selectedEvent.data?.job?.id && (
-                  <div className="border-t pt-3">
-                    <Button asChild size="sm" variant="outline" className="w-full">
+                  <div className="border-t pt-3 flex gap-2">
+                    <Button asChild size="sm" variant="outline" className="flex-1">
                       <Link to={`/admin/jobs/${selectedEvent.data.job.id}`}>
                         <ExternalLink className="h-4 w-4 mr-2" />
                         View Job Details
+                      </Link>
+                    </Button>
+                    <Button asChild size="sm" variant="default" className="flex-1">
+                      <Link to={`/admin/jobs/${selectedEvent.data.job.id}?tab=appointments&apt=${selectedEvent.data.appointmentId || selectedEvent.id}`}>
+                        <Calendar className="h-4 w-4 mr-2" />
+                        View Appointment
                       </Link>
                     </Button>
                   </div>

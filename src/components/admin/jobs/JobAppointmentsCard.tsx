@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Plus, Pencil, Trash2, CheckCircle2, Clock, Users, Copy } from 'lucide-react';
+import { Calendar, Plus, Pencil, Trash2, CheckCircle2, Clock, Users, Copy, Eye } from 'lucide-react';
 import { formatInCST, formatTimeCSTDisplay } from '@/lib/cstTimezone';
 import { toast } from 'sonner';
 import JobAppointmentDialog from './JobAppointmentDialog';
@@ -204,6 +204,15 @@ export default function JobAppointmentsCard({
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7"
+                      title="View appointment details"
+                      onClick={() => handleEdit(apt)}
+                    >
+                      <Eye className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
                       title="Clone appointment"
                       onClick={() => handleClone(apt)}
                     >
@@ -213,6 +222,7 @@ export default function JobAppointmentsCard({
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7"
+                      title="Edit appointment"
                       onClick={() => handleEdit(apt)}
                     >
                       <Pencil className="h-3 w-3" />
@@ -221,6 +231,7 @@ export default function JobAppointmentsCard({
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 text-destructive hover:text-destructive"
+                      title="Delete appointment"
                       onClick={() => setDeleteId(apt.id)}
                     >
                       <Trash2 className="h-3 w-3" />
