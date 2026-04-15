@@ -471,7 +471,7 @@ export default function Calendar() {
                     </Button>
                     <Button asChild size="sm" variant="default" className="flex-1">
                       <Link to={`/admin/jobs/${selectedEvent.data.job.id}?tab=appointments&apt=${selectedEvent.data.appointmentId || selectedEvent.id}`}>
-                        <Calendar className="h-4 w-4 mr-2" />
+                        <CalendarIcon className="h-4 w-4 mr-2" />
                         View Appointment
                       </Link>
                     </Button>

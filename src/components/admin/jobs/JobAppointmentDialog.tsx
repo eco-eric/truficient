@@ -395,10 +395,38 @@ export default function JobAppointmentDialog({
           }
         }}
       >
-        <DialogHeader>
-          <DialogTitle>
-            {appointment ? 'Edit Appointment' : 'Add Calendar Appointment'}
-          </DialogTitle>
+        <DialogHeader className="pr-8">
+          <div className="flex items-center justify-between">
+            <DialogTitle>
+              {appointment?.id ? 'Edit Appointment' : 'Add Calendar Appointment'}
+            </DialogTitle>
+            {appointment?.id && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mr-6"
+                onClick={() => {
+                  onOpenChange(false);
+                  setTimeout(() => {
+                    const cloneData = {
+                      ...appointment,
+                      id: undefined,
+                      title: `${appointment.title || 'Appointment'} (Copy)`,
+                      google_calendar_event_id: null,
+                      calendar_links: [],
+                    };
+                    // Re-open with clone data via parent
+                    onOpenChange(true);
+                  }, 100);
+                }}
+                title="Duplicate this appointment"
+              >
+                <Copy className="h-3.5 w-3.5 mr-1" />
+                Copy
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
         <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-4">
