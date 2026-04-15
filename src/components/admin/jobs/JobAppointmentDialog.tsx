@@ -22,6 +22,7 @@ interface JobAppointmentDialogProps {
   customerName: string;
   customerPhone?: string | null;
   location?: string | null;
+  onClone?: (appointment: any) => void;
   appointment?: {
     id?: string;
     title: string | null;
@@ -44,6 +45,7 @@ export default function JobAppointmentDialog({
   customerName,
   customerPhone,
   location,
+  onClone,
   appointment
 }: JobAppointmentDialogProps) {
   const queryClient = useQueryClient();
@@ -400,26 +402,13 @@ export default function JobAppointmentDialog({
             <DialogTitle>
               {appointment?.id ? 'Edit Appointment' : 'Add Calendar Appointment'}
             </DialogTitle>
-            {appointment?.id && (
+            {appointment?.id && onClone && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 className="mr-6"
-                onClick={() => {
-                  onOpenChange(false);
-                  setTimeout(() => {
-                    const cloneData = {
-                      ...appointment,
-                      id: undefined,
-                      title: `${appointment.title || 'Appointment'} (Copy)`,
-                      google_calendar_event_id: null,
-                      calendar_links: [],
-                    };
-                    // Re-open with clone data via parent
-                    onOpenChange(true);
-                  }, 100);
-                }}
+                onClick={() => onClone(appointment)}
                 title="Duplicate this appointment"
               >
                 <Copy className="h-3.5 w-3.5 mr-1" />
