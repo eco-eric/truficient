@@ -1,46 +1,35 @@
 
 
-## SEO & Performance Fixes — Plan
+## Problem: Permission Matrix Out of Sync with Sidebar
 
-Most of the items in this audit are **already implemented** in the current codebase. Here's the status of each item and what still needs to be done:
+### Root Cause
 
-### Already Done (No Changes Needed)
+There's a **default-value mismatch** between two parts of the system:
 
-| # | Item | Status |
-|---|------|--------|
-| 2 | YouTube facade pattern | ✅ `YouTubeFacade.tsx` already loads iframe only on click |
-| 4 | Favicon optimization | ✅ Already 5.5 KB PNG; WebP savings negligible at this size |
-| 5 | Preconnect hints | ✅ `index.html` already has `supabase.co` and `i.ytimg.com`; no Google Fonts preconnect exists |
-| 6 | Exclude admin from GA | ✅ GTM script in `index.html` already checks `!window.location.pathname.startsWith('/admin')` |
+1. **Permission Matrix UI** (`RolePermissions.tsx` line 232): `permissions[role][item.permissionKey] ?? true` — when a permission key has **no row** in the database, the checkbox shows as **checked** (defaults to `true`).
 
-### Changes Needed
+2. **Sidebar filtering** (`useRolePermissions.ts`): Only loads rows where `enabled = true` into a `Set`, then `hasPermission()` checks `permissions.has(permissionKey)` — if there's **no row**, the item is **denied** (defaults to `false`).
 
-**1. Canonical tags — enhance `usePageSEO` hook**
-The hook already sets canonicals when a `page_seo` record exists, but pages without a DB record get no canonical. Fix: add a fallback canonical using `https://www.truficient.com` + current path + trailing slash, applied on every page load regardless of DB data.
+So the Matrix shows items as enabled when they're actually blocked in the sidebar. When you click to "disable" an item that looks checked, it writes `enabled: false` to the DB — but the sidebar was already denying it. Clicking again writes `enabled: true`, which should work, but the visual state is inverted the whole time.
 
-- Edit `src/hooks/usePageSEO.ts` to always inject/update a `<link rel="canonical">` with the normalized URL (`https://www.truficient.com${path.replace(/\/$/, '')}/`), even when no `page_seo` row is found.
+**Additionally**: Gary's browser caches permissions in `sessionStorage` (`cached_permissions`), so even after you change permissions, his session won't pick them up until he refreshes or the cache is cleared.
 
-**3. Responsive images — resize oversized assets**
-Three images are larger than their display size. Resize them at build-asset level using `cwebp`:
+### Plan
 
-| Image | Current | Target | Display |
-|-------|---------|--------|---------|
-| `ducted-air-handler.webp` | 1000×625 (85 KB) | 700×438 | 662×448 |
-| `ductless-services.webp` | 1013×633 (51 KB) | 800×500 | 784×413 |
-| `truficient-logo.webp` | 911×463 (11 KB) | Already handled via `truficient-logo-sm.webp` (1.6 KB) |
+**1. Fix the default value in Permission Matrix (RolePermissions.tsx)**
+- Change line 232: `?? true` → `?? false`
+- This makes the checkboxes accurately reflect what the sidebar enforces — unchecked means denied
 
-- Resize the two service images using `cwebp`/`imagemagick` and overwrite the existing files.
-- Add explicit `width`/`height` attributes to their `<img>` tags in `EstimatorCards.tsx`.
+**2. Fix the toggle logic (same file, line ~90)**  
+- `const currentValue = permissions[role][permissionKey] ?? true` → `?? false`
+- So toggling correctly flips from the real state
 
-**5. Preconnect hints — minor adjustment**
-Add `youtube-nocookie.com` preconnect (currently missing; `i.ytimg.com` is already present). The `i.ytimg.com` preconnect is actually useful since the facade thumbnail loads from it, so keep it.
+**3. Clear stale session cache on permission save**
+- After a successful upsert in the Permission Matrix, the target user (Gary) still has stale `sessionStorage`. This is inherent to client-side caching — we can't clear his cache remotely. However, we should add a note/toast reminding the admin that affected users need to refresh their browser.
 
-- Add `<link rel="preconnect" href="https://www.youtube-nocookie.com" crossorigin />` to `index.html`.
+### Files to Edit
+- `src/pages/admin/RolePermissions.tsx` — fix `?? true` → `?? false` in two places (lines 90 and 232), add admin toast note about user refresh
 
-### Files to modify
-- `src/hooks/usePageSEO.ts` — fallback canonical logic
-- `src/assets/ducted-air-handler.webp` — resize to 700px wide
-- `src/assets/ductless-services.webp` — resize to 800px wide
-- `src/components/home/EstimatorCards.tsx` — add width/height to img tags
-- `index.html` — add youtube-nocookie.com preconnect
+### What This Fixes
+After this change, when you open the Lead Tech tab, you'll see only the 8 items that are actually enabled (Dashboard, Customers, Locations, Calendar, Jobs, Teams, WorkEdge, Job Types) checked — matching Gary's sidebar screenshot exactly. Toggling additional items on will immediately take effect for Gary on his next page refresh.
 
