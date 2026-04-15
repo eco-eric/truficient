@@ -110,6 +110,19 @@ export default function JobAppointmentsCard({
     setDialogOpen(true);
   };
 
+  // Auto-open appointment from URL param (e.g. ?tab=appointments&apt=<id>)
+  useEffect(() => {
+    const aptId = searchParams.get('apt');
+    if (aptId && appointments.length > 0) {
+      const found = appointments.find((a: any) => a.id === aptId);
+      if (found) {
+        handleEdit(found);
+        searchParams.delete('apt');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [appointments, searchParams]);
+
   const handleClone = (appointment: any) => {
     // Create a clone object without id/calendar links so dialog treats it as new
     setEditingAppointment({
