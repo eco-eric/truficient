@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MultiSelect } from '@/components/ui/multi-select';
-import { Calendar, RefreshCw, CheckCircle2, Users, MapPin } from 'lucide-react';
+import { Calendar, RefreshCw, CheckCircle2, Users, MapPin, Copy } from 'lucide-react';
 import { format, addHours } from 'date-fns';
 import { toast } from 'sonner';
 import { formatInCST, buildCSTDateTime } from '@/lib/cstTimezone';
@@ -22,6 +22,7 @@ interface JobAppointmentDialogProps {
   customerName: string;
   customerPhone?: string | null;
   location?: string | null;
+  onClone?: (appointment: any) => void;
   appointment?: {
     id?: string;
     title: string | null;
@@ -44,6 +45,7 @@ export default function JobAppointmentDialog({
   customerName,
   customerPhone,
   location,
+  onClone,
   appointment
 }: JobAppointmentDialogProps) {
   const queryClient = useQueryClient();
@@ -395,10 +397,25 @@ export default function JobAppointmentDialog({
           }
         }}
       >
-        <DialogHeader>
-          <DialogTitle>
-            {appointment ? 'Edit Appointment' : 'Add Calendar Appointment'}
-          </DialogTitle>
+        <DialogHeader className="pr-8">
+          <div className="flex items-center justify-between">
+            <DialogTitle>
+              {appointment?.id ? 'Edit Appointment' : 'Add Calendar Appointment'}
+            </DialogTitle>
+            {appointment?.id && onClone && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mr-6"
+                onClick={() => onClone(appointment)}
+                title="Duplicate this appointment"
+              >
+                <Copy className="h-3.5 w-3.5 mr-1" />
+                Copy
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
         <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-4">
