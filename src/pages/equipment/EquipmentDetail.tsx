@@ -123,7 +123,7 @@ export default function EquipmentDetail() {
   const isR22 = refrigerant?.toLowerCase().includes('r-22') || refrigerant?.toLowerCase().includes('r22');
 
   // Set page title manually since usePageSEO expects a path
-  // Skip global HVACBusiness schema (which contains priceRange) — equipment pages use their own Product schema
+  // Skip global HVACBusiness schema — equipment pages use their own IndividualProduct schema
   usePageSEO(`/equipment/${slug}`, { skipGlobalSchema: true });
 
   // Inject canonical URL and JSON-LD structured data
@@ -151,9 +151,27 @@ export default function EquipmentDetail() {
     const equipmentImage = (equipment as any).image_url
       || `${BASE_URL}/og-image.png`;
 
+    const additionalProperties = [
+      ...(specs?.tonnage ? [{
+        '@type': 'PropertyValue',
+        name: 'Tonnage',
+        value: String(specs.tonnage),
+      }] : []),
+      ...(specs?.seer_rating ? [{
+        '@type': 'PropertyValue',
+        name: 'SEER Rating',
+        value: String(specs.seer_rating),
+      }] : []),
+      ...(specs?.refrigerant ? [{
+        '@type': 'PropertyValue',
+        name: 'Refrigerant Type',
+        value: specs.refrigerant,
+      }] : []),
+    ];
+
     const jsonLd = {
       '@context': 'https://schema.org',
-      '@type': 'Product',
+      '@type': 'IndividualProduct',
       name: `${equipment.brand} ${equipment.model_number}`,
       description: equipment.custom_content || equipment.seo_description || 
         `${equipment.brand} ${equipment.model_number} ${equipment.equipment_type || 'HVAC equipment'} specifications, documentation, and service information.`,
@@ -165,27 +183,9 @@ export default function EquipmentDetail() {
       model: equipment.model_number,
       category: equipment.equipment_type || 'HVAC Equipment',
       url: canonicalUrl,
-      ...(specs?.tonnage && {
-        additionalProperty: [
-          {
-            '@type': 'PropertyValue',
-            name: 'Tonnage',
-            value: specs.tonnage,
-          },
-          ...(specs?.seer_rating ? [{
-            '@type': 'PropertyValue',
-            name: 'SEER Rating',
-            value: specs.seer_rating,
-          }] : []),
-          ...(specs?.refrigerant ? [{
-            '@type': 'PropertyValue',
-            name: 'Refrigerant Type',
-            value: specs.refrigerant,
-          }] : []),
-        ],
+      ...(additionalProperties.length > 0 && {
+        additionalProperty: additionalProperties,
       }),
-      // Removed 'offers' block — no public pricing, so omitting avoids
-      // Merchant Listing validation errors in Google Search Console
     };
 
     // Inject JSON-LD script
