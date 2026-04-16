@@ -3,64 +3,95 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { useButtonTracking } from '@/hooks/useButtonTracking';
+import { buildSrcSet } from '@/utils/responsiveImages';
+
 import heatPumpImage from '@/assets/heat-pump-installation.webp';
+import heatPumpImage400 from '@/assets/heat-pump-installation-400w.webp';
+import heatPumpImage640 from '@/assets/heat-pump-installation-640w.webp';
+
 import acRepairImage from '@/assets/ac-repair.webp';
+import acRepairImage400 from '@/assets/ac-repair-400w.webp';
+import acRepairImage640 from '@/assets/ac-repair-640w.webp';
+
 import designInstallImage from '@/assets/design-and-install.webp';
+import designInstallImage400 from '@/assets/design-and-install-400w.webp';
+import designInstallImage640 from '@/assets/design-and-install-640w.webp';
+
 import commercialServicesImage from '@/assets/commercial-services.webp';
+import commercialServicesImage400 from '@/assets/commercial-services-400w.webp';
+import commercialServicesImage640 from '@/assets/commercial-services-640w.webp';
+
 import ductlessServicesImage from '@/assets/ductless-services.webp';
+
 import heatingRepairImage from '@/assets/heating-repair.webp';
+import heatingRepairImage400 from '@/assets/heating-repair-400w.webp';
+import heatingRepairImage640 from '@/assets/heating-repair-640w.webp';
+
 import acReplacementImage from '@/assets/ac-replacement.webp';
+import acReplacementImage400 from '@/assets/ac-replacement-400w.webp';
+import acReplacementImage640 from '@/assets/ac-replacement-640w.webp';
 
 const services = [
   {
     title: 'Heat Pump Installation',
     description: 'Keep your energy bill low in the winter by having Truficient Service install a high-efficiency heat pump system.',
     image: heatPumpImage,
+    srcSet: buildSrcSet({ '400w': heatPumpImage400, '640w': heatPumpImage640, '864w': heatPumpImage }),
     link: '/residential-services#heating-installation',
   },
   {
     title: 'AC Repair',
     description: 'AC running harder than it should be? Lower your utility costs and avoid further costly repairs by scheduling a service call with Truficient today.',
     image: acRepairImage,
+    srcSet: buildSrcSet({ '400w': acRepairImage400, '640w': acRepairImage640, '1200w': acRepairImage }),
     link: '/residential-services#ac-repair',
   },
   {
     title: 'AC Replacement',
     description: 'Is your heating and air conditioning unit decades old and about to kick the bucket? Call Truficient today and see if AC replacement is right for you.',
     image: acReplacementImage,
+    srcSet: buildSrcSet({ '400w': acReplacementImage400, '640w': acReplacementImage640, '900w': acReplacementImage }),
     link: '/residential-services#ac-replacement',
   },
   {
     title: 'Design and Install Services',
     description: 'Your HVAC system bit the dust? Truficient offers full HVAC design and installation for all private, commercial, and residential customers.',
     image: designInstallImage,
+    srcSet: buildSrcSet({ '400w': designInstallImage400, '640w': designInstallImage640, '903w': designInstallImage }),
     link: '/residential-services#ac-installation',
   },
   {
     title: 'Heating Repair',
     description: 'Having your heater go out in the middle of winter is not something we want families to have to go through. Call Truficient to schedule a heating repair appointment today.',
     image: heatingRepairImage,
+    srcSet: buildSrcSet({ '400w': heatingRepairImage400, '640w': heatingRepairImage640, '903w': heatingRepairImage }),
     link: '/residential-services#heating-repair',
   },
   {
     title: 'Indoor Air Quality',
     description: 'Our customers\' comfort is one of our top concerns. That\'s why we offer air quality services such as air purification, humidifiers, and dehumidifiers.',
     image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop',
+    srcSet: undefined,
     link: '/residential-services#air-quality',
   },
   {
     title: 'Ductless Systems',
     description: 'Our HVAC technicians can repair, replace, or install a ductless air conditioning unit and ductless split systems.',
     image: ductlessServicesImage,
+    srcSet: undefined, // already small (800x422)
     link: '/residential-services#ductless',
   },
   {
     title: 'Commercial Services',
     description: 'Expert Heating & Cooling Solutions for Small to Mid-Sized Commercial Buildings.',
     image: commercialServicesImage,
+    srcSet: buildSrcSet({ '400w': commercialServicesImage400, '640w': commercialServicesImage640, '1200w': commercialServicesImage }),
     link: '/commercial-services',
   },
 ];
+
+// Cards render at ~300px on desktop (4-col), ~50vw on tablet, ~100vw on mobile
+const CARD_SIZES = '(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 25vw';
 
 const ServicesGrid = () => {
   const { trackButtonClick } = useButtonTracking();
@@ -104,6 +135,8 @@ const ServicesGrid = () => {
                 <div className="relative overflow-hidden">
                   <img
                     src={service.image}
+                    srcSet={service.srcSet}
+                    sizes={service.srcSet ? CARD_SIZES : undefined}
                     alt={service.title}
                     className="w-full h-56 object-cover object-center group-hover:scale-110 transition-transform duration-500"
                     loading="lazy"
