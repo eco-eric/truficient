@@ -123,7 +123,7 @@ export default function EquipmentDetail() {
   const isR22 = refrigerant?.toLowerCase().includes('r-22') || refrigerant?.toLowerCase().includes('r22');
 
   // Set page title manually since usePageSEO expects a path
-  // Skip global HVACBusiness schema (which contains priceRange) — equipment pages use their own Product schema
+  // Skip global HVACBusiness schema — equipment pages use their own IndividualProduct schema
   usePageSEO(`/equipment/${slug}`, { skipGlobalSchema: true });
 
   // Inject canonical URL and JSON-LD structured data
