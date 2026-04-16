@@ -32,6 +32,16 @@
     <meta name="theme-color" content="#1e40af" />
     
     <link rel="icon" href="/favicon.png?v=2" type="image/png" />
+
+    <!-- Critical CSS — inlined to eliminate render-blocking wait for the JS-injected stylesheet -->
+    <style>
+      :root{--background:0 0% 100%;--foreground:215 25% 15%;--card:0 0% 100%;--card-foreground:215 25% 15%;--primary:210 19% 33%;--primary-foreground:0 0% 100%;--secondary:36 100% 64%;--secondary-foreground:215 25% 15%;--muted:210 20% 96%;--muted-foreground:215 16% 47%;--accent:210 40% 96%;--accent-foreground:213 54% 24%;--border:214 32% 91%;--radius:0.5rem}
+      *,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:hsl(var(--border))}
+      html{line-height:1.5;-webkit-text-size-adjust:100%;font-family:ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji";-webkit-font-smoothing:antialiased}
+      body{margin:0;background-color:hsl(var(--background));color:hsl(var(--foreground))}
+      img,video{max-width:100%;height:auto;display:block}
+      #root{min-height:100dvh}
+    </style>
     
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json">
