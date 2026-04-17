@@ -16,33 +16,53 @@ export const useAuth = () => {
   });
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setAuthState({
-          session,
-          user: session?.user ?? null,
-          loading: false,
-        });
+    let resolved = false;
 
-        // Clear caches on sign-out
-        if (!session?.user) {
-          try {
-            sessionStorage.removeItem('cached_user_role');
-            sessionStorage.removeItem('cached_permissions');
-          } catch {}
-        }
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const finish = (session: Session | null) => {
+      resolved = true;
       setAuthState({
         session,
         user: session?.user ?? null,
         loading: false,
       });
-    });
+      if (!session?.user) {
+        try {
+          sessionStorage.removeItem('cached_user_role');
+          sessionStorage.removeItem('cached_permissions');
+        } catch {}
+      }
+    };
 
-    return () => subscription.unsubscribe();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => finish(session)
+    );
+
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => finish(session))
+      .catch((err) => {
+        console.error('getSession failed, clearing auth:', err);
+        try {
+          // Clear potentially corrupted auth tokens so the user can recover
+          Object.keys(localStorage)
+            .filter((k) => k.startsWith('sb-') && k.includes('-auth-token'))
+            .forEach((k) => localStorage.removeItem(k));
+        } catch {}
+        finish(null);
+      });
+
+    // Safety net: never hang the UI on a stalled getSession() call
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        console.warn('Auth init timed out after 5s — proceeding as signed out');
+        finish(null);
+      }
+    }, 5000);
+
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
