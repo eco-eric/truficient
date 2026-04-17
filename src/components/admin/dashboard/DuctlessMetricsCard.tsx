@@ -1,83 +1,20 @@
-import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
 import { Wind, DollarSign, ShoppingCart, RefreshCw, CheckCircle, Clock, AlertCircle, Layers } from 'lucide-react';
-
-interface DuctlessMetrics {
-  totalQuotes: number;
-  totalValue: number;
-  avgQuoteValue: number;
-  abandonedCarts: number;
-  syncedCount: number;
-  pendingCount: number;
-  failedCount: number;
-  newCount: number;
-  closedCount: number;
-  avgZoneCount: number;
-}
+import { useDashboardSummary } from '@/hooks/useDashboardSummary';
 
 export const DuctlessMetricsCard = () => {
-  const { data: metrics, isLoading } = useQuery({
-    queryKey: ['ductless-metrics'],
-    queryFn: async (): Promise<DuctlessMetrics> => {
-      const { data, error } = await supabase
-        .from('ductless_estimate_submissions')
-        .select('status, final_total, ghl_sync_status, zone_count');
-      
-      if (error) throw error;
+  const { data, isLoading } = useDashboardSummary();
+  const metrics = data?.ductlessMetrics;
 
-      const submissions = data || [];
-      
-      // Filter out partial (abandoned) for quote metrics
-      const completedSubmissions = submissions.filter(s => s.status !== 'partial');
-      const abandonedSubmissions = submissions.filter(s => s.status === 'partial');
-
-      const totalValue = completedSubmissions.reduce((sum, s) => sum + (s.final_total || 0), 0);
-      const avgQuoteValue = completedSubmissions.length > 0 
-        ? totalValue / completedSubmissions.length 
-        : 0;
-
-      // Average zone count
-      const totalZones = completedSubmissions.reduce((sum, s) => sum + (s.zone_count || 0), 0);
-      const avgZoneCount = completedSubmissions.length > 0 
-        ? totalZones / completedSubmissions.length 
-        : 0;
-
-      // GHL sync status counts (only for completed submissions)
-      const syncedCount = completedSubmissions.filter(s => s.ghl_sync_status === 'synced').length;
-      const pendingCount = completedSubmissions.filter(s => s.ghl_sync_status === 'pending').length;
-      const failedCount = completedSubmissions.filter(s => s.ghl_sync_status === 'failed').length;
-
-      // Status counts
-      const newCount = submissions.filter(s => s.status === 'new').length;
-      const closedCount = submissions.filter(s => s.status === 'closed').length;
-
-      return {
-        totalQuotes: completedSubmissions.length,
-        totalValue,
-        avgQuoteValue,
-        abandonedCarts: abandonedSubmissions.length,
-        syncedCount,
-        pendingCount,
-        failedCount,
-        newCount,
-        closedCount,
-        avgZoneCount,
-      };
-    },
-    staleTime: 60000,
-  });
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
-  };
 
   if (isLoading) {
     return (
@@ -90,9 +27,7 @@ export const DuctlessMetricsCard = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-6 w-full" />
-            ))}
+            {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-6 w-full" />)}
           </div>
         </CardContent>
       </Card>
@@ -107,13 +42,10 @@ export const DuctlessMetricsCard = () => {
             <Wind className="h-5 w-5 text-emerald-600" />
             Ductless Estimator
           </CardTitle>
-          <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
-            Mini-Split
-          </Badge>
+          <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">Mini-Split</Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Quote Stats */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-muted/50 rounded-lg p-3">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
@@ -130,13 +62,10 @@ export const DuctlessMetricsCard = () => {
               <DollarSign className="h-4 w-4" />
               <span className="text-xs">Avg Quote</span>
             </div>
-            <p className="text-2xl font-bold">
-              {formatCurrency(metrics?.avgQuoteValue || 0)}
-            </p>
+            <p className="text-2xl font-bold">{formatCurrency(metrics?.avgQuoteValue || 0)}</p>
           </div>
         </div>
 
-        {/* Status Row */}
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
@@ -156,7 +85,6 @@ export const DuctlessMetricsCard = () => {
           </span>
         </div>
 
-        {/* GHL Sync Status */}
         <div className="pt-3 border-t">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
@@ -182,7 +110,6 @@ export const DuctlessMetricsCard = () => {
           </div>
         </div>
 
-        {/* Abandoned Carts */}
         <div className="flex items-center justify-between pt-3 border-t">
           <span className="flex items-center gap-2 text-sm text-muted-foreground">
             <ShoppingCart className="h-4 w-4" />

@@ -1,75 +1,20 @@
-import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
 import { Home, DollarSign, ShoppingCart, RefreshCw, CheckCircle, Clock, AlertCircle } from 'lucide-react';
-
-interface DuctedMetrics {
-  totalQuotes: number;
-  totalValue: number;
-  avgQuoteValue: number;
-  abandonedCarts: number;
-  syncedCount: number;
-  pendingCount: number;
-  failedCount: number;
-  newCount: number;
-  closedCount: number;
-}
+import { useDashboardSummary } from '@/hooks/useDashboardSummary';
 
 export const DuctedMetricsCard = () => {
-  const { data: metrics, isLoading } = useQuery({
-    queryKey: ['ducted-metrics'],
-    queryFn: async (): Promise<DuctedMetrics> => {
-      const { data, error } = await supabase
-        .from('ducted_estimate_submissions')
-        .select('status, final_total, ghl_sync_status');
-      
-      if (error) throw error;
+  const { data, isLoading } = useDashboardSummary();
+  const metrics = data?.ductedMetrics;
 
-      const submissions = data || [];
-      
-      // Filter out partial (abandoned) for quote metrics
-      const completedSubmissions = submissions.filter(s => s.status !== 'partial');
-      const abandonedSubmissions = submissions.filter(s => s.status === 'partial');
-
-      const totalValue = completedSubmissions.reduce((sum, s) => sum + (s.final_total || 0), 0);
-      const avgQuoteValue = completedSubmissions.length > 0 
-        ? totalValue / completedSubmissions.length 
-        : 0;
-
-      // GHL sync status counts (only for completed submissions)
-      const syncedCount = completedSubmissions.filter(s => s.ghl_sync_status === 'synced').length;
-      const pendingCount = completedSubmissions.filter(s => s.ghl_sync_status === 'pending').length;
-      const failedCount = completedSubmissions.filter(s => s.ghl_sync_status === 'failed').length;
-
-      // Status counts
-      const newCount = submissions.filter(s => s.status === 'new').length;
-      const closedCount = submissions.filter(s => s.status === 'closed').length;
-
-      return {
-        totalQuotes: completedSubmissions.length,
-        totalValue,
-        avgQuoteValue,
-        abandonedCarts: abandonedSubmissions.length,
-        syncedCount,
-        pendingCount,
-        failedCount,
-        newCount,
-        closedCount,
-      };
-    },
-    staleTime: 60000,
-  });
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
-  };
 
   if (isLoading) {
     return (
@@ -82,9 +27,7 @@ export const DuctedMetricsCard = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-6 w-full" />
-            ))}
+            {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-6 w-full" />)}
           </div>
         </CardContent>
       </Card>
@@ -99,13 +42,10 @@ export const DuctedMetricsCard = () => {
             <Home className="h-5 w-5 text-blue-600" />
             Ducted Estimator
           </CardTitle>
-          <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-            Central HVAC
-          </Badge>
+          <Badge variant="secondary" className="bg-blue-100 text-blue-700">Central HVAC</Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Quote Stats */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-muted/50 rounded-lg p-3">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
@@ -122,13 +62,10 @@ export const DuctedMetricsCard = () => {
               <DollarSign className="h-4 w-4" />
               <span className="text-xs">Avg Quote</span>
             </div>
-            <p className="text-2xl font-bold">
-              {formatCurrency(metrics?.avgQuoteValue || 0)}
-            </p>
+            <p className="text-2xl font-bold">{formatCurrency(metrics?.avgQuoteValue || 0)}</p>
           </div>
         </div>
 
-        {/* Status Row */}
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
@@ -144,7 +81,6 @@ export const DuctedMetricsCard = () => {
           </div>
         </div>
 
-        {/* GHL Sync Status */}
         <div className="pt-3 border-t">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
@@ -170,7 +106,6 @@ export const DuctedMetricsCard = () => {
           </div>
         </div>
 
-        {/* Abandoned Carts */}
         <div className="flex items-center justify-between pt-3 border-t">
           <span className="flex items-center gap-2 text-sm text-muted-foreground">
             <ShoppingCart className="h-4 w-4" />

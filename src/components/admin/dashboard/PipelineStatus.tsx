@@ -1,107 +1,21 @@
-import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { supabase } from '@/integrations/supabase/client';
 import { GitBranch, ArrowRight } from 'lucide-react';
+import { useDashboardSummary } from '@/hooks/useDashboardSummary';
 
-interface PipelineStage {
-  name: string;
-  count: number;
-  value: number;
-  color: string;
-  bgColor: string;
-}
-
-interface PipelineData {
-  stages: PipelineStage[];
-  total: number;
-}
+const STAGE_DISPLAY: Record<string, { name: string; color: string; bgColor: string }> = {
+  partial: { name: 'Abandoned', color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  new: { name: 'New', color: 'text-amber-600', bgColor: 'bg-amber-100' },
+  reviewed: { name: 'Reviewed', color: 'text-blue-600', bgColor: 'bg-blue-100' },
+  contacted: { name: 'Contacted', color: 'text-purple-600', bgColor: 'bg-purple-100' },
+  closed: { name: 'Closed', color: 'text-green-600', bgColor: 'bg-green-100' },
+};
 
 export const PipelineStatus = () => {
-  const { data: pipeline, isLoading } = useQuery({
-    queryKey: ['pipeline-status'],
-    queryFn: async (): Promise<PipelineData> => {
-      // Fetch all submissions from both estimators
-      const [ductedResult, ductlessResult] = await Promise.all([
-        supabase
-          .from('ducted_estimate_submissions')
-          .select('status, final_total'),
-        supabase
-          .from('ductless_estimate_submissions')
-          .select('status, final_total'),
-      ]);
-
-      const allSubmissions = [
-        ...(ductedResult.data || []),
-        ...(ductlessResult.data || []),
-      ];
-
-      // Count by status
-      const statusCounts: Record<string, { count: number; value: number }> = {
-        partial: { count: 0, value: 0 },
-        new: { count: 0, value: 0 },
-        reviewed: { count: 0, value: 0 },
-        contacted: { count: 0, value: 0 },
-        closed: { count: 0, value: 0 },
-      };
-
-      allSubmissions.forEach((submission) => {
-        const status = submission.status || 'new';
-        if (statusCounts[status]) {
-          statusCounts[status].count += 1;
-          statusCounts[status].value += submission.final_total || 0;
-        }
-      });
-
-      const stages: PipelineStage[] = [
-        {
-          name: 'Abandoned',
-          count: statusCounts.partial.count,
-          value: statusCounts.partial.value,
-          color: 'text-gray-600',
-          bgColor: 'bg-gray-100',
-        },
-        {
-          name: 'New',
-          count: statusCounts.new.count,
-          value: statusCounts.new.value,
-          color: 'text-amber-600',
-          bgColor: 'bg-amber-100',
-        },
-        {
-          name: 'Reviewed',
-          count: statusCounts.reviewed.count,
-          value: statusCounts.reviewed.value,
-          color: 'text-blue-600',
-          bgColor: 'bg-blue-100',
-        },
-        {
-          name: 'Contacted',
-          count: statusCounts.contacted.count,
-          value: statusCounts.contacted.value,
-          color: 'text-purple-600',
-          bgColor: 'bg-purple-100',
-        },
-        {
-          name: 'Closed',
-          count: statusCounts.closed.count,
-          value: statusCounts.closed.value,
-          color: 'text-green-600',
-          bgColor: 'bg-green-100',
-        },
-      ];
-
-      const total = allSubmissions.length;
-
-      return { stages, total };
-    },
-    staleTime: 60000,
-  });
+  const { data, isLoading } = useDashboardSummary();
 
   const formatCurrency = (value: number) => {
-    if (value >= 1000) {
-      return `$${(value / 1000).toFixed(0)}k`;
-    }
+    if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`;
     return `$${value.toFixed(0)}`;
   };
 
@@ -127,7 +41,18 @@ export const PipelineStatus = () => {
     );
   }
 
-  const maxCount = Math.max(...(pipeline?.stages.map(s => s.count) || [1]));
+  const stages = (data?.pipelineStages || []).map(s => ({
+    ...s,
+    ...STAGE_DISPLAY[s.name],
+  }));
+
+  const total = stages.reduce((sum, s) => sum + s.count, 0);
+  const maxCount = Math.max(...stages.map(s => s.count), 1);
+  const closedCount = stages.find(s => s.name === 'closed')?.count || 0;
+  const abandonedCount = stages.find(s => s.name === 'partial')?.count || 0;
+  const conversionRate = total - abandonedCount > 0
+    ? ((closedCount / (total - abandonedCount)) * 100).toFixed(1)
+    : '0';
 
   return (
     <Card>
@@ -136,46 +61,35 @@ export const PipelineStatus = () => {
           <GitBranch className="h-5 w-5 text-primary" />
           Pipeline Status
           <span className="text-sm font-normal text-muted-foreground ml-auto">
-            {pipeline?.total || 0} total leads
+            {total} total leads
           </span>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {/* Funnel visualization */}
         <div className="flex items-stretch gap-1">
-          {pipeline?.stages.map((stage, index) => {
-            const heightPercent = maxCount > 0 ? (stage.count / maxCount) * 100 : 0;
+          {stages.map((stage, index) => {
+            const heightPercent = (stage.count / maxCount) * 100;
             const minHeight = stage.count > 0 ? 30 : 20;
-            
             return (
               <div key={stage.name} className="flex-1 flex flex-col items-center gap-2">
-                {/* Stage bar */}
                 <div className="w-full flex flex-col items-center justify-end h-[80px]">
                   <div
                     className={`w-full rounded-t-lg transition-all ${stage.bgColor}`}
-                    style={{ 
+                    style={{
                       height: `${Math.max(heightPercent, minHeight)}%`,
-                      minHeight: `${minHeight}px`
+                      minHeight: `${minHeight}px`,
                     }}
                   >
                     <div className="flex flex-col items-center justify-center h-full p-1">
-                      <span className={`text-lg font-bold ${stage.color}`}>
-                        {stage.count}
-                      </span>
+                      <span className={`text-lg font-bold ${stage.color}`}>{stage.count}</span>
                     </div>
                   </div>
                 </div>
-                
-                {/* Stage label */}
                 <div className="text-center">
                   <p className="text-xs font-medium truncate">{stage.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatCurrency(stage.value)}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{formatCurrency(stage.value)}</p>
                 </div>
-
-                {/* Arrow to next stage (except last) */}
-                {index < (pipeline?.stages.length || 0) - 1 && (
+                {index < stages.length - 1 && (
                   <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 hidden md:block">
                     <ArrowRight className="h-3 w-3 text-muted-foreground/50" />
                   </div>
@@ -185,16 +99,10 @@ export const PipelineStatus = () => {
           })}
         </div>
 
-        {/* Conversion rate summary */}
         <div className="mt-4 pt-3 border-t">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Conversion Rate</span>
-            <span className="font-medium">
-              {pipeline && pipeline.total > 0
-                ? `${(((pipeline.stages.find(s => s.name === 'Closed')?.count || 0) / 
-                    (pipeline.total - (pipeline.stages.find(s => s.name === 'Abandoned')?.count || 0))) * 100).toFixed(1)}%`
-                : '0%'}
-            </span>
+            <span className="font-medium">{conversionRate}%</span>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             Based on submitted quotes (excludes abandoned)

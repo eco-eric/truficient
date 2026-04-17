@@ -1,89 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle2, Clock, AlertTriangle, RefreshCw, Activity } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-
-interface SyncStats {
-  synced: number;
-  pending: number;
-  failed: number;
-  total: number;
-  recentActivity: {
-    id: string;
-    source: string;
-    status: string;
-    created_at: string;
-  }[];
-  stalePending: number;
-}
+import { useDashboardSummary } from '@/hooks/useDashboardSummary';
 
 export const GHLSyncHealth = () => {
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ['ghl-sync-health'],
-    queryFn: async (): Promise<SyncStats> => {
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-
-      // Fetch from all sources in parallel
-      const [ductedResult, ductlessResult, scannerResult, landingResult] = await Promise.all([
-        supabase
-          .from('ducted_estimate_submissions')
-          .select('id, ghl_sync_status, created_at')
-          .neq('status', 'partial'),
-        supabase
-          .from('ductless_estimate_submissions')
-          .select('id, ghl_sync_status, created_at')
-          .neq('status', 'partial'),
-        supabase
-          .from('equipment_scans')
-          .select('id, ghl_sync_status, created_at')
-          .not('email', 'is', null),
-        supabase
-          .from('landing_page_submissions')
-          .select('id, ghl_sync_status, created_at'),
-      ]);
-
-      const allRecords = [
-        ...(ductedResult.data || []).map(r => ({ ...r, source: 'Ducted' })),
-        ...(ductlessResult.data || []).map(r => ({ ...r, source: 'Ductless' })),
-        ...(scannerResult.data || []).map(r => ({ ...r, source: 'Scanner' })),
-        ...(landingResult.data || []).map(r => ({ ...r, source: 'Landing Page' })),
-      ];
-
-      const synced = allRecords.filter(r => r.ghl_sync_status === 'synced').length;
-      const pending = allRecords.filter(r => r.ghl_sync_status === 'pending').length;
-      const failed = allRecords.filter(r => r.ghl_sync_status === 'failed').length;
-
-      // Count stale pending (pending for more than 1 hour)
-      const stalePending = allRecords.filter(
-        r => r.ghl_sync_status === 'pending' && r.created_at && r.created_at < oneHourAgo
-      ).length;
-
-      // Get recent activity (last 5 records)
-      const recentActivity = allRecords
-        .filter(r => r.created_at)
-        .sort((a, b) => new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime())
-        .slice(0, 5)
-        .map(r => ({
-          id: r.id,
-          source: r.source,
-          status: r.ghl_sync_status || 'pending',
-          created_at: r.created_at!,
-        }));
-
-      return {
-        synced,
-        pending,
-        failed,
-        total: allRecords.length,
-        recentActivity,
-        stalePending,
-      };
-    },
-    refetchInterval: 30000, // Refresh every 30 seconds
-  });
+  const { data, isLoading } = useDashboardSummary();
+  const stats = data?.ghlHealth;
 
   if (isLoading) {
     return (
@@ -133,7 +57,6 @@ export const GHLSyncHealth = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Sync Status Summary */}
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-green-500/10 rounded-lg p-3 text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
@@ -149,9 +72,7 @@ export const GHLSyncHealth = () => {
             </div>
             <p className="text-2xl font-bold text-yellow-700">{stats?.pending || 0}</p>
             {(stats?.stalePending || 0) > 0 && (
-              <p className="text-[10px] text-yellow-600 mt-1">
-                {stats?.stalePending} stale (&gt;1hr)
-              </p>
+              <p className="text-[10px] text-yellow-600 mt-1">{stats?.stalePending} stale (&gt;1hr)</p>
             )}
           </div>
           <div className={`rounded-lg p-3 text-center ${(stats?.failed || 0) > 0 ? 'bg-red-500/20' : 'bg-red-500/10'}`}>
@@ -163,7 +84,6 @@ export const GHLSyncHealth = () => {
           </div>
         </div>
 
-        {/* Sync Rate Bar */}
         <div>
           <div className="flex justify-between text-xs mb-1">
             <span className="text-muted-foreground">Sync Rate</span>
@@ -177,7 +97,6 @@ export const GHLSyncHealth = () => {
           </div>
         </div>
 
-        {/* Recent Activity */}
         <div>
           <div className="flex items-center gap-1 mb-2">
             <Activity className="h-3 w-3 text-muted-foreground" />

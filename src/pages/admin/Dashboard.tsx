@@ -1,166 +1,67 @@
-import { useState, useEffect } from 'react';
+import { lazy, Suspense } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { StatsCards } from '@/components/admin/dashboard/StatsCards';
-import { RecentSubmissions } from '@/components/admin/dashboard/RecentSubmissions';
-import { RecentChats } from '@/components/admin/dashboard/RecentChats';
-import { SubmissionsChart } from '@/components/admin/dashboard/SubmissionsChart';
 import { QuickActions } from '@/components/admin/dashboard/QuickActions';
-import { ActivityFeed } from '@/components/admin/dashboard/ActivityFeed';
 import { LeadMetrics } from '@/components/admin/dashboard/LeadMetrics';
-import { InvoicingSnapshot } from '@/components/admin/dashboard/InvoicingSnapshot';
-import { EngagementStats } from '@/components/admin/dashboard/EngagementStats';
 import { RevenueSummary } from '@/components/admin/dashboard/RevenueSummary';
 import { PipelineStatus } from '@/components/admin/dashboard/PipelineStatus';
-import { DuctedMetricsCard } from '@/components/admin/dashboard/DuctedMetricsCard';
-import { DuctlessMetricsCard } from '@/components/admin/dashboard/DuctlessMetricsCard';
-import { GHLSyncHealth } from '@/components/admin/dashboard/GHLSyncHealth';
-import { FailedSyncsAlert } from '@/components/admin/dashboard/FailedSyncsAlert';
-import { JobTypeBoardPreview } from '@/components/admin/dashboard/JobTypeBoardPreview';
-import { UpcomingAppointments } from '@/components/admin/dashboard/UpcomingAppointments';
-import { BriefingSummaryCard } from '@/components/admin/dashboard/BriefingSummaryCard';
-import { supabase } from '@/integrations/supabase/client';
+import { DeferredWidget } from '@/components/admin/dashboard/DeferredWidget';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2 } from 'lucide-react';
-import { startOfWeek } from 'date-fns';
 import { CommandCenter } from '@/components/admin/command-center/CommandCenter';
 import { useAssistant } from '@/components/admin/assistant/AssistantContext';
+import { useDashboardSummary } from '@/hooks/useDashboardSummary';
+import { BriefingSummaryCard } from '@/components/admin/dashboard/BriefingSummaryCard';
 
-interface Submission {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  service_type: string | null;
-  status: string;
-  created_at: string;
-}
+// Below-the-fold widgets — code-split + intersection-observer mounted
+const RecentSubmissions = lazy(() =>
+  import('@/components/admin/dashboard/RecentSubmissions').then(m => ({ default: m.RecentSubmissions }))
+);
+const RecentChats = lazy(() =>
+  import('@/components/admin/dashboard/RecentChats').then(m => ({ default: m.RecentChats }))
+);
+const SubmissionsChart = lazy(() =>
+  import('@/components/admin/dashboard/SubmissionsChart').then(m => ({ default: m.SubmissionsChart }))
+);
+const ActivityFeed = lazy(() =>
+  import('@/components/admin/dashboard/ActivityFeed').then(m => ({ default: m.ActivityFeed }))
+);
+const InvoicingSnapshot = lazy(() =>
+  import('@/components/admin/dashboard/InvoicingSnapshot').then(m => ({ default: m.InvoicingSnapshot }))
+);
+const EngagementStats = lazy(() =>
+  import('@/components/admin/dashboard/EngagementStats').then(m => ({ default: m.EngagementStats }))
+);
+const DuctedMetricsCard = lazy(() =>
+  import('@/components/admin/dashboard/DuctedMetricsCard').then(m => ({ default: m.DuctedMetricsCard }))
+);
+const DuctlessMetricsCard = lazy(() =>
+  import('@/components/admin/dashboard/DuctlessMetricsCard').then(m => ({ default: m.DuctlessMetricsCard }))
+);
+const GHLSyncHealth = lazy(() =>
+  import('@/components/admin/dashboard/GHLSyncHealth').then(m => ({ default: m.GHLSyncHealth }))
+);
+const FailedSyncsAlert = lazy(() =>
+  import('@/components/admin/dashboard/FailedSyncsAlert').then(m => ({ default: m.FailedSyncsAlert }))
+);
+const JobTypeBoardPreview = lazy(() =>
+  import('@/components/admin/dashboard/JobTypeBoardPreview').then(m => ({ default: m.JobTypeBoardPreview }))
+);
+const UpcomingAppointments = lazy(() =>
+  import('@/components/admin/dashboard/UpcomingAppointments').then(m => ({ default: m.UpcomingAppointments }))
+);
+
+const WidgetFallback = ({ height = 200 }: { height?: number }) => (
+  <Skeleton className="w-full rounded-lg" style={{ height }} />
+);
 
 const Dashboard = () => {
   const outletContext = useOutletContext<{ briefingData?: any; canBriefing?: boolean }>();
   const { openPanel } = useAssistant();
-  const [loading, setLoading] = useState(true);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [allSubmissions, setAllSubmissions] = useState<Submission[]>([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    new: 0,
-    reviewed: 0,
-    thisWeek: 0,
-  });
+  const { data: summary, isLoading } = useDashboardSummary();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch all submissions from multiple sources in parallel
-        const [contactResult, landingPageResult, ductlessResult, scannerResult] = await Promise.all([
-          supabase
-            .from('contact_submissions')
-            .select('id, first_name, last_name, email, service_type, status, created_at')
-            .order('created_at', { ascending: false }),
-          supabase
-            .from('landing_page_submissions')
-            .select('id, first_name, last_name, email, service_type, status, created_at')
-            .order('created_at', { ascending: false }),
-          supabase
-            .from('ductless_estimate_submissions')
-            .select('id, customer_name, customer_email, status, created_at')
-            .order('created_at', { ascending: false }),
-          supabase
-            .from('equipment_scans')
-            .select('id, customer_name, email, status, created_at')
-            .not('email', 'is', null)
-            .order('created_at', { ascending: false }),
-        ]);
-
-        // Normalize all submissions
-        const allSubs: Submission[] = [];
-        
-        // Contact submissions
-        (contactResult.data || []).forEach(s => {
-          allSubs.push({
-            id: s.id,
-            first_name: s.first_name,
-            last_name: s.last_name,
-            email: s.email,
-            service_type: s.service_type,
-            status: s.status || 'new',
-            created_at: s.created_at,
-          });
-        });
-
-        // Landing page submissions
-        (landingPageResult.data || []).forEach(s => {
-          allSubs.push({
-            id: s.id,
-            first_name: s.first_name,
-            last_name: s.last_name,
-            email: s.email,
-            service_type: s.service_type,
-            status: s.status || 'new',
-            created_at: s.created_at,
-          });
-        });
-
-        // Ductless submissions
-        (ductlessResult.data || []).forEach(s => {
-          const nameParts = (s.customer_name || 'Unknown').split(' ');
-          allSubs.push({
-            id: s.id,
-            first_name: nameParts[0] || '',
-            last_name: nameParts.slice(1).join(' ') || '',
-            email: s.customer_email,
-            service_type: 'Ductless',
-            status: s.status || 'new',
-            created_at: s.created_at,
-          });
-        });
-
-        // Scanner submissions
-        (scannerResult.data || []).forEach(s => {
-          const nameParts = (s.customer_name || 'Unknown').split(' ');
-          allSubs.push({
-            id: s.id,
-            first_name: nameParts[0] || '',
-            last_name: nameParts.slice(1).join(' ') || '',
-            email: s.email!,
-            service_type: 'Scanner',
-            status: s.status || 'new',
-            created_at: s.created_at!,
-          });
-        });
-
-        // Sort by date descending
-        allSubs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        
-        // Calculate stats
-        const weekStart = startOfWeek(new Date());
-        const thisWeekCount = allSubs.filter(
-          s => new Date(s.created_at) >= weekStart
-        ).length;
-
-        setStats({
-          total: allSubs.length,
-          new: allSubs.filter(s => !s.status || s.status === 'new').length,
-          reviewed: allSubs.filter(s => s.status === 'reviewed' || s.status === 'contacted' || s.status === 'closed').length,
-          thisWeek: thisWeekCount,
-        });
-
-        // Store all submissions for charts
-        setAllSubmissions(allSubs);
-        
-        // Set recent submissions (last 5)
-        setSubmissions(allSubs.slice(0, 5));
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <AdminLayout title="Dashboard">
         <div className="flex items-center justify-center h-64">
@@ -170,71 +71,106 @@ const Dashboard = () => {
     );
   }
 
+  const stats = summary?.stats || { total: 0, new: 0, reviewed: 0, thisWeek: 0 };
+  const recentSubmissions = summary?.recentSubmissions || [];
+  const chartSubmissions = summary?.chartSubmissions || [];
+
   return (
     <AdminLayout title="Dashboard">
       <div className="space-y-6">
-        {/* AI Briefing Summary */}
         {outletContext?.canBriefing && outletContext?.briefingData && (
           <BriefingSummaryCard briefingData={outletContext.briefingData} onOpenAssistant={openPanel} />
         )}
 
-        {/* Command Center */}
+        {/* Above the fold — render immediately */}
         <CommandCenter />
-        
-        {/* Stats Cards Row */}
+
         <StatsCards
           totalSubmissions={stats.total}
           newSubmissions={stats.new}
           reviewedSubmissions={stats.reviewed}
           thisWeekSubmissions={stats.thisWeek}
         />
-        
-        {/* Revenue & Pipeline Row */}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <RevenueSummary />
           <PipelineStatus />
         </div>
-        
-        {/* Jobs & Calendar Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <JobTypeBoardPreview jobTypeSlug="residential-service-call" title="Service Calls Board" icon="wrench" />
-          <JobTypeBoardPreview jobTypeSlug="residential-installation" title="Installs Board" icon="hardhat" />
-        </div>
-        
-        {/* Upcoming Appointments */}
-        <UpcomingAppointments />
-        
-        {/* GHL Sync Health Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <GHLSyncHealth />
-          <FailedSyncsAlert />
-        </div>
-        
-        {/* Estimator Performance Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <DuctedMetricsCard />
-          <DuctlessMetricsCard />
-        </div>
-        
-        {/* Quick Actions + Lead Metrics + Invoicing Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <QuickActions />
-          <LeadMetrics />
-          <InvoicingSnapshot />
-        </div>
-        
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <SubmissionsChart submissions={allSubmissions} days={30} />
-          <EngagementStats />
-        </div>
-        
-        {/* Activity + Recent Items Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <ActivityFeed />
-          <RecentSubmissions submissions={submissions} />
-          <RecentChats />
-        </div>
+
+        {/* Below the fold — defer mount until near viewport */}
+        <DeferredWidget minHeight={400}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Suspense fallback={<WidgetFallback height={400} />}>
+              <JobTypeBoardPreview jobTypeSlug="residential-service-call" title="Service Calls Board" icon="wrench" />
+            </Suspense>
+            <Suspense fallback={<WidgetFallback height={400} />}>
+              <JobTypeBoardPreview jobTypeSlug="residential-installation" title="Installs Board" icon="hardhat" />
+            </Suspense>
+          </div>
+        </DeferredWidget>
+
+        <DeferredWidget minHeight={420}>
+          <Suspense fallback={<WidgetFallback height={420} />}>
+            <UpcomingAppointments />
+          </Suspense>
+        </DeferredWidget>
+
+        <DeferredWidget minHeight={350}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Suspense fallback={<WidgetFallback height={350} />}>
+              <GHLSyncHealth />
+            </Suspense>
+            <Suspense fallback={<WidgetFallback height={350} />}>
+              <FailedSyncsAlert />
+            </Suspense>
+          </div>
+        </DeferredWidget>
+
+        <DeferredWidget minHeight={420}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Suspense fallback={<WidgetFallback height={420} />}>
+              <DuctedMetricsCard />
+            </Suspense>
+            <Suspense fallback={<WidgetFallback height={420} />}>
+              <DuctlessMetricsCard />
+            </Suspense>
+          </div>
+        </DeferredWidget>
+
+        <DeferredWidget minHeight={200}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <QuickActions />
+            <LeadMetrics />
+            <Suspense fallback={<WidgetFallback height={200} />}>
+              <InvoicingSnapshot />
+            </Suspense>
+          </div>
+        </DeferredWidget>
+
+        <DeferredWidget minHeight={350}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Suspense fallback={<WidgetFallback height={350} />}>
+              <SubmissionsChart submissions={chartSubmissions} days={30} />
+            </Suspense>
+            <Suspense fallback={<WidgetFallback height={350} />}>
+              <EngagementStats />
+            </Suspense>
+          </div>
+        </DeferredWidget>
+
+        <DeferredWidget minHeight={350}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Suspense fallback={<WidgetFallback height={350} />}>
+              <ActivityFeed />
+            </Suspense>
+            <Suspense fallback={<WidgetFallback height={350} />}>
+              <RecentSubmissions submissions={recentSubmissions} />
+            </Suspense>
+            <Suspense fallback={<WidgetFallback height={350} />}>
+              <RecentChats />
+            </Suspense>
+          </div>
+        </DeferredWidget>
       </div>
     </AdminLayout>
   );
