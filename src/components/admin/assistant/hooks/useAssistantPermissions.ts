@@ -2,6 +2,25 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 
+const ASSISTANT_PERMISSIONS_TIMEOUT_MS = 5000;
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
+
 export interface AssistantPermissions {
   canAccess: boolean;
   canWrite: boolean;
@@ -20,20 +39,52 @@ export function useAssistantPermissions(): AssistantPermissions {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (roleLoading || !role) return;
+    let cancelled = false;
 
     const fetchPermissions = async () => {
-      const { data } = await supabase
-        .from("assistant_role_permissions" as any)
-        .select("*")
-        .eq("role_name", role)
-        .single();
+      if (roleLoading) return;
 
-      setPermissions(data);
-      setIsLoading(false);
+      if (!role) {
+        if (!cancelled) {
+          setPermissions(null);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      setIsLoading(true);
+
+      try {
+        const { data } = await withTimeout(
+          supabase
+            .from("assistant_role_permissions" as any)
+            .select("*")
+            .eq("role_name", role)
+            .single(),
+          ASSISTANT_PERMISSIONS_TIMEOUT_MS,
+          'Assistant permission lookup timed out'
+        );
+
+        if (!cancelled) {
+          setPermissions(data);
+        }
+      } catch (error) {
+        console.error('Error fetching assistant permissions:', error);
+        if (!cancelled) {
+          setPermissions(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
     };
 
-    fetchPermissions();
+    void fetchPermissions();
+
+    return () => {
+      cancelled = true;
+    };
   }, [role, roleLoading]);
 
   return {

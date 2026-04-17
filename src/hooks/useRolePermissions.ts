@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from './useUserRole';
 
 const CACHE_KEY = 'cached_permissions';
+const PERMISSIONS_FETCH_TIMEOUT_MS = 5000;
 
 function getCachedPermissions(): Set<string> | null {
   try {
@@ -18,6 +19,23 @@ function setCachedPermissions(perms: Set<string>) {
   } catch {}
 }
 
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
+
 interface UseRolePermissionsResult {
   permissions: Set<string>;
   loading: boolean;
@@ -25,8 +43,9 @@ interface UseRolePermissionsResult {
 }
 
 export const useRolePermissions = (): UseRolePermissionsResult => {
-  const [permissions, setPermissions] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
+  const cachedPermissions = getCachedPermissions();
+  const [permissions, setPermissions] = useState<Set<string>>(cachedPermissions ?? new Set());
+  const [loading, setLoading] = useState(!cachedPermissions);
   const { role, isSuperAdmin, loading: roleLoading } = useUserRole();
 
   const fetchPermissions = async () => {
@@ -38,14 +57,28 @@ export const useRolePermissions = (): UseRolePermissionsResult => {
       return;
     }
 
-    if (!role || roleLoading) return;
+    if (roleLoading) return;
+
+    if (!role) {
+      const emptyPermissions = new Set<string>();
+      setPermissions(emptyPermissions);
+      setCachedPermissions(emptyPermissions);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from('role_permissions')
-        .select('permission_key, enabled')
-        .eq('role', role)
-        .eq('enabled', true);
+      const { data, error } = await withTimeout(
+        supabase
+          .from('role_permissions')
+          .select('permission_key, enabled')
+          .eq('role', role)
+          .eq('enabled', true),
+        PERMISSIONS_FETCH_TIMEOUT_MS,
+        'Permission lookup timed out'
+      );
 
       if (error) {
         console.error('Error fetching permissions:', error);
@@ -67,9 +100,7 @@ export const useRolePermissions = (): UseRolePermissionsResult => {
   };
 
   useEffect(() => {
-    if (!roleLoading) {
-      fetchPermissions();
-    }
+    void fetchPermissions();
   }, [role, isSuperAdmin, roleLoading]);
 
   return {

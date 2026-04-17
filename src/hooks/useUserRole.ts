@@ -5,23 +5,116 @@ import { useAuth } from './useAuth';
 export type AppRole = 'super_admin' | 'admin' | 'manager' | 'technician' | 'lead_tech' | 'installer' | 'helper';
 
 const CACHE_KEY = 'cached_user_role';
+const ROLE_FETCH_TIMEOUT_MS = 5000;
 
-function getCachedRole(): AppRole | null {
+interface CachedRolePayload {
+  userId: string;
+  role: AppRole;
+}
+
+let roleCacheUserId: string | null = null;
+let roleCacheValue: AppRole | null = null;
+let inFlightRoleUserId: string | null = null;
+let inFlightRoleRequest: Promise<AppRole | null> | null = null;
+
+function getCachedRole(userId?: string): AppRole | null {
+  try {
+    const cached = sessionStorage.getItem(CACHE_KEY);
+    if (!cached) return null;
+
+    const parsed = JSON.parse(cached) as CachedRolePayload;
+    if (parsed && parsed.userId && parsed.role) {
+      return !userId || parsed.userId === userId ? parsed.role : null;
+    }
+  } catch {}
+
   try {
     const cached = sessionStorage.getItem(CACHE_KEY);
     if (cached) return cached as AppRole;
   } catch {}
+
   return null;
 }
 
-function setCachedRole(role: AppRole | null) {
+function setCachedRole(userId: string | null, role: AppRole | null) {
   try {
-    if (role) {
-      sessionStorage.setItem(CACHE_KEY, role);
+    if (role && userId) {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ userId, role }));
     } else {
       sessionStorage.removeItem(CACHE_KEY);
     }
   } catch {}
+}
+
+function resetRoleCache() {
+  roleCacheUserId = null;
+  roleCacheValue = null;
+  inFlightRoleUserId = null;
+  inFlightRoleRequest = null;
+  setCachedRole(null, null);
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
+
+async function fetchRoleForUser(userId: string): Promise<AppRole | null> {
+  if (roleCacheUserId === userId) {
+    return roleCacheValue;
+  }
+
+  if (inFlightRoleUserId === userId && inFlightRoleRequest) {
+    return inFlightRoleRequest;
+  }
+
+  inFlightRoleUserId = userId;
+  inFlightRoleRequest = withTimeout(
+    supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) throw error;
+        return (data?.role ?? null) as AppRole | null;
+      }),
+    ROLE_FETCH_TIMEOUT_MS,
+    'Role lookup timed out'
+  )
+    .then((nextRole) => {
+      roleCacheUserId = userId;
+      roleCacheValue = nextRole;
+      setCachedRole(userId, nextRole);
+      return nextRole;
+    })
+    .catch((error) => {
+      console.error('Error fetching user role:', error);
+      roleCacheUserId = userId;
+      roleCacheValue = null;
+      setCachedRole(null, null);
+      return null;
+    })
+    .finally(() => {
+      if (inFlightRoleUserId === userId) {
+        inFlightRoleUserId = null;
+        inFlightRoleRequest = null;
+      }
+    });
+
+  return inFlightRoleRequest;
 }
 
 interface UserRoleState {
@@ -40,48 +133,52 @@ interface UserRoleState {
 
 export const useUserRole = (): UserRoleState => {
   const { user, loading: authLoading } = useAuth();
-  const cachedRole = getCachedRole();
-  const [role, setRole] = useState<AppRole | null>(cachedRole);
-  const [loading, setLoading] = useState(!cachedRole);
+  const [role, setRole] = useState<AppRole | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchRole = async () => {
+    let cancelled = false;
+
+    const syncRole = async () => {
       if (authLoading) return;
 
       if (!user) {
-        setRole(null);
-        setCachedRole(null);
-        setLoading(false);
+        resetRoleCache();
+        if (!cancelled) {
+          setRole(null);
+          setLoading(false);
+        }
         return;
       }
 
-      try {
-        const { data, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .single();
-
-        if (error) {
-          console.log('No role found for user');
-          setRole(null);
-          setCachedRole(null);
-        } else {
-          const newRole = data.role as AppRole;
-          setRole(newRole);
-          setCachedRole(newRole);
+      const cachedRole = getCachedRole(user.id);
+      if (cachedRole) {
+        roleCacheUserId = user.id;
+        roleCacheValue = cachedRole;
+        if (!cancelled) {
+          setRole(cachedRole);
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('Error fetching user role:', error);
-        setRole(null);
-        setCachedRole(null);
-      } finally {
+        return;
+      }
+
+      if (!cancelled) {
+        setLoading(true);
+      }
+
+      const nextRole = await fetchRoleForUser(user.id);
+      if (!cancelled) {
+        setRole(nextRole);
         setLoading(false);
       }
     };
 
-    fetchRole();
-  }, [user, authLoading]);
+    void syncRole();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, authLoading]);
 
   const isSuperAdmin = role === 'super_admin';
   const isAdmin = role === 'admin' || role === 'super_admin';
