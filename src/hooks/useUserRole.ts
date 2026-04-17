@@ -54,12 +54,12 @@ function resetRoleCache() {
   setCachedRole(null, null);
 }
 
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+async function withTimeout<T>(promise: PromiseLike<T>, timeoutMs: number, message: string): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   try {
     return await Promise.race([
-      promise,
+      Promise.resolve(promise),
       new Promise<T>((_, reject) => {
         timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
       }),
@@ -86,14 +86,14 @@ async function fetchRoleForUser(userId: string): Promise<AppRole | null> {
       .from('user_roles')
       .select('role')
       .eq('user_id', userId)
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (error) throw error;
-        return (data?.role ?? null) as AppRole | null;
-      }),
+      .maybeSingle(),
     ROLE_FETCH_TIMEOUT_MS,
     'Role lookup timed out'
   )
+    .then(({ data, error }) => {
+        if (error) throw error;
+        return (data?.role ?? null) as AppRole | null;
+      })
     .then((nextRole) => {
       roleCacheUserId = userId;
       roleCacheValue = nextRole;

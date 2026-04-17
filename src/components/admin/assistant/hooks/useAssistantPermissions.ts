@@ -4,12 +4,12 @@ import { useUserRole } from "@/hooks/useUserRole";
 
 const ASSISTANT_PERMISSIONS_TIMEOUT_MS = 5000;
 
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+async function withTimeout<T>(promise: PromiseLike<T>, timeoutMs: number, message: string): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   try {
     return await Promise.race([
-      promise,
+      Promise.resolve(promise),
       new Promise<T>((_, reject) => {
         timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
       }),
@@ -55,7 +55,7 @@ export function useAssistantPermissions(): AssistantPermissions {
       setIsLoading(true);
 
       try {
-        const { data } = await withTimeout(
+        const { data, error } = await withTimeout(
           supabase
             .from("assistant_role_permissions" as any)
             .select("*")
@@ -64,6 +64,10 @@ export function useAssistantPermissions(): AssistantPermissions {
           ASSISTANT_PERMISSIONS_TIMEOUT_MS,
           'Assistant permission lookup timed out'
         );
+
+        if (error) {
+          throw error;
+        }
 
         if (!cancelled) {
           setPermissions(data);
