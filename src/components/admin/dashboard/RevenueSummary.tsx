@@ -1,85 +1,20 @@
-import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { supabase } from '@/integrations/supabase/client';
 import { DollarSign, TrendingUp, Receipt, PieChart } from 'lucide-react';
-import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-
-interface RevenueData {
-  totalQuoted: number;
-  averageQuote: number;
-  ductedTotal: number;
-  ductlessTotal: number;
-  ductedCount: number;
-  ductlessCount: number;
-  closedValue: number;
-}
+import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { useDashboardSummary } from '@/hooks/useDashboardSummary';
 
 export const RevenueSummary = () => {
-  const { data: revenue, isLoading } = useQuery({
-    queryKey: ['revenue-summary'],
-    queryFn: async (): Promise<RevenueData> => {
-      // Fetch ducted submissions with final_total
-      const { data: ductedData, error: ductedError } = await supabase
-        .from('ducted_estimate_submissions')
-        .select('final_total, status')
-        .neq('status', 'partial');
-      
-      if (ductedError) throw ductedError;
+  const { data, isLoading } = useDashboardSummary();
+  const revenue = data?.revenue;
 
-      // Fetch ductless submissions with final_total
-      const { data: ductlessData, error: ductlessError } = await supabase
-        .from('ductless_estimate_submissions')
-        .select('final_total, status')
-        .neq('status', 'partial');
-      
-      if (ductlessError) throw ductlessError;
-
-      // Calculate ducted metrics
-      const ductedSubmissions = ductedData || [];
-      const ductedTotal = ductedSubmissions.reduce((sum, s) => sum + (s.final_total || 0), 0);
-      const ductedCount = ductedSubmissions.length;
-
-      // Calculate ductless metrics
-      const ductlessSubmissions = ductlessData || [];
-      const ductlessTotal = ductlessSubmissions.reduce((sum, s) => sum + (s.final_total || 0), 0);
-      const ductlessCount = ductlessSubmissions.length;
-
-      // Combined metrics
-      const totalQuoted = ductedTotal + ductlessTotal;
-      const totalCount = ductedCount + ductlessCount;
-      const averageQuote = totalCount > 0 ? totalQuoted / totalCount : 0;
-
-      // Closed value (won deals)
-      const ductedClosed = ductedSubmissions
-        .filter(s => s.status === 'closed')
-        .reduce((sum, s) => sum + (s.final_total || 0), 0);
-      const ductlessClosed = ductlessSubmissions
-        .filter(s => s.status === 'closed')
-        .reduce((sum, s) => sum + (s.final_total || 0), 0);
-      const closedValue = ductedClosed + ductlessClosed;
-
-      return {
-        totalQuoted,
-        averageQuote,
-        ductedTotal,
-        ductlessTotal,
-        ductedCount,
-        ductlessCount,
-        closedValue,
-      };
-    },
-    staleTime: 60000,
-  });
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
-  };
 
   if (isLoading) {
     return (
@@ -110,34 +45,10 @@ export const RevenueSummary = () => {
   ].filter(d => d.value > 0);
 
   const stats = [
-    {
-      label: 'Total Quoted',
-      value: formatCurrency(revenue?.totalQuoted || 0),
-      icon: DollarSign,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
-    },
-    {
-      label: 'Avg Quote Value',
-      value: formatCurrency(revenue?.averageQuote || 0),
-      icon: Receipt,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
-    },
-    {
-      label: 'Closed Revenue',
-      value: formatCurrency(revenue?.closedValue || 0),
-      icon: TrendingUp,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-100',
-    },
-    {
-      label: 'Total Quotes',
-      value: (revenue?.ductedCount || 0) + (revenue?.ductlessCount || 0),
-      icon: PieChart,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
-    },
+    { label: 'Total Quoted', value: formatCurrency(revenue?.totalQuoted || 0), icon: DollarSign, color: 'text-green-600', bgColor: 'bg-green-100' },
+    { label: 'Avg Quote Value', value: formatCurrency(revenue?.averageQuote || 0), icon: Receipt, color: 'text-blue-600', bgColor: 'bg-blue-100' },
+    { label: 'Closed Revenue', value: formatCurrency(revenue?.closedValue || 0), icon: TrendingUp, color: 'text-emerald-600', bgColor: 'bg-emerald-100' },
+    { label: 'Total Quotes', value: (revenue?.ductedCount || 0) + (revenue?.ductlessCount || 0), icon: PieChart, color: 'text-purple-600', bgColor: 'bg-purple-100' },
   ];
 
   return (
@@ -170,22 +81,12 @@ export const RevenueSummary = () => {
               <div className="h-[100px] w-[100px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsPie>
-                    <Pie
-                      data={pieData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={25}
-                      outerRadius={45}
-                    >
+                    <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={25} outerRadius={45}>
                       {pieData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip 
-                      formatter={(value: number) => formatCurrency(value)}
-                    />
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
                   </RechartsPie>
                 </ResponsiveContainer>
               </div>
