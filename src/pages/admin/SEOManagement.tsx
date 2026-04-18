@@ -259,6 +259,12 @@ const SEOManagement = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/admin/seo-performance">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Performance
+              </Link>
+            </Button>
             <SitemapButton />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
