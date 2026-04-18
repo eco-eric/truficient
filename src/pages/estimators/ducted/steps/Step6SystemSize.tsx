@@ -67,31 +67,27 @@ export const Step6SystemSize = () => {
       equipmentType: equipmentType || undefined,
     });
     
-    // Create equipment library page (without serial number)
+    // Route equipment_pages create/update through the shared upsert function.
     if (specs?.model_number && specs?.brand) {
       try {
-        const slug = `${specs.brand.toLowerCase().replace(/\s+/g, '-')}-${specs.model_number.toLowerCase().replace(/\s+/g, '-')}`;
-        
-        await supabase.from('equipment_pages').upsert({
-          model_number: specs.model_number,
-          brand: specs.brand,
-          slug: slug,
-          equipment_type: equipmentType || null,
-          specs: {
-            tonnage: specs.tonnage,
-            seer_rating: specs.seer_rating,
-            refrigerant: specs.refrigerant,
-            manufactured_year: specs.manufactured_year,
-            voltage_info: specs.voltage_info,
-            breaker_size: specs.breaker_size,
+        const { error: upsertErr } = await supabase.functions.invoke('upsert-equipment-page', {
+          body: {
+            brand: specs.brand,
+            model_number: specs.model_number,
+            source: 'estimate',
+            source_confidence: 0.85,
+            equipment_type: equipmentType || undefined,
+            tonnage: specs.tonnage ?? undefined,
+            seer_rating: specs.seer_rating ?? undefined,
+            refrigerant: specs.refrigerant ?? undefined,
+            manufactured_year: specs.manufactured_year ?? undefined,
+            voltage_info: specs.voltage_info ?? undefined,
+            breaker_size: specs.breaker_size ?? undefined,
           },
-          auto_generated: true,
-          published: true,
-        }, { onConflict: 'slug' });
-        
-        console.log('Equipment page created/updated:', slug);
+        });
+        if (upsertErr) console.error('upsert-equipment-page invoke error:', upsertErr);
       } catch (err) {
-        console.error('Failed to create equipment page:', err);
+        console.error('Failed to register equipment page:', err);
       }
     }
     

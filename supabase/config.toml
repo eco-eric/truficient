@@ -79,3 +79,9 @@ verify_jwt = false
 [functions.sync-gsc-performance]
 verify_jwt = false
 
+[functions.upsert-equipment-page]
+verify_jwt = false
+
+[functions.backfill-equipment-install-counts]
+verify_jwt = false
+
