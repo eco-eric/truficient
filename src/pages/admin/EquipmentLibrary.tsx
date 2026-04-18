@@ -48,8 +48,17 @@ import {
   XCircle,
   Loader2,
   RefreshCw,
+  Database,
+  MapPin,
+  TrendingUp,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface EquipmentPage {
   id: string;
@@ -68,6 +77,10 @@ interface EquipmentPage {
   custom_content: string | null;
   created_at: string | null;
   updated_at: string | null;
+  market_segment: string | null;
+  install_count: number | null;
+  cities_installed: string[] | null;
+  last_installed_at: string | null;
 }
 
 interface EquipmentDocumentation {
