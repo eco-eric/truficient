@@ -223,10 +223,6 @@ const SEOManagement = () => {
   const indexedCount = pages.filter(p => (p.index_status || '').toLowerCase() === 'indexed').length;
   const notIndexedCount = totalPages - indexedCount;
   const missingSchemaCount = pages.filter(p => !p.schema_applied).length;
-  const pagesWithPosition = locationPages.filter(p => p.avg_position != null && p.avg_position > 0);
-  const avgPosition = pagesWithPosition.length > 0
-    ? (pagesWithPosition.reduce((sum, p) => sum + (p.avg_position || 0), 0) / pagesWithPosition.length).toFixed(1)
-    : '—';
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
