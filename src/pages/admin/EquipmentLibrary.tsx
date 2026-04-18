@@ -326,6 +326,38 @@ const AdminEquipmentLibrary = () => {
       .replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
+  const handleBackfill = async () => {
+    if (isBackfilling) return;
+    setIsBackfilling(true);
+    const toastId = toast.loading("Backfilling install counts from scan history…");
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "backfill-equipment-install-counts",
+        { body: {} },
+      );
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Unknown failure");
+      toast.success(
+        `Backfill complete — ${data.pages_updated} models updated from ${data.scans_processed} scans`,
+        { id: toastId },
+      );
+      queryClient.invalidateQueries({ queryKey: ["admin-equipment-pages"] });
+    } catch (err) {
+      toast.error(
+        "Backfill failed: " + (err instanceof Error ? err.message : String(err)),
+        { id: toastId },
+      );
+    } finally {
+      setIsBackfilling(false);
+    }
+  };
+
+  const marketBadgeVariant = (segment: string | null) => {
+    if (segment === "commercial") return "default" as const;
+    if (segment === "both") return "outline" as const;
+    return "secondary" as const;
+  };
+
   return (
     <AdminLayout title="Equipment Library">
       <div className="space-y-6">
