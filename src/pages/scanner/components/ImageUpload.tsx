@@ -6,6 +6,7 @@ import { Upload, X, Check, ArrowLeft, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { trackScanCompleted } from '@/utils/conversionTracking';
+import { compressImage } from '@/utils/imageCompression';
 
 export function ImageUpload() {
   const { state, dispatch } = useScanner();
@@ -13,29 +14,47 @@ export function ImageUpload() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
+    // Validate file type (HEIC from iPhone passes this but can't be decoded by vision model)
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file');
       return;
     }
 
-    // Validate file size (max 10MB)
+    if (file.type === 'image/heic' || file.type === 'image/heif' || /\.heic$/i.test(file.name) || /\.heif$/i.test(file.name)) {
+      toast.error('HEIC images aren\'t supported. Please convert to JPG or PNG and try again.');
+      return;
+    }
+
+    // Validate file size (max 10MB raw)
     if (file.size > 10 * 1024 * 1024) {
       toast.error('Image must be less than 10MB');
       return;
     }
 
-    // Create preview and convert to base64
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      setPreviewUrl(dataUrl);
-    };
-    reader.readAsDataURL(file);
+    try {
+      // Compress to keep base64 payload small enough for the vision model
+      const compressed = await compressImage(file, {
+        maxWidth: 1920,
+        maxHeight: 1920,
+        quality: 0.85,
+        maxSizeMB: 2,
+      });
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        setPreviewUrl(dataUrl);
+      };
+      reader.onerror = () => toast.error('Could not read image. Please try another file.');
+      reader.readAsDataURL(compressed);
+    } catch (err) {
+      console.error('Image prep error:', err);
+      toast.error('Could not process image. Please try another file.');
+    }
   };
 
   const handleClear = () => {
