@@ -205,8 +205,8 @@ const SEOManagement = () => {
   const needsAttentionCount = totalPages - optimizedCount;
   const LOCATION_TYPES = ['location', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Commercial + Developer', 'Brand Pillar', 'Residential Service + Neighborhood', 'Neighborhood Hub'];
   const locationPages = pages.filter(p => LOCATION_TYPES.includes(p.page_type || ''));
-  const indexedCount = pages.filter(p => p.index_status === 'Indexed').length;
-  const notIndexedCount = pages.filter(p => p.index_status !== 'Indexed').length;
+  const indexedCount = pages.filter(p => (p.index_status || '').toLowerCase() === 'indexed').length;
+  const notIndexedCount = totalPages - indexedCount;
   const missingSchemaCount = pages.filter(p => !p.schema_applied).length;
   const pagesWithPosition = locationPages.filter(p => p.avg_position != null && p.avg_position > 0);
   const avgPosition = pagesWithPosition.length > 0
