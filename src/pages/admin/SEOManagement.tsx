@@ -317,7 +317,7 @@ const SEOManagement = () => {
             <div className="text-xs text-muted-foreground">Missing Schema</div>
           </div>
           <div className="bg-white p-3 rounded-lg border">
-            <div className="text-2xl font-bold">{avgPosition}</div>
+            <div className="text-2xl font-bold">{gscAvgPosition}</div>
             <div className="text-xs text-muted-foreground">Avg Position</div>
           </div>
         </div>
