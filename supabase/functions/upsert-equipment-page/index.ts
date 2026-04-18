@@ -18,7 +18,9 @@ const corsHeaders = {
 // Validation
 // ---------------------------------------------------------------------------
 
-const SAFE_BRAND_RE = /^[A-Za-z0-9 .&\-/]+$/;
+// Allow real-world AI brand outputs like "Champion (York/JCI)", "Gree / Livo+",
+// "Daikin, Goodman/Amana (CHPE brand)". Still excludes <>{}[]"'`;\ etc.
+const SAFE_BRAND_RE = /^[A-Za-z0-9 .&,()+\-/]+$/;
 const SAFE_MODEL_RE = /^[A-Za-z0-9 .\-/]+$/;
 const SUSPICIOUS_RE =
   /(<script|<\/script|javascript:|onerror=|onload=|select\s+.*\s+from|union\s+select|drop\s+table|insert\s+into|update\s+.*\s+set|--\s|;\s*--|https?:\/\/)/i;
