@@ -173,7 +173,7 @@ export function ImageUpload() {
               </p>
             </div>
             <p className="text-xs text-muted-foreground">
-              JPG, PNG, or HEIC up to 10MB
+              JPG, PNG, or WebP up to 10MB (HEIC not supported)
             </p>
           </CardContent>
         </Card>
