@@ -813,6 +813,39 @@ export type Database = {
         }
         Relationships: []
       }
+      content_cross_links: {
+        Row: {
+          created_at: string
+          from_id: string
+          from_type: string
+          id: string
+          link_reason: string
+          relevance_score: number
+          to_id: string
+          to_type: string
+        }
+        Insert: {
+          created_at?: string
+          from_id: string
+          from_type: string
+          id?: string
+          link_reason: string
+          relevance_score?: number
+          to_id: string
+          to_type: string
+        }
+        Update: {
+          created_at?: string
+          from_id?: string
+          from_type?: string
+          id?: string
+          link_reason?: string
+          relevance_score?: number
+          to_id?: string
+          to_type?: string
+        }
+        Relationships: []
+      }
       crm_campaign_tags: {
         Row: {
           color: string | null
@@ -3069,62 +3102,186 @@ export type Database = {
         }
         Relationships: []
       }
+      equipment_page_conflicts: {
+        Row: {
+          created_at: string
+          equipment_page_id: string
+          existing_confidence: number | null
+          existing_value: string | null
+          field_name: string
+          id: string
+          incoming_confidence: number | null
+          incoming_value: string | null
+          resolution: string
+          resolved_at: string | null
+          resolved_by: string | null
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          equipment_page_id: string
+          existing_confidence?: number | null
+          existing_value?: string | null
+          field_name: string
+          id?: string
+          incoming_confidence?: number | null
+          incoming_value?: string | null
+          resolution: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source: string
+        }
+        Update: {
+          created_at?: string
+          equipment_page_id?: string
+          existing_confidence?: number | null
+          existing_value?: string | null
+          field_name?: string
+          id?: string
+          incoming_confidence?: number | null
+          incoming_value?: string | null
+          resolution?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_page_conflicts_equipment_page_id_fkey"
+            columns: ["equipment_page_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment_pages: {
         Row: {
           auto_generated: boolean | null
           brand: string
+          cities_installed: Json
           created_at: string | null
           custom_content: string | null
+          description: string | null
+          discontinuation_date: string | null
           documentation_count: number | null
           equipment_type: string | null
+          faqs: Json
+          hspf_rating: number | null
           id: string
+          ideal_for: Json
+          install_count: number
+          intro_year: number | null
+          is_discontinued: boolean
+          key_features: Json
+          last_installed_at: string | null
+          manufacturer_spec_url: string | null
+          market_segment: string
           model_number: string
           model_pattern: string | null
           published: boolean | null
+          published_at: string | null
+          refrigerant: string | null
+          seer2_rating: number | null
           seo_description: string | null
           seo_title: string | null
           slug: string
           specs: Json
+          stages: string | null
+          successor_equipment_page_id: string | null
+          tier: string | null
           times_searched: number | null
+          tonnage: number | null
+          type_descriptor: string | null
           updated_at: string | null
         }
         Insert: {
           auto_generated?: boolean | null
           brand: string
+          cities_installed?: Json
           created_at?: string | null
           custom_content?: string | null
+          description?: string | null
+          discontinuation_date?: string | null
           documentation_count?: number | null
           equipment_type?: string | null
+          faqs?: Json
+          hspf_rating?: number | null
           id?: string
+          ideal_for?: Json
+          install_count?: number
+          intro_year?: number | null
+          is_discontinued?: boolean
+          key_features?: Json
+          last_installed_at?: string | null
+          manufacturer_spec_url?: string | null
+          market_segment?: string
           model_number: string
           model_pattern?: string | null
           published?: boolean | null
+          published_at?: string | null
+          refrigerant?: string | null
+          seer2_rating?: number | null
           seo_description?: string | null
           seo_title?: string | null
           slug: string
           specs: Json
+          stages?: string | null
+          successor_equipment_page_id?: string | null
+          tier?: string | null
           times_searched?: number | null
+          tonnage?: number | null
+          type_descriptor?: string | null
           updated_at?: string | null
         }
         Update: {
           auto_generated?: boolean | null
           brand?: string
+          cities_installed?: Json
           created_at?: string | null
           custom_content?: string | null
+          description?: string | null
+          discontinuation_date?: string | null
           documentation_count?: number | null
           equipment_type?: string | null
+          faqs?: Json
+          hspf_rating?: number | null
           id?: string
+          ideal_for?: Json
+          install_count?: number
+          intro_year?: number | null
+          is_discontinued?: boolean
+          key_features?: Json
+          last_installed_at?: string | null
+          manufacturer_spec_url?: string | null
+          market_segment?: string
           model_number?: string
           model_pattern?: string | null
           published?: boolean | null
+          published_at?: string | null
+          refrigerant?: string | null
+          seer2_rating?: number | null
           seo_description?: string | null
           seo_title?: string | null
           slug?: string
           specs?: Json
+          stages?: string | null
+          successor_equipment_page_id?: string | null
+          tier?: string | null
           times_searched?: number | null
+          tonnage?: number | null
+          type_descriptor?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "equipment_pages_successor_equipment_page_id_fkey"
+            columns: ["successor_equipment_page_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_pages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       equipment_scans: {
         Row: {
@@ -4289,6 +4446,63 @@ export type Database = {
         }
         Relationships: []
       }
+      job_equipment_installs: {
+        Row: {
+          created_at: string
+          equipment_page_id: string
+          id: string
+          install_date: string | null
+          install_notes: string | null
+          job_id: string
+          quantity: number
+          serial_numbers: string[] | null
+          source: string
+          source_confidence: number | null
+          warranty_expiry: string | null
+        }
+        Insert: {
+          created_at?: string
+          equipment_page_id: string
+          id?: string
+          install_date?: string | null
+          install_notes?: string | null
+          job_id: string
+          quantity?: number
+          serial_numbers?: string[] | null
+          source: string
+          source_confidence?: number | null
+          warranty_expiry?: string | null
+        }
+        Update: {
+          created_at?: string
+          equipment_page_id?: string
+          id?: string
+          install_date?: string | null
+          install_notes?: string | null
+          job_id?: string
+          quantity?: number
+          serial_numbers?: string[] | null
+          source?: string
+          source_confidence?: number | null
+          warranty_expiry?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_equipment_installs_equipment_page_id_fkey"
+            columns: ["equipment_page_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_equipment_installs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "crm_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_base: {
         Row: {
           category: string
@@ -4839,6 +5053,69 @@ export type Database = {
           },
         ]
       }
+      service_area_pages: {
+        Row: {
+          area_name: string
+          area_type: string
+          created_at: string
+          description: string | null
+          headline: string | null
+          id: string
+          install_count: number
+          last_install_at: string | null
+          local_info: Json
+          popular_equipment: Json
+          published: boolean
+          published_at: string | null
+          seo_description: string | null
+          seo_title: string | null
+          service_highlights: Json
+          slug: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          area_name: string
+          area_type: string
+          created_at?: string
+          description?: string | null
+          headline?: string | null
+          id?: string
+          install_count?: number
+          last_install_at?: string | null
+          local_info?: Json
+          popular_equipment?: Json
+          published?: boolean
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          service_highlights?: Json
+          slug: string
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          area_name?: string
+          area_type?: string
+          created_at?: string
+          description?: string | null
+          headline?: string | null
+          id?: string
+          install_count?: number
+          last_install_at?: string | null
+          local_info?: Json
+          popular_equipment?: Json
+          published?: boolean
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          service_highlights?: Json
+          slug?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sitemap_snapshots: {
         Row: {
           created_at: string
@@ -5127,11 +5404,24 @@ export type Database = {
         Row: {
           captured_at: string | null
           captured_by: string | null
+          classification_confidence: number | null
+          classification_metadata: Json | null
+          classified_at: string | null
+          content_type: string | null
           description: string | null
+          equipment_page_id: string | null
+          extracted_brand: string | null
+          extracted_mfg_date: string | null
+          extracted_model: string | null
+          extracted_refrigerant: string | null
+          extracted_serial: string | null
+          extracted_tonnage: number | null
+          extraction_confidence: number | null
           id: string
           job_id: string
           media_type: string
           media_url: string | null
+          review_status: string
           synced_at: string
           thumbnail_url: string | null
           title: string | null
@@ -5141,11 +5431,24 @@ export type Database = {
         Insert: {
           captured_at?: string | null
           captured_by?: string | null
+          classification_confidence?: number | null
+          classification_metadata?: Json | null
+          classified_at?: string | null
+          content_type?: string | null
           description?: string | null
+          equipment_page_id?: string | null
+          extracted_brand?: string | null
+          extracted_mfg_date?: string | null
+          extracted_model?: string | null
+          extracted_refrigerant?: string | null
+          extracted_serial?: string | null
+          extracted_tonnage?: number | null
+          extraction_confidence?: number | null
           id?: string
           job_id: string
           media_type: string
           media_url?: string | null
+          review_status?: string
           synced_at?: string
           thumbnail_url?: string | null
           title?: string | null
@@ -5155,11 +5458,24 @@ export type Database = {
         Update: {
           captured_at?: string | null
           captured_by?: string | null
+          classification_confidence?: number | null
+          classification_metadata?: Json | null
+          classified_at?: string | null
+          content_type?: string | null
           description?: string | null
+          equipment_page_id?: string | null
+          extracted_brand?: string | null
+          extracted_mfg_date?: string | null
+          extracted_model?: string | null
+          extracted_refrigerant?: string | null
+          extracted_serial?: string | null
+          extracted_tonnage?: number | null
+          extraction_confidence?: number | null
           id?: string
           job_id?: string
           media_type?: string
           media_url?: string | null
+          review_status?: string
           synced_at?: string
           thumbnail_url?: string | null
           title?: string | null
@@ -5167,6 +5483,13 @@ export type Database = {
           workedge_project_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "workedge_project_media_equipment_page_id_fkey"
+            columns: ["equipment_page_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_pages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "workedge_project_media_job_id_fkey"
             columns: ["job_id"]
