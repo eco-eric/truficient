@@ -72,3 +72,7 @@ verify_jwt = false
 
 [functions.generate-email-draft]
 verify_jwt = false
+
+[functions.sync-gsc-index-status]
+verify_jwt = false
+

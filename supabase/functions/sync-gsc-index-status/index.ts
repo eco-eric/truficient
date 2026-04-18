@@ -1,0 +1,189 @@
+// Daily Google Search Console URL Inspection sync.
+// Calls GSC URL Inspection API for every page in public.page_seo and
+// writes the verdict back to index_status ('indexed' | 'not_indexed' | 'pending').
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+// ---------- Service-account JWT → OAuth2 access token ----------
+function base64url(input: ArrayBuffer | string): string {
+  const bytes = typeof input === "string" ? new TextEncoder().encode(input) : new Uint8Array(input);
+  let s = "";
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
+}
+
+async function importPrivateKey(pem: string): Promise<CryptoKey> {
+  // Handle: literal "\n" sequences, surrounding quotes, JSON-escaped quotes,
+  // and accidental whitespace from secret-form pastes.
+  let cleaned = pem.trim();
+  if ((cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+      (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+    cleaned = cleaned.slice(1, -1);
+  }
+  cleaned = cleaned.replace(/\\n/g, "\n").replace(/\\r/g, "");
+  cleaned = cleaned
+    .replace("-----BEGIN PRIVATE KEY-----", "")
+    .replace("-----END PRIVATE KEY-----", "")
+    .replace(/\s+/g, "");
+  const der = Uint8Array.from(atob(cleaned), c => c.charCodeAt(0));
+  return crypto.subtle.importKey(
+    "pkcs8",
+    der.buffer,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+}
+
+async function getAccessToken(clientEmail: string, privateKeyPem: string): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: "RS256", typ: "JWT" };
+  const claim = {
+    iss: clientEmail,
+    scope: "https://www.googleapis.com/auth/webmasters.readonly",
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600,
+  };
+  const toSign = `${base64url(JSON.stringify(header))}.${base64url(JSON.stringify(claim))}`;
+  const key = await importPrivateKey(privateKeyPem);
+  const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(toSign));
+  const jwt = `${toSign}.${base64url(sig)}`;
+
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion: jwt,
+    }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(`Google token exchange failed [${res.status}]: ${JSON.stringify(json)}`);
+  return json.access_token as string;
+}
+
+// ---------- GSC verdict → our enum ----------
+function verdictToStatus(verdict: string | undefined, coverage: string | undefined): string {
+  if (verdict === "PASS") return "indexed";
+  if (verdict === "FAIL" || verdict === "NEUTRAL") return "not_indexed";
+  // PARTIAL or unknown → coverage may say "URL is unknown to Google"
+  if (coverage && /unknown|not on google|excluded/i.test(coverage)) return "not_indexed";
+  return "pending";
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  try {
+    const clientEmail = Deno.env.get("GSC_CLIENT_EMAIL");
+    const privateKey = Deno.env.get("GSC_PRIVATE_KEY");
+    const siteUrl = Deno.env.get("GSC_SITE_URL");
+    if (!clientEmail) throw new Error("GSC_CLIENT_EMAIL is not configured");
+    if (!privateKey) throw new Error("GSC_PRIVATE_KEY is not configured");
+    if (!siteUrl) throw new Error("GSC_SITE_URL is not configured");
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    // Optional: ?limit=N&offset=N for manual re-runs / chunking
+    const url = new URL(req.url);
+    if (url.searchParams.get("diag") === "1") {
+      return new Response(JSON.stringify({
+        client_email_set: !!clientEmail,
+        client_email_preview: clientEmail.slice(0, 25) + "…",
+        site_url: siteUrl,
+        private_key_length: privateKey.length,
+        private_key_starts_with: privateKey.slice(0, 35),
+        has_begin_marker: privateKey.includes("BEGIN PRIVATE KEY"),
+        has_literal_backslash_n: privateKey.includes("\\n"),
+        has_real_newline: privateKey.includes("\n"),
+        is_quote_wrapped: privateKey.startsWith('"') || privateKey.startsWith("'"),
+      }, null, 2), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
+    }
+    const limit = Math.min(Number(url.searchParams.get("limit") ?? 2000), 2000);
+    const offset = Number(url.searchParams.get("offset") ?? 0);
+
+    const { data: pages, error: fetchErr } = await supabase
+      .from("page_seo")
+      .select("id, page_path")
+      .order("updated_at", { ascending: true })
+      .range(offset, offset + limit - 1);
+    if (fetchErr) throw fetchErr;
+
+    const accessToken = await getAccessToken(clientEmail, privateKey);
+    const baseHost = "https://truficient.com";
+
+    let indexed = 0, notIndexed = 0, pending = 0, errors = 0;
+
+    for (const page of pages ?? []) {
+      const pagePath = page.page_path?.startsWith("/") ? page.page_path : `/${page.page_path}`;
+      const inspectionUrl = `${baseHost}${pagePath}`;
+
+      try {
+        const res = await fetch("https://searchconsole.googleapis.com/v1/urlInspection/index:inspect", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ inspectionUrl, siteUrl }),
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          console.error(`GSC inspect failed for ${inspectionUrl} [${res.status}]:`, json);
+          errors++;
+          continue;
+        }
+        const result = json?.inspectionResult?.indexStatusResult;
+        const status = verdictToStatus(result?.verdict, result?.coverageState);
+        if (status === "indexed") indexed++;
+        else if (status === "not_indexed") notIndexed++;
+        else pending++;
+
+        await supabase
+          .from("page_seo")
+          .update({
+            index_status: status,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", page.id);
+      } catch (e) {
+        console.error(`Error inspecting ${inspectionUrl}:`, e);
+        errors++;
+      }
+
+      // Light pacing — GSC URL Inspection limit ~600 QPM
+      await new Promise(r => setTimeout(r, 120));
+    }
+
+    const summary = {
+      checked: pages?.length ?? 0,
+      indexed,
+      not_indexed: notIndexed,
+      pending,
+      errors,
+      offset,
+      limit,
+    };
+    console.log("GSC sync complete:", summary);
+
+    return new Response(JSON.stringify({ success: true, ...summary }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("sync-gsc-index-status error:", msg);
+    return new Response(JSON.stringify({ success: false, error: msg }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
+  }
+});
