@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { WorkEdgeBanner } from '@/components/WorkEdgeBanner';
 import { EstimatorLinks } from '@/pages/scanner/components/EstimatorLinks';
 import { useQuery } from '@tanstack/react-query';
@@ -76,10 +76,22 @@ function SpecRow({ icon, label, value }: SpecRowProps) {
 }
 
 export default function EquipmentDetail() {
-  const { "*": slug } = useParams();
+  const { "*": rawSlug } = useParams();
   const [documents, setDocuments] = useState<DocumentResult[]>([]);
   const [isLoadingDocs, setIsLoadingDocs] = useState(false);
   const { trackButtonClick } = useButtonTracking();
+
+  // Legacy slug redirect: /equipment/:brand/:model → /equipment/:brand-:model
+  // (301 via <Navigate replace>; preserves SEO equity from old slash-format URLs.)
+  // Also normalizes any other slashes/whitespace defensively.
+  const slug = rawSlug ?? '';
+  const needsRedirect = slug.includes('/');
+  const normalizedSlug = needsRedirect
+    ? slug
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+    : slug;
 
   const { data: equipment, isLoading } = useQuery({
     queryKey: ['equipment-detail', slug],
