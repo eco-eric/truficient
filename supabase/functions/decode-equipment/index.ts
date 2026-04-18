@@ -329,105 +329,35 @@ IMPORTANT:
       // Continue anyway - don't fail the user request
     }
 
-    // Auto-generate equipment page if it doesn't exist
-    // Check for duplicates by model number to avoid creating multiple pages for same equipment
-    if (publicSpecs.brand && typeof publicSpecs.brand === 'string') {
-      const brandSlug = publicSpecs.brand.toLowerCase().replace(/[\s\/]+/g, '-');
-      const modelSlug = publicSpecs.model_number.toLowerCase().replace(/\s+/g, '-');
-      const slug = `${brandSlug}/${modelSlug}`;
-      
-      // First check if exact slug exists
-      const { data: existingPage } = await supabase
-        .from('equipment_pages')
-        .select('id, times_searched')
-        .eq('slug', slug)
-        .single();
-
-      if (existingPage) {
-        // Increment search count for existing page
-        await supabase
-          .from('equipment_pages')
-          .update({ times_searched: (existingPage.times_searched || 0) + 1 })
-          .eq('id', existingPage.id);
-      } else {
-        // Check if a page with the same model number already exists (duplicate detection)
-        const { data: duplicatePage } = await supabase
-          .from('equipment_pages')
-          .select('id, times_searched, slug, brand')
-          .ilike('model_number', publicSpecs.model_number)
-          .limit(1)
-          .single();
-
-        if (duplicatePage) {
-          // Increment search count on existing page instead of creating duplicate
-          console.log(`Duplicate detected: ${publicSpecs.model_number} already exists as ${duplicatePage.slug}`);
-          await supabase
-            .from('equipment_pages')
-            .update({ times_searched: (duplicatePage.times_searched || 0) + 1 })
-            .eq('id', duplicatePage.id);
-        } else {
-          // No duplicates found - generate SEO description and create new equipment page
-          let customContent = null;
-          
-          try {
-            // Generate SEO-optimized product description
-            const descriptionPrompt = `Write a 150-200 word SEO-optimized product description for this HVAC equipment:
-
-Brand: ${publicSpecs.brand}
-Model Number: ${publicSpecs.model_number}
-Equipment Type: ${publicSpecs.equipment_type || 'HVAC Equipment'}
-Tonnage: ${publicSpecs.tonnage || 'Not specified'}
-SEER Rating: ${publicSpecs.seer_rating || 'Not specified'}
-Refrigerant: ${publicSpecs.refrigerant || 'Not specified'}
-
-Guidelines:
-- Write in a professional, informative tone
-- Include the brand and model number naturally
-- Mention key specifications and their benefits
-- Include relevant use cases (residential cooling, home comfort, etc.)
-- Mention energy efficiency if SEER rating is available
-- Reference modern refrigerant standards if applicable
-- Do NOT include warranty information or pricing
-- Do NOT use marketing hyperbole or superlatives
-- Write 2-3 paragraphs of plain text (no markdown, no bullet points)`;
-
-            const descResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                model: 'google/gemini-2.5-flash-lite',
-                messages: [{ role: 'user', content: descriptionPrompt }],
-              }),
-            });
-
-            if (descResponse.ok) {
-              const descData = await descResponse.json();
-              customContent = descData.choices?.[0]?.message?.content?.trim() || null;
-              console.log('Generated product description:', customContent?.substring(0, 100) + '...');
-            }
-          } catch (descError) {
-            console.error('Failed to generate description:', descError);
-            // Continue without description - not critical
-          }
-
-          // Create new equipment page with PUBLIC specs and generated description
-          await supabase
-            .from('equipment_pages')
-            .insert({
-              slug,
-              brand: publicSpecs.brand,
-              model_number: publicSpecs.model_number,
-              model_pattern: publicSpecs.model_number.substring(0, 8),
-              equipment_type: publicSpecs.equipment_type,
-              specs: publicSpecs,
-              custom_content: customContent,
-              seo_title: `${publicSpecs.brand} ${publicSpecs.model_number} Specs & Docs | Truficient`,
-              seo_description: `${publicSpecs.brand} ${publicSpecs.model_number} specs — tonnage, SEER, refrigerant & manuals. Free HVAC resource from Truficient.`,
-            });
+    // Route equipment_pages create/update through the shared upsert function.
+    // Single source of truth — handles dedupe, slug normalization, conflict logging.
+    if (publicSpecs.brand && typeof publicSpecs.brand === 'string' && publicSpecs.model_number) {
+      try {
+        const { error: upsertErr } = await supabase.functions.invoke('upsert-equipment-page', {
+          body: {
+            brand: publicSpecs.brand,
+            model_number: publicSpecs.model_number,
+            source: 'scanner',
+            source_confidence: 0.9,
+            equipment_type: publicSpecs.equipment_type ?? undefined,
+            tonnage: publicSpecs.tonnage ?? undefined,
+            seer_rating: publicSpecs.seer_rating ?? undefined,
+            refrigerant: publicSpecs.refrigerant ?? undefined,
+            manufactured_year: decodedSpecs.manufactured_year ?? undefined,
+            voltage_info: publicSpecs.voltage_info ?? undefined,
+            breaker_size: publicSpecs.breaker_size ?? undefined,
+            fan_motor_info: publicSpecs.fan_motor_info ?? undefined,
+            compressor_info: publicSpecs.compressor_info ?? undefined,
+            factory_charge: publicSpecs.factory_charge ?? undefined,
+            install_zip: zipCode ?? undefined,
+            increment_times_searched: true,
+          },
+        });
+        if (upsertErr) {
+          console.error('upsert-equipment-page invoke error:', upsertErr);
         }
+      } catch (err) {
+        console.error('upsert-equipment-page failed (non-fatal):', err);
       }
     }
 
