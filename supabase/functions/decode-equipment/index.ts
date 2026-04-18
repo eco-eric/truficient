@@ -301,21 +301,28 @@ IMPORTANT:
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Truncate string values to fit DB column limits (AI may return verbose strings)
+    const trunc = (v: unknown, max: number): string | null => {
+      if (v === null || v === undefined) return null;
+      const s = String(v);
+      return s.length > max ? s.slice(0, max) : s;
+    };
+
     // Save to equipment_scans with PRIVATE specs (includes serial number)
     const { data: scanData, error: scanError } = await supabase
       .from('equipment_scans')
       .insert({
-        zip_code: zipCode,
-        email: email || null,
-        brand: privateSpecs.brand,
-        model_number: privateSpecs.model_number,
-        serial_number: privateSpecs.serial_number,
+        zip_code: trunc(zipCode, 10),
+        email: trunc(email, 255),
+        brand: trunc(privateSpecs.brand, 100),
+        model_number: trunc(privateSpecs.model_number, 100),
+        serial_number: trunc(privateSpecs.serial_number, 100),
         manufactured_year: privateSpecs.manufactured_year,
-        tonnage: privateSpecs.tonnage,
-        refrigerant: privateSpecs.refrigerant,
-        breaker_size: privateSpecs.breaker_size,
+        tonnage: trunc(privateSpecs.tonnage, 20),
+        refrigerant: trunc(privateSpecs.refrigerant, 50),
+        breaker_size: trunc(privateSpecs.breaker_size, 20),
         seer_rating: privateSpecs.seer_rating,
-        equipment_type: privateSpecs.equipment_type,
+        equipment_type: trunc(privateSpecs.equipment_type, 50),
         fan_motor_info: privateSpecs.fan_motor_info,
         compressor_info: privateSpecs.compressor_info,
         raw_ai_response: { decode: aiData, vision: imageAnalysisResult },
