@@ -386,62 +386,115 @@ const AdminEquipmentLibrary = () => {
 
           {/* Equipment Pages Tab */}
           <TabsContent value="pages" className="space-y-4">
+            {/* Header with backfill button */}
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                {totalPages} models · {publishedPages} published · {draftPages} drafts
+              </p>
+              <Button
+                onClick={handleBackfill}
+                disabled={isBackfilling}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                <Database className={`w-4 h-4 ${isBackfilling ? "animate-pulse" : ""}`} />
+                {isBackfilling ? "Backfilling…" : "Backfill Install Counts"}
+              </Button>
+            </div>
+
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Total Pages
+                  <CardTitle className="text-xs font-medium text-muted-foreground">
+                    Total / Published
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">{totalPages}</p>
+                  <p className="text-2xl font-bold">
+                    {totalPages}
+                    <span className="text-muted-foreground text-base font-normal"> / {publishedPages}</span>
+                  </p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Published
+                  <CardTitle className="text-xs font-medium text-muted-foreground">
+                    Drafts
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold text-green-600">{publishedPages}</p>
+                  <p className="text-2xl font-bold text-amber-600">{draftPages}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Unique Brands
+                  <CardTitle className="text-xs font-medium text-muted-foreground">
+                    Residential
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">{uniqueBrands.length}</p>
+                  <p className="text-2xl font-bold">{residentialPages}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Most Searched
+                  <CardTitle className="text-xs font-medium text-muted-foreground">
+                    Commercial
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold">
+                    {commercialPages}
+                    {bothPages > 0 && (
+                      <span className="text-muted-foreground text-base font-normal"> +{bothPages} both</span>
+                    )}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs font-medium text-muted-foreground">
+                    Top City (Installs)
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-lg font-bold truncate">
-                    {equipmentPages[0]?.model_number || "N/A"}
+                    {topCity ? topCity[0] : "—"}
                   </p>
+                  {topCity && (
+                    <p className="text-xs text-muted-foreground">
+                      ~{Math.round(topCity[1])} installs
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </div>
 
-            {/* Filters */}
-            <div className="flex gap-4 items-center">
-              <div className="flex-1">
-                <Input
-                  placeholder="Search by model or brand..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="max-w-sm"
-                />
-              </div>
+            {/* Market Segment Filter Chips */}
+            <div className="flex flex-wrap gap-2">
+              {(["all", "residential", "commercial", "both"] as const).map((seg) => (
+                <Button
+                  key={seg}
+                  variant={marketFilter === seg ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setMarketFilter(seg)}
+                  className="capitalize"
+                >
+                  {seg === "all" ? "All Markets" : seg}
+                </Button>
+              ))}
+            </div>
+
+            {/* Search + Brand + Sort */}
+            <div className="flex flex-wrap gap-3 items-center">
+              <Input
+                placeholder="Search by model or brand..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="max-w-sm"
+              />
               <Select value={brandFilter} onValueChange={setBrandFilter}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Filter by brand" />
@@ -455,7 +508,18 @@ const AdminEquipmentLibrary = () => {
                   ))}
                 </SelectContent>
               </Select>
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="installs">Most installs</SelectItem>
+                  <SelectItem value="last_installed">Recently installed</SelectItem>
+                  <SelectItem value="searches">Most searched</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
 
             {/* Pages Table */}
             <div className="rounded-md border">
