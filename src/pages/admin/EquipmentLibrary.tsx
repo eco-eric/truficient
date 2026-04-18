@@ -189,11 +189,26 @@ const AdminEquipmentLibrary = () => {
   // Calculate stats
   const totalPages = equipmentPages.length;
   const publishedPages = equipmentPages.filter((p) => p.published).length;
+  const draftPages = totalPages - publishedPages;
+  const residentialPages = equipmentPages.filter((p) => p.market_segment === "residential").length;
+  const commercialPages = equipmentPages.filter((p) => p.market_segment === "commercial").length;
+  const bothPages = equipmentPages.filter((p) => p.market_segment === "both").length;
   const totalDocs = documentation.length;
   const verifiedDocs = documentation.filter((d) => d.verified_working).length;
   const totalSearches = searchLogs.length;
   const cacheHits = searchLogs.filter((l) => l.cache_hit).length;
   const cacheHitRate = totalSearches > 0 ? ((cacheHits / totalSearches) * 100).toFixed(1) : "0";
+
+  // Top city by total install count
+  const cityCounts = equipmentPages.reduce((acc, p) => {
+    const cities = (p.cities_installed ?? []) as string[];
+    const installs = p.install_count ?? 0;
+    if (installs <= 0 || cities.length === 0) return acc;
+    const perCity = installs / cities.length;
+    for (const c of cities) acc[c] = (acc[c] ?? 0) + perCity;
+    return acc;
+  }, {} as Record<string, number>);
+  const topCity = Object.entries(cityCounts).sort((a, b) => b[1] - a[1])[0];
 
   // Document type stats
   const docTypeStats = documentation.reduce((acc, doc) => {
