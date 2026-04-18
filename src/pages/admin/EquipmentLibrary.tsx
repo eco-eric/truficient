@@ -48,8 +48,17 @@ import {
   XCircle,
   Loader2,
   RefreshCw,
+  Database,
+  MapPin,
+  TrendingUp,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface EquipmentPage {
   id: string;
@@ -68,6 +77,10 @@ interface EquipmentPage {
   custom_content: string | null;
   created_at: string | null;
   updated_at: string | null;
+  market_segment: string | null;
+  install_count: number | null;
+  cities_installed: string[] | null;
+  last_installed_at: string | null;
 }
 
 interface EquipmentDocumentation {
@@ -100,20 +113,37 @@ const AdminEquipmentLibrary = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("pages");
   const [brandFilter, setBrandFilter] = useState<string>("all");
+  const [marketFilter, setMarketFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"installs" | "last_installed" | "searches">("installs");
+  const [isBackfilling, setIsBackfilling] = useState(false);
 
   // Fetch equipment pages
   const { data: equipmentPages = [], isLoading: pagesLoading } = useQuery({
-    queryKey: ["admin-equipment-pages", brandFilter, searchQuery],
+    queryKey: ["admin-equipment-pages", brandFilter, marketFilter, searchQuery, sortBy],
     queryFn: async () => {
-      let query = supabase
-        .from("equipment_pages")
-        .select("*")
-        .order("times_searched", { ascending: false, nullsFirst: false })
-        .order("created_at", { ascending: false });
+      let query = supabase.from("equipment_pages").select("*");
+
+      if (sortBy === "installs") {
+        query = query
+          .order("install_count", { ascending: false, nullsFirst: false })
+          .order("times_searched", { ascending: false, nullsFirst: false });
+      } else if (sortBy === "last_installed") {
+        query = query
+          .order("last_installed_at", { ascending: false, nullsFirst: false })
+          .order("created_at", { ascending: false });
+      } else {
+        query = query
+          .order("times_searched", { ascending: false, nullsFirst: false })
+          .order("created_at", { ascending: false });
+      }
 
       if (brandFilter !== "all") {
         query = query.eq("brand", brandFilter);
+      }
+
+      if (marketFilter !== "all") {
+        query = query.eq("market_segment", marketFilter);
       }
 
       if (searchQuery) {
@@ -159,11 +189,26 @@ const AdminEquipmentLibrary = () => {
   // Calculate stats
   const totalPages = equipmentPages.length;
   const publishedPages = equipmentPages.filter((p) => p.published).length;
+  const draftPages = totalPages - publishedPages;
+  const residentialPages = equipmentPages.filter((p) => p.market_segment === "residential").length;
+  const commercialPages = equipmentPages.filter((p) => p.market_segment === "commercial").length;
+  const bothPages = equipmentPages.filter((p) => p.market_segment === "both").length;
   const totalDocs = documentation.length;
   const verifiedDocs = documentation.filter((d) => d.verified_working).length;
   const totalSearches = searchLogs.length;
   const cacheHits = searchLogs.filter((l) => l.cache_hit).length;
   const cacheHitRate = totalSearches > 0 ? ((cacheHits / totalSearches) * 100).toFixed(1) : "0";
+
+  // Top city by total install count
+  const cityCounts = equipmentPages.reduce((acc, p) => {
+    const cities = (p.cities_installed ?? []) as string[];
+    const installs = p.install_count ?? 0;
+    if (installs <= 0 || cities.length === 0) return acc;
+    const perCity = installs / cities.length;
+    for (const c of cities) acc[c] = (acc[c] ?? 0) + perCity;
+    return acc;
+  }, {} as Record<string, number>);
+  const topCity = Object.entries(cityCounts).sort((a, b) => b[1] - a[1])[0];
 
   // Document type stats
   const docTypeStats = documentation.reduce((acc, doc) => {
@@ -281,6 +326,38 @@ const AdminEquipmentLibrary = () => {
       .replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
+  const handleBackfill = async () => {
+    if (isBackfilling) return;
+    setIsBackfilling(true);
+    const toastId = toast.loading("Backfilling install counts from scan history…");
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "backfill-equipment-install-counts",
+        { body: {} },
+      );
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Unknown failure");
+      toast.success(
+        `Backfill complete — ${data.pages_updated} models updated from ${data.scans_processed} scans`,
+        { id: toastId },
+      );
+      queryClient.invalidateQueries({ queryKey: ["admin-equipment-pages"] });
+    } catch (err) {
+      toast.error(
+        "Backfill failed: " + (err instanceof Error ? err.message : String(err)),
+        { id: toastId },
+      );
+    } finally {
+      setIsBackfilling(false);
+    }
+  };
+
+  const marketBadgeVariant = (segment: string | null) => {
+    if (segment === "commercial") return "default" as const;
+    if (segment === "both") return "outline" as const;
+    return "secondary" as const;
+  };
+
   return (
     <AdminLayout title="Equipment Library">
       <div className="space-y-6">
@@ -309,62 +386,115 @@ const AdminEquipmentLibrary = () => {
 
           {/* Equipment Pages Tab */}
           <TabsContent value="pages" className="space-y-4">
+            {/* Header with backfill button */}
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                {totalPages} models · {publishedPages} published · {draftPages} drafts
+              </p>
+              <Button
+                onClick={handleBackfill}
+                disabled={isBackfilling}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                <Database className={`w-4 h-4 ${isBackfilling ? "animate-pulse" : ""}`} />
+                {isBackfilling ? "Backfilling…" : "Backfill Install Counts"}
+              </Button>
+            </div>
+
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Total Pages
+                  <CardTitle className="text-xs font-medium text-muted-foreground">
+                    Total / Published
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">{totalPages}</p>
+                  <p className="text-2xl font-bold">
+                    {totalPages}
+                    <span className="text-muted-foreground text-base font-normal"> / {publishedPages}</span>
+                  </p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Published
+                  <CardTitle className="text-xs font-medium text-muted-foreground">
+                    Drafts
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold text-green-600">{publishedPages}</p>
+                  <p className="text-2xl font-bold text-amber-600">{draftPages}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Unique Brands
+                  <CardTitle className="text-xs font-medium text-muted-foreground">
+                    Residential
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">{uniqueBrands.length}</p>
+                  <p className="text-2xl font-bold">{residentialPages}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Most Searched
+                  <CardTitle className="text-xs font-medium text-muted-foreground">
+                    Commercial
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold">
+                    {commercialPages}
+                    {bothPages > 0 && (
+                      <span className="text-muted-foreground text-base font-normal"> +{bothPages} both</span>
+                    )}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs font-medium text-muted-foreground">
+                    Top City (Installs)
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-lg font-bold truncate">
-                    {equipmentPages[0]?.model_number || "N/A"}
+                    {topCity ? topCity[0] : "—"}
                   </p>
+                  {topCity && (
+                    <p className="text-xs text-muted-foreground">
+                      ~{Math.round(topCity[1])} installs
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </div>
 
-            {/* Filters */}
-            <div className="flex gap-4 items-center">
-              <div className="flex-1">
-                <Input
-                  placeholder="Search by model or brand..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="max-w-sm"
-                />
-              </div>
+            {/* Market Segment Filter Chips */}
+            <div className="flex flex-wrap gap-2">
+              {(["all", "residential", "commercial", "both"] as const).map((seg) => (
+                <Button
+                  key={seg}
+                  variant={marketFilter === seg ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setMarketFilter(seg)}
+                  className="capitalize"
+                >
+                  {seg === "all" ? "All Markets" : seg}
+                </Button>
+              ))}
+            </div>
+
+            {/* Search + Brand + Sort */}
+            <div className="flex flex-wrap gap-3 items-center">
+              <Input
+                placeholder="Search by model or brand..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="max-w-sm"
+              />
               <Select value={brandFilter} onValueChange={setBrandFilter}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Filter by brand" />
@@ -378,7 +508,18 @@ const AdminEquipmentLibrary = () => {
                   ))}
                 </SelectContent>
               </Select>
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="installs">Most installs</SelectItem>
+                  <SelectItem value="last_installed">Recently installed</SelectItem>
+                  <SelectItem value="searches">Most searched</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
 
             {/* Pages Table */}
             <div className="rounded-md border">
@@ -387,38 +528,85 @@ const AdminEquipmentLibrary = () => {
                   <TableRow>
                     <TableHead>Brand</TableHead>
                     <TableHead>Model</TableHead>
+                    <TableHead>Market</TableHead>
+                    <TableHead>Installs</TableHead>
+                    <TableHead>Last Installed</TableHead>
+                    <TableHead>Cities</TableHead>
                     <TableHead>Searches</TableHead>
-                    <TableHead>Docs</TableHead>
                     <TableHead>Published</TableHead>
-                    <TableHead>Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pagesLoading ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8">
+                      <TableCell colSpan={9} className="text-center py-8">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto" />
                       </TableCell>
                     </TableRow>
                   ) : equipmentPages.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                         No equipment pages found
                       </TableCell>
                     </TableRow>
                   ) : (
-                    equipmentPages.map((page) => (
+                    equipmentPages.map((page) => {
+                      const cities = (page.cities_installed ?? []) as string[];
+                      const visibleCities = cities.slice(0, 2);
+                      const extraCities = cities.slice(2);
+                      return (
                       <TableRow key={page.id}>
                         <TableCell className="font-medium">{page.brand}</TableCell>
                         <TableCell className="font-mono text-sm">{page.model_number}</TableCell>
                         <TableCell>
-                          <Badge variant="secondary">{page.times_searched || 0}</Badge>
+                          <Badge variant={marketBadgeVariant(page.market_segment)} className="capitalize">
+                            {page.market_segment ?? "residential"}
+                          </Badge>
                         </TableCell>
                         <TableCell>
-                          {documentation.filter(d => 
-                            d.model_number?.toLowerCase() === page.model_number.toLowerCase()
-                          ).length}
+                          <Badge
+                            variant={(page.install_count ?? 0) > 0 ? "default" : "outline"}
+                            className="font-mono"
+                          >
+                            {page.install_count ?? 0}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                          {page.last_installed_at
+                            ? formatDistanceToNow(new Date(page.last_installed_at), { addSuffix: true })
+                            : "—"}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {cities.length === 0 ? (
+                            <span className="text-muted-foreground">—</span>
+                          ) : (
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {visibleCities.map((c) => (
+                                <Badge key={c} variant="outline" className="font-normal">
+                                  <MapPin className="w-3 h-3 mr-1" />
+                                  {c}
+                                </Badge>
+                              ))}
+                              {extraCities.length > 0 && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="secondary" className="cursor-help">
+                                        +{extraCities.length} more
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="max-w-xs">
+                                      <p className="text-xs">{extraCities.join(", ")}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{page.times_searched || 0}</Badge>
                         </TableCell>
                         <TableCell>
                           <Switch
@@ -427,11 +615,6 @@ const AdminEquipmentLibrary = () => {
                               togglePublishMutation.mutate({ id: page.id, published: checked })
                             }
                           />
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {page.created_at
-                            ? format(new Date(page.created_at), "MMM d, yyyy")
-                            : "N/A"}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-2 justify-end">
@@ -488,7 +671,8 @@ const AdminEquipmentLibrary = () => {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
