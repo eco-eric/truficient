@@ -18,36 +18,56 @@ export function ImageUpload() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Reject HEIC/HEIF first (iPhone often reports empty file.type for these)
-    if (
+    const isHeic =
       file.type === 'image/heic' ||
       file.type === 'image/heif' ||
-      /\.(heic|heif)$/i.test(file.name)
-    ) {
-      toast.error("HEIC images aren't supported. Please convert to JPG or PNG and try again.");
+      /\.(heic|heif)$/i.test(file.name);
+
+    // Validate file type — allow empty type if extension looks like a supported image (incl. HEIC)
+    const hasImageExt = /\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(file.name);
+    if (!isHeic && file.type && !file.type.startsWith('image/') && !hasImageExt) {
+      toast.error('Please select an image file (JPG, PNG, WebP, or HEIC)');
+      return;
+    }
+    if (!isHeic && !file.type && !hasImageExt) {
+      toast.error('Please select an image file (JPG, PNG, WebP, or HEIC)');
       return;
     }
 
-    // Validate file type — allow empty type if extension looks like a supported image
-    const hasImageExt = /\.(jpe?g|png|webp|gif|bmp)$/i.test(file.name);
-    if (file.type && !file.type.startsWith('image/') && !hasImageExt) {
-      toast.error('Please select an image file (JPG, PNG, or WebP)');
-      return;
-    }
-    if (!file.type && !hasImageExt) {
-      toast.error('Please select an image file (JPG, PNG, or WebP)');
+    // Validate file size (max 15MB raw — HEIC files from iPhone can be larger)
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('Image must be less than 15MB');
       return;
     }
 
-    // Validate file size (max 10MB raw)
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Image must be less than 10MB');
-      return;
-    }
-
+    setIsProcessing(true);
     try {
+      let workingFile: File = file;
+
+      // Convert HEIC/HEIF → JPEG in the browser (Gemini + canvas can't decode HEIC)
+      if (isHeic) {
+        try {
+          const { default: heic2any } = await import('heic2any');
+          const converted = await heic2any({
+            blob: file,
+            toType: 'image/jpeg',
+            quality: 0.9,
+          });
+          const blob = Array.isArray(converted) ? converted[0] : converted;
+          workingFile = new File(
+            [blob as Blob],
+            file.name.replace(/\.(heic|heif)$/i, '.jpg'),
+            { type: 'image/jpeg', lastModified: Date.now() }
+          );
+        } catch (convErr) {
+          console.error('HEIC conversion error:', convErr);
+          toast.error('Could not convert HEIC image. Please try a different photo.');
+          return;
+        }
+      }
+
       // Compress to keep base64 payload small enough for the vision model
-      const compressed = await compressImage(file, {
+      const compressed = await compressImage(workingFile, {
         maxWidth: 1920,
         maxHeight: 1920,
         quality: 0.85,
@@ -64,6 +84,8 @@ export function ImageUpload() {
     } catch (err) {
       console.error('Image prep error:', err);
       toast.error('Could not process image. Please try another file.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
