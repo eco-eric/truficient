@@ -105,6 +105,7 @@ const SitemapButton = () => {
 const SEOManagement = () => {
   const [loading, setLoading] = useState(true);
   const [pages, setPages] = useState<PageSEO[]>([]);
+  const [gscAvgPosition, setGscAvgPosition] = useState<string>('—');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPageType, setFilterPageType] = useState<string>('all');
   const [filterCluster, setFilterCluster] = useState<string>('all');
@@ -113,6 +114,20 @@ const SEOManagement = () => {
   const [sortField, setSortField] = useState<SortField>('page_name');
   const [sortAsc, setSortAsc] = useState(true);
   const { toast } = useToast();
+
+  const fetchGscAvgPosition = async () => {
+    // Pull last 28 days of site-wide GSC data and compute average position
+    const { data } = await supabase
+      .from('gsc_site_metrics' as any)
+      .select('position')
+      .order('date', { ascending: false })
+      .limit(28);
+    if (data && data.length > 0) {
+      const rows = data as unknown as { position: number }[];
+      const avg = rows.reduce((sum, r) => sum + (r.position || 0), 0) / rows.length;
+      setGscAvgPosition(avg.toFixed(1));
+    }
+  };
 
   const fetchPages = async () => {
     try {
@@ -131,7 +146,7 @@ const SEOManagement = () => {
     }
   };
 
-  useEffect(() => { fetchPages(); }, []);
+  useEffect(() => { fetchPages(); fetchGscAvgPosition(); }, []);
 
   const getSEOStatus = (page: PageSEO) => {
     const hasTitle = page.meta_title && page.meta_title.length > 0;
