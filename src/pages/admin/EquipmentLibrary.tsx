@@ -528,38 +528,85 @@ const AdminEquipmentLibrary = () => {
                   <TableRow>
                     <TableHead>Brand</TableHead>
                     <TableHead>Model</TableHead>
+                    <TableHead>Market</TableHead>
+                    <TableHead>Installs</TableHead>
+                    <TableHead>Last Installed</TableHead>
+                    <TableHead>Cities</TableHead>
                     <TableHead>Searches</TableHead>
-                    <TableHead>Docs</TableHead>
                     <TableHead>Published</TableHead>
-                    <TableHead>Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pagesLoading ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8">
+                      <TableCell colSpan={9} className="text-center py-8">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto" />
                       </TableCell>
                     </TableRow>
                   ) : equipmentPages.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                         No equipment pages found
                       </TableCell>
                     </TableRow>
                   ) : (
-                    equipmentPages.map((page) => (
+                    equipmentPages.map((page) => {
+                      const cities = (page.cities_installed ?? []) as string[];
+                      const visibleCities = cities.slice(0, 2);
+                      const extraCities = cities.slice(2);
+                      return (
                       <TableRow key={page.id}>
                         <TableCell className="font-medium">{page.brand}</TableCell>
                         <TableCell className="font-mono text-sm">{page.model_number}</TableCell>
                         <TableCell>
-                          <Badge variant="secondary">{page.times_searched || 0}</Badge>
+                          <Badge variant={marketBadgeVariant(page.market_segment)} className="capitalize">
+                            {page.market_segment ?? "residential"}
+                          </Badge>
                         </TableCell>
                         <TableCell>
-                          {documentation.filter(d => 
-                            d.model_number?.toLowerCase() === page.model_number.toLowerCase()
-                          ).length}
+                          <Badge
+                            variant={(page.install_count ?? 0) > 0 ? "default" : "outline"}
+                            className="font-mono"
+                          >
+                            {page.install_count ?? 0}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                          {page.last_installed_at
+                            ? formatDistanceToNow(new Date(page.last_installed_at), { addSuffix: true })
+                            : "—"}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {cities.length === 0 ? (
+                            <span className="text-muted-foreground">—</span>
+                          ) : (
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {visibleCities.map((c) => (
+                                <Badge key={c} variant="outline" className="font-normal">
+                                  <MapPin className="w-3 h-3 mr-1" />
+                                  {c}
+                                </Badge>
+                              ))}
+                              {extraCities.length > 0 && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="secondary" className="cursor-help">
+                                        +{extraCities.length} more
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="max-w-xs">
+                                      <p className="text-xs">{extraCities.join(", ")}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{page.times_searched || 0}</Badge>
                         </TableCell>
                         <TableCell>
                           <Switch
@@ -568,11 +615,6 @@ const AdminEquipmentLibrary = () => {
                               togglePublishMutation.mutate({ id: page.id, published: checked })
                             }
                           />
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {page.created_at
-                            ? format(new Date(page.created_at), "MMM d, yyyy")
-                            : "N/A"}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-2 justify-end">
