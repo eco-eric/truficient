@@ -18,14 +18,24 @@ export function ImageUpload() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type (HEIC from iPhone passes this but can't be decoded by vision model)
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
+    // Reject HEIC/HEIF first (iPhone often reports empty file.type for these)
+    if (
+      file.type === 'image/heic' ||
+      file.type === 'image/heif' ||
+      /\.(heic|heif)$/i.test(file.name)
+    ) {
+      toast.error("HEIC images aren't supported. Please convert to JPG or PNG and try again.");
       return;
     }
 
-    if (file.type === 'image/heic' || file.type === 'image/heif' || /\.heic$/i.test(file.name) || /\.heif$/i.test(file.name)) {
-      toast.error('HEIC images aren\'t supported. Please convert to JPG or PNG and try again.');
+    // Validate file type — allow empty type if extension looks like a supported image
+    const hasImageExt = /\.(jpe?g|png|webp|gif|bmp)$/i.test(file.name);
+    if (file.type && !file.type.startsWith('image/') && !hasImageExt) {
+      toast.error('Please select an image file (JPG, PNG, or WebP)');
+      return;
+    }
+    if (!file.type && !hasImageExt) {
+      toast.error('Please select an image file (JPG, PNG, or WebP)');
       return;
     }
 
