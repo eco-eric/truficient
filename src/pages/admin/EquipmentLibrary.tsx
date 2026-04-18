@@ -113,20 +113,37 @@ const AdminEquipmentLibrary = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("pages");
   const [brandFilter, setBrandFilter] = useState<string>("all");
+  const [marketFilter, setMarketFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"installs" | "last_installed" | "searches">("installs");
+  const [isBackfilling, setIsBackfilling] = useState(false);
 
   // Fetch equipment pages
   const { data: equipmentPages = [], isLoading: pagesLoading } = useQuery({
-    queryKey: ["admin-equipment-pages", brandFilter, searchQuery],
+    queryKey: ["admin-equipment-pages", brandFilter, marketFilter, searchQuery, sortBy],
     queryFn: async () => {
-      let query = supabase
-        .from("equipment_pages")
-        .select("*")
-        .order("times_searched", { ascending: false, nullsFirst: false })
-        .order("created_at", { ascending: false });
+      let query = supabase.from("equipment_pages").select("*");
+
+      if (sortBy === "installs") {
+        query = query
+          .order("install_count", { ascending: false, nullsFirst: false })
+          .order("times_searched", { ascending: false, nullsFirst: false });
+      } else if (sortBy === "last_installed") {
+        query = query
+          .order("last_installed_at", { ascending: false, nullsFirst: false })
+          .order("created_at", { ascending: false });
+      } else {
+        query = query
+          .order("times_searched", { ascending: false, nullsFirst: false })
+          .order("created_at", { ascending: false });
+      }
 
       if (brandFilter !== "all") {
         query = query.eq("brand", brandFilter);
+      }
+
+      if (marketFilter !== "all") {
+        query = query.eq("market_segment", marketFilter);
       }
 
       if (searchQuery) {
