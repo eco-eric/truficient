@@ -17,8 +17,15 @@ function base64url(input: ArrayBuffer | string): string {
 }
 
 async function importPrivateKey(pem: string): Promise<CryptoKey> {
-  const cleaned = pem
-    .replace(/\\n/g, "\n")
+  // Handle: literal "\n" sequences, surrounding quotes, JSON-escaped quotes,
+  // and accidental whitespace from secret-form pastes.
+  let cleaned = pem.trim();
+  if ((cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+      (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+    cleaned = cleaned.slice(1, -1);
+  }
+  cleaned = cleaned.replace(/\\n/g, "\n").replace(/\\r/g, "");
+  cleaned = cleaned
     .replace("-----BEGIN PRIVATE KEY-----", "")
     .replace("-----END PRIVATE KEY-----", "")
     .replace(/\s+/g, "");
