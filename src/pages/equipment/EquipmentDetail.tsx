@@ -94,21 +94,21 @@ export default function EquipmentDetail() {
     : slug;
 
   const { data: equipment, isLoading } = useQuery({
-    queryKey: ['equipment-detail', slug],
+    queryKey: ['equipment-detail', normalizedSlug],
     queryFn: async () => {
-      if (!slug) return null;
+      if (!normalizedSlug) return null;
 
       const { data, error } = await supabase
         .from('equipment_pages')
         .select('*')
-        .eq('slug', slug)
+        .eq('slug', normalizedSlug)
         .eq('published', true)
         .single();
 
       if (error) throw error;
       return data;
     },
-    enabled: !!slug,
+    enabled: !!normalizedSlug && !needsRedirect,
   });
 
   // Query for related pages with same model number but different brands
@@ -253,6 +253,11 @@ export default function EquipmentDetail() {
       setIsLoadingDocs(false);
     }
   };
+
+  // Perform legacy slash → hyphen redirect AFTER all hooks have run.
+  if (needsRedirect && normalizedSlug) {
+    return <Navigate to={`/equipment/${normalizedSlug}`} replace />;
+  }
 
   if (isLoading) {
     return (
