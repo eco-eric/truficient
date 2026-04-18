@@ -130,9 +130,12 @@ function normalizeModel(raw: string): string {
 }
 
 function buildSlug(brand: string, model: string): string {
-  const brandSlug = brand.toLowerCase().replace(/[\s/]+/g, "-").replace(/[^a-z0-9-]/g, "");
-  const modelSlug = model.toLowerCase().replace(/[\s/]+/g, "-").replace(/[^a-z0-9-]/g, "");
-  return `${brandSlug}-${modelSlug}`;
+  const clean = (s: string) =>
+    s.toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+  return `${clean(brand)}-${clean(model)}`;
 }
 
 // ---------------------------------------------------------------------------
