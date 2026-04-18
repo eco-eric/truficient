@@ -94,6 +94,19 @@ Deno.serve(async (req) => {
 
     // Optional: ?limit=N&offset=N for manual re-runs / chunking
     const url = new URL(req.url);
+    if (url.searchParams.get("diag") === "1") {
+      return new Response(JSON.stringify({
+        client_email_set: !!clientEmail,
+        client_email_preview: clientEmail.slice(0, 25) + "…",
+        site_url: siteUrl,
+        private_key_length: privateKey.length,
+        private_key_starts_with: privateKey.slice(0, 35),
+        has_begin_marker: privateKey.includes("BEGIN PRIVATE KEY"),
+        has_literal_backslash_n: privateKey.includes("\\n"),
+        has_real_newline: privateKey.includes("\n"),
+        is_quote_wrapped: privateKey.startsWith('"') || privateKey.startsWith("'"),
+      }, null, 2), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
+    }
     const limit = Math.min(Number(url.searchParams.get("limit") ?? 2000), 2000);
     const offset = Number(url.searchParams.get("offset") ?? 0);
 
