@@ -671,7 +671,8 @@ const AdminEquipmentLibrary = () => {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
