@@ -479,7 +479,7 @@ const SEOManagement = () => {
                   );
                 })}
               </TableBody>
-            </Table>
+            </table>
           </div>
         )}
 
