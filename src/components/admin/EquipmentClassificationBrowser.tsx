@@ -1039,6 +1039,48 @@ function DetailContent({
           </Collapsible>
         )}
 
+        {/* Project / customer context */}
+        {(() => {
+          const job = item.crm_jobs;
+          const cust = job?.crm_customers;
+          const customerName = cust
+            ? cust.company_name ||
+              [cust.first_name, cust.last_name].filter(Boolean).join(' ') ||
+              null
+            : null;
+          const loc = job?.crm_locations;
+          const locStr = loc
+            ? [loc.city, loc.zip_code].filter(Boolean).join(' ')
+            : null;
+          if (!job && !customerName) return null;
+          return (
+            <div className="rounded-md border p-3 bg-muted/30 space-y-1 text-sm">
+              <div className="text-xs text-muted-foreground uppercase font-medium">
+                Project
+              </div>
+              {job?.job_number && (
+                <div>
+                  <Link
+                    to={`/admin/jobs/${item.job_id}`}
+                    target="_blank"
+                    className="text-primary hover:underline font-medium inline-flex items-center gap-1"
+                  >
+                    {job.job_number}
+                    <ExternalLink className="w-3 h-3" />
+                  </Link>
+                  {job.title && (
+                    <span className="text-muted-foreground"> · {job.title}</span>
+                  )}
+                </div>
+              )}
+              {customerName && <div>{customerName}</div>}
+              {locStr && (
+                <div className="text-xs text-muted-foreground">{locStr}</div>
+              )}
+            </div>
+          );
+        })()}
+
         {/* Actions */}
         <div className="flex flex-wrap gap-2 pt-2 border-t">
           <Button onClick={onApprove} size="sm">
