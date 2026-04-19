@@ -20,6 +20,13 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -312,6 +319,29 @@ export function EquipmentClassificationBrowser() {
       toast.error(
         `Update failed: ${e instanceof Error ? e.message : 'unknown'}`,
       ),
+  });
+
+  const overrideTypeMutation = useMutation({
+    mutationFn: async (args: { id: string; content_type: ContentType }) => {
+      const { error } = await supabase
+        .from('workedge_project_media')
+        .update({
+          content_type: args.content_type,
+          classification_confidence: 1.0,
+          classified_at: new Date().toISOString(),
+          review_status: 'approved',
+          classification_metadata: { reasoning: 'Manually set by admin', manual_override: true },
+        })
+        .eq('id', args.id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      toast.success(`Type set to ${vars.content_type.replace('_', ' ')}`);
+      setOpenItem((prev) => (prev ? { ...prev, content_type: vars.content_type, review_status: 'approved' } : prev));
+      refresh();
+    },
+    onError: (e) =>
+      toast.error(`Type update failed: ${e instanceof Error ? e.message : 'unknown'}`),
   });
 
   const saveEditMutation = useMutation({
@@ -727,6 +757,10 @@ export function EquipmentClassificationBrowser() {
               onSaveEdit={() => saveEditMutation.mutate(openItem)}
               saving={saveEditMutation.isPending}
               classifyRunning={classifyRunning}
+              onOverrideType={(ct) =>
+                overrideTypeMutation.mutate({ id: openItem.id, content_type: ct })
+              }
+              overridingType={overrideTypeMutation.isPending}
             />
           )}
         </SheetContent>
@@ -828,6 +862,8 @@ interface DetailContentProps {
   onSaveEdit: () => void;
   saving: boolean;
   classifyRunning: boolean;
+  onOverrideType: (ct: ContentType) => void;
+  overridingType: boolean;
 }
 
 function DetailContent({
@@ -843,6 +879,8 @@ function DetailContent({
   onSaveEdit,
   saving,
   classifyRunning,
+  onOverrideType,
+  overridingType,
 }: DetailContentProps) {
   const meta = item.classification_metadata as
     | { reasoning?: string }
@@ -896,6 +934,27 @@ function DetailContent({
               "{meta.reasoning}"
             </div>
           )}
+          <div className="pt-2 mt-1 border-t flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground whitespace-nowrap">
+              Override type:
+            </Label>
+            <Select
+              value={item.content_type ?? ''}
+              onValueChange={(v) => onOverrideType(v as ContentType)}
+              disabled={overridingType}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Set type manually" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="data_plate">Data Plate</SelectItem>
+                <SelectItem value="install_shot">Install Shot</SelectItem>
+                <SelectItem value="diagnostic">Diagnostic</SelectItem>
+                <SelectItem value="component">Component</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Data plate fields */}
