@@ -574,6 +574,10 @@ const AdminGallery = () => {
                 <Camera className="w-4 h-4" />
                 WorkEdge
               </TabsTrigger>
+              <TabsTrigger value="equipment" className="gap-2">
+                <Wrench className="w-4 h-4" />
+                Equipment
+              </TabsTrigger>
             </TabsList>
 
             {activeTab === 'images' && (
@@ -1156,6 +1160,10 @@ const AdminGallery = () => {
 
         <TabsContent value="workedge">
           <WorkEdgeMediaBrowser />
+        </TabsContent>
+
+        <TabsContent value="equipment">
+          <EquipmentClassificationBrowser />
         </TabsContent>
       </Tabs>
     </AdminLayout>
