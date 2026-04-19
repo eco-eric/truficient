@@ -697,7 +697,7 @@ export function EquipmentClassificationBrowser() {
           }
         }}
       >
-        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+        <SheetContent className="w-full sm:!max-w-[50vw] sm:w-[50vw] overflow-y-auto">
           {openItem && (
             <DetailContent
               item={openItem}
