@@ -33,6 +33,8 @@ import { SortableGalleryItem } from '@/components/admin/SortableGalleryItem';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { Plus, Pencil, Trash2, Star, Image as ImageIcon, Video, Tag, Loader2, Upload, Grid2X2, Grid3X3, LayoutGrid, Play, ArrowUpDown, Check, X, Camera, Sparkles } from 'lucide-react';
 import { WorkEdgeMediaBrowser } from '@/components/admin/WorkEdgeMediaBrowser';
+import { EquipmentClassificationBrowser } from '@/components/admin/EquipmentClassificationBrowser';
+import { Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   DndContext,
@@ -571,6 +573,10 @@ const AdminGallery = () => {
               <TabsTrigger value="workedge" className="gap-2">
                 <Camera className="w-4 h-4" />
                 WorkEdge
+              </TabsTrigger>
+              <TabsTrigger value="equipment" className="gap-2">
+                <Wrench className="w-4 h-4" />
+                Equipment
               </TabsTrigger>
             </TabsList>
 
@@ -1154,6 +1160,10 @@ const AdminGallery = () => {
 
         <TabsContent value="workedge">
           <WorkEdgeMediaBrowser />
+        </TabsContent>
+
+        <TabsContent value="equipment">
+          <EquipmentClassificationBrowser />
         </TabsContent>
       </Tabs>
     </AdminLayout>
