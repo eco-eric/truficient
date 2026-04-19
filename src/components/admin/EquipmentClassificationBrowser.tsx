@@ -757,6 +757,10 @@ export function EquipmentClassificationBrowser() {
               onSaveEdit={() => saveEditMutation.mutate(openItem)}
               saving={saveEditMutation.isPending}
               classifyRunning={classifyRunning}
+              onOverrideType={(ct) =>
+                overrideTypeMutation.mutate({ id: openItem.id, content_type: ct })
+              }
+              overridingType={overrideTypeMutation.isPending}
             />
           )}
         </SheetContent>
