@@ -178,7 +178,9 @@ export function EquipmentClassificationBrowser() {
           extraction_confidence, equipment_page_id,
           crm_jobs:job_id (
             job_number,
-            crm_locations:location_id ( city, zip_code )
+            title,
+            crm_locations:location_id ( city, zip_code ),
+            crm_customers:customer_id ( first_name, last_name, company_name )
           ),
           equipment_pages:equipment_page_id ( brand, model_number, slug )
         `,
