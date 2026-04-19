@@ -82,7 +82,13 @@ interface MediaRow {
   equipment_page_id: string | null;
   crm_jobs?: {
     job_number?: string;
+    title?: string | null;
     crm_locations?: { city: string | null; zip_code: string | null } | null;
+    crm_customers?: {
+      first_name: string | null;
+      last_name: string | null;
+      company_name: string | null;
+    } | null;
   } | null;
   equipment_pages?: { brand: string; model_number: string; slug: string } | null;
 }
