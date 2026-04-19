@@ -934,6 +934,27 @@ function DetailContent({
               "{meta.reasoning}"
             </div>
           )}
+          <div className="pt-2 mt-1 border-t flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground whitespace-nowrap">
+              Override type:
+            </Label>
+            <Select
+              value={item.content_type ?? ''}
+              onValueChange={(v) => onOverrideType(v as ContentType)}
+              disabled={overridingType}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Set type manually" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="data_plate">Data Plate</SelectItem>
+                <SelectItem value="install_shot">Install Shot</SelectItem>
+                <SelectItem value="diagnostic">Diagnostic</SelectItem>
+                <SelectItem value="component">Component</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Data plate fields */}
