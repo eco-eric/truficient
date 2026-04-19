@@ -82,7 +82,13 @@ interface MediaRow {
   equipment_page_id: string | null;
   crm_jobs?: {
     job_number?: string;
+    title?: string | null;
     crm_locations?: { city: string | null; zip_code: string | null } | null;
+    crm_customers?: {
+      first_name: string | null;
+      last_name: string | null;
+      company_name: string | null;
+    } | null;
   } | null;
   equipment_pages?: { brand: string; model_number: string; slug: string } | null;
 }
@@ -172,7 +178,9 @@ export function EquipmentClassificationBrowser() {
           extraction_confidence, equipment_page_id,
           crm_jobs:job_id (
             job_number,
-            crm_locations:location_id ( city, zip_code )
+            title,
+            crm_locations:location_id ( city, zip_code ),
+            crm_customers:customer_id ( first_name, last_name, company_name )
           ),
           equipment_pages:equipment_page_id ( brand, model_number, slug )
         `,
@@ -689,7 +697,7 @@ export function EquipmentClassificationBrowser() {
           }
         }}
       >
-        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+        <SheetContent className="w-full sm:!max-w-[50vw] sm:w-[50vw] overflow-y-auto">
           {openItem && (
             <DetailContent
               item={openItem}
@@ -1030,6 +1038,48 @@ function DetailContent({
             </CollapsibleContent>
           </Collapsible>
         )}
+
+        {/* Project / customer context */}
+        {(() => {
+          const job = item.crm_jobs;
+          const cust = job?.crm_customers;
+          const customerName = cust
+            ? cust.company_name ||
+              [cust.first_name, cust.last_name].filter(Boolean).join(' ') ||
+              null
+            : null;
+          const loc = job?.crm_locations;
+          const locStr = loc
+            ? [loc.city, loc.zip_code].filter(Boolean).join(' ')
+            : null;
+          if (!job && !customerName) return null;
+          return (
+            <div className="rounded-md border p-3 bg-muted/30 space-y-1 text-sm">
+              <div className="text-xs text-muted-foreground uppercase font-medium">
+                Project
+              </div>
+              {job?.job_number && (
+                <div>
+                  <Link
+                    to={`/admin/jobs/${item.job_id}`}
+                    target="_blank"
+                    className="text-primary hover:underline font-medium inline-flex items-center gap-1"
+                  >
+                    {job.job_number}
+                    <ExternalLink className="w-3 h-3" />
+                  </Link>
+                  {job.title && (
+                    <span className="text-muted-foreground"> · {job.title}</span>
+                  )}
+                </div>
+              )}
+              {customerName && <div>{customerName}</div>}
+              {locStr && (
+                <div className="text-xs text-muted-foreground">{locStr}</div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Actions */}
         <div className="flex flex-wrap gap-2 pt-2 border-t">
