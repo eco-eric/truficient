@@ -20,6 +20,13 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -312,6 +319,29 @@ export function EquipmentClassificationBrowser() {
       toast.error(
         `Update failed: ${e instanceof Error ? e.message : 'unknown'}`,
       ),
+  });
+
+  const overrideTypeMutation = useMutation({
+    mutationFn: async (args: { id: string; content_type: ContentType }) => {
+      const { error } = await supabase
+        .from('workedge_project_media')
+        .update({
+          content_type: args.content_type,
+          classification_confidence: 1.0,
+          classified_at: new Date().toISOString(),
+          review_status: 'approved',
+          classification_metadata: { reasoning: 'Manually set by admin', manual_override: true },
+        })
+        .eq('id', args.id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      toast.success(`Type set to ${vars.content_type.replace('_', ' ')}`);
+      setOpenItem((prev) => (prev ? { ...prev, content_type: vars.content_type, review_status: 'approved' } : prev));
+      refresh();
+    },
+    onError: (e) =>
+      toast.error(`Type update failed: ${e instanceof Error ? e.message : 'unknown'}`),
   });
 
   const saveEditMutation = useMutation({
