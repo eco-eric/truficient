@@ -862,6 +862,8 @@ interface DetailContentProps {
   onSaveEdit: () => void;
   saving: boolean;
   classifyRunning: boolean;
+  onOverrideType: (ct: ContentType) => void;
+  overridingType: boolean;
 }
 
 function DetailContent({
@@ -877,6 +879,8 @@ function DetailContent({
   onSaveEdit,
   saving,
   classifyRunning,
+  onOverrideType,
+  overridingType,
 }: DetailContentProps) {
   const meta = item.classification_metadata as
     | { reasoning?: string }
