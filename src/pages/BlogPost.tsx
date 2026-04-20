@@ -117,7 +117,7 @@ const BlogPostPage = () => {
 
     // Set canonical URL
     let canonicalLink = document.querySelector('link[rel="canonical"]');
-    const canonicalUrl = post.canonical_url || `https://truficient.lovable.app/blog/${post.slug}`;
+    const canonicalUrl = post.canonical_url || `https://truficient.com/blog/${post.slug}`;
     if (!canonicalLink) {
       canonicalLink = document.createElement('link');
       canonicalLink.setAttribute('rel', 'canonical');
@@ -176,7 +176,7 @@ const BlogPostPage = () => {
         name: 'Truficient Energy Solutions',
         logo: {
           '@type': 'ImageObject',
-          url: 'https://truficient.lovable.app/truficient-logo.png',
+          url: 'https://truficient.com/truficient-logo.png',
         },
       },
       mainEntityOfPage: {
