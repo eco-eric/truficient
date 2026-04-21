@@ -3,6 +3,34 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { ViteImageOptimizer } from "vite-plugin-image-optimizer";
+import { pathToFileURL } from "node:url";
+
+/**
+ * Run the SEO prerender step as part of `vite build` itself, so it executes
+ * regardless of whether the deploy pipeline calls `npm run build` or
+ * `vite build` directly. (Lovable hosting invokes `vite build` directly,
+ * which previously skipped the npm-script chain.)
+ */
+function seoPrerenderPlugin() {
+  return {
+    name: "truficient-seo-prerender",
+    apply: "build" as const,
+    async closeBundle() {
+      const scriptUrl = pathToFileURL(
+        path.resolve(__dirname, "scripts/prerender.mjs"),
+      ).href;
+      // Cache-bust so repeated builds in the same Node process re-import.
+      try {
+        await import(`${scriptUrl}?t=${Date.now()}`);
+      } catch (err) {
+        // Re-throw to fail the build — a silent prerender failure is what
+        // got us into this mess in the first place.
+        console.error("[vite] SEO prerender failed:", err);
+        throw err;
+      }
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
