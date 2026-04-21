@@ -76,9 +76,9 @@ const REPRESENTATIVE_PAGES = [
   },
   {
     label: 'North Texas Water Crisis blog (hub)',
-    path: '/blog/north-texas-water-crisis-deep-dive',
+    path: '/blog/north-texas-water-crisis-conservation',
     expectedTitleMatch: /water|texas/i,
-    expectedCanonical: 'https://truficient.com/blog/north-texas-water-crisis-deep-dive',
+    expectedCanonical: 'https://truficient.com/blog/north-texas-water-crisis-conservation',
     // Will become true once the SEO build ships @graph + FAQPage:
     requireJsonLd: WATER_CRISIS_BUILD_SHIPPED,
     requireFaqHashMatch: WATER_CRISIS_BUILD_SHIPPED,
@@ -87,7 +87,7 @@ const REPRESENTATIVE_PAGES = [
 
 /** Routes the queued build will add. Soft-asserted today. */
 const PENDING_BUILD_ROUTES = [
-  '/blog/north-texas-water-conservation', // renamed hub slug per spec §7
+  '/blog/north-texas-water-crisis-conservation', // canonical hub slug
   '/water-restrictions/dallas-tx-2026',
   '/water-restrictions/fort-worth-tx-2026',
   '/water-restrictions/plano-tx-2026',
