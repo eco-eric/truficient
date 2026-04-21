@@ -16,6 +16,25 @@ function seoPrerenderPlugin() {
     name: "truficient-seo-prerender",
     apply: "build" as const,
     async closeBundle() {
+      // Bridge Lovable's VITE_-prefixed build env vars into the non-prefixed
+      // names the prerender script reads. Without this, the script's Supabase
+      // client never initializes in production builds and only static routes
+      // get prerendered (the four DB-backed sources return zero rows).
+      // Service role key is NOT required — published SEO rows are readable
+      // with the anon key, and the script runs server-side so the key never
+      // ships to the client bundle.
+      if (!process.env.SUPABASE_URL && process.env.VITE_SUPABASE_URL) {
+        process.env.SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+      }
+      if (
+        !process.env.SUPABASE_ANON_KEY &&
+        !process.env.SUPABASE_SERVICE_ROLE_KEY &&
+        process.env.VITE_SUPABASE_PUBLISHABLE_KEY
+      ) {
+        process.env.SUPABASE_ANON_KEY =
+          process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      }
+
       const scriptUrl = pathToFileURL(
         path.resolve(__dirname, "scripts/prerender.mjs"),
       ).href;
