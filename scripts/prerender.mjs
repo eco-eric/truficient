@@ -434,15 +434,53 @@ async function main() {
   );
   console.log('[prerender] Wrote prerender-manifest.json');
 
+  // ---------------------------------------------------------------------
+  // Deploy validator — fail the build loudly if the prerender output looks
+  // wrong. This catches the class of failure we just shipped: the script
+  // technically "succeeded" but Supabase never initialized, so only static
+  // routes were written and every DB-backed page silently fell back to the
+  // SPA shell with homepage og: tags.
+  // ---------------------------------------------------------------------
+  const MIN_ROUTES_THRESHOLD = 200;
+  const validationErrors = [];
+  if (!supabase) {
+    validationErrors.push(
+      'Supabase client did not initialize. SUPABASE_URL and SUPABASE_ANON_KEY (or SUPABASE_SERVICE_ROLE_KEY) must be present in the build environment.',
+    );
+  }
+  if (
+    supabase &&
+    pageSeoRows.length === 0 &&
+    blogRows.length === 0 &&
+    equipRows.length === 0 &&
+    locRows.length === 0
+  ) {
+    validationErrors.push(
+      'Supabase initialized but every DB source returned zero rows. Check anon-key RLS policies on page_seo, blog_posts, equipment_pages, seo_location_pages.',
+    );
+  }
+  if (written < MIN_ROUTES_THRESHOLD) {
+    validationErrors.push(
+      `Only ${written} routes prerendered (threshold: ${MIN_ROUTES_THRESHOLD}). Expected ~300+ once DB sources load.`,
+    );
+  }
+
   if (failed > 0) {
     console.error(`[prerender] ${failed} routes failed:`);
     for (const e of errors.slice(0, 20)) {
       console.error(`  - [${e.source}] ${e.path}: ${e.error}`);
     }
     if (errors.length > 20) console.error(`  …and ${errors.length - 20} more.`);
-    // Hard fail only when there are no successful writes — otherwise let the
-    // build complete so the rest of the site still ships.
-    if (written === 0) process.exit(1);
+  }
+
+  if (validationErrors.length > 0) {
+    console.error('[prerender] Build validation FAILED:');
+    for (const msg of validationErrors) console.error(`  - ${msg}`);
+    process.exit(1);
+  }
+
+  if (failed > 0 && written === 0) {
+    process.exit(1);
   }
 }
 
