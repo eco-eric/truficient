@@ -108,11 +108,6 @@ export const STATIC_ROUTES_SEO = [
     title: 'South Dallas HVAC Services | Truficient',
     description: 'HVAC service across South Dallas — repair, installation, and maintenance.',
   },
-  {
-    path: '/service-areas/south-dallas-area',
-    title: 'South Dallas HVAC Services | Truficient',
-    description: 'HVAC service across South Dallas — repair, installation, and maintenance.',
-  },
 
   // Estimators / tools
   {
