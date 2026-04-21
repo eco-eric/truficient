@@ -370,6 +370,14 @@ async function main() {
     `[prerender] Sources: page_seo=${pageSeoRows.length} blog=${blogRows.length} equipment=${equipRows.length} location=${locRows.length} static=${STATIC_ROUTES_SEO.length}`,
   );
 
+  const sourceCounts = {
+    page_seo: pageSeoRows.length,
+    blog_posts: blogRows.length,
+    equipment_pages: equipRows.length,
+    seo_location_pages: locRows.length,
+    static_routes: STATIC_ROUTES_SEO.length,
+  };
+
   // Static routes wrapped in the same shape
   const staticRows = STATIC_ROUTES_SEO.map((r) => ({
     source: 'static',
@@ -406,6 +414,26 @@ async function main() {
 
   const dt = ((Date.now() - t0) / 1000).toFixed(1);
   console.log(`[prerender] Wrote ${written} routes in ${dt}s (skipped homepage).`);
+
+  const manifest = {
+    generated_at: new Date().toISOString(),
+    duration_seconds: Number(dt),
+    supabase_enabled: Boolean(supabase),
+    source_counts: sourceCounts,
+    routes_written: written,
+    routes_failed: failed,
+    skipped_paths: ['/'],
+    route_paths: routes.map((route) => route.path),
+    failed_routes: errors,
+  };
+
+  await writeFile(
+    join(DIST_DIR, 'prerender-manifest.json'),
+    JSON.stringify(manifest, null, 2),
+    'utf8',
+  );
+  console.log('[prerender] Wrote prerender-manifest.json');
+
   if (failed > 0) {
     console.error(`[prerender] ${failed} routes failed:`);
     for (const e of errors.slice(0, 20)) {
