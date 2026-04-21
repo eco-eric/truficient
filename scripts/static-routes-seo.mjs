@@ -104,14 +104,9 @@ export const STATIC_ROUTES_SEO = [
     description: 'HVAC service across North Dallas — repair, installation, and maintenance by certified technicians.',
   },
   {
-    path: '/service-areas/frisco-mckinney-area',
-    title: 'Frisco & McKinney HVAC Services | Truficient',
-    description: 'HVAC service across Frisco and McKinney — repair, installation, and maintenance.',
-  },
-  {
-    path: '/service-areas/mid-cities-area',
-    title: 'Mid-Cities HVAC Services | Truficient',
-    description: 'HVAC service across the Mid-Cities — repair, installation, and maintenance.',
+    path: '/service-areas/south-dallas-area',
+    title: 'South Dallas HVAC Services | Truficient',
+    description: 'HVAC service across South Dallas — repair, installation, and maintenance.',
   },
   {
     path: '/service-areas/south-dallas-area',
