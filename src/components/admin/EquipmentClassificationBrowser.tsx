@@ -957,6 +957,7 @@ function DetailContent({
   overridingType,
   onScan,
   scanning,
+}: DetailContentProps) {
   const meta = item.classification_metadata as
     | { reasoning?: string }
     | null;
