@@ -1038,23 +1038,44 @@ function DetailContent({
           <div className="rounded-md border p-3 space-y-3">
             <div className="flex items-center justify-between">
               <span className="font-medium text-sm">Extracted data</span>
-              {!editMode ? (
+              <div className="flex items-center gap-2">
                 <Button
                   size="sm"
-                  variant="outline"
-                  onClick={() => setEditMode(true)}
+                  variant="default"
+                  onClick={onScan}
+                  disabled={scanning || !item.media_url}
+                  title="Use AI to read this data plate and fill the fields"
                 >
-                  Edit
+                  {scanning ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                      Scanning…
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5 mr-1" />
+                      Scan with AI
+                    </>
+                  )}
                 </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setEditMode(false)}
-                >
-                  Cancel
-                </Button>
-              )}
+                {!editMode ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setEditMode(true)}
+                  >
+                    Edit
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setEditMode(false)}
+                  >
+                    Cancel
+                  </Button>
+                )}
+              </div>
             </div>
 
             {!editMode ? (
