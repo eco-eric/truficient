@@ -150,23 +150,38 @@ Deno.serve(async (req) => {
 
     let pagesUpserted = 0;
     if (pageRows.length > 0) {
-      const siteOrigin = new URL(siteUrl.startsWith("sc-domain:") ? `https://${siteUrl.slice(10)}` : siteUrl).origin;
-      const pageData = pageRows.map((r: any) => {
+      const nowIso = new Date().toISOString();
+      // Aggregate by normalized path (collapses trailing-slash duplicates)
+      const pageMap = new Map<string, { clicks: number; impressions: number; position_weighted: number }>();
+      for (const r of pageRows as any[]) {
         let path = r.keys[0] as string;
         try {
           const u = new URL(path);
           path = u.pathname + u.search;
         } catch { /* keep as-is */ }
-        return {
-          page_path: path,
-          date_range: "28d",
-          clicks: r.clicks || 0,
-          impressions: r.impressions || 0,
-          ctr: r.ctr || 0,
-          position: r.position || 0,
-          last_synced_at: new Date().toISOString(),
-        };
-      });
+        // Normalize trailing slash (except root)
+        if (path.length > 1 && path.endsWith("/")) path = path.replace(/\/+$/, "");
+        const clicks = r.clicks || 0;
+        const impressions = r.impressions || 0;
+        const position = r.position || 0;
+        const existing = pageMap.get(path);
+        if (existing) {
+          existing.clicks += clicks;
+          existing.impressions += impressions;
+          existing.position_weighted += position * impressions;
+        } else {
+          pageMap.set(path, { clicks, impressions, position_weighted: position * impressions });
+        }
+      }
+      const pageData = Array.from(pageMap.entries()).map(([page_path, m]) => ({
+        page_path,
+        date_range: "28d",
+        clicks: m.clicks,
+        impressions: m.impressions,
+        ctr: m.impressions > 0 ? m.clicks / m.impressions : 0,
+        position: m.impressions > 0 ? m.position_weighted / m.impressions : 0,
+        last_synced_at: nowIso,
+      }));
       const { error } = await supabase
         .from("gsc_page_metrics")
         .upsert(pageData, { onConflict: "page_path,date_range" });
