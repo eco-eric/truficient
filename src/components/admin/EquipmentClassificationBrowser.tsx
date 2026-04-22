@@ -414,6 +414,76 @@ export function EquipmentClassificationBrowser() {
       toast.error(`Save failed: ${e instanceof Error ? e.message : 'unknown'}`),
   });
 
+  // Scan a data plate image with AI to auto-extract specs
+  const scanMutation = useMutation({
+    mutationFn: async (item: MediaRow) => {
+      if (!item.media_url) throw new Error('No image URL on this media item');
+
+      // Fetch image and convert to base64 data URL
+      const res = await fetch(item.media_url);
+      if (!res.ok) throw new Error(`Failed to fetch image (${res.status})`);
+      const blob = await res.blob();
+      const base64: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+
+      const zip = item.crm_jobs?.crm_locations?.zip_code ?? undefined;
+
+      const { data, error } = await supabase.functions.invoke('decode-equipment', {
+        body: {
+          imageBase64: base64,
+          zipCode: zip,
+          isDfw: true,
+        },
+      });
+      if (error) throw error;
+      const specs = (data?.specs ?? {}) as Record<string, unknown>;
+
+      const tonnageStr = specs.tonnage ? String(specs.tonnage) : null;
+      const tonnageNum = tonnageStr ? parseFloat(tonnageStr) : null;
+      const mfgYear = specs.manufactured_year ? Number(specs.manufactured_year) : null;
+      const mfgDate = mfgYear ? `${mfgYear}-01-01` : null;
+
+      const updates = {
+        extracted_brand: (specs.brand as string) ?? null,
+        extracted_model: (specs.model_number as string) ?? null,
+        extracted_serial: (specs.serial_number as string) ?? null,
+        extracted_tonnage: Number.isFinite(tonnageNum as number) ? tonnageNum : null,
+        extracted_refrigerant: (specs.refrigerant as string) ?? null,
+        extracted_mfg_date: mfgDate,
+        extraction_confidence: 0.9,
+        review_status: 'needs_review' as const,
+      };
+
+      const { error: upErr } = await supabase
+        .from('workedge_project_media')
+        .update(updates)
+        .eq('id', item.id);
+      if (upErr) throw upErr;
+
+      return { ...item, ...updates };
+    },
+    onSuccess: (updated) => {
+      toast.success('Data plate scanned');
+      // Sync open sheet + edit form with new values
+      setOpenItem((prev) => (prev ? { ...prev, ...updated } : prev));
+      setEditForm({
+        brand: updated.extracted_brand ?? '',
+        model_number: updated.extracted_model ?? '',
+        serial_number: updated.extracted_serial ?? '',
+        tonnage: updated.extracted_tonnage?.toString() ?? '',
+        refrigerant: updated.extracted_refrigerant ?? '',
+        mfg_date: updated.extracted_mfg_date ?? '',
+      });
+      refresh();
+    },
+    onError: (e) =>
+      toast.error(`Scan failed: ${e instanceof Error ? e.message : 'unknown'}`),
+  });
+
   // ----- UI helpers -----
   const toggleCT = (c: ContentType | 'unclassified') => {
     setContentTypeFilter((prev) => {
