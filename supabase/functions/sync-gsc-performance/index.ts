@@ -202,14 +202,31 @@ Deno.serve(async (req) => {
       // Clear old 28d queries first (queries change too much to leave stale rows)
       await supabase.from("gsc_query_metrics").delete().eq("date_range", "28d");
 
-      const queryData = queryRows.map((r: any) => ({
-        query: r.keys[0],
+      const nowIso = new Date().toISOString();
+      const queryMap = new Map<string, { clicks: number; impressions: number; position_weighted: number }>();
+      for (const r of queryRows as any[]) {
+        const key = String(r.keys[0] ?? "").trim().toLowerCase();
+        if (!key) continue;
+        const clicks = r.clicks || 0;
+        const impressions = r.impressions || 0;
+        const position = r.position || 0;
+        const existing = queryMap.get(key);
+        if (existing) {
+          existing.clicks += clicks;
+          existing.impressions += impressions;
+          existing.position_weighted += position * impressions;
+        } else {
+          queryMap.set(key, { clicks, impressions, position_weighted: position * impressions });
+        }
+      }
+      const queryData = Array.from(queryMap.entries()).map(([query, m]) => ({
+        query,
         date_range: "28d",
-        clicks: r.clicks || 0,
-        impressions: r.impressions || 0,
-        ctr: r.ctr || 0,
-        position: r.position || 0,
-        last_synced_at: new Date().toISOString(),
+        clicks: m.clicks,
+        impressions: m.impressions,
+        ctr: m.impressions > 0 ? m.clicks / m.impressions : 0,
+        position: m.impressions > 0 ? m.position_weighted / m.impressions : 0,
+        last_synced_at: nowIso,
       }));
       const { error } = await supabase
         .from("gsc_query_metrics")
