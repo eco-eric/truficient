@@ -455,7 +455,7 @@ export function EquipmentClassificationBrowser() {
         extracted_refrigerant: (specs.refrigerant as string) ?? null,
         extracted_mfg_date: mfgDate,
         extraction_confidence: 0.9,
-        review_status: 'needs_review' as const,
+        review_status: 'auto_approved' as const,
       };
 
       const { error: upErr } = await supabase
