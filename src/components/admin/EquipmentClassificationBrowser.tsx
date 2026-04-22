@@ -936,6 +936,8 @@ interface DetailContentProps {
   classifyRunning: boolean;
   onOverrideType: (ct: ContentType) => void;
   overridingType: boolean;
+  onScan: () => void;
+  scanning: boolean;
 }
 
 function DetailContent({
