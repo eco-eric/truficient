@@ -159,8 +159,8 @@ Deno.serve(async (req) => {
         errors++;
       }
 
-      // Light pacing — GSC URL Inspection limit ~600 QPM
-      await new Promise(r => setTimeout(r, 120));
+      // Light pacing — GSC URL Inspection limit ~600 QPM (= 100ms min); use 110ms for safety
+      await new Promise(r => setTimeout(r, 110));
     }
 
     const summary = {
