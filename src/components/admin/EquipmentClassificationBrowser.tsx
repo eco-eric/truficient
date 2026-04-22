@@ -831,6 +831,8 @@ export function EquipmentClassificationBrowser() {
                 overrideTypeMutation.mutate({ id: openItem.id, content_type: ct })
               }
               overridingType={overrideTypeMutation.isPending}
+              onScan={() => scanMutation.mutate(openItem)}
+              scanning={scanMutation.isPending}
             />
           )}
         </SheetContent>
