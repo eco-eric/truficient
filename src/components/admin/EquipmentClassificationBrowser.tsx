@@ -955,7 +955,8 @@ function DetailContent({
   classifyRunning,
   onOverrideType,
   overridingType,
-}: DetailContentProps) {
+  onScan,
+  scanning,
   const meta = item.classification_metadata as
     | { reasoning?: string }
     | null;
