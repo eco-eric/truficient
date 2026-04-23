@@ -294,7 +294,7 @@ const BlogPostPage = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             src={displayUrl(post.featured_image)}
             alt={post.featured_image_alt || post.title}
-            className="w-full max-w-4xl mx-auto rounded-lg shadow-lg max-h-[600px] object-contain bg-muted"
+            className="max-w-4xl w-auto mx-auto rounded-lg shadow-lg max-h-[600px] object-contain"
           />
         </div>
       )}
