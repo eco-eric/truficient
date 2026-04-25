@@ -11,7 +11,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Loader2, RefreshCw, MousePointerClick, Eye, Percent, TrendingUp, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Loader2, RefreshCw, MousePointerClick, Eye, Percent, TrendingUp, ArrowLeft, ExternalLink, Download } from 'lucide-react';
 import { format, parseISO, subDays } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -40,6 +40,23 @@ interface QueryMetric {
 }
 
 type Range = '7d' | '28d' | '90d';
+
+function exportCSV(filename: string, headers: string[], rows: (string | number)[][]) {
+  const escape = (v: string | number) => {
+    const s = String(v ?? '');
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const csv = [headers.map(escape).join(','), ...rows.map(r => r.map(escape).join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 const SEOPerformance = () => {
   const [loading, setLoading] = useState(true);
@@ -202,8 +219,21 @@ const SEOPerformance = () => {
         {/* Top Queries + Top Pages side-by-side */}
         <div className="grid lg:grid-cols-2 gap-4">
           <div className="bg-white rounded-lg border">
-            <div className="p-4 border-b">
+            <div className="p-4 border-b flex items-center justify-between">
               <h3 className="font-semibold">Top Queries (28d)</h3>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => exportCSV(
+                  'top-queries-28d.csv',
+                  ['Query', 'Clicks', 'Impressions', 'CTR', 'Position'],
+                  queryMetrics.map(q => [q.query, q.clicks, q.impressions, (q.ctr * 100).toFixed(2) + '%', q.position.toFixed(1)]),
+                )}
+                disabled={queryMetrics.length === 0}
+              >
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                Export
+              </Button>
             </div>
             <div className="max-h-[500px] overflow-auto">
               <Table>
@@ -234,8 +264,21 @@ const SEOPerformance = () => {
           </div>
 
           <div className="bg-white rounded-lg border">
-            <div className="p-4 border-b">
+            <div className="p-4 border-b flex items-center justify-between">
               <h3 className="font-semibold">Top Pages (28d)</h3>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => exportCSV(
+                  'top-pages-28d.csv',
+                  ['Page', 'Clicks', 'Impressions', 'CTR', 'Position'],
+                  pageMetrics.map(p => [p.page_path, p.clicks, p.impressions, (p.ctr * 100).toFixed(2) + '%', p.position.toFixed(1)]),
+                )}
+                disabled={pageMetrics.length === 0}
+              >
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                Export
+              </Button>
             </div>
             <div className="max-h-[500px] overflow-auto">
               <Table>
