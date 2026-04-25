@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Loader2, Search, Pencil, Plus, Check, X, ExternalLink, ArrowUpDown, MapPin, FileText, ChevronDown, RefreshCw, BarChart3 } from 'lucide-react';
+import { Loader2, Search, Pencil, Plus, Check, X, ExternalLink, ArrowUpDown, MapPin, FileText, ChevronDown, RefreshCw, BarChart3, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 const PAGE_TYPES = ['Core Page', 'Neighborhood Hub', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Energy Content', 'Equipment'];
@@ -233,6 +233,46 @@ const SEOManagement = () => {
     }
   };
 
+  const handleExportCSV = () => {
+    const headers = ['Page Name', 'Page Path', 'Page Type', 'Target Keyword', 'Cluster', 'Meta Title', 'Meta Title Length', 'Meta Description', 'Meta Description Length', 'SEO Status', 'Index Status', 'GSC Impressions', 'GSC Clicks', 'Avg Position', 'Internal Links', 'Schema Applied', 'Last Content Update', 'Updated At'];
+    const escape = (val: any) => {
+      if (val === null || val === undefined) return '';
+      const s = String(val).replace(/"/g, '""');
+      return /[",\n]/.test(s) ? `"${s}"` : s;
+    };
+    const rows = filteredPages.map(p => [
+      p.page_name,
+      p.page_path,
+      p.page_type || '',
+      p.target_keyword || '',
+      p.cluster || '',
+      p.meta_title || '',
+      p.meta_title?.length ?? 0,
+      p.meta_description || '',
+      p.meta_description?.length ?? 0,
+      getSEOStatus(p).label,
+      p.index_status || '',
+      p.gsc_impressions ?? 0,
+      p.gsc_clicks ?? 0,
+      p.avg_position != null ? p.avg_position.toFixed(1) : '',
+      p.internal_links ?? 0,
+      p.schema_applied ? 'Yes' : 'No',
+      p.last_content_update ? format(new Date(p.last_content_update), 'yyyy-MM-dd') : '',
+      p.updated_at ? format(new Date(p.updated_at), 'yyyy-MM-dd') : '',
+    ].map(escape).join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `seo-pages-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: 'Exported', description: `${filteredPages.length} pages exported to CSV.` });
+  };
+
   if (loading) {
     return (
       <AdminLayout title="SEO Management">
@@ -264,6 +304,10 @@ const SEOManagement = () => {
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Performance
               </Link>
+            </Button>
+            <Button variant="outline" onClick={handleExportCSV}>
+              <Download className="h-4 w-4 mr-2" />
+              Export CSV
             </Button>
             <SitemapButton />
             <DropdownMenu>
