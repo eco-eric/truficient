@@ -261,17 +261,86 @@ Deno.serve(async (req) => {
     }
 
     const data = await aiRes.json();
-    const answer = data?.choices?.[0]?.message?.content ?? "(no response)";
+    const answer: string = data?.choices?.[0]?.message?.content ?? "(no response)";
+
+    // Persist the analysis
+    let analysisId: string | null = null;
+    try {
+      const { data: inserted } = await supabase
+        .from("seo_bach_analyses")
+        .insert({
+          action,
+          question: question || null,
+          model,
+          answer_markdown: answer,
+          total_analyzed: context.summary.total,
+        })
+        .select("id")
+        .single();
+      analysisId = inserted?.id ?? null;
+    } catch (persistErr) {
+      console.warn("Failed to persist analysis:", persistErr);
+    }
+
+    // For internal_linking, parse the ```opportunities ... ``` block and persist rows
+    let opportunitiesSaved = 0;
+    if (action === "internal_linking" && analysisId) {
+      try {
+        const match = answer.match(/```opportunities\s*([\s\S]*?)```/i);
+        if (match) {
+          const arr = JSON.parse(match[1].trim());
+          if (Array.isArray(arr)) {
+            const validPaths = new Set((pages ?? []).map((p: any) => String(p.page_path)));
+            const rows = arr
+              .filter((o: any) => o && typeof o.source_url === "string" && typeof o.target_url === "string")
+              .filter((o: any) => o.source_url !== o.target_url)
+              .filter((o: any) => validPaths.has(o.source_url) && validPaths.has(o.target_url))
+              .slice(0, 60)
+              .map((o: any) => ({
+                analysis_id: analysisId,
+                source_url: o.source_url,
+                target_url: o.target_url,
+                anchor_text: typeof o.anchor_text === "string" ? o.anchor_text.slice(0, 200) : null,
+                cluster: typeof o.cluster === "string" ? o.cluster.slice(0, 120) : null,
+                reason: typeof o.reason === "string" ? o.reason.slice(0, 500) : null,
+                priority: ["high", "medium", "low"].includes(o.priority) ? o.priority : "medium",
+                status: "todo",
+                apply_method: "db_content_append",
+              }));
+            if (rows.length) {
+              const { error: upErr } = await supabase
+                .from("seo_linking_opportunities")
+                .upsert(rows, { onConflict: "source_url,target_url", ignoreDuplicates: true });
+              if (!upErr) opportunitiesSaved = rows.length;
+              else console.warn("Opportunity upsert error:", upErr);
+            }
+          }
+        }
+      } catch (parseErr) {
+        console.warn("Failed to parse opportunities JSON:", parseErr);
+      }
+    }
 
     return new Response(
       JSON.stringify({
         answer,
         model,
         action,
+        analysisId,
+        opportunitiesSaved,
         meta: { totalAnalyzed: context.summary.total },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+  } catch (e) {
+    console.error("seo-bach-analyst error:", e);
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    return new Response(JSON.stringify({ error: msg }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
   } catch (e) {
     console.error("seo-bach-analyst error:", e);
     const msg = e instanceof Error ? e.message : "Unknown error";
