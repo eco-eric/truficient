@@ -30,6 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Loader2, Search, Pencil, Plus, Check, X, ExternalLink, ArrowUpDown, MapPin, FileText, ChevronDown, RefreshCw, BarChart3, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { SEOBachPanel } from '@/components/admin/seo/SEOBachPanel';
 
 const PAGE_TYPES = ['Core Page', 'Neighborhood Hub', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Energy Content', 'Equipment'];
 const CLUSTERS = ['Core Site', 'Oak Cliff', 'East Dallas', 'North Dallas', 'Downtown Dallas', 'South Dallas', 'Outer Ring'];
@@ -368,9 +369,12 @@ const SEOManagement = () => {
           </div>
           <div className="bg-white p-3 rounded-lg border">
             <div className="text-2xl font-bold">{gscAvgPosition}</div>
-            <div className="text-xs text-muted-foreground">Avg Position</div>
+          <div className="text-xs text-muted-foreground">Avg Position</div>
           </div>
         </div>
+
+        {/* Bach AI Analyst */}
+        <SEOBachPanel />
 
         {/* Filters */}
         <div className="flex flex-wrap gap-3">
