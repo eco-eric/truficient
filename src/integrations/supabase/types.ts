@@ -509,6 +509,75 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_categories: {
+        Row: {
+          created_at: string
+          cta_body: string | null
+          cta_button_href: string | null
+          cta_button_label: string | null
+          cta_heading: string | null
+          display_order: number | null
+          faqs: Json | null
+          hero_eyebrow: string | null
+          hero_heading: string
+          hero_image: string | null
+          hero_subheading: string | null
+          id: string
+          intro_html: string
+          name: string
+          related_post_categories: string[] | null
+          related_service_links: Json | null
+          slug: string
+          status: string
+          updated_at: string
+          what_we_cover: Json | null
+        }
+        Insert: {
+          created_at?: string
+          cta_body?: string | null
+          cta_button_href?: string | null
+          cta_button_label?: string | null
+          cta_heading?: string | null
+          display_order?: number | null
+          faqs?: Json | null
+          hero_eyebrow?: string | null
+          hero_heading: string
+          hero_image?: string | null
+          hero_subheading?: string | null
+          id?: string
+          intro_html: string
+          name: string
+          related_post_categories?: string[] | null
+          related_service_links?: Json | null
+          slug: string
+          status?: string
+          updated_at?: string
+          what_we_cover?: Json | null
+        }
+        Update: {
+          created_at?: string
+          cta_body?: string | null
+          cta_button_href?: string | null
+          cta_button_label?: string | null
+          cta_heading?: string | null
+          display_order?: number | null
+          faqs?: Json | null
+          hero_eyebrow?: string | null
+          hero_heading?: string
+          hero_image?: string | null
+          hero_subheading?: string | null
+          id?: string
+          intro_html?: string
+          name?: string
+          related_post_categories?: string[] | null
+          related_service_links?: Json | null
+          slug?: string
+          status?: string
+          updated_at?: string
+          what_we_cover?: Json | null
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author_bio: string | null

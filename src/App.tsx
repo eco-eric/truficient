@@ -48,6 +48,7 @@ const SmartGroupMarchGoogleLanding = lazy(() => import("./pages/landing/SmartGro
 const PublicEstimatePreview = lazy(() => import("./pages/PublicEstimatePreview"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
+const BlogCategory = lazy(() => import("./pages/BlogCategory"));
 const Gallery = lazy(() => import("./pages/Gallery"));
 const Scanner = lazy(() => import("./pages/scanner/Scanner"));
 const EquipmentReport = lazy(() => import("./pages/scanner/EquipmentReport"));
@@ -205,6 +206,7 @@ const router = createBrowserRouter([
       
       { path: "/blog", element: <Blog /> },
       { path: "/blog/:slug", element: <BlogPost /> },
+      { path: "/category/:slug", element: <BlogCategory /> },
       { path: "/gallery", element: <Gallery /> },
       { path: "/scanner", element: <Scanner /> },
       { path: "/scanner/report", element: <EquipmentReport /> },
