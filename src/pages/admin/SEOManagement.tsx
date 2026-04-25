@@ -305,6 +305,10 @@ const SEOManagement = () => {
                 Performance
               </Link>
             </Button>
+            <Button variant="outline" onClick={handleExportCSV}>
+              <Download className="h-4 w-4 mr-2" />
+              Export CSV
+            </Button>
             <SitemapButton />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
