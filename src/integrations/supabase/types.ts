@@ -5000,6 +5000,104 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_bach_analyses: {
+        Row: {
+          action: string
+          answer_markdown: string
+          created_at: string
+          created_by: string | null
+          id: string
+          model: string
+          question: string | null
+          total_analyzed: number | null
+        }
+        Insert: {
+          action: string
+          answer_markdown: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          model: string
+          question?: string | null
+          total_analyzed?: number | null
+        }
+        Update: {
+          action?: string
+          answer_markdown?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          model?: string
+          question?: string | null
+          total_analyzed?: number | null
+        }
+        Relationships: []
+      }
+      seo_linking_opportunities: {
+        Row: {
+          analysis_id: string | null
+          anchor_text: string | null
+          applied_at: string | null
+          applied_by: string | null
+          apply_error: string | null
+          apply_method: string | null
+          cluster: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          priority: string
+          reason: string | null
+          source_url: string
+          status: string
+          target_url: string
+          updated_at: string
+        }
+        Insert: {
+          analysis_id?: string | null
+          anchor_text?: string | null
+          applied_at?: string | null
+          applied_by?: string | null
+          apply_error?: string | null
+          apply_method?: string | null
+          cluster?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          priority?: string
+          reason?: string | null
+          source_url: string
+          status?: string
+          target_url: string
+          updated_at?: string
+        }
+        Update: {
+          analysis_id?: string | null
+          anchor_text?: string | null
+          applied_at?: string | null
+          applied_by?: string | null
+          apply_error?: string | null
+          apply_method?: string | null
+          cluster?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          priority?: string
+          reason?: string | null
+          source_url?: string
+          status?: string
+          target_url?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seo_linking_opportunities_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "seo_bach_analyses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seo_location_pages: {
         Row: {
           add_to_service_areas_hub: boolean | null
