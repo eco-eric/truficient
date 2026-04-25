@@ -11,7 +11,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Loader2, RefreshCw, MousePointerClick, Eye, Percent, TrendingUp, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Loader2, RefreshCw, MousePointerClick, Eye, Percent, TrendingUp, ArrowLeft, ExternalLink, Download } from 'lucide-react';
 import { format, parseISO, subDays } from 'date-fns';
 import { toast } from 'sonner';
 
