@@ -281,11 +281,23 @@ const LocationPage = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-2">Page Not Found</h1>
-            <p className="text-muted-foreground mb-4">This service area page doesn't exist.</p>
-            <Button asChild><Link to="/service-areas">View All Service Areas</Link></Button>
+        <main className="flex-grow flex items-center justify-center px-4 py-12">
+          <div className="w-full max-w-2xl">
+            <div className="overflow-hidden rounded-2xl border border-border shadow-xl bg-background">
+              <video
+                src="/videos/404-magic-smoke.mp4"
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="block w-full h-auto"
+              />
+            </div>
+            <div className="text-center mt-8">
+              <h1 className="text-4xl font-bold mb-2">Page Not Found</h1>
+              <p className="text-muted-foreground mb-6">Looks like the magic smoke escaped from this page.</p>
+              <Button asChild><Link to="/service-areas">View All Service Areas</Link></Button>
+            </div>
           </div>
         </main>
         <Footer />
