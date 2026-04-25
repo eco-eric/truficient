@@ -31,6 +31,7 @@ import { format } from 'date-fns';
 import { Loader2, Search, Pencil, Plus, Check, X, ExternalLink, ArrowUpDown, MapPin, FileText, ChevronDown, RefreshCw, BarChart3, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { SEOBachPanel } from '@/components/admin/seo/SEOBachPanel';
+import { SEOLinkingOpportunities } from '@/components/admin/seo/SEOLinkingOpportunities';
 
 const PAGE_TYPES = ['Core Page', 'Neighborhood Hub', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Energy Content', 'Equipment'];
 const CLUSTERS = ['Core Site', 'Oak Cliff', 'East Dallas', 'North Dallas', 'Downtown Dallas', 'South Dallas', 'Outer Ring'];
@@ -375,6 +376,9 @@ const SEOManagement = () => {
 
         {/* Bach AI Analyst */}
         <SEOBachPanel />
+
+        {/* Internal Linking Opportunities Tracker */}
+        <SEOLinkingOpportunities />
 
         {/* Filters */}
         <div className="flex flex-wrap gap-3">
