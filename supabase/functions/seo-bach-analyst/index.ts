@@ -25,7 +25,22 @@ Guidelines:
 - For cluster/keyword gaps, look for under-built clusters or missing supporting content.
 - For performance, prioritize pages with high impressions but poor CTR or position 5–20 (striking distance).
 - If asked something you can't answer from the data, say so briefly.
-- Never invent page paths, keywords, or metrics.`;
+- Never invent page paths, keywords, or metrics.
+
+When the user's quick action is "internal_linking", AFTER your normal markdown analysis, append a fenced JSON code block tagged \`opportunities\` containing an array of suggested links. Schema:
+\`\`\`opportunities
+[
+  {
+    "source_url": "/page-that-should-add-the-link/",
+    "target_url": "/page-being-linked-to/",
+    "anchor_text": "short descriptive anchor",
+    "cluster": "Oak Cliff",
+    "reason": "1-sentence why",
+    "priority": "high|medium|low"
+  }
+]
+\`\`\`
+Only include pairs where BOTH source_url and target_url appear in the DATA CONTEXT. Limit to 30 highest-value pairs.`;
 
 interface PageSEORow {
   page_path: string;
