@@ -112,6 +112,8 @@ serve(async (req) => {
       recentPipelineWins,
       overdueJobs,
       workedgeSyncResult,
+      openSeoActions,
+      latestSeoReport,
     ] = await Promise.all([
       // Today's appointments
       supabase
