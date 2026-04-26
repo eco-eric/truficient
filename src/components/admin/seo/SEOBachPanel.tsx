@@ -144,8 +144,26 @@ export function SEOBachPanel() {
     setQuestion('');
   }
 
+  // Allow other surfaces (e.g. Search Console "Ask Bach" buttons) to drive this panel.
+  useEffect(() => {
+    function onAsk(ev: Event) {
+      const detail = (ev as CustomEvent<{ prompt?: string; autoSubmit?: boolean }>).detail || {};
+      const prompt = (detail.prompt ?? '').trim();
+      if (!prompt) return;
+      setQuestion(prompt);
+      containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (detail.autoSubmit !== false && !loadingRef.current) {
+        // Defer so the textarea reflects the new value before submitting.
+        setTimeout(() => runAnalysis('freeform', prompt), 50);
+      }
+    }
+    window.addEventListener('seo-bach-ask', onAsk as EventListener);
+    return () => window.removeEventListener('seo-bach-ask', onAsk as EventListener);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <div className="bg-gradient-to-br from-[#1e3a5f] via-[#1e3a5f] to-[#2a4d7d] rounded-xl border border-[#1e3a5f]/20 shadow-sm overflow-hidden">
+    <div ref={containerRef} className="bg-gradient-to-br from-[#1e3a5f] via-[#1e3a5f] to-[#2a4d7d] rounded-xl border border-[#1e3a5f]/20 shadow-sm overflow-hidden">
       {/* Header */}
       <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
