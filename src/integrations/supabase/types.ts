@@ -4043,6 +4043,42 @@ export type Database = {
           },
         ]
       }
+      ga4_page_metrics: {
+        Row: {
+          avg_engagement_seconds: number | null
+          bounce_rate: number | null
+          conversions: number
+          date_range: string
+          id: string
+          last_synced_at: string
+          page_path: string
+          sessions: number
+          users: number
+        }
+        Insert: {
+          avg_engagement_seconds?: number | null
+          bounce_rate?: number | null
+          conversions?: number
+          date_range: string
+          id?: string
+          last_synced_at?: string
+          page_path: string
+          sessions?: number
+          users?: number
+        }
+        Update: {
+          avg_engagement_seconds?: number | null
+          bounce_rate?: number | null
+          conversions?: number
+          date_range?: string
+          id?: string
+          last_synced_at?: string
+          page_path?: string
+          sessions?: number
+          users?: number
+        }
+        Relationships: []
+      }
       gallery_image_tags: {
         Row: {
           created_at: string | null
@@ -4943,6 +4979,44 @@ export type Database = {
         }
         Relationships: []
       }
+      page_seo_gsc_snapshots: {
+        Row: {
+          avg_position: number | null
+          clicks: number
+          created_at: string
+          id: string
+          impressions: number
+          page_id: string
+          week_starting: string
+        }
+        Insert: {
+          avg_position?: number | null
+          clicks?: number
+          created_at?: string
+          id?: string
+          impressions?: number
+          page_id: string
+          week_starting: string
+        }
+        Update: {
+          avg_position?: number | null
+          clicks?: number
+          created_at?: string
+          id?: string
+          impressions?: number
+          page_id?: string
+          week_starting?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_seo_gsc_snapshots_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "page_seo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       price_books: {
         Row: {
           category: string | null
@@ -5219,6 +5293,130 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      seo_report_actions: {
+        Row: {
+          action_text: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          page_path: string | null
+          report_id: string
+          status: string
+        }
+        Insert: {
+          action_text: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          page_path?: string | null
+          report_id: string
+          status?: string
+        }
+        Update: {
+          action_text?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          page_path?: string | null
+          report_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seo_report_actions_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "seo_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seo_report_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          report_id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          report_id: string
+          role: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          report_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seo_report_messages_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "seo_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seo_reports: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          full_response: string
+          id: string
+          model_used: string | null
+          original_prompt: string
+          pages_analyzed: number | null
+          pages_flagged: number | null
+          related_clusters: string[]
+          related_page_paths: string[]
+          report_type: string | null
+          summary: string
+          tags: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          full_response: string
+          id?: string
+          model_used?: string | null
+          original_prompt: string
+          pages_analyzed?: number | null
+          pages_flagged?: number | null
+          related_clusters?: string[]
+          related_page_paths?: string[]
+          report_type?: string | null
+          summary: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          full_response?: string
+          id?: string
+          model_used?: string | null
+          original_prompt?: string
+          pages_analyzed?: number | null
+          pages_flagged?: number | null
+          related_clusters?: string[]
+          related_page_paths?: string[]
+          report_type?: string | null
+          summary?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       service_area_pages: {
         Row: {
