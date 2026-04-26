@@ -154,16 +154,21 @@ const PageLoader = () => (
 );
 
 // Root layout component that includes global elements
-const RootLayout = () => (
-  <>
-    <ScrollToTop />
-    <TrackingScripts />
-    <CookieConsent />
-    <Suspense fallback={<PageLoader />}>
-      <Outlet />
-    </Suspense>
-  </>
-);
+const RootLayout = () => {
+  const location = useLocation();
+  useEffect(() => { loadGA4(); }, []);
+  useEffect(() => { trackPageView(location.pathname + location.search); }, [location.pathname, location.search]);
+  return (
+    <>
+      <ScrollToTop />
+      <TrackingScripts />
+      <CookieConsent />
+      <Suspense fallback={<PageLoader />}>
+        <Outlet />
+      </Suspense>
+    </>
+  );
+};
 
 // Admin layout wrapper with its own Suspense
 const LazyAdminLayout = () => (
