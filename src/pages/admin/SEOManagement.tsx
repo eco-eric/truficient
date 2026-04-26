@@ -552,6 +552,13 @@ const SEOManagement = () => {
             <table className="w-full caption-bottom text-sm">
               <TableHeader className="sticky top-0 z-20 bg-white [&_th]:bg-white shadow-[0_1px_0_0_hsl(var(--border))]">
                 <TableRow>
+                  <TableHead className="w-[40px]">
+                    <Checkbox
+                      checked={allFilteredSelected ? true : someFilteredSelected ? 'indeterminate' : false}
+                      onCheckedChange={toggleSelectAllFiltered}
+                      aria-label="Select all on page"
+                    />
+                  </TableHead>
                   <TableHead>Page</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Keyword</TableHead>
