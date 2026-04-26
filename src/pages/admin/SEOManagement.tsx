@@ -30,7 +30,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Loader2, Search, Pencil, Plus, Check, X, ExternalLink, ArrowUpDown, MapPin, FileText, ChevronDown, RefreshCw, BarChart3, Download } from 'lucide-react';
+import { Loader2, Search, Pencil, Plus, Check, X, ExternalLink, ArrowUpDown, MapPin, FileText, ChevronDown, RefreshCw, BarChart3, Download, Tag } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { SEOBachPanel } from '@/components/admin/seo/SEOBachPanel';
 import { SEOLinkingOpportunities } from '@/components/admin/seo/SEOLinkingOpportunities';
@@ -38,8 +39,16 @@ import { SEOReportsTab } from '@/components/admin/seo/SEOReportsTab';
 import { SEOSearchConsoleTab } from '@/components/admin/seo/SEOSearchConsoleTab';
 import { SEOAnalyticsTab } from '@/components/admin/seo/SEOAnalyticsTab';
 
-const PAGE_TYPES = ['Core Page', 'Neighborhood Hub', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Energy Content', 'Equipment'];
-const CLUSTERS = ['Core Site', 'Oak Cliff', 'East Dallas', 'North Dallas', 'Downtown Dallas', 'South Dallas', 'Outer Ring'];
+const PAGE_TYPES = ['Core Page', 'Neighborhood Hub', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Energy Content', 'Equipment', 'Location Page', 'location', 'Brand Pillar', 'Brand - Concept', 'Brand - Comparison', 'Brand - Equipment', 'Brand - System Configuration', 'Commercial + Developer', 'Residential Service + Neighborhood', 'Blog Post'];
+const CLUSTERS = [
+  'Core Site',
+  'Oak Cliff', 'East Dallas', 'North Dallas', 'Downtown Dallas', 'South Dallas', 'West Dallas',
+  'Lakewood', 'Lake Highlands', 'Outer Ring',
+  'Dallas UHI Research',
+  'Brand - Mitsubishi', 'Brand - Bosch', 'Brand - Goodman', 'Brand - Trane',
+  'Brand - Daikin', 'Brand - Fujitsu', 'Brand - Gree', 'Brand - Hitachi',
+  'Brand - LG', 'Brand - Pioneer', 'Brand - Samsung',
+];
 const INDEX_STATUSES = ['Indexed', 'Pending', 'Not Indexed', 'Excluded'];
 
 interface PageSEO {
@@ -120,6 +129,10 @@ const SEOManagement = () => {
   const [filterSchema, setFilterSchema] = useState<string>('all');
   const [sortField, setSortField] = useState<SortField>('page_name');
   const [sortAsc, setSortAsc] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkCluster, setBulkCluster] = useState<string>('');
+  const [bulkPageType, setBulkPageType] = useState<string>('');
+  const [bulkSaving, setBulkSaving] = useState(false);
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
@@ -200,8 +213,14 @@ const SEOManagement = () => {
     }
 
     // Filters
-    if (filterPageType !== 'all') result = result.filter(p => p.page_type === filterPageType);
-    if (filterCluster !== 'all') result = result.filter(p => p.cluster === filterCluster);
+    if (filterPageType !== 'all') {
+      if (filterPageType === '__none__') result = result.filter(p => !p.page_type);
+      else result = result.filter(p => p.page_type === filterPageType);
+    }
+    if (filterCluster !== 'all') {
+      if (filterCluster === '__none__') result = result.filter(p => !p.cluster);
+      else result = result.filter(p => p.cluster === filterCluster);
+    }
     if (filterIndexStatus !== 'all') result = result.filter(p => p.index_status === filterIndexStatus);
     if (filterSchema === 'yes') result = result.filter(p => p.schema_applied === true);
     if (filterSchema === 'no') result = result.filter(p => !p.schema_applied);
@@ -288,6 +307,55 @@ const SEOManagement = () => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast({ title: 'Exported', description: `${filteredPages.length} pages exported to CSV.` });
+  };
+
+  const allFilteredSelected = filteredPages.length > 0 && filteredPages.every(p => selectedIds.has(p.id));
+  const someFilteredSelected = filteredPages.some(p => selectedIds.has(p.id));
+
+  const toggleSelectAllFiltered = () => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allFilteredSelected) filteredPages.forEach(p => next.delete(p.id));
+      else filteredPages.forEach(p => next.add(p.id));
+      return next;
+    });
+  };
+
+  const toggleRow = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectUnclustered = () => {
+    setSelectedIds(new Set(filteredPages.filter(p => !p.cluster).map(p => p.id)));
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const applyBulkUpdate = async (field: 'cluster' | 'page_type', value: string) => {
+    if (!value || selectedIds.size === 0) return;
+    setBulkSaving(true);
+    try {
+      const ids = Array.from(selectedIds);
+      const { error } = await supabase
+        .from('page_seo' as any)
+        .update({ [field]: value })
+        .in('id', ids);
+      if (error) throw error;
+      setPages(prev => prev.map(p => (selectedIds.has(p.id) ? { ...p, [field]: value } : p)));
+      toast({ title: 'Updated', description: `Set ${field === 'cluster' ? 'cluster' : 'page type'} to "${value}" on ${ids.length} page${ids.length === 1 ? '' : 's'}.` });
+      if (field === 'cluster') setBulkCluster('');
+      else setBulkPageType('');
+      setSelectedIds(new Set());
+    } catch (err: any) {
+      toast({ title: 'Bulk update failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setBulkSaving(false);
+    }
   };
 
   if (loading) {
@@ -422,6 +490,7 @@ const SEOManagement = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="__none__">(none)</SelectItem>
               {PAGE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -432,6 +501,7 @@ const SEOManagement = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Clusters</SelectItem>
+              <SelectItem value="__none__">(none / unclustered)</SelectItem>
               {CLUSTERS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -472,6 +542,51 @@ const SEOManagement = () => {
           </Select>
         </div>
 
+        {/* Bulk action toolbar */}
+        <div className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-md border bg-muted/40">
+          <div className="text-sm font-medium">
+            {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Bulk edit'}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={selectUnclustered}
+            disabled={!filteredPages.some(p => !p.cluster)}
+          >
+            <Tag className="h-3.5 w-3.5 mr-1.5" />
+            Select unclustered ({filteredPages.filter(p => !p.cluster).length})
+          </Button>
+          {selectedIds.size > 0 && (
+            <Button variant="ghost" size="sm" onClick={clearSelection}>Clear</Button>
+          )}
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <Select
+              value={bulkCluster}
+              onValueChange={(v) => { setBulkCluster(v); applyBulkUpdate('cluster', v); }}
+              disabled={selectedIds.size === 0 || bulkSaving}
+            >
+              <SelectTrigger className="w-[200px] h-9">
+                <SelectValue placeholder="Set cluster…" />
+              </SelectTrigger>
+              <SelectContent>
+                {CLUSTERS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select
+              value={bulkPageType}
+              onValueChange={(v) => { setBulkPageType(v); applyBulkUpdate('page_type', v); }}
+              disabled={selectedIds.size === 0 || bulkSaving}
+            >
+              <SelectTrigger className="w-[200px] h-9">
+                <SelectValue placeholder="Set page type…" />
+              </SelectTrigger>
+              <SelectContent>
+                {PAGE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {/* Table */}
         {filteredPages.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground border rounded-md">
@@ -482,6 +597,13 @@ const SEOManagement = () => {
             <table className="w-full caption-bottom text-sm">
               <TableHeader className="sticky top-0 z-20 bg-white [&_th]:bg-white shadow-[0_1px_0_0_hsl(var(--border))]">
                 <TableRow>
+                  <TableHead className="w-[40px]">
+                    <Checkbox
+                      checked={allFilteredSelected ? true : someFilteredSelected ? 'indeterminate' : false}
+                      onCheckedChange={toggleSelectAllFiltered}
+                      aria-label="Select all on page"
+                    />
+                  </TableHead>
                   <TableHead>Page</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Keyword</TableHead>
@@ -501,8 +623,16 @@ const SEOManagement = () => {
               <TableBody>
                 {filteredPages.map((page) => {
                   const status = getSEOStatus(page);
+                  const isSelected = selectedIds.has(page.id);
                   return (
-                    <TableRow key={page.id}>
+                    <TableRow key={page.id} data-state={isSelected ? 'selected' : undefined}>
+                      <TableCell>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleRow(page.id)}
+                          aria-label={`Select ${page.page_name}`}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div>
                           <div className="font-medium text-sm">{page.page_name}</div>
