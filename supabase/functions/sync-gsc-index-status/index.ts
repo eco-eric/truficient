@@ -67,6 +67,16 @@ async function getAccessToken(clientEmail: string, privateKeyPem: string): Promi
   return json.access_token as string;
 }
 
+// Monday (00:00 UTC) of the current week, ISO date string (YYYY-MM-DD).
+function mondayOfCurrentWeek(): string {
+  const d = new Date();
+  const day = d.getUTCDay(); // 0 = Sunday … 6 = Saturday
+  const diff = (day + 6) % 7; // days since Monday
+  d.setUTCDate(d.getUTCDate() - diff);
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString().slice(0, 10);
+}
+
 // ---------- GSC verdict → our enum ----------
 function verdictToStatus(verdict: string | undefined, coverage: string | undefined): string {
   if (verdict === "PASS") return "indexed";
@@ -120,7 +130,8 @@ Deno.serve(async (req) => {
     const accessToken = await getAccessToken(clientEmail, privateKey);
     const baseHost = "https://truficient.com";
 
-    let indexed = 0, notIndexed = 0, pending = 0, errors = 0;
+    const weekStarting = mondayOfCurrentWeek();
+    let indexed = 0, notIndexed = 0, pending = 0, errors = 0, snapshotsWritten = 0;
 
     for (const page of pages ?? []) {
       const pagePath = page.page_path?.startsWith("/") ? page.page_path : `/${page.page_path}`;
@@ -154,6 +165,32 @@ Deno.serve(async (req) => {
             updated_at: new Date().toISOString(),
           })
           .eq("id", page.id);
+
+        // Read latest performance metrics from page_seo and snapshot them
+        // for week-over-week comparisons.
+        const { data: metricsRow } = await supabase
+          .from("page_seo")
+          .select("gsc_clicks, gsc_impressions, avg_position")
+          .eq("id", page.id)
+          .maybeSingle();
+
+        const { error: snapErr } = await supabase
+          .from("page_seo_gsc_snapshots")
+          .upsert(
+            {
+              page_id: page.id,
+              week_starting: weekStarting,
+              clicks: metricsRow?.gsc_clicks ?? 0,
+              impressions: metricsRow?.gsc_impressions ?? 0,
+              avg_position: metricsRow?.avg_position ?? null,
+            },
+            { onConflict: "page_id,week_starting" },
+          );
+        if (snapErr) {
+          console.error(`Snapshot upsert failed for ${page.id}:`, snapErr);
+        } else {
+          snapshotsWritten++;
+        }
       } catch (e) {
         console.error(`Error inspecting ${inspectionUrl}:`, e);
         errors++;
@@ -169,6 +206,8 @@ Deno.serve(async (req) => {
       not_indexed: notIndexed,
       pending,
       errors,
+      snapshots_written: snapshotsWritten,
+      week_starting: weekStarting,
       offset,
       limit,
     };
