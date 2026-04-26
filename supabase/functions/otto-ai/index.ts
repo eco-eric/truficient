@@ -14,7 +14,7 @@ serve(async (req) => {
 
     const { action, payload } = await req.json();
 
-    let messages: { role: string; content: string }[] = [];
+    let messages: { role: string; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }[] = [];
     let tools: any[] | undefined;
     let tool_choice: any | undefined;
 

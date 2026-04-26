@@ -3860,7 +3860,7 @@ You are currently responding to Harold, your trusted AI operations partner built
       }
 
       const rawMessage = aiConfig.provider === "anthropic" ? aiData : aiData.choices?.[0]?.message;
-      messages.push(buildAssistantToolCallMessage(aiConfig.provider, parsed, rawMessage));
+      messages.push(buildAssistantToolCallMessage(aiConfig.provider, { ...parsed, toolCalls: parsed.toolCalls ?? [] }, rawMessage));
 
       for (const toolCall of parsed.toolCalls) {
         const toolName = toolCall.function.name;
@@ -3898,7 +3898,7 @@ You are currently responding to Harold, your trusted AI operations partner built
       assistant_response: finalResponse,
       tools_used: toolsUsed,
       duration_ms: Date.now() - startTime,
-    }).then(() => {}).catch(() => {});
+    }).then(() => {}, () => {});
 
     return new Response(
       JSON.stringify({ message: finalResponse, toolsUsed, provider: aiConfig.provider, model: aiConfig.model }),
