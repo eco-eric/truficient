@@ -5,12 +5,8 @@
 // This is the admin exclusion — implemented at the code level rather
 // than via IP filtering so internal usage never inflates GA4 metrics.
 
-declare global {
-  interface Window {
-    gtag?: (...args: any[]) => void;
-    dataLayer?: any[];
-  }
-}
+// `window.gtag` and `window.dataLayer` are already declared globally in
+// src/components/tracking/TrackingScripts.tsx — we reuse that typing.
 
 const MEASUREMENT_ID = import.meta.env.VITE_GA4_MEASUREMENT_ID as string | undefined;
 let loaded = false;
