@@ -593,6 +593,32 @@ const SEOManagement = () => {
             <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Add Open Graph tags for social sharing</li>
           </ul>
         </div>
+          </TabsContent>
+
+          <TabsContent value="reports" className="mt-6">
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                Coming next
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="search-console" className="mt-6">
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                Coming next
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="mt-6">
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                Coming next
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminLayout>
   );
