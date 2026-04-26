@@ -3282,9 +3282,54 @@ async function executeSEOAudit(supabase: any, input: any) {
   };
 }
 
-// ============================================================
-// SEO UPDATE TOOL
-// ============================================================
+async function executeSearchSeoReports(supabase: any, input: any) {
+  const limit = Math.min(input.limit || 10, 50);
+  let query = supabase
+    .from("seo_reports")
+    .select("id, title, summary, created_at, report_type, tags, related_page_paths")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (input.query?.trim()) {
+    const term = input.query.trim().replace(/\s+/g, " & ");
+    try {
+      query = query.textSearch("fts", term, { config: "english" });
+    } catch {
+      query = query.or(`title.ilike.%${input.query}%,summary.ilike.%${input.query}%`);
+    }
+  }
+  if (input.tag) query = query.contains("tags", [input.tag]);
+  if (input.page_path) query = query.contains("related_page_paths", [input.page_path]);
+
+  const { data, error } = await query;
+  if (error) {
+    // Fallback to ilike if tsvector fails
+    let fb = supabase
+      .from("seo_reports")
+      .select("id, title, summary, created_at, report_type, tags, related_page_paths")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (input.query?.trim()) fb = fb.or(`title.ilike.%${input.query}%,summary.ilike.%${input.query}%,full_response.ilike.%${input.query}%`);
+    if (input.tag) fb = fb.contains("tags", [input.tag]);
+    if (input.page_path) fb = fb.contains("related_page_paths", [input.page_path]);
+    const { data: fbData, error: fbErr } = await fb;
+    if (fbErr) return { error: `search_seo_reports failed: ${fbErr.message}` };
+    return { count: (fbData || []).length, reports: fbData || [] };
+  }
+
+  return {
+    count: (data || []).length,
+    reports: (data || []).map((r: any) => ({
+      report_id: r.id,
+      title: r.title,
+      summary: r.summary,
+      created_at: r.created_at,
+      report_type: r.report_type,
+      tags: r.tags,
+    })),
+    instructions: "Reference these prior reports by title and date. Each report_id can be linked at /admin/seo?tab=reports&report=[id].",
+  };
+}
 
 async function executeUpdateSEO(supabase: any, userId: string, input: any) {
   const source = input.source || "page";
