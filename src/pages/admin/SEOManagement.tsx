@@ -370,8 +370,17 @@ const SEOManagement = () => {
         {/* Internal Linking Opportunities Tracker */}
         <SEOLinkingOpportunities />
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-3">
+        {/* Search + Filters */}
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[240px] max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search pages, slugs, keywords..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
           <Select value={filterPageType} onValueChange={setFilterPageType}>
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Page Type" />
