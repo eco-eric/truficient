@@ -578,8 +578,16 @@ const SEOManagement = () => {
               <TableBody>
                 {filteredPages.map((page) => {
                   const status = getSEOStatus(page);
+                  const isSelected = selectedIds.has(page.id);
                   return (
-                    <TableRow key={page.id}>
+                    <TableRow key={page.id} data-state={isSelected ? 'selected' : undefined}>
+                      <TableCell>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleRow(page.id)}
+                          aria-label={`Select ${page.page_name}`}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div>
                           <div className="font-medium text-sm">{page.page_name}</div>
