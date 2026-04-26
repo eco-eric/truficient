@@ -464,6 +464,7 @@ function ReportDetail({ reportId, onBack }: { reportId: string; onBack: () => vo
             </ul>
           )}
         </section>
+        </div>{/* /#seo-report-printable */}
 
         {/* Follow-up Conversation */}
         <section>
