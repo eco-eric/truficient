@@ -290,17 +290,7 @@ const SEOManagement = () => {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search pages, slugs, keywords..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-auto">
             <Button variant="outline" asChild>
               <Link to="/admin/seo-performance">
                 <BarChart3 className="h-4 w-4 mr-2" />
@@ -380,8 +370,17 @@ const SEOManagement = () => {
         {/* Internal Linking Opportunities Tracker */}
         <SEOLinkingOpportunities />
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-3">
+        {/* Search + Filters */}
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[240px] max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search pages, slugs, keywords..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
           <Select value={filterPageType} onValueChange={setFilterPageType}>
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Page Type" />
