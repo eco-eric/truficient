@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -63,6 +64,7 @@ const QUICK_ACTIONS = [
 type ActionId = typeof QUICK_ACTIONS[number]['id'] | 'freeform';
 
 export function SEOBachPanel() {
+  const navigate = useNavigate();
   const [model, setModel] = useState('google/gemini-2.5-pro');
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
@@ -70,11 +72,39 @@ export function SEOBachPanel() {
   const [answer, setAnswer] = useState<string | null>(null);
   const [meta, setMeta] = useState<{ model?: string; action?: string; totalAnalyzed?: number } | null>(null);
 
+  async function archiveReport(promptText: string, responseText: string, modelUsed: string, totalAnalyzed?: number) {
+    try {
+      const { data, error } = await supabase.functions.invoke('seo-report-save', {
+        body: {
+          original_prompt: promptText,
+          full_response: responseText,
+          model_used: modelUsed,
+          pages_analyzed: typeof totalAnalyzed === 'number' ? totalAnalyzed : null,
+        },
+      });
+      if (error) throw error;
+      const reportId = (data as any)?.report_id;
+      if (reportId) {
+        toast.success('Report archived', {
+          duration: 8000,
+          action: {
+            label: 'View',
+            onClick: () => navigate(`/admin/seo?tab=reports&report=${reportId}`),
+          },
+        });
+      }
+    } catch (e: any) {
+      console.warn('Failed to archive report:', e?.message ?? e);
+      // Silent — the user still has the answer in front of them.
+    }
+  }
+
   async function runAnalysis(action: ActionId, customQuestion?: string) {
     setLoading(true);
     setActiveAction(action);
     setAnswer(null);
     try {
+      const promptText = customQuestion ?? (action === 'freeform' ? question : action);
       const { data, error } = await supabase.functions.invoke('seo-bach-analyst', {
         body: {
           action,
@@ -84,12 +114,17 @@ export function SEOBachPanel() {
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      setAnswer((data as any).answer);
+      const responseText = (data as any).answer;
+      const usedModel = (data as any).model;
+      const totalAnalyzed = (data as any).meta?.totalAnalyzed;
+      setAnswer(responseText);
       setMeta({
-        model: (data as any).model,
+        model: usedModel,
         action: (data as any).action,
-        totalAnalyzed: (data as any).meta?.totalAnalyzed,
+        totalAnalyzed,
       });
+      // Fire-and-forget: save the report for later reference
+      archiveReport(promptText, responseText, usedModel, totalAnalyzed);
     } catch (e: any) {
       const msg = e?.message ?? 'Failed to run analysis';
       toast.error(msg);

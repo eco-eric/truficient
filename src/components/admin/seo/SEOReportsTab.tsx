@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { format, formatDistanceToNow } from 'date-fns';
 import { CalendarIcon, Search, ArrowLeft, ExternalLink, MessageSquare, ListChecks, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -36,16 +38,27 @@ const STATUS_PILL: Record<string, string> = {
 };
 
 export function SEOReportsTab() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const reportFromUrl = searchParams.get('report');
+
   const [search, setSearch] = useState('');
   const [reportType, setReportType] = useState<string>('all');
   const [tag, setTag] = useState<string>('all');
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [mobileShowDetail, setMobileShowDetail] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(reportFromUrl);
+  const [mobileShowDetail, setMobileShowDetail] = useState(!!reportFromUrl);
 
   const { reports, count, allTags, loading } = useSeoReports({
     search, reportType, tag, dateRange,
   });
+
+  // Sync ?report= URL param → selectedId (e.g. when navigating from "View" toast)
+  useEffect(() => {
+    if (reportFromUrl && reportFromUrl !== selectedId) {
+      setSelectedId(reportFromUrl);
+      setMobileShowDetail(true);
+    }
+  }, [reportFromUrl]);
 
   const dateLabel = useMemo(() => {
     if (dateRange.from && dateRange.to) {
@@ -58,6 +71,16 @@ export function SEOReportsTab() {
   const handleSelect = (id: string) => {
     setSelectedId(id);
     setMobileShowDetail(true);
+    const next = new URLSearchParams(searchParams);
+    next.set('report', id);
+    setSearchParams(next, { replace: true });
+  };
+
+  const handleBack = () => {
+    setMobileShowDetail(false);
+    const next = new URLSearchParams(searchParams);
+    next.delete('report');
+    setSearchParams(next, { replace: true });
   };
 
   return (
@@ -158,7 +181,7 @@ export function SEOReportsTab() {
         {selectedId ? (
           <ReportDetail
             reportId={selectedId}
-            onBack={() => setMobileShowDetail(false)}
+            onBack={handleBack}
           />
         ) : (
           <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-24 px-6 h-full">
@@ -206,7 +229,30 @@ function ReportCard({ report, active, onClick }: {
 }
 
 function ReportDetail({ reportId, onBack }: { reportId: string; onBack: () => void }) {
-  const { report, messages, actions, loading, toggleAction } = useSeoReport(reportId);
+  const { report, messages, actions, loading, toggleAction, refetch } = useSeoReport(reportId);
+  const [followUp, setFollowUp] = useState('');
+  const [sending, setSending] = useState(false);
+
+  async function sendFollowUp() {
+    const text = followUp.trim();
+    if (!text || sending) return;
+    setSending(true);
+    setFollowUp('');
+    try {
+      const { data, error } = await supabase.functions.invoke('seo-report-followup', {
+        body: { report_id: reportId, user_message: text },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      await refetch();
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to send follow-up');
+      // Restore input so the user can retry
+      setFollowUp(text);
+    } finally {
+      setSending(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -313,33 +359,62 @@ function ReportDetail({ reportId, onBack }: { reportId: string; onBack: () => vo
             <h3 className="text-sm font-semibold text-[#1e3a5f]">Follow-up Conversation</h3>
           </div>
           <div className="border rounded-md bg-muted/30 max-h-[400px] overflow-auto p-3 space-y-3">
-            {messages.length === 0 ? (
+            {messages.length === 0 && !sending ? (
               <p className="text-xs text-muted-foreground text-center py-4">
                 No follow-ups yet.
               </p>
             ) : (
-              messages.map(m => (
-                <div key={m.id} className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
-                  <div className={cn(
-                    'max-w-[80%] rounded-lg px-3 py-2 text-sm',
-                    m.role === 'user'
-                      ? 'bg-[#1e3a5f] text-white'
-                      : 'bg-white border'
-                  )}>
-                    <div className="prose prose-sm max-w-none prose-p:my-1">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
-                    </div>
-                    <div className={cn('text-[10px] mt-1', m.role === 'user' ? 'text-white/60' : 'text-muted-foreground')}>
-                      {format(new Date(m.created_at), 'MMM d, h:mm a')}
+              <>
+                {messages.map(m => (
+                  <div key={m.id} className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
+                    <div className={cn(
+                      'max-w-[80%] rounded-lg px-3 py-2 text-sm',
+                      m.role === 'user'
+                        ? 'bg-[#1e3a5f] text-white'
+                        : 'bg-white border'
+                    )}>
+                      <div className="prose prose-sm max-w-none prose-p:my-1">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                      </div>
+                      <div className={cn('text-[10px] mt-1', m.role === 'user' ? 'text-white/60' : 'text-muted-foreground')}>
+                        {format(new Date(m.created_at), 'MMM d, h:mm a')}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                ))}
+                {sending && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[80%] rounded-lg px-3 py-2 text-sm bg-white border inline-flex items-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-[#1e3a5f]" />
+                      <span className="text-xs">Bach is thinking…</span>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
           <div className="mt-2 flex gap-2">
-            <Input disabled placeholder="Ask a follow-up… (coming next)" className="flex-1 h-9 text-sm" />
-            <Button disabled size="sm" className="bg-[#1e3a5f] hover:bg-[#1e3a5f]/90">Send</Button>
+            <Input
+              value={followUp}
+              onChange={(e) => setFollowUp(e.target.value)}
+              placeholder="Ask a follow-up about this report…"
+              className="flex-1 h-9 text-sm"
+              disabled={sending}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  sendFollowUp();
+                }
+              }}
+            />
+            <Button
+              size="sm"
+              onClick={sendFollowUp}
+              disabled={!followUp.trim() || sending}
+              className="bg-[#1e3a5f] hover:bg-[#1e3a5f]/90"
+            >
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send'}
+            </Button>
           </div>
         </section>
       </div>
