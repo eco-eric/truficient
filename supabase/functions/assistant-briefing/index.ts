@@ -198,6 +198,20 @@ serve(async (req) => {
         .order("sync_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
+
+      // Open SEO action items
+      supabase
+        .from("seo_report_actions")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "open"),
+
+      // Most recent SEO report
+      supabase
+        .from("seo_reports")
+        .select("id, title, created_at")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
     // Process uncontacted leads — filter to those with no interactions or last > 3 days
