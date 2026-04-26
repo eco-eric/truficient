@@ -34,6 +34,7 @@ import { Loader2, Search, Pencil, Plus, Check, X, ExternalLink, ArrowUpDown, Map
 import { toast } from 'sonner';
 import { SEOBachPanel } from '@/components/admin/seo/SEOBachPanel';
 import { SEOLinkingOpportunities } from '@/components/admin/seo/SEOLinkingOpportunities';
+import { SEOReportsTab } from '@/components/admin/seo/SEOReportsTab';
 
 const PAGE_TYPES = ['Core Page', 'Neighborhood Hub', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Energy Content', 'Equipment'];
 const CLUSTERS = ['Core Site', 'Oak Cliff', 'East Dallas', 'North Dallas', 'Downtown Dallas', 'South Dallas', 'Outer Ring'];
@@ -596,11 +597,7 @@ const SEOManagement = () => {
           </TabsContent>
 
           <TabsContent value="reports" className="mt-6">
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                Coming next
-              </CardContent>
-            </Card>
+            <SEOReportsTab />
           </TabsContent>
 
           <TabsContent value="search-console" className="mt-6">
