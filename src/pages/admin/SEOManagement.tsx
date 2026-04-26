@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -116,6 +118,16 @@ const SEOManagement = () => {
   const [sortField, setSortField] = useState<SortField>('page_name');
   const [sortAsc, setSortAsc] = useState(true);
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const validTabs = ['pages', 'reports', 'search-console', 'analytics'] as const;
+  const activeTab = (validTabs.includes(tabParam as any) ? tabParam : 'pages') as typeof validTabs[number];
+  const handleTabChange = (val: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (val === 'pages') next.delete('tab');
+    else next.set('tab', val);
+    setSearchParams(next, { replace: true });
+  };
 
   const fetchGscAvgPosition = async () => {
     // Pull last 28 days of site-wide GSC data and compute average position
@@ -328,47 +340,67 @@ const SEOManagement = () => {
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-          <div className="bg-white p-3 rounded-lg border">
-            <div className="text-2xl font-bold">{totalPages}</div>
-            <div className="text-xs text-muted-foreground">Total Pages</div>
-          </div>
-          <div className="bg-white p-3 rounded-lg border">
-            <div className="text-2xl font-bold text-green-600">{optimizedCount}</div>
-            <div className="text-xs text-muted-foreground">Optimized</div>
-          </div>
-          <div className="bg-white p-3 rounded-lg border">
-            <div className="text-2xl font-bold text-amber-600">{needsAttentionCount}</div>
-            <div className="text-xs text-muted-foreground">Needs Attention</div>
-          </div>
-          <div className="bg-white p-3 rounded-lg border">
-            <div className="text-2xl font-bold text-blue-600">{locationPages.length}</div>
-            <div className="text-xs text-muted-foreground">Location Pages</div>
-          </div>
-          <div className="bg-white p-3 rounded-lg border">
-            <div className="text-2xl font-bold">
-              <span className="text-green-600">{indexedCount}</span>
-              <span className="text-muted-foreground text-lg"> / </span>
-              <span className="text-red-500">{notIndexedCount}</span>
-            </div>
-            <div className="text-xs text-muted-foreground">Indexed / Not</div>
-          </div>
-          <div className="bg-white p-3 rounded-lg border">
-            <div className="text-2xl font-bold text-orange-600">{missingSchemaCount}</div>
-            <div className="text-xs text-muted-foreground">Missing Schema</div>
-          </div>
-          <div className="bg-white p-3 rounded-lg border">
-            <div className="text-2xl font-bold">{gscAvgPosition}</div>
-          <div className="text-xs text-muted-foreground">Avg Position</div>
-          </div>
-        </div>
-
-        {/* Bach AI Analyst */}
+        {/* Bach AI Analyst (global, above tabs) */}
         <SEOBachPanel />
 
-        {/* Internal Linking Opportunities Tracker */}
-        <SEOLinkingOpportunities />
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <TabsList className="bg-white border border-border rounded-md h-auto p-1 gap-1">
+            {[
+              { value: 'pages', label: 'Pages' },
+              { value: 'reports', label: 'Reports' },
+              { value: 'search-console', label: 'Search Console' },
+              { value: 'analytics', label: 'Analytics' },
+            ].map((t) => (
+              <TabsTrigger
+                key={t.value}
+                value={t.value}
+                className="rounded-sm px-4 py-2 text-sm font-medium text-muted-foreground border-b-2 border-transparent hover:text-[#1e3a5f] hover:border-[#FFB547] data-[state=active]:text-[#1e3a5f] data-[state=active]:border-[#1e3a5f] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              >
+                {t.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          <TabsContent value="pages" className="mt-6 space-y-6">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+              <div className="bg-white p-3 rounded-lg border">
+                <div className="text-2xl font-bold">{totalPages}</div>
+                <div className="text-xs text-muted-foreground">Total Pages</div>
+              </div>
+              <div className="bg-white p-3 rounded-lg border">
+                <div className="text-2xl font-bold text-green-600">{optimizedCount}</div>
+                <div className="text-xs text-muted-foreground">Optimized</div>
+              </div>
+              <div className="bg-white p-3 rounded-lg border">
+                <div className="text-2xl font-bold text-amber-600">{needsAttentionCount}</div>
+                <div className="text-xs text-muted-foreground">Needs Attention</div>
+              </div>
+              <div className="bg-white p-3 rounded-lg border">
+                <div className="text-2xl font-bold text-blue-600">{locationPages.length}</div>
+                <div className="text-xs text-muted-foreground">Location Pages</div>
+              </div>
+              <div className="bg-white p-3 rounded-lg border">
+                <div className="text-2xl font-bold">
+                  <span className="text-green-600">{indexedCount}</span>
+                  <span className="text-muted-foreground text-lg"> / </span>
+                  <span className="text-red-500">{notIndexedCount}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">Indexed / Not</div>
+              </div>
+              <div className="bg-white p-3 rounded-lg border">
+                <div className="text-2xl font-bold text-orange-600">{missingSchemaCount}</div>
+                <div className="text-xs text-muted-foreground">Missing Schema</div>
+              </div>
+              <div className="bg-white p-3 rounded-lg border">
+                <div className="text-2xl font-bold">{gscAvgPosition}</div>
+                <div className="text-xs text-muted-foreground">Avg Position</div>
+              </div>
+            </div>
+
+            {/* Internal Linking Opportunities Tracker */}
+            <SEOLinkingOpportunities />
 
         {/* Search + Filters */}
         <div className="flex flex-wrap gap-3 items-center">
@@ -561,6 +593,32 @@ const SEOManagement = () => {
             <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Add Open Graph tags for social sharing</li>
           </ul>
         </div>
+          </TabsContent>
+
+          <TabsContent value="reports" className="mt-6">
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                Coming next
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="search-console" className="mt-6">
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                Coming next
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="mt-6">
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                Coming next
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminLayout>
   );
