@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { format, formatDistanceToNow } from 'date-fns';
-import { CalendarIcon, Search, ArrowLeft, ExternalLink, MessageSquare, ListChecks, Loader2 } from 'lucide-react';
+import { CalendarIcon, Search, ArrowLeft, ExternalLink, MessageSquare, ListChecks, Loader2, Copy, FileDown, FileText, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -228,10 +228,107 @@ function ReportCard({ report, active, onClick }: {
   );
 }
 
+function buildReportMarkdown(report: any, actions: any[], messages: any[]) {
+  const lines: string[] = [];
+  lines.push(`# ${report.title}`, '');
+  lines.push(`*Generated ${format(new Date(report.created_at), 'MMM d, yyyy h:mm a')} · ${report.pages_analyzed ?? 0} pages analyzed · ${report.pages_flagged ?? 0} flagged*`, '');
+  if (report.model_used) lines.push(`*Model: ${report.model_used}*`, '');
+  lines.push('## Original Prompt', '', `> ${report.original_prompt.replace(/\n/g, '\n> ')}`, '');
+  lines.push('## Response', '', report.full_response, '');
+  if (actions.length) {
+    lines.push('## Action Items', '');
+    actions.forEach(a => {
+      const box = a.status === 'done' ? '[x]' : '[ ]';
+      lines.push(`- ${box} ${a.action_text}${a.page_path ? ` — \`${a.page_path}\`` : ''} _(${a.status})_`);
+    });
+    lines.push('');
+  }
+  if (messages.length) {
+    lines.push('## Follow-up Conversation', '');
+    messages.forEach(m => {
+      lines.push(`**${m.role === 'user' ? 'You' : 'Bach'}** · ${format(new Date(m.created_at), 'MMM d, h:mm a')}`, '', m.content, '');
+    });
+  }
+  if (report.related_page_paths?.length) {
+    lines.push('## Related Pages', '', ...report.related_page_paths.map((p: string) => `- ${p}`), '');
+  }
+  return lines.join('\n');
+}
+
+function downloadBlob(content: string | Blob, filename: string, mime: string) {
+  const blob = content instanceof Blob ? content : new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function ReportDetail({ reportId, onBack }: { reportId: string; onBack: () => void }) {
   const { report, messages, actions, loading, toggleAction, refetch } = useSeoReport(reportId);
   const [followUp, setFollowUp] = useState('');
   const [sending, setSending] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+
+  const safeFilename = (s: string) =>
+    s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'seo-report';
+
+  async function handleCopy() {
+    if (!report) return;
+    try {
+      await navigator.clipboard.writeText(buildReportMarkdown(report, actions, messages));
+      setCopied(true);
+      toast.success('Report copied to clipboard');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Failed to copy');
+    }
+  }
+
+  function handleExportMd() {
+    if (!report) return;
+    const md = buildReportMarkdown(report, actions, messages);
+    const date = format(new Date(report.created_at), 'yyyy-MM-dd');
+    downloadBlob(md, `${date}-${safeFilename(report.title)}.md`, 'text/markdown');
+    toast.success('Markdown downloaded');
+  }
+
+  async function handleExportPdf() {
+    if (!report || exportingPdf) return;
+    setExportingPdf(true);
+    try {
+      const node = document.getElementById('seo-report-printable');
+      if (!node) throw new Error('Report content not found');
+      const printWindow = window.open('', '_blank', 'width=900,height=1000');
+      if (!printWindow) throw new Error('Popup blocked — allow popups to export PDF');
+      const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+        .map(el => el.outerHTML).join('\n');
+      printWindow.document.write(`<!doctype html><html><head><title>${report.title}</title>${styles}
+        <style>
+          body { padding: 32px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a1a1a; }
+          @media print { body { padding: 0; } .no-print { display: none !important; } }
+          h1, h2, h3 { color: #1e3a5f; }
+          blockquote { border-left: 4px solid #FFB547; padding: 8px 16px; background: #f8f8f8; margin: 12px 0; }
+          table { border-collapse: collapse; width: 100%; }
+          th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
+          th { background: #f4f4f4; }
+        </style>
+      </head><body>${node.innerHTML}</body></html>`);
+      printWindow.document.close();
+      await new Promise(r => setTimeout(r, 400));
+      printWindow.focus();
+      printWindow.print();
+      toast.success('Print dialog opened — choose "Save as PDF"');
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to export PDF');
+    } finally {
+      setExportingPdf(false);
+    }
+  }
 
   async function sendFollowUp() {
     const text = followUp.trim();
@@ -247,7 +344,6 @@ function ReportDetail({ reportId, onBack }: { reportId: string; onBack: () => vo
       await refetch();
     } catch (e: any) {
       toast.error(e?.message ?? 'Failed to send follow-up');
-      // Restore input so the user can retry
       setFollowUp(text);
     } finally {
       setSending(false);
@@ -276,22 +372,39 @@ function ReportDetail({ reportId, onBack }: { reportId: string; onBack: () => vo
           <ArrowLeft className="h-4 w-4 mr-1" /> Back
         </Button>
 
-        {/* Header */}
-        <header className="space-y-2">
-          <div className="flex items-start justify-between gap-3">
-            <h2 className="text-xl font-semibold text-[#1e3a5f]">{report.title}</h2>
-            {report.model_used && (
-              <Badge className="bg-[#FFB547] text-[#1e3a5f] border-0 hover:bg-[#FFB547] shrink-0">
-                {report.model_used}
-              </Badge>
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Generated {format(new Date(report.created_at), 'MMM d, yyyy h:mm a')}
-            {' · '}analyzed <strong className="text-foreground">{report.pages_analyzed ?? 0}</strong> pages
-            {' · '}flagged <strong className="text-foreground">{report.pages_flagged ?? 0}</strong>
-          </p>
-        </header>
+        {/* Action toolbar */}
+        <div className="flex flex-wrap items-center gap-2 pb-2 border-b">
+          <Button variant="outline" size="sm" onClick={handleCopy} className="h-8 text-xs">
+            {copied ? <Check className="h-3.5 w-3.5 mr-1.5 text-green-600" /> : <Copy className="h-3.5 w-3.5 mr-1.5" />}
+            {copied ? 'Copied' : 'Copy'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportMd} className="h-8 text-xs">
+            <FileText className="h-3.5 w-3.5 mr-1.5" />
+            Export .md
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={exportingPdf} className="h-8 text-xs">
+            {exportingPdf ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5 mr-1.5" />}
+            Export PDF
+          </Button>
+        </div>
+
+        <div id="seo-report-printable" className="space-y-6">
+          {/* Header */}
+          <header className="space-y-2">
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="text-xl font-semibold text-[#1e3a5f]">{report.title}</h2>
+              {report.model_used && (
+                <Badge className="bg-[#FFB547] text-[#1e3a5f] border-0 hover:bg-[#FFB547] shrink-0">
+                  {report.model_used}
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Generated {format(new Date(report.created_at), 'MMM d, yyyy h:mm a')}
+              {' · '}analyzed <strong className="text-foreground">{report.pages_analyzed ?? 0}</strong> pages
+              {' · '}flagged <strong className="text-foreground">{report.pages_flagged ?? 0}</strong>
+            </p>
+          </header>
 
         {/* Original prompt */}
         <blockquote className="bg-muted/60 border-l-4 border-[#FFB547] rounded-r-md px-4 py-3 text-sm text-foreground/80 whitespace-pre-wrap">
@@ -351,6 +464,7 @@ function ReportDetail({ reportId, onBack }: { reportId: string; onBack: () => vo
             </ul>
           )}
         </section>
+        </div>{/* /#seo-report-printable */}
 
         {/* Follow-up Conversation */}
         <section>
