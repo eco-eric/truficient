@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { format, formatDistanceToNow } from 'date-fns';
 import { CalendarIcon, Search, ArrowLeft, ExternalLink, MessageSquare, ListChecks, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
