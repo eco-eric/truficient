@@ -193,7 +193,7 @@ Deno.serve(async (req) => {
       assistant_response: finalResponse,
       tools_used: toolsUsed,
       duration_ms: Date.now() - Date.now(),
-    }).then(() => {}).catch(() => {});
+    }).then(() => {}, () => {});
 
     return new Response(
       JSON.stringify({ message: finalResponse, toolsUsed }),

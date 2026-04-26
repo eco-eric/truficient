@@ -1435,7 +1435,7 @@ Deno.serve(async (req) => {
       assistant_response: JSON.stringify(response.result || response.error || {}).substring(0, 2000),
       tools_used: method === "tools/call" ? [{ tool: params?.name, input: params?.arguments }] : [{ tool: "resource_read", input: { uri: params?.uri } }],
       duration_ms: Date.now() - startTime,
-    }).then(() => {}).catch(() => {});
+    }).then(() => {}, () => {});
   }
 
   return new Response(

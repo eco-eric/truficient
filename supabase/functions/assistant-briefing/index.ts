@@ -138,7 +138,7 @@ serve(async (req) => {
         .order("start_datetime"),
 
       // New submissions via RPC
-      supabase.rpc("get_new_submission_counts").then(r => r).catch(() => ({ data: { total: 0, new_last_24h: 0, breakdown: {} } })),
+      supabase.rpc("get_new_submission_counts").then(r => r, () => ({ data: { total: 0, new_last_24h: 0, breakdown: {} } })),
 
       // Uncontacted leads
       supabase

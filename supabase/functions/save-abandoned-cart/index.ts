@@ -247,7 +247,7 @@ Deno.serve(async (req) => {
         let syncStatus = "failed";
 
         if (ghlResponse.ok) {
-          const ghlData: GHLResponse = JSON.parse(responseText);
+          const ghlData: any = JSON.parse(responseText);
           ghlContactId = ghlData.contact?.id || null;
           syncStatus = "synced";
           console.log("GHL sync successful. Contact ID:", ghlContactId);
