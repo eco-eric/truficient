@@ -490,6 +490,7 @@ const SEOManagement = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="__none__">(none)</SelectItem>
               {PAGE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -500,6 +501,7 @@ const SEOManagement = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Clusters</SelectItem>
+              <SelectItem value="__none__">(none / unclustered)</SelectItem>
               {CLUSTERS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
