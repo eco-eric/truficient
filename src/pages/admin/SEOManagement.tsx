@@ -309,6 +309,55 @@ const SEOManagement = () => {
     toast({ title: 'Exported', description: `${filteredPages.length} pages exported to CSV.` });
   };
 
+  const allFilteredSelected = filteredPages.length > 0 && filteredPages.every(p => selectedIds.has(p.id));
+  const someFilteredSelected = filteredPages.some(p => selectedIds.has(p.id));
+
+  const toggleSelectAllFiltered = () => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allFilteredSelected) filteredPages.forEach(p => next.delete(p.id));
+      else filteredPages.forEach(p => next.add(p.id));
+      return next;
+    });
+  };
+
+  const toggleRow = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectUnclustered = () => {
+    setSelectedIds(new Set(filteredPages.filter(p => !p.cluster).map(p => p.id)));
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const applyBulkUpdate = async (field: 'cluster' | 'page_type', value: string) => {
+    if (!value || selectedIds.size === 0) return;
+    setBulkSaving(true);
+    try {
+      const ids = Array.from(selectedIds);
+      const { error } = await supabase
+        .from('page_seo' as any)
+        .update({ [field]: value })
+        .in('id', ids);
+      if (error) throw error;
+      setPages(prev => prev.map(p => (selectedIds.has(p.id) ? { ...p, [field]: value } : p)));
+      toast({ title: 'Updated', description: `Set ${field === 'cluster' ? 'cluster' : 'page type'} to "${value}" on ${ids.length} page${ids.length === 1 ? '' : 's'}.` });
+      if (field === 'cluster') setBulkCluster('');
+      else setBulkPageType('');
+      setSelectedIds(new Set());
+    } catch (err: any) {
+      toast({ title: 'Bulk update failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <AdminLayout title="SEO Management">
