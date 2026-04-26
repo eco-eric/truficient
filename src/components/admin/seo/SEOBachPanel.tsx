@@ -71,6 +71,9 @@ export function SEOBachPanel() {
   const [activeAction, setActiveAction] = useState<ActionId | null>(null);
   const [answer, setAnswer] = useState<string | null>(null);
   const [meta, setMeta] = useState<{ model?: string; action?: string; totalAnalyzed?: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const loadingRef = useRef(loading);
+  loadingRef.current = loading;
 
   async function archiveReport(promptText: string, responseText: string, modelUsed: string, totalAnalyzed?: number) {
     try {
