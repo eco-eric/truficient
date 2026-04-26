@@ -635,6 +635,23 @@ const tools = [
       },
     },
   },
+  // === SEO REPORT ARCHIVE SEARCH ===
+  {
+    type: "function" as const,
+    function: {
+      name: "search_seo_reports",
+      description: "Search archived SEO reports by keyword, tag, page path, or date. Use when Eric references a past audit, asks 'what did we find about X', or when current questions might benefit from prior analysis context. Returns title, summary, date, and report_id for each match.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Free-text search across title, summary, response" },
+          tag: { type: "string", description: "Filter by tag" },
+          page_path: { type: "string", description: "Filter to reports referencing this page path" },
+          limit: { type: "number", description: "Max results, default 10" },
+        },
+      },
+    },
+  },
   // === SEO UPDATE TOOL ===
   {
     type: "function" as const,
