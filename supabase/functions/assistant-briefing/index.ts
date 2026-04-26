@@ -358,6 +358,14 @@ serve(async (req) => {
         duration_ms: workedgeSyncResult.data.duration_ms,
         has_errors: !!workedgeSyncResult.data.errors,
       } : null,
+      seo: {
+        open_actions_count: (openSeoActions as any)?.count || 0,
+        latest_report: (latestSeoReport as any)?.data ? {
+          id: (latestSeoReport as any).data.id,
+          title: (latestSeoReport as any).data.title,
+          created_at: (latestSeoReport as any).data.created_at,
+        } : null,
+      },
       alerts,
       alerts_by_severity: {
         urgent: alerts.filter(a => a.severity === "urgent").length,
