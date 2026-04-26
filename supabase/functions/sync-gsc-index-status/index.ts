@@ -206,6 +206,8 @@ Deno.serve(async (req) => {
       not_indexed: notIndexed,
       pending,
       errors,
+      snapshots_written: snapshotsWritten,
+      week_starting: weekStarting,
       offset,
       limit,
     };
