@@ -229,7 +229,30 @@ function ReportCard({ report, active, onClick }: {
 }
 
 function ReportDetail({ reportId, onBack }: { reportId: string; onBack: () => void }) {
-  const { report, messages, actions, loading, toggleAction } = useSeoReport(reportId);
+  const { report, messages, actions, loading, toggleAction, refetch } = useSeoReport(reportId);
+  const [followUp, setFollowUp] = useState('');
+  const [sending, setSending] = useState(false);
+
+  async function sendFollowUp() {
+    const text = followUp.trim();
+    if (!text || sending) return;
+    setSending(true);
+    setFollowUp('');
+    try {
+      const { data, error } = await supabase.functions.invoke('seo-report-followup', {
+        body: { report_id: reportId, user_message: text },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      await refetch();
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to send follow-up');
+      // Restore input so the user can retry
+      setFollowUp(text);
+    } finally {
+      setSending(false);
+    }
+  }
 
   if (loading) {
     return (
