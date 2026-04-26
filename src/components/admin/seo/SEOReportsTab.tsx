@@ -359,33 +359,62 @@ function ReportDetail({ reportId, onBack }: { reportId: string; onBack: () => vo
             <h3 className="text-sm font-semibold text-[#1e3a5f]">Follow-up Conversation</h3>
           </div>
           <div className="border rounded-md bg-muted/30 max-h-[400px] overflow-auto p-3 space-y-3">
-            {messages.length === 0 ? (
+            {messages.length === 0 && !sending ? (
               <p className="text-xs text-muted-foreground text-center py-4">
                 No follow-ups yet.
               </p>
             ) : (
-              messages.map(m => (
-                <div key={m.id} className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
-                  <div className={cn(
-                    'max-w-[80%] rounded-lg px-3 py-2 text-sm',
-                    m.role === 'user'
-                      ? 'bg-[#1e3a5f] text-white'
-                      : 'bg-white border'
-                  )}>
-                    <div className="prose prose-sm max-w-none prose-p:my-1">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
-                    </div>
-                    <div className={cn('text-[10px] mt-1', m.role === 'user' ? 'text-white/60' : 'text-muted-foreground')}>
-                      {format(new Date(m.created_at), 'MMM d, h:mm a')}
+              <>
+                {messages.map(m => (
+                  <div key={m.id} className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
+                    <div className={cn(
+                      'max-w-[80%] rounded-lg px-3 py-2 text-sm',
+                      m.role === 'user'
+                        ? 'bg-[#1e3a5f] text-white'
+                        : 'bg-white border'
+                    )}>
+                      <div className="prose prose-sm max-w-none prose-p:my-1">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                      </div>
+                      <div className={cn('text-[10px] mt-1', m.role === 'user' ? 'text-white/60' : 'text-muted-foreground')}>
+                        {format(new Date(m.created_at), 'MMM d, h:mm a')}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                ))}
+                {sending && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[80%] rounded-lg px-3 py-2 text-sm bg-white border inline-flex items-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-[#1e3a5f]" />
+                      <span className="text-xs">Bach is thinking…</span>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
           <div className="mt-2 flex gap-2">
-            <Input disabled placeholder="Ask a follow-up… (coming next)" className="flex-1 h-9 text-sm" />
-            <Button disabled size="sm" className="bg-[#1e3a5f] hover:bg-[#1e3a5f]/90">Send</Button>
+            <Input
+              value={followUp}
+              onChange={(e) => setFollowUp(e.target.value)}
+              placeholder="Ask a follow-up about this report…"
+              className="flex-1 h-9 text-sm"
+              disabled={sending}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  sendFollowUp();
+                }
+              }}
+            />
+            <Button
+              size="sm"
+              onClick={sendFollowUp}
+              disabled={!followUp.trim() || sending}
+              className="bg-[#1e3a5f] hover:bg-[#1e3a5f]/90"
+            >
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send'}
+            </Button>
           </div>
         </section>
       </div>
