@@ -129,6 +129,10 @@ const SEOManagement = () => {
   const [filterSchema, setFilterSchema] = useState<string>('all');
   const [sortField, setSortField] = useState<SortField>('page_name');
   const [sortAsc, setSortAsc] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkCluster, setBulkCluster] = useState<string>('');
+  const [bulkPageType, setBulkPageType] = useState<string>('');
+  const [bulkSaving, setBulkSaving] = useState(false);
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
