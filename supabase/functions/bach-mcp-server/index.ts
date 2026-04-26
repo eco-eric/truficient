@@ -200,6 +200,19 @@ const MCP_TOOLS = [
     },
   },
   {
+    name: "search_seo_reports",
+    description: "Search archived SEO reports by keyword, tag, page path, or date. Use when referencing past audits or asking 'what did we find about X'. Returns title, summary, date, and report_id for each match.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Free-text search across title, summary, response" },
+        tag: { type: "string", description: "Filter by tag" },
+        page_path: { type: "string", description: "Filter to reports referencing this page path" },
+        limit: { type: "number", description: "Max results, default 10" },
+      },
+    },
+  },
+  {
     name: "get_google_calendar",
     description: "Read events directly from Google Calendar for a date range. Shows all events including non-job items.",
     inputSchema: {

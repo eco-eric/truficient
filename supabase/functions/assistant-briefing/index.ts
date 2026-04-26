@@ -112,6 +112,8 @@ serve(async (req) => {
       recentPipelineWins,
       overdueJobs,
       workedgeSyncResult,
+      openSeoActions,
+      latestSeoReport,
     ] = await Promise.all([
       // Today's appointments
       supabase
@@ -194,6 +196,20 @@ serve(async (req) => {
         .from("workedge_daily_sync_log")
         .select("*")
         .order("sync_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+
+      // Open SEO action items
+      supabase
+        .from("seo_report_actions")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "open"),
+
+      // Most recent SEO report
+      supabase
+        .from("seo_reports")
+        .select("id, title, created_at")
+        .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
     ]);
@@ -342,6 +358,14 @@ serve(async (req) => {
         duration_ms: workedgeSyncResult.data.duration_ms,
         has_errors: !!workedgeSyncResult.data.errors,
       } : null,
+      seo: {
+        open_actions_count: (openSeoActions as any)?.count || 0,
+        latest_report: (latestSeoReport as any)?.data ? {
+          id: (latestSeoReport as any).data.id,
+          title: (latestSeoReport as any).data.title,
+          created_at: (latestSeoReport as any).data.created_at,
+        } : null,
+      },
       alerts,
       alerts_by_severity: {
         urgent: alerts.filter(a => a.severity === "urgent").length,

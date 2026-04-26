@@ -635,6 +635,23 @@ const tools = [
       },
     },
   },
+  // === SEO REPORT ARCHIVE SEARCH ===
+  {
+    type: "function" as const,
+    function: {
+      name: "search_seo_reports",
+      description: "Search archived SEO reports by keyword, tag, page path, or date. Use when Eric references a past audit, asks 'what did we find about X', or when current questions might benefit from prior analysis context. Returns title, summary, date, and report_id for each match.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Free-text search across title, summary, response" },
+          tag: { type: "string", description: "Filter by tag" },
+          page_path: { type: "string", description: "Filter to reports referencing this page path" },
+          limit: { type: "number", description: "Max results, default 10" },
+        },
+      },
+    },
+  },
   // === SEO UPDATE TOOL ===
   {
     type: "function" as const,
@@ -3265,9 +3282,54 @@ async function executeSEOAudit(supabase: any, input: any) {
   };
 }
 
-// ============================================================
-// SEO UPDATE TOOL
-// ============================================================
+async function executeSearchSeoReports(supabase: any, input: any) {
+  const limit = Math.min(input.limit || 10, 50);
+  let query = supabase
+    .from("seo_reports")
+    .select("id, title, summary, created_at, report_type, tags, related_page_paths")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (input.query?.trim()) {
+    const term = input.query.trim().replace(/\s+/g, " & ");
+    try {
+      query = query.textSearch("fts", term, { config: "english" });
+    } catch {
+      query = query.or(`title.ilike.%${input.query}%,summary.ilike.%${input.query}%`);
+    }
+  }
+  if (input.tag) query = query.contains("tags", [input.tag]);
+  if (input.page_path) query = query.contains("related_page_paths", [input.page_path]);
+
+  const { data, error } = await query;
+  if (error) {
+    // Fallback to ilike if tsvector fails
+    let fb = supabase
+      .from("seo_reports")
+      .select("id, title, summary, created_at, report_type, tags, related_page_paths")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (input.query?.trim()) fb = fb.or(`title.ilike.%${input.query}%,summary.ilike.%${input.query}%,full_response.ilike.%${input.query}%`);
+    if (input.tag) fb = fb.contains("tags", [input.tag]);
+    if (input.page_path) fb = fb.contains("related_page_paths", [input.page_path]);
+    const { data: fbData, error: fbErr } = await fb;
+    if (fbErr) return { error: `search_seo_reports failed: ${fbErr.message}` };
+    return { count: (fbData || []).length, reports: fbData || [] };
+  }
+
+  return {
+    count: (data || []).length,
+    reports: (data || []).map((r: any) => ({
+      report_id: r.id,
+      title: r.title,
+      summary: r.summary,
+      created_at: r.created_at,
+      report_type: r.report_type,
+      tags: r.tags,
+    })),
+    instructions: "Reference these prior reports by title and date. Each report_id can be linked at /admin/seo?tab=reports&report=[id].",
+  };
+}
 
 async function executeUpdateSEO(supabase: any, userId: string, input: any) {
   const source = input.source || "page";
@@ -3357,6 +3419,7 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "get_pipeline_overview": return executeGetPipelineOverview(supabase, toolInput);
     case "get_team_info": return executeGetTeamInfo(supabase, toolInput);
     case "seo_audit": return executeSEOAudit(supabase, toolInput);
+    case "search_seo_reports": return executeSearchSeoReports(supabase, toolInput);
     // Write tools
     case "create_customer": return executeCreateCustomer(supabase, userId, toolInput);
     case "create_job": return executeCreateJob(supabase, userId, toolInput);
@@ -3437,6 +3500,7 @@ SEO MANAGEMENT:
 - You can audit SEO metadata using seo_audit — this generates a read-only report showing missing, too-long, too-short, and duplicate meta titles and descriptions across pages and blog posts.
 - You never update SEO automatically. After showing the audit, wait for Eric to tell you which pages to fix, then use update_seo to show a preview before saving.
 - update_seo supports both page_seo records and blog_posts. Always show old vs new in the preview and require explicit confirmation before saving.
+- You can search archived SEO reports using search_seo_reports. When Eric asks about SEO trends, past findings, or analysis history, search the report archive first to provide continuity. Reference prior reports by title and date when relevant.
 
 WORKEDGE SYNC:
 Each morning the WorkEdge sync runs at 1AM CST. Report on last night's sync by querying workedge_daily_sync_log data in the briefing. If status is 'failed' flag it immediately at the top of the morning briefing with urgency.
