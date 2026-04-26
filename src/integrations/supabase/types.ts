@@ -4079,6 +4079,30 @@ export type Database = {
         }
         Relationships: []
       }
+      ga4_traffic_sources: {
+        Row: {
+          date_range: string
+          id: string
+          last_synced_at: string
+          sessions: number
+          source: string
+        }
+        Insert: {
+          date_range: string
+          id?: string
+          last_synced_at?: string
+          sessions?: number
+          source: string
+        }
+        Update: {
+          date_range?: string
+          id?: string
+          last_synced_at?: string
+          sessions?: number
+          source?: string
+        }
+        Relationships: []
+      }
       gallery_image_tags: {
         Row: {
           created_at: string | null
