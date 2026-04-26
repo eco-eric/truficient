@@ -213,8 +213,14 @@ const SEOManagement = () => {
     }
 
     // Filters
-    if (filterPageType !== 'all') result = result.filter(p => p.page_type === filterPageType);
-    if (filterCluster !== 'all') result = result.filter(p => p.cluster === filterCluster);
+    if (filterPageType !== 'all') {
+      if (filterPageType === '__none__') result = result.filter(p => !p.page_type);
+      else result = result.filter(p => p.page_type === filterPageType);
+    }
+    if (filterCluster !== 'all') {
+      if (filterCluster === '__none__') result = result.filter(p => !p.cluster);
+      else result = result.filter(p => p.cluster === filterCluster);
+    }
     if (filterIndexStatus !== 'all') result = result.filter(p => p.index_status === filterIndexStatus);
     if (filterSchema === 'yes') result = result.filter(p => p.schema_applied === true);
     if (filterSchema === 'no') result = result.filter(p => !p.schema_applied);
