@@ -3419,6 +3419,7 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "get_pipeline_overview": return executeGetPipelineOverview(supabase, toolInput);
     case "get_team_info": return executeGetTeamInfo(supabase, toolInput);
     case "seo_audit": return executeSEOAudit(supabase, toolInput);
+    case "search_seo_reports": return executeSearchSeoReports(supabase, toolInput);
     // Write tools
     case "create_customer": return executeCreateCustomer(supabase, userId, toolInput);
     case "create_job": return executeCreateJob(supabase, userId, toolInput);
