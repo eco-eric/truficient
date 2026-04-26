@@ -67,6 +67,16 @@ async function getAccessToken(clientEmail: string, privateKeyPem: string): Promi
   return json.access_token as string;
 }
 
+// Monday (00:00 UTC) of the current week, ISO date string (YYYY-MM-DD).
+function mondayOfCurrentWeek(): string {
+  const d = new Date();
+  const day = d.getUTCDay(); // 0 = Sunday … 6 = Saturday
+  const diff = (day + 6) % 7; // days since Monday
+  d.setUTCDate(d.getUTCDate() - diff);
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString().slice(0, 10);
+}
+
 // ---------- GSC verdict → our enum ----------
 function verdictToStatus(verdict: string | undefined, coverage: string | undefined): string {
   if (verdict === "PASS") return "indexed";
