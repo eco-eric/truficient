@@ -596,11 +596,7 @@ const SEOManagement = () => {
           </TabsContent>
 
           <TabsContent value="reports" className="mt-6">
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                Coming next
-              </CardContent>
-            </Card>
+            <SEOReportsTab />
           </TabsContent>
 
           <TabsContent value="search-console" className="mt-6">
