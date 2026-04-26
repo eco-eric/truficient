@@ -118,6 +118,16 @@ const SEOManagement = () => {
   const [sortField, setSortField] = useState<SortField>('page_name');
   const [sortAsc, setSortAsc] = useState(true);
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const validTabs = ['pages', 'reports', 'search-console', 'analytics'] as const;
+  const activeTab = (validTabs.includes(tabParam as any) ? tabParam : 'pages') as typeof validTabs[number];
+  const handleTabChange = (val: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (val === 'pages') next.delete('tab');
+    else next.set('tab', val);
+    setSearchParams(next, { replace: true });
+  };
 
   const fetchGscAvgPosition = async () => {
     // Pull last 28 days of site-wide GSC data and compute average position
