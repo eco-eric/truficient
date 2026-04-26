@@ -38,16 +38,27 @@ const STATUS_PILL: Record<string, string> = {
 };
 
 export function SEOReportsTab() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const reportFromUrl = searchParams.get('report');
+
   const [search, setSearch] = useState('');
   const [reportType, setReportType] = useState<string>('all');
   const [tag, setTag] = useState<string>('all');
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [mobileShowDetail, setMobileShowDetail] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(reportFromUrl);
+  const [mobileShowDetail, setMobileShowDetail] = useState(!!reportFromUrl);
 
   const { reports, count, allTags, loading } = useSeoReports({
     search, reportType, tag, dateRange,
   });
+
+  // Sync ?report= URL param → selectedId (e.g. when navigating from "View" toast)
+  useEffect(() => {
+    if (reportFromUrl && reportFromUrl !== selectedId) {
+      setSelectedId(reportFromUrl);
+      setMobileShowDetail(true);
+    }
+  }, [reportFromUrl]);
 
   const dateLabel = useMemo(() => {
     if (dateRange.from && dateRange.to) {
@@ -60,6 +71,16 @@ export function SEOReportsTab() {
   const handleSelect = (id: string) => {
     setSelectedId(id);
     setMobileShowDetail(true);
+    const next = new URLSearchParams(searchParams);
+    next.set('report', id);
+    setSearchParams(next, { replace: true });
+  };
+
+  const handleBack = () => {
+    setMobileShowDetail(false);
+    const next = new URLSearchParams(searchParams);
+    next.delete('report');
+    setSearchParams(next, { replace: true });
   };
 
   return (
