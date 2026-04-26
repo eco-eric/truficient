@@ -542,6 +542,51 @@ const SEOManagement = () => {
           </Select>
         </div>
 
+        {/* Bulk action toolbar */}
+        <div className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-md border bg-muted/40">
+          <div className="text-sm font-medium">
+            {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Bulk edit'}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={selectUnclustered}
+            disabled={!filteredPages.some(p => !p.cluster)}
+          >
+            <Tag className="h-3.5 w-3.5 mr-1.5" />
+            Select unclustered ({filteredPages.filter(p => !p.cluster).length})
+          </Button>
+          {selectedIds.size > 0 && (
+            <Button variant="ghost" size="sm" onClick={clearSelection}>Clear</Button>
+          )}
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <Select
+              value={bulkCluster}
+              onValueChange={(v) => { setBulkCluster(v); applyBulkUpdate('cluster', v); }}
+              disabled={selectedIds.size === 0 || bulkSaving}
+            >
+              <SelectTrigger className="w-[200px] h-9">
+                <SelectValue placeholder="Set cluster…" />
+              </SelectTrigger>
+              <SelectContent>
+                {CLUSTERS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select
+              value={bulkPageType}
+              onValueChange={(v) => { setBulkPageType(v); applyBulkUpdate('page_type', v); }}
+              disabled={selectedIds.size === 0 || bulkSaving}
+            >
+              <SelectTrigger className="w-[200px] h-9">
+                <SelectValue placeholder="Set page type…" />
+              </SelectTrigger>
+              <SelectContent>
+                {PAGE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {/* Table */}
         {filteredPages.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground border rounded-md">
