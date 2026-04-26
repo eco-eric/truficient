@@ -181,7 +181,7 @@ export function SEOReportsTab() {
         {selectedId ? (
           <ReportDetail
             reportId={selectedId}
-            onBack={() => setMobileShowDetail(false)}
+            onBack={handleBack}
           />
         ) : (
           <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-24 px-6 h-full">
