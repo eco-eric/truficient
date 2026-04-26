@@ -8,6 +8,7 @@ import truficientLogo from '@/assets/truficient-logo.webp';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useRolePermissions, hasPermission } from '@/hooks/useRolePermissions';
 import { navSections } from './adminNavConfig';
+import { useOpenSeoActions } from '@/hooks/useOpenSeoActions';
 import {
   Collapsible,
   CollapsibleContent,
@@ -21,6 +22,7 @@ export const AdminSidebar = () => {
   const { signOut } = useAuth();
   const { isSuperAdmin } = useUserRole();
   const { permissions, loading: permissionsLoading } = useRolePermissions();
+  const openSeoActions = useOpenSeoActions();
   const [collapsed, setCollapsed] = useState(false);
   
   // Initialize expanded sections from localStorage or default all open
@@ -115,13 +117,22 @@ export const AdminSidebar = () => {
                       to={item.href}
                       className={cn(
                         "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
-                        isActive 
-                          ? "bg-[#d4a84b] text-[#1e3a5f] font-medium" 
+                        isActive
+                          ? "bg-[#d4a84b] text-[#1e3a5f] font-medium"
                           : "text-white/80 hover:bg-white/10 hover:text-white"
                       )}
                     >
                       <item.icon className="h-5 w-5 flex-shrink-0" />
-                      {!collapsed && <span>{item.label}</span>}
+                      {!collapsed && (
+                        <span className="flex-1 flex items-center justify-between">
+                          <span>{item.label}</span>
+                          {item.href === '/admin/seo' && openSeoActions > 0 && (
+                            <span className="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#FFB547] text-[#1e3a5f] text-[10px] font-semibold">
+                              {openSeoActions}
+                            </span>
+                          )}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}
