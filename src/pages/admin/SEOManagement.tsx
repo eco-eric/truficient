@@ -39,8 +39,16 @@ import { SEOReportsTab } from '@/components/admin/seo/SEOReportsTab';
 import { SEOSearchConsoleTab } from '@/components/admin/seo/SEOSearchConsoleTab';
 import { SEOAnalyticsTab } from '@/components/admin/seo/SEOAnalyticsTab';
 
-const PAGE_TYPES = ['Core Page', 'Neighborhood Hub', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Energy Content', 'Equipment'];
-const CLUSTERS = ['Core Site', 'Oak Cliff', 'East Dallas', 'North Dallas', 'Downtown Dallas', 'South Dallas', 'Outer Ring'];
+const PAGE_TYPES = ['Core Page', 'Neighborhood Hub', 'Service+City', 'ZIP Code', 'Housing Type', 'Commercial', 'Energy Content', 'Equipment', 'Location Page', 'location', 'Brand Pillar', 'Brand - Concept', 'Brand - Comparison', 'Brand - Equipment', 'Brand - System Configuration', 'Commercial + Developer', 'Residential Service + Neighborhood', 'Blog Post'];
+const CLUSTERS = [
+  'Core Site',
+  'Oak Cliff', 'East Dallas', 'North Dallas', 'Downtown Dallas', 'South Dallas', 'West Dallas',
+  'Lakewood', 'Lake Highlands', 'Outer Ring',
+  'Dallas UHI Research',
+  'Brand - Mitsubishi', 'Brand - Bosch', 'Brand - Goodman', 'Brand - Trane',
+  'Brand - Daikin', 'Brand - Fujitsu', 'Brand - Gree', 'Brand - Hitachi',
+  'Brand - LG', 'Brand - Pioneer', 'Brand - Samsung',
+];
 const INDEX_STATUSES = ['Indexed', 'Pending', 'Not Indexed', 'Excluded'];
 
 interface PageSEO {
