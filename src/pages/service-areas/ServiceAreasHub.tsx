@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import ReactMarkdown from 'react-markdown';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { usePageSEO } from '@/hooks/usePageSEO';
@@ -16,26 +17,96 @@ interface LocationPage {
   published: boolean;
 }
 
+interface HubContent {
+  content: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
+  schema_enabled: boolean;
+  schema_json: Record<string, unknown> | null;
+  url_slug: string;
+}
+
 const CLUSTER_ORDER = ['Oak Cliff', 'East Dallas', 'North Dallas', 'Downtown Dallas', 'South Dallas', 'Uptown/Oak Lawn', 'West Dallas', 'Design District', 'Lakewood', 'Lake Highlands', 'Brand - Mitsubishi', 'Dallas UHI Research', 'Outer Ring'];
+
+const PHONE_TEL = 'tel:2142384349';
+
+const markdownComponents = {
+  a: ({ href, children, ...props }: any) => {
+    if (href === '#contact') {
+      return <Link to="/hvac-estimate" className="text-primary hover:underline font-medium" {...props}>{children}</Link>;
+    }
+    if (href?.startsWith('tel:')) {
+      return <a href={PHONE_TEL} className="text-primary hover:underline font-medium" {...props}>{children}</a>;
+    }
+    if (href?.startsWith('#')) {
+      return <a href={href} className="text-primary hover:underline" {...props}>{children}</a>;
+    }
+    if (href?.startsWith('/')) {
+      return <Link to={href} className="text-primary hover:underline" {...props}>{children}</Link>;
+    }
+    return <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
+  },
+};
 
 const ServiceAreasHub = () => {
   usePageSEO('/service-areas');
+  const [hub, setHub] = useState<HubContent | null>(null);
   const [locations, setLocations] = useState<LocationPage[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchLocations = async () => {
-      const { data, error } = await supabase
+    const fetchAll = async () => {
+      // Try to load curated master-directory content from DB (slug variants)
+      const slugVariants = ['/service-areas/', '/service-areas'];
+      for (const s of slugVariants) {
+        const { data } = await supabase
+          .from('seo_location_pages' as any)
+          .select('content, meta_title, meta_description, schema_enabled, schema_json, url_slug')
+          .eq('url_slug', s)
+          .eq('published', true)
+          .maybeSingle();
+        if (data) { setHub(data as unknown as HubContent); break; }
+      }
+
+      // Always fetch fallback list
+      const { data: locs } = await supabase
         .from('seo_location_pages' as any)
         .select('id, neighborhood, city, url_slug, primary_service, cluster, published')
         .eq('published', true)
         .eq('add_to_service_areas_hub', true)
         .order('neighborhood', { ascending: true });
-      if (!error) setLocations((data as unknown as LocationPage[]) || []);
+      setLocations((locs as unknown as LocationPage[]) || []);
       setLoading(false);
     };
-    fetchLocations();
+    fetchAll();
   }, []);
+
+  // Apply SEO meta from hub content + canonical + JSON-LD
+  useEffect(() => {
+    if (!hub) return;
+    if (hub.meta_title) document.title = hub.meta_title;
+    if (hub.meta_description) {
+      let meta = document.querySelector('meta[name="description"]');
+      if (!meta) { meta = document.createElement('meta'); meta.setAttribute('name', 'description'); document.head.appendChild(meta); }
+      meta.setAttribute('content', hub.meta_description);
+    }
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) { canonical = document.createElement('link'); canonical.setAttribute('rel', 'canonical'); document.head.appendChild(canonical); }
+    canonical.setAttribute('href', 'https://truficient.com/service-areas/');
+
+    // Remove global page_seo HVACBusiness schema; inject hub-specific one
+    document.getElementById('page-seo-jsonld')?.remove();
+    if (hub.schema_enabled && hub.schema_json) {
+      let existing = document.getElementById('service-areas-hub-jsonld');
+      if (existing) existing.remove();
+      const script = document.createElement('script');
+      script.id = 'service-areas-hub-jsonld';
+      script.type = 'application/ld+json';
+      script.textContent = JSON.stringify(hub.schema_json);
+      document.head.appendChild(script);
+    }
+    return () => { document.getElementById('service-areas-hub-jsonld')?.remove(); };
+  }, [hub]);
 
   const grouped = CLUSTER_ORDER.reduce((acc, cluster) => {
     const pages = locations.filter(l => l.cluster === cluster);
@@ -45,6 +116,47 @@ const ServiceAreasHub = () => {
 
   const clusterSlug = (name: string) => name.toLowerCase().replace(/\s+/g, '-');
 
+  const proseClasses = `prose prose-lg max-w-none
+    prose-headings:text-foreground prose-p:text-muted-foreground
+    prose-a:text-primary prose-strong:text-foreground
+    prose-h1:text-3xl prose-h1:md:text-4xl prose-h1:font-bold prose-h1:mb-6
+    prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
+    prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
+    prose-li:text-muted-foreground prose-ul:my-4
+    prose-hr:border-border prose-hr:my-8`;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Preferred: render the curated master directory from DB
+  if (hub?.content) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow">
+          <article className="container mx-auto px-4 py-10">
+            <div className="max-w-4xl mx-auto">
+              <div className={proseClasses}>
+                <ReactMarkdown components={markdownComponents}>{hub.content}</ReactMarkdown>
+              </div>
+            </div>
+          </article>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Fallback: legacy auto-generated cluster grid
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -60,11 +172,7 @@ const ServiceAreasHub = () => {
 
         <section className="py-12">
           <div className="container mx-auto px-4">
-            {loading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : Object.keys(grouped).length === 0 ? (
+            {Object.keys(grouped).length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <p>Location pages coming soon. Check back for neighborhood-specific HVAC services.</p>
               </div>
