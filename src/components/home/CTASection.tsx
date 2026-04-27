@@ -49,7 +49,16 @@ const CTASection = () => {
             Don't wait until your HVAC system breaks down. Whether you need routine maintenance, a repair, or a new installation, Truficient is here to help. Contact us today to experience the difference of working with DFW's trusted HVAC experts.
           </p>
           <p className="text-sm mb-8 opacity-80">
-            Serving: Dallas Area • North Dallas Area • Frisco-McKinney Area • Mid-Cities Area • South Dallas Area
+            Serving:{' '}
+            <Link to="/service-areas/" className="underline hover:text-secondary transition-colors">Dallas</Link> ·{' '}
+            <Link to="/hvac-preston-hollow-dallas/" className="underline hover:text-secondary transition-colors">North Dallas</Link> ·{' '}
+            <Link to="/hvac-casa-view-east-dallas/" className="underline hover:text-secondary transition-colors">East Dallas</Link> ·{' '}
+            <Link to="/residential-hvac-oak-cliff-dallas/" className="underline hover:text-secondary transition-colors">Oak Cliff</Link> ·{' '}
+            <Link to="/hvac-richardson-tx/" className="underline hover:text-secondary transition-colors">Richardson</Link> ·{' '}
+            <Link to="/hvac-plano-tx/" className="underline hover:text-secondary transition-colors">Plano</Link> ·{' '}
+            <Link to="/hvac-garland-tx/" className="underline hover:text-secondary transition-colors">Garland</Link> ·{' '}
+            <Link to="/hvac-mesquite-tx/" className="underline hover:text-secondary transition-colors">Mesquite</Link> ·{' '}
+            <Link to="/hvac-75038/" className="underline hover:text-secondary transition-colors">Irving</Link>
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/contact" onClick={handleScheduleClick}>
