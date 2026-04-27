@@ -88,7 +88,7 @@ const Footer = () => {
     <footer className="bg-primary text-primary-foreground">
       {/* Main Footer */}
       <div className="container mx-auto px-4 py-8 md:py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Company Info */}
           <div className="text-center sm:text-left">
             <div className="flex items-center gap-3 mb-4 justify-center sm:justify-start">
@@ -214,6 +214,53 @@ const Footer = () => {
                   className="hover:text-secondary transition-colors inline-block"
                 >
                   Ductless Systems
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Service Areas Links */}
+          <div className="text-center sm:text-left">
+            <p className="font-bold mb-4 text-lg">SERVICE AREAS</p>
+            <ul className="space-y-1 text-sm opacity-90">
+              <li>
+                <Link to="/service-areas/" className="hover:text-secondary transition-colors inline-block font-semibold">
+                  All Service Areas
+                </Link>
+              </li>
+              <li>
+                <Link to="/residential-hvac-oak-cliff-dallas/" className="hover:text-secondary transition-colors inline-block">
+                  Oak Cliff Dallas
+                </Link>
+              </li>
+              <li>
+                <Link to="/hvac-lakewood-dallas/" className="hover:text-secondary transition-colors inline-block">
+                  Lakewood Dallas
+                </Link>
+              </li>
+              <li>
+                <Link to="/hvac-highland-park-university-park-dallas/" className="hover:text-secondary transition-colors inline-block">
+                  Highland Park / UP
+                </Link>
+              </li>
+              <li>
+                <Link to="/hvac-preston-hollow-dallas/" className="hover:text-secondary transition-colors inline-block">
+                  Preston Hollow
+                </Link>
+              </li>
+              <li>
+                <Link to="/hvac-uptown-oak-lawn-dallas/" className="hover:text-secondary transition-colors inline-block">
+                  Uptown / Oak Lawn
+                </Link>
+              </li>
+              <li>
+                <Link to="/hvac-richardson-tx/" className="hover:text-secondary transition-colors inline-block">
+                  Richardson TX
+                </Link>
+              </li>
+              <li>
+                <Link to="/hvac-plano-tx/" className="hover:text-secondary transition-colors inline-block">
+                  Plano TX
                 </Link>
               </li>
             </ul>
