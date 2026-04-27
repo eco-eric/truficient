@@ -8,7 +8,10 @@
 // `window.gtag` and `window.dataLayer` are already declared globally in
 // src/components/tracking/TrackingScripts.tsx — we reuse that typing.
 
-const MEASUREMENT_ID = import.meta.env.VITE_GA4_MEASUREMENT_ID as string | undefined;
+// Hardcoded — GA4 measurement IDs are public (they appear in the page's
+// HTML once gtag.js loads), so it's safe to commit. Avoids needing a
+// VITE_ build secret. Admin routes (/admin/*) are excluded below.
+const MEASUREMENT_ID = 'G-C8RCHPZDQC';
 let loaded = false;
 
 function isAdminPath(path?: string): boolean {
