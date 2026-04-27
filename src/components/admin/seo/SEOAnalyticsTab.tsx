@@ -37,7 +37,10 @@ interface PageSeoLite {
   gsc_clicks: number | null;
 }
 
-const MEASUREMENT_ID = import.meta.env.VITE_GA4_MEASUREMENT_ID as string | undefined;
+// Hardcoded — GA4 measurement IDs are public; safe to commit. Matches
+// src/lib/analytics.ts so the front-end pixel and the admin Analytics
+// tab gate stay in sync.
+const MEASUREMENT_ID = 'G-C8RCHPZDQC';
 
 function formatSeconds(s: number | null | undefined): string {
   const n = Math.round(Number(s ?? 0));
