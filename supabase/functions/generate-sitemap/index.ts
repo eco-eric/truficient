@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
     for (const page of staticPages) {
       xml += `
   <url>
-    <loc>${baseUrl}${page.loc}</loc>
+    <loc>${toHtmlUrl(page.loc)}</loc>
     <changefreq>${page.changefreq}</changefreq>
     <priority>${page.priority}</priority>
   </url>`;
@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
         const priority = page.page_type?.includes('Hub') ? '0.8' : '0.7';
         xml += `
   <url>
-    <loc>${baseUrl}/${slug}</loc>
+    <loc>${toHtmlUrl('/' + slug)}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>${priority}</priority>
@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
           : today;
         xml += `
   <url>
-    <loc>${baseUrl}/blog/${post.slug}</loc>
+    <loc>${toHtmlUrl('/blog/' + post.slug)}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
           : today;
         xml += `
   <url>
-    <loc>${baseUrl}/equipment/${page.slug}</loc>
+    <loc>${toHtmlUrl('/equipment/' + page.slug)}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
