@@ -84,7 +84,21 @@ const supabase = SUPABASE_URL && SUPABASE_KEY
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Normalise any URL or path to https://truficient.com/<rest> (non-www, no trailing slash except root). */
+/**
+ * Normalise any URL or path to https://truficient.com/<rest>.html (non-www).
+ *
+ * Lovable Hosting has SPA fallback but does NOT do directory-index resolution
+ * or honour `_redirects` files. Extensionless URLs (e.g. `/foo`) always serve
+ * the SPA shell. The literal prerendered files live at `dist/foo.html`, so
+ * crawler-facing canonicals + sitemap entries must point to the `.html` form
+ * so that bots fetch the prerendered HTML, not the empty SPA shell.
+ *
+ * Rules:
+ *   - Root (`/`) stays as `https://truficient.com/`.
+ *   - Anything already ending in a file extension (e.g. `.html`, `.xml`) is
+ *     left alone — only its host is normalised.
+ *   - Everything else gets `.html` appended.
+ */
 function toCanonical(input) {
   if (!input) return null;
   let s = String(input).trim();
@@ -95,7 +109,11 @@ function toCanonical(input) {
   s = s.replace(/\/{2,}/g, '/');
   // Drop trailing slash unless it's the root
   if (s.length > 1) s = s.replace(/\/+$/, '');
-  return `${SITE_HOST}${s}`;
+  // Root stays bare
+  if (s === '/') return `${SITE_HOST}/`;
+  // Already has a file extension? Leave the path as-is.
+  if (/\.[a-z0-9]{2,5}$/i.test(s)) return `${SITE_HOST}${s}`;
+  return `${SITE_HOST}${s}.html`;
 }
 
 /** Normalise any URL field that should be non-www (og_image, og_url, etc.). */

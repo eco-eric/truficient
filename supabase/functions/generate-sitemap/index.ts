@@ -19,6 +19,20 @@ Deno.serve(async (req) => {
     const baseUrl = 'https://truficient.com';
     const today = new Date().toISOString().split('T')[0];
 
+    // Lovable Hosting has SPA fallback but does NOT do directory-index
+    // resolution or honour `_redirects`. Extensionless URLs always serve the
+    // empty SPA shell, while the prerendered HTML lives at `dist/<path>.html`.
+    // Sitemap entries must point at the `.html` form so crawlers fetch the
+    // prerendered content with proper <head> tags. The root path is special-
+    // cased to stay bare. Anything already containing a file extension is
+    // left alone.
+    const toHtmlUrl = (path: string): string => {
+      if (!path || path === '/') return `${baseUrl}/`;
+      const trimmed = path.replace(/\/+$/, '');
+      if (/\.[a-z0-9]{2,5}$/i.test(trimmed)) return `${baseUrl}${trimmed}`;
+      return `${baseUrl}${trimmed}.html`;
+    };
+
     // Fetch all dynamic content in parallel
     const [locationRes, blogRes, equipmentRes] = await Promise.all([
       supabase
