@@ -114,11 +114,21 @@ function esc(value) {
     .replace(/>/g, '&gt;');
 }
 
-/** Convert a path string to an output file: /foo/bar -> dist/foo/bar/index.html. */
+/**
+ * Convert a path string to an output file as a flat `.html` file:
+ *   /foo        -> dist/foo.html
+ *   /foo/bar    -> dist/foo/bar.html
+ *   /           -> dist/index.html
+ *
+ * Flat files are required because Lovable Hosting's SPA fallback does not
+ * perform directory-index resolution (it will not auto-serve `foo/index.html`
+ * for a request to `/foo`). Serving prerendered HTML at `dist/foo.html` lets
+ * the host find the literal file before falling back to the SPA shell.
+ */
 function pathToOutFile(urlPath) {
   let p = urlPath.replace(/^\/+/, '').replace(/\/+$/, '');
   if (!p) return join(DIST_DIR, 'index.html');
-  return join(DIST_DIR, p, 'index.html');
+  return join(DIST_DIR, `${p}.html`);
 }
 
 // ---------------------------------------------------------------------------
