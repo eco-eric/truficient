@@ -36,6 +36,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { usePageSEO } from '@/hooks/usePageSEO';
+import { setSocialMetaTags } from '@/lib/seo/socialMeta';
 import { useButtonTracking } from '@/hooks/useButtonTracking';
 
 const EQUIPMENT_TYPE_ICONS: Record<string, React.ReactNode> = {
