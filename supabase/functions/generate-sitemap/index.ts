@@ -19,6 +19,20 @@ Deno.serve(async (req) => {
     const baseUrl = 'https://truficient.com';
     const today = new Date().toISOString().split('T')[0];
 
+    // Lovable Hosting has SPA fallback but does NOT do directory-index
+    // resolution or honour `_redirects`. Extensionless URLs always serve the
+    // empty SPA shell, while the prerendered HTML lives at `dist/<path>.html`.
+    // Sitemap entries must point at the `.html` form so crawlers fetch the
+    // prerendered content with proper <head> tags. The root path is special-
+    // cased to stay bare. Anything already containing a file extension is
+    // left alone.
+    const toHtmlUrl = (path: string): string => {
+      if (!path || path === '/') return `${baseUrl}/`;
+      const trimmed = path.replace(/\/+$/, '');
+      if (/\.[a-z0-9]{2,5}$/i.test(trimmed)) return `${baseUrl}${trimmed}`;
+      return `${baseUrl}${trimmed}.html`;
+    };
+
     // Fetch all dynamic content in parallel
     const [locationRes, blogRes, equipmentRes] = await Promise.all([
       supabase
@@ -93,7 +107,7 @@ Deno.serve(async (req) => {
     for (const page of staticPages) {
       xml += `
   <url>
-    <loc>${baseUrl}${page.loc}</loc>
+    <loc>${toHtmlUrl(page.loc)}</loc>
     <changefreq>${page.changefreq}</changefreq>
     <priority>${page.priority}</priority>
   </url>`;
@@ -112,7 +126,7 @@ Deno.serve(async (req) => {
         const priority = page.page_type?.includes('Hub') ? '0.8' : '0.7';
         xml += `
   <url>
-    <loc>${baseUrl}/${slug}</loc>
+    <loc>${toHtmlUrl('/' + slug)}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>${priority}</priority>
@@ -133,7 +147,7 @@ Deno.serve(async (req) => {
           : today;
         xml += `
   <url>
-    <loc>${baseUrl}/blog/${post.slug}</loc>
+    <loc>${toHtmlUrl('/blog/' + post.slug)}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -152,7 +166,7 @@ Deno.serve(async (req) => {
           : today;
         xml += `
   <url>
-    <loc>${baseUrl}/equipment/${page.slug}</loc>
+    <loc>${toHtmlUrl('/equipment/' + page.slug)}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
