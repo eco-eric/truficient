@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
@@ -11,18 +11,29 @@ import { pathToFileURL } from "node:url";
  * `vite build` directly. (Lovable hosting invokes `vite build` directly,
  * which previously skipped the npm-script chain.)
  */
-function seoPrerenderPlugin() {
+function seoPrerenderPlugin(mode: string) {
   return {
     name: "truficient-seo-prerender",
     apply: "build" as const,
     async closeBundle() {
-      // Bridge Lovable's VITE_-prefixed build env vars into the non-prefixed
-      // names the prerender script reads. Without this, the script's Supabase
-      // client never initializes in production builds and only static routes
-      // get prerendered (the four DB-backed sources return zero rows).
-      // Service role key is NOT required — published SEO rows are readable
-      // with the anon key, and the script runs server-side so the key never
-      // ships to the client bundle.
+      // Vite loads .env files into `import.meta.env` for the client bundle,
+      // but does NOT populate `process.env` for build-time scripts. On
+      // Lovable's deploy infra, `process.env.VITE_SUPABASE_URL` is therefore
+      // empty even though `.env` contains it — which silently caused the
+      // prerender script to skip every DB-backed route (blog, equipment,
+      // and ~440 location pages), shipping only the 26 static routes to
+      // production.
+      //
+      // Fix: explicitly load .env into process.env here, then bridge the
+      // VITE_-prefixed names into the non-prefixed names the prerender
+      // script reads.
+      const env = loadEnv(mode, process.cwd(), "");
+      for (const [key, value] of Object.entries(env)) {
+        if (process.env[key] === undefined && value !== undefined) {
+          process.env[key] = value;
+        }
+      }
+
       if (!process.env.SUPABASE_URL && process.env.VITE_SUPABASE_URL) {
         process.env.SUPABASE_URL = process.env.VITE_SUPABASE_URL;
       }
@@ -65,7 +76,7 @@ export default defineConfig(({ mode }) => ({
       jpeg: { quality: 70 },
       png: { quality: 75 },
     }),
-    seoPrerenderPlugin(),
+    seoPrerenderPlugin(mode),
   ].filter(Boolean),
   resolve: {
     alias: {
