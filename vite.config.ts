@@ -76,7 +76,7 @@ export default defineConfig(({ mode }) => ({
       jpeg: { quality: 70 },
       png: { quality: 75 },
     }),
-    seoPrerenderPlugin(),
+    seoPrerenderPlugin(mode),
   ].filter(Boolean),
   resolve: {
     alias: {
