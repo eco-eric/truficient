@@ -10,6 +10,7 @@ import { LocationGallery } from '@/components/gallery/LocationGallery';
 import { useLocationGalleryPhotos } from '@/hooks/useLocationGalleryPhotos';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { setSocialMetaTags } from '@/lib/seo/socialMeta';
 
 /**
  * Split markdown content at specific paragraph boundaries.
