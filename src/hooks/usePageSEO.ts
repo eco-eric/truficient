@@ -86,6 +86,26 @@ export const usePageSEO = (customPath?: string, options?: UsePageSEOOptions) => 
             }
           });
 
+          // Mirror og:* into twitter:* so cards on X/Slack/LinkedIn show
+          // per-page values instead of the homepage defaults from index.html.
+          const twitterTags: Record<string, string | null | undefined> = {
+            'twitter:title': ogTags['og:title'],
+            'twitter:description': ogTags['og:description'],
+            'twitter:image': ogTags['og:image'],
+            'twitter:url': ogTags['og:url'],
+          };
+          Object.entries(twitterTags).forEach(([name, content]) => {
+            if (content) {
+              let twMeta = document.querySelector(`meta[name="${name}"]`);
+              if (!twMeta) {
+                twMeta = document.createElement('meta');
+                twMeta.setAttribute('name', name);
+                document.head.appendChild(twMeta);
+              }
+              twMeta.setAttribute('content', content);
+            }
+          });
+
           // Override canonical with DB value if provided
           if ((data as any).canonical_url) {
             canonical!.setAttribute('href', (data as any).canonical_url);
