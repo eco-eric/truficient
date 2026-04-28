@@ -10,6 +10,7 @@ import { LocationGallery } from '@/components/gallery/LocationGallery';
 import { useLocationGalleryPhotos } from '@/hooks/useLocationGalleryPhotos';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { setSocialMetaTags } from '@/lib/seo/socialMeta';
 
 /**
  * Split markdown content at specific paragraph boundaries.
@@ -155,9 +156,10 @@ const LocationPage = () => {
     }
 
     // Self-referencing canonical tag — each location page canonicalizes to itself
+    let canonicalUrl: string | null = null;
     if (location?.url_slug) {
       const slug = location.url_slug.startsWith('/') ? location.url_slug : `/${location.url_slug}`;
-      const canonicalUrl = `https://truficient.com${slug}`;
+      canonicalUrl = `https://truficient.com${slug}`;
       let canonical = document.querySelector('link[rel="canonical"]');
       if (!canonical) {
         canonical = document.createElement('link');
@@ -166,6 +168,11 @@ const LocationPage = () => {
       }
       canonical.setAttribute('href', canonicalUrl);
     }
+
+    // Sync og:* and twitter:* tags with this page's title/description/canonical
+    // so social shares (Facebook, Twitter, Slack, LinkedIn) show per-page data
+    // instead of the homepage defaults baked into index.html.
+    setSocialMetaTags({ title, description: desc, url: canonicalUrl });
 
     // Remove the global HVACBusiness JSON-LD (from usePageSEO) since location pages have their own
     const globalSchema = document.getElementById('page-seo-jsonld');

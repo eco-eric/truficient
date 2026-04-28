@@ -36,6 +36,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { usePageSEO } from '@/hooks/usePageSEO';
+import { setSocialMetaTags } from '@/lib/seo/socialMeta';
 import { useButtonTracking } from '@/hooks/useButtonTracking';
 
 const EQUIPMENT_TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -157,6 +158,22 @@ export default function EquipmentDetail() {
     canonicalLink.rel = 'canonical';
     canonicalLink.href = canonicalUrl;
     document.head.appendChild(canonicalLink);
+
+    // Sync og:* and twitter:* with this equipment page's title/description/canonical.
+    // Without this, social shares show the homepage's OG tags instead of the model.
+    const equipmentTitle =
+      equipment.seo_title ||
+      `${equipment.brand} ${equipment.model_number} | Truficient`;
+    const equipmentDesc =
+      equipment.seo_description ||
+      equipment.custom_content ||
+      `${equipment.brand} ${equipment.model_number} ${equipment.equipment_type || 'HVAC equipment'} specifications, documentation, and service information.`;
+    setSocialMetaTags({
+      title: equipmentTitle,
+      description: equipmentDesc,
+      url: canonicalUrl,
+      image: (equipment as any).image_url || undefined,
+    });
 
     // Build JSON-LD structured data
     // Use equipment image if available, otherwise a brand-logo placeholder
