@@ -46,7 +46,25 @@ const markdownComponents = {
     }
     return <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
   },
+  h1: ({ children, ...props }: any) => <h1 id={slugFromChildren(children)} {...props}>{children}</h1>,
+  h2: ({ children, ...props }: any) => <h2 id={slugFromChildren(children)} {...props}>{children}</h2>,
+  h3: ({ children, ...props }: any) => <h3 id={slugFromChildren(children)} {...props}>{children}</h3>,
 };
+
+const slugFromChildren = (children: any): string => {
+  const text = (Array.isArray(children) ? children : [children])
+    .map((c) => (typeof c === 'string' ? c : c?.props?.children ?? ''))
+    .join(' ');
+  return text.toString().toLowerCase().trim()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+};
+
+// Strip raw <a name="..."></a> anchor tags that ReactMarkdown would otherwise render as text
+const sanitizeHubMarkdown = (md: string): string =>
+  md.replace(/<a\s+name=["'][^"']*["']\s*>\s*<\/a>/gi, '');
 
 const ServiceAreasHub = () => {
   usePageSEO('/service-areas');
