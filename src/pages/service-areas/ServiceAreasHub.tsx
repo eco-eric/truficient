@@ -164,7 +164,7 @@ const ServiceAreasHub = () => {
           <article className="container mx-auto px-4 py-10">
             <div className="max-w-4xl mx-auto">
               <div className={proseClasses}>
-                <ReactMarkdown components={markdownComponents}>{hub.content}</ReactMarkdown>
+                <ReactMarkdown components={markdownComponents}>{sanitizeHubMarkdown(hub.content)}</ReactMarkdown>
               </div>
             </div>
           </article>
