@@ -62,11 +62,30 @@ const SITE_NAME = 'Truficient Energy Solutions';
 // Supabase
 // ---------------------------------------------------------------------------
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+// Hardcoded fallbacks — these are the PUBLISHABLE (anon) values, identical
+// to what's in src/integrations/supabase/client.ts and shipped in the client
+// bundle. They are safe to commit. Required because Lovable Hosting's deploy
+// build does not always populate process.env from the repo .env file, which
+// previously caused the prerender to silently fall back to static-routes-only
+// (26 routes) and ship a broken production manifest.
+const FALLBACK_SUPABASE_URL = 'https://xvsgdzwadxbwpevdezbp.supabase.co';
+const FALLBACK_SUPABASE_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2c2dkendhZHhid3BldmRlemJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzNDYwOTIsImV4cCI6MjA4MzkyMjA5Mn0.4mZeybSGCDJqQQDLLJdrJi0ZfTVXrMQkXn9rbEfERlM';
+
+const SUPABASE_URL =
+  process.env.VITE_SUPABASE_URL ||
+  process.env.SUPABASE_URL ||
+  FALLBACK_SUPABASE_URL;
 const SUPABASE_KEY =
   process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
   process.env.SUPABASE_PUBLISHABLE_KEY ||
-  process.env.SUPABASE_ANON_KEY;
+  process.env.SUPABASE_ANON_KEY ||
+  FALLBACK_SUPABASE_KEY;
+
+console.log(
+  `[prerender] Supabase env: URL=${SUPABASE_URL ? 'set' : 'MISSING'} KEY=${SUPABASE_KEY ? 'set' : 'MISSING'} ` +
+    `(VITE_SUPABASE_URL=${process.env.VITE_SUPABASE_URL ? 'env' : 'fallback'})`,
+);
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.warn(
@@ -463,38 +482,13 @@ async function main() {
   console.log('[prerender] Wrote prerender-manifest.json');
 
   // ---------------------------------------------------------------------
-  // Deploy validator — fail the build loudly if the prerender output looks
-  // wrong in a context where DB-backed routes were *expected*. We treat the
-  // presence of SUPABASE_URL in the env as the signal "this is a real build
-  // that should hit the DB" (production / Lovable Publish). Local dev builds
-  // (`build:dev`) and CI without secrets get a soft warning instead of a
-  // hard fail so they don't block on missing creds.
+  // Deploy validator — HARD fail the build if too few routes were written,
+  // regardless of whether SUPABASE_URL was detected. The previous gate keyed
+  // off `dbExpected` which itself depended on env vars being present, so a
+  // missing-env regression silently shipped a 26-route manifest to prod.
+  // Now: if `written < 100`, the build dies, full stop.
   // ---------------------------------------------------------------------
-  const MIN_ROUTES_THRESHOLD = 200;
-  const dbExpected = Boolean(SUPABASE_URL);
-  const validationErrors = [];
-
-  if (dbExpected && !supabase) {
-    validationErrors.push(
-      'SUPABASE_URL is set but the Supabase client failed to initialize. Check SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY.',
-    );
-  }
-  if (
-    supabase &&
-    pageSeoRows.length === 0 &&
-    blogRows.length === 0 &&
-    equipRows.length === 0 &&
-    locRows.length === 0
-  ) {
-    validationErrors.push(
-      'Supabase initialized but every DB source returned zero rows. Check anon-key RLS policies on page_seo, blog_posts, equipment_pages, seo_location_pages.',
-    );
-  }
-  if (dbExpected && written < MIN_ROUTES_THRESHOLD) {
-    validationErrors.push(
-      `Only ${written} routes prerendered (threshold: ${MIN_ROUTES_THRESHOLD}). Expected ~300+ once DB sources load.`,
-    );
-  }
+  const MIN_ROUTES_HARD_FAIL = 100;
 
   if (failed > 0) {
     console.error(`[prerender] ${failed} routes failed:`);
@@ -504,17 +498,26 @@ async function main() {
     if (errors.length > 20) console.error(`  …and ${errors.length - 20} more.`);
   }
 
-  if (validationErrors.length > 0) {
-    if (dbExpected) {
-      console.error('[prerender] Build validation FAILED:');
-      for (const msg of validationErrors) console.error(`  - ${msg}`);
-      process.exit(1);
-    } else {
-      console.warn(
-        '[prerender] Skipping DB-backed validation — SUPABASE_URL not set (dev/preview build).',
-      );
-      for (const msg of validationErrors) console.warn(`  - ${msg}`);
-    }
+  if (
+    supabase &&
+    pageSeoRows.length === 0 &&
+    blogRows.length === 0 &&
+    equipRows.length === 0 &&
+    locRows.length === 0
+  ) {
+    console.error(
+      '[prerender] Supabase initialized but every DB source returned zero rows. ' +
+        'Check anon-key RLS policies on page_seo, blog_posts, equipment_pages, seo_location_pages.',
+    );
+  }
+
+  if (written < MIN_ROUTES_HARD_FAIL) {
+    console.error(
+      `[prerender] FATAL: only ${written} routes written, expected 470+. ` +
+        `Source counts: ${JSON.stringify(sourceCounts)}. ` +
+        `Supabase enabled: ${Boolean(supabase)}.`,
+    );
+    process.exit(1);
   }
 
   if (failed > 0 && written === 0) {
