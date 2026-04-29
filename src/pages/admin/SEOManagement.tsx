@@ -73,45 +73,59 @@ interface PageSEO {
 type SortField = 'status' | 'avg_position' | 'gsc_clicks' | 'last_content_update' | 'page_name';
 
 const SitemapButton = () => {
-  const [regenerating, setRegenerating] = useState(false);
-  const [lastSnapshot, setLastSnapshot] = useState<{ url_count: number; created_at: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [preview, setPreview] = useState<{ urlCount: number; htmlCount: number; fetchedAt: string } | null>(null);
 
-  useEffect(() => {
-    supabase
-      .from('sitemap_snapshots')
-      .select('url_count, created_at')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .then(({ data }) => {
-        if (data && data.length > 0) setLastSnapshot(data[0]);
-      });
-  }, []);
-
-  const handleRegenerate = async () => {
-    setRegenerating(true);
+  const handlePreview = async () => {
+    setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('regenerate-sitemap');
-      if (error) throw error;
-      toast.success(`Sitemap regenerated: ${data.url_count} URLs`, {
-        description: `Static: ${data.breakdown.static} · Location: ${data.breakdown.location} · Blog: ${data.breakdown.blog} · Equipment: ${data.breakdown.equipment}`,
+      // Hit the live edge function directly — same one the build step bakes
+      // into public/sitemap.xml on publish. This is read-only: no DB writes,
+      // no production change. Just lets you eyeball what the next publish
+      // will ship.
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-sitemap`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
       });
-      setLastSnapshot({ url_count: data.url_count, created_at: data.generated_at });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const xml = await res.text();
+      const urlCount = (xml.match(/<loc>/g) || []).length;
+      const htmlCount = (xml.match(/<loc>[^<]*\.html<\/loc>/g) || []).length;
+      const fetchedAt = new Date().toISOString();
+
+      setPreview({ urlCount, htmlCount, fetchedAt });
+
+      // Open the raw XML in a new tab for visual inspection.
+      const blob = new Blob([xml], { type: 'application/xml' });
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank', 'noopener');
+
+      toast.success(`Sitemap preview: ${urlCount} URLs (${htmlCount} prerendered)`, {
+        description: 'This is what the next publish will deploy. No changes saved.',
+      });
     } catch (err: any) {
-      toast.error('Failed to regenerate sitemap', { description: err.message });
+      toast.error('Failed to preview sitemap', { description: err.message });
     } finally {
-      setRegenerating(false);
+      setLoading(false);
     }
   };
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <Button variant="outline" onClick={handleRegenerate} disabled={regenerating}>
-        <RefreshCw className={`h-4 w-4 mr-2 ${regenerating ? 'animate-spin' : ''}`} />
-        {regenerating ? 'Regenerating...' : 'Regenerate Sitemap'}
+      <Button variant="outline" onClick={handlePreview} disabled={loading}>
+        <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+        {loading ? 'Loading…' : 'Preview Sitemap'}
       </Button>
-      {lastSnapshot && (
+      {preview ? (
         <span className="text-xs text-muted-foreground">
-          Last: {format(new Date(lastSnapshot.created_at), 'MMM d, h:mm a')} · {lastSnapshot.url_count} URLs
+          {format(new Date(preview.fetchedAt), 'h:mm a')} · {preview.urlCount} URLs · {preview.htmlCount} .html
+        </span>
+      ) : (
+        <span className="text-xs text-muted-foreground">
+          Live preview · publishes on republish
         </span>
       )}
     </div>
