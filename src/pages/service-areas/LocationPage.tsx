@@ -534,7 +534,7 @@ function FullContentWithGallery({ location }: { location: LocationData }) {
         {/* Chunk 1: up to paragraph 1 */}
         {chunks[0] && (
           <div className={proseClasses}>
-            <ReactMarkdown components={markdownComponents}>{chunks[0]}</ReactMarkdown>
+            <ReactMarkdown components={markdownComponents} urlTransform={safeUrlTransform}>{chunks[0]}</ReactMarkdown>
           </div>
         )}
 
@@ -557,7 +557,7 @@ function FullContentWithGallery({ location }: { location: LocationData }) {
         {/* Chunk 2: paragraphs 2-3 */}
         {chunks[1] && (
           <div className={proseClasses}>
-            <ReactMarkdown components={markdownComponents}>{chunks[1]}</ReactMarkdown>
+            <ReactMarkdown components={markdownComponents} urlTransform={safeUrlTransform}>{chunks[1]}</ReactMarkdown>
           </div>
         )}
 
@@ -581,7 +581,7 @@ function FullContentWithGallery({ location }: { location: LocationData }) {
         {/* Chunk 3: rest of content */}
         {chunks[2] && (
           <div className={proseClasses}>
-            <ReactMarkdown components={markdownComponents}>{chunks[2]}</ReactMarkdown>
+            <ReactMarkdown components={markdownComponents} urlTransform={safeUrlTransform}>{chunks[2]}</ReactMarkdown>
           </div>
         )}
 
