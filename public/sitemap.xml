@@ -3,1854 +3,2323 @@
   <!-- Static Pages -->
   <url>
     <loc>https://truficient.com/</loc>
-    <lastmod>2026-04-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://truficient.com/about</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/about.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://truficient.com/contact</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/contact.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://truficient.com/gallery</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/gallery.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/services/residential</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/services/residential.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://truficient.com/services/commercial</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/services/commercial.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://truficient.com/services/ductless</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/services/ductless.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://truficient.com/hvac-estimate</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/hvac-estimate.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://truficient.com/estimate/ducted</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/estimate/ducted.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://truficient.com/estimate/ductless</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/estimate/ductless.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://truficient.com/estimators/sizing</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/estimators/sizing.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://truficient.com/estimators/cost</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/estimators/cost.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://truficient.com/estimators/savings</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/estimators/savings.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://truficient.com/scanner</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/scanner.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/equipment.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/service-areas</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/service-areas.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://truficient.com/service-areas/dallas-area</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/service-areas/dallas-area.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/service-areas/north-dallas-area</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/service-areas/north-dallas-area.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/service-areas/frisco-mckinney-area</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/service-areas/frisco-mckinney-area.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/service-areas/mid-cities-area</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/service-areas/mid-cities-area.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/service-areas/south-dallas-area</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/service-areas/south-dallas-area.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/blog</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/blog.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://truficient.com/careers</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/dallas-urban-heat-island-effect-energy-hvac.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/ac-feedback-loop-dallas.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/dallas-hvac-ercot-grid-demand.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/dallas-electricity-bill-summer-hvac.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/trees-hvac-dallas-cooling.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/oak-cliff-heat-island-paradox-dallas.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mitsubishi-mini-split-dallas-heat-island.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/daikin-vrf-dallas-commercial-heat-island.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/gree-mini-split-dallas-heat-island.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-island-hvac-bishop-arts-dallas.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/careers.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/privacy-policy</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/privacy-policy.html</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://truficient.com/terms-of-service</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/terms-of-service.html</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
-  <!-- Location Pages (192 total) -->
+  <!-- Location Pages (253 total) -->
   <url>
-    <loc>https://truficient.com/ac-feedback-loop-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/ac-repair-lake-highlands-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
+    <loc>https://truficient.com/service-areas.html</loc>
+    <lastmod>2026-04-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://truficient.com/ac-repair-lakewood-dallas</loc>
-    <lastmod>2026-04-16</lastmod>
+    <loc>https://truficient.com/lg-mini-split-lakewood-dallas.html</loc>
+    <lastmod>2026-04-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mitsubishi-mini-split-lower-greenville-dallas.html</loc>
+    <lastmod>2026-04-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/bosch-mini-split-preston-hollow-dallas.html</loc>
+    <lastmod>2026-04-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-pump-replacement-casa-view-dallas.html</loc>
+    <lastmod>2026-04-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/ac-repair-pleasant-grove-dallas</loc>
-    <lastmod>2026-04-08</lastmod>
+    <loc>https://truficient.com/residential-hvac-oak-cliff-dallas.html</loc>
+    <lastmod>2026-04-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/bosch-inverter-ducted-dallas.html</loc>
+    <lastmod>2026-04-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/ac-repair-preston-hollow-dallas</loc>
+    <loc>https://truficient.com/commercial-hvac-maintenance-dallas.html</loc>
+    <lastmod>2026-04-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/commercial-hvac-installation-dallas.html</loc>
+    <lastmod>2026-04-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/goodman-variable-speed-dallas.html</loc>
+    <lastmod>2026-04-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/trane-trucomfort-variable-speed-dallas.html</loc>
+    <lastmod>2026-04-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/vrf-systems-dallas.html</loc>
+    <lastmod>2026-04-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-east-dallas-townhomes.html</loc>
+    <lastmod>2026-04-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-lake-highlands-dallas.html</loc>
+    <lastmod>2026-04-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-75038.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-kessler-park-dallas.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-forest-hills-dallas.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-fair-park-dallas.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-75218.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-75040.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-1950s-ranch-home-dallas.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/why-upstairs-hot-summer-dallas-tx.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/ductless-hvac-university-park-dallas.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mini-split-installation-bluffview-dallas.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/vrf-hvac-installation-dallas.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hotel-hvac-vrf-dallas-tx.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-pump-replacement-cockrell-hill-dallas.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/ductless-hvac-bishop-arts-dallas.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/ac-repair-oak-cliff-dallas.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mini-split-installation-south-dallas-tx.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-75215.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-75217.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/ductless-hvac-historic-home-dallas.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-1940s-bungalow-oak-cliff-dallas.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-pump-replacement-pleasant-grove-dallas.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/commercial-hvac-south-dallas.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-75211.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-75208.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/bosch-oak-cliff-dual-fuel-install.html</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-craftsman-bungalow-dallas-tx.html</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/dallas-warehouse-industrial-uhi-hvac.html</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/commercial-hvac-medical-district-dallas.html</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/commercial-rtu-replacement-dallas.html</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mini-split-installation-highland-park-tx.html</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/commercial-refrigeration-repair-dallas.html</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/dallas-multifamily-apartment-uhi-hvac.html</loc>
+    <lastmod>2026-04-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/goodman-variable-speed-lakewood-dallas.html</loc>
+    <lastmod>2026-04-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/trane-trucomfort-oak-lawn-uptown-dallas.html</loc>
+    <lastmod>2026-04-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/bosch-inverter-ducted-lower-greenville-dallas.html</loc>
+    <lastmod>2026-04-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mitsubishi-mini-split-lakewood-dallas.html</loc>
+    <lastmod>2026-04-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/gree-mini-split-garland-tx.html</loc>
+    <lastmod>2026-04-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/fujitsu-mini-split-oak-cliff-dallas.html</loc>
+    <lastmod>2026-04-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/daikin-mini-split-east-dallas.html</loc>
+    <lastmod>2026-04-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/samsung-mini-split-plano-tx.html</loc>
+    <lastmod>2026-04-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hitachi-mini-split-richardson-tx.html</loc>
+    <lastmod>2026-04-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/lg-mini-split-preston-hollow-dallas.html</loc>
+    <lastmod>2026-04-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/commercial-landlord-uhi-playbook-dallas.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/dallas-winter-cold-snap-hvac-uhi.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/trane-trucomfort-richardson-tx.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/commercial-hvac-richardson-tx.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-75080.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/commercial-vrf-dallas.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/commercial-mini-split-bishop-arts-district.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-pump-replacement-richardson-tx.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hot-spots-home-dallas-tx-summer.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-pump-vs-gas-furnace-dallas-tx-cost-comparison.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/services/do-we-do-plumbing-dallas.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/duct-sealing-assessment-dallas.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mini-split-adu-mother-in-law-suite-dallas-tx.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mini-split-airbnb-short-term-rental-dallas-tx.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-lower-greenville-townhomes.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-oak-cliff-townhomes.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mini-split-installation-oak-cliff-dallas.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-pump-replacement-oak-cliff-dallas.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mini-split-installation-richardson-tx.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-bonton-dallas.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/ac-repair-richardson-tx.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-wynnewood-dallas.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-cedars-dallas.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-canyon-creek-richardson-tx.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-trinity-heights-dallas.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/trane-vs-goodman-variable-speed-dallas.html</loc>
     <lastmod>2026-04-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/ac-repair-west-dallas-tx</loc>
-    <lastmod>2026-04-16</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/atmos-gas-rates-heat-pump-dallas</loc>
+    <loc>https://truficient.com/mitsubishi-pead-ducted-air-handler-dallas.html</loc>
     <lastmod>2026-04-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/best-dual-fuel-heat-pump-dallas</loc>
-    <lastmod>2026-04-17</lastmod>
+    <loc>https://truficient.com/mitsubishi-whole-home-zoning-dallas.html</loc>
+    <lastmod>2026-04-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/best-inverter-ac-dallas</loc>
+    <loc>https://truficient.com/trane-dual-fuel-heat-pump-dallas.html</loc>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/trane-trucomfort-university-park-dallas.html</loc>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/goodman-variable-speed-west-dallas.html</loc>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/atmos-gas-rates-heat-pump-dallas.html</loc>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/trane-variable-speed-heat-island-dallas.html</loc>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/far-north-dallas-heat-island.html</loc>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/highland-park-university-park-heat-island.html</loc>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/restaurant-hvac-dallas-tx.html</loc>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mini-split-installation-preston-hollow-dallas.html</loc>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mini-split-garage-conversion-dallas.html</loc>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-richardson-tx.html</loc>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-plano-tx.html</loc>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-75209.html</loc>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-pump-replacement-lake-highlands-dallas.html</loc>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/ac-repair-preston-hollow-dallas.html</loc>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/goodman-variable-speed-garland-tx.html</loc>
+    <lastmod>2026-04-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/goodman-variable-speed-south-dallas-pleasant-grove.html</loc>
+    <lastmod>2026-04-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/goodman-variable-speed-west-dallas-trinity-groves.html</loc>
+    <lastmod>2026-04-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/humidity-dehumidification-dallas-hvac.html</loc>
+    <lastmod>2026-04-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-downtown-design-district-dallas.html</loc>
+    <lastmod>2026-04-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/project/bosch-uptown-townhome-install.html</loc>
+    <lastmod>2026-04-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/project/goodman-bishop-arts-dual-fuel.html</loc>
+    <lastmod>2026-04-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/project/trane-lakewood-humidity-resolution.html</loc>
+    <lastmod>2026-04-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/trane-comfortlink-ii-controls-dallas.html</loc>
+    <lastmod>2026-04-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/trane-trucomfort-preston-hollow-dallas.html</loc>
+    <lastmod>2026-04-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/best-inverter-ac-dallas.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/bluffview-kessler-park-heat-island-hvac</loc>
+    <loc>https://truficient.com/bosch-ids-light-premium-ultra-comparison.html</loc>
+    <lastmod>2026-04-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/bosch-inverter-ducted-uptown-oak-lawn-dallas.html</loc>
+    <lastmod>2026-04-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/goodman-variable-speed-lower-greenville-dallas.html</loc>
+    <lastmod>2026-04-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/inverter-vs-single-stage-ac-dallas.html</loc>
+    <lastmod>2026-04-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/project/trane-preston-hollow-dual-system.html</loc>
+    <lastmod>2026-04-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/r32-refrigerant-hvac-dallas.html</loc>
+    <lastmod>2026-04-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/trane-weatherguard-hail-protection-dallas.html</loc>
+    <lastmod>2026-04-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/trane-trucomfort-lakewood-dallas.html</loc>
+    <lastmod>2026-04-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/project/goodman-lake-highlands-ranch-upgrade.html</loc>
+    <lastmod>2026-04-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/project/bosch-lower-greenville-quiet-install.html</loc>
+    <lastmod>2026-04-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/bosch-inverter-ducted-oak-cliff-dallas.html</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/goodman-gzv6s-heat-pump-dallas.html</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/goodman-variable-speed-bishop-arts-dallas.html</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/goodman-variable-speed-lake-highlands-dallas.html</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/goodman-variable-speed-east-dallas.html</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/best-dual-fuel-heat-pump-dallas.html</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/goodman-variable-speed-oak-cliff-dallas.html</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/bosch-dual-fuel-heat-pump-dallas.html</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-pump-texas-winter-freeze-performance.html</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/project/goodman-oak-cliff-bungalow-r22-upgrade.html</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/project/trane-highland-park-trucomfort-upgrade.html</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/trane-5twv0x-heat-pump-dallas.html</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/trane-trucomfort-highland-park-dallas.html</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-75205.html</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-pump-replacement-lower-greenville-dallas.html</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/ac-repair-lakewood-dallas.html</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mini-split-installation-lake-highlands-dallas.html</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-75214.html</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-pump-replacement-highland-park-dallas.html</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mini-split-installation-casa-view-east-dallas.html</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-far-north-dallas.html</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/ac-repair-west-dallas-tx.html</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-duplex-east-dallas.html</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-pump-vs-gas-furnace-dallas-oak-cliff.html</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/garland-mesquite-heat-island-hvac-tx.html</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mitsubishi-svz-kp-air-handler-dallas.html</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mitsubishi-slz-ceiling-cassette-dallas.html</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mitsubishi-kumo-cloud-dallas.html</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mitsubishi-city-multi-vrf-dallas.html</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/dallas-peak-heat-days-hvac.html</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/samsung-dvm-heat-island-hvac-dallas.html</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/plano-heat-island-hvac-tx.html</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-casa-view-east-dallas.html</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/retail-hvac-upgrade-oak-lawn-dallas.html</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/office-hvac-energy-efficiency-uptown-dallas.html</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-75219.html</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-75204.html</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-pump-replacement-lakewood-dallas.html</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mitsubishi-hyper-heat-dallas.html</loc>
     <lastmod>2026-04-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://truficient.com/bosch-dual-fuel-heat-pump-dallas</loc>
-    <lastmod>2026-04-17</lastmod>
+    <loc>https://truficient.com/mitsubishi-mxz-multi-zone-dallas.html</loc>
+    <lastmod>2026-04-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mitsubishi-msz-wall-mount-dallas.html</loc>
+    <lastmod>2026-04-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mitsubishi-m-series-vs-p-series-dallas.html</loc>
+    <lastmod>2026-04-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/preston-hollow-heat-island-hvac-dallas.html</loc>
+    <lastmod>2026-04-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/lg-lgred-heat-island-hvac-dallas.html</loc>
+    <lastmod>2026-04-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/richardson-heat-island-hvac-tx.html</loc>
+    <lastmod>2026-04-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/bluffview-kessler-park-heat-island-hvac.html</loc>
+    <lastmod>2026-04-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mini-split-condo-uptown-dallas.html</loc>
+    <lastmod>2026-04-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/bosch-ids-light-premium-ultra-comparison</loc>
-    <lastmod>2026-04-18</lastmod>
+    <loc>https://truficient.com/hvac-lower-greenville-dallas.html</loc>
+    <lastmod>2026-04-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-lakewood-dallas.html</loc>
+    <lastmod>2026-04-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-75207.html</loc>
+    <lastmod>2026-04-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/bosch-inverter-ducted-dallas</loc>
-    <lastmod>2026-04-17</lastmod>
+    <loc>https://truficient.com/energy-efficient-hvac-uptown-dallas.html</loc>
+    <lastmod>2026-04-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/bosch-inverter-ducted-oak-cliff-dallas</loc>
-    <lastmod>2026-04-17</lastmod>
+    <loc>https://truficient.com/ductless-hvac-m-streets-dallas.html</loc>
+    <lastmod>2026-04-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/bosch-inverter-ducted-uptown-oak-lawn-dallas</loc>
-    <lastmod>2026-04-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/bosch-mini-split-dallas</loc>
+    <loc>https://truficient.com/bosch-mini-split-dallas.html</loc>
     <lastmod>2026-04-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/casa-view-east-dallas-heat-island-hvac</loc>
+    <loc>https://truficient.com/daikin-vrf-dallas.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mitsubishi-12-year-warranty-dallas.html</loc>
     <lastmod>2026-04-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://truficient.com/commercial-hvac-design-district-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
+    <loc>https://truficient.com/mitsubishi-diamond-contractor-dallas.html</loc>
+    <lastmod>2026-04-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://truficient.com/commercial-hvac-downtown-dallas</loc>
+    <loc>https://truficient.com/mitsubishi-mini-split-vs-central-ac-dallas.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mitsubishi-mini-split-no-ductwork-dallas.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/casa-view-east-dallas-heat-island-hvac.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/south-dallas-cedars-heat-island-hvac.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/pleasant-grove-heat-island-hvac-dallas.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/dallas-uhi-indoor-air-quality-hvac.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/east-dallas-lakewood-heat-island-hvac.html</loc>
     <lastmod>2026-04-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/commercial-mini-split-design-district-dallas</loc>
+    <loc>https://truficient.com/hvac-75201.html</loc>
     <lastmod>2026-04-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/commercial-rooftop-hvac-dallas-heat-island</loc>
+    <loc>https://truficient.com/commercial-hvac-downtown-dallas.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/commercial-mini-split-design-district-dallas.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-75206.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mini-split-installation-lower-greenville-dallas.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-75202.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/new-construction-hvac-trinity-groves-dallas.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mini-split-condo-downtown-dallas.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-pump-installation-oak-lawn-dallas.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/small-commercial-hvac-design-district-dallas.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-design-district-dallas.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-downtown-dallas.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-uptown-oak-lawn-dallas.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-75212.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-west-dallas-tx.html</loc>
+    <lastmod>2026-04-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/commercial-rooftop-hvac-dallas-heat-island.html</loc>
     <lastmod>2026-04-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/cool-roof-dallas-hvac-savings</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/daikin-vrf-dallas-commercial-heat-island</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/daikin-vrf-dallas</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/dallas-electricity-bill-summer-hvac</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/dallas-heat-island-city-policy</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/dallas-hvac-ercot-grid-demand</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/dallas-peak-heat-days-hvac</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/dallas-tree-canopy-hvac-load-calculation</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/dallas-uhi-indoor-air-quality-hvac</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/dallas-urban-heat-island-effect-energy-hvac</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/duct-loss-dallas-hvac-attic</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/ductless-hvac-bluffview-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/ductless-hvac-lakewood-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/ductless-hvac-m-streets-dallas</loc>
-    <lastmod>2026-04-14</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/east-dallas-lakewood-heat-island-hvac</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/energy-efficient-hvac-uptown-dallas</loc>
-    <lastmod>2026-04-14</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/far-north-dallas-heat-island</loc>
-    <lastmod>2026-04-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/fujitsu-mini-split-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/garland-mesquite-heat-island-hvac-tx</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/goodman-gzv6s-heat-pump-dallas</loc>
-    <lastmod>2026-04-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/goodman-variable-speed-bishop-arts-dallas</loc>
-    <lastmod>2026-04-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/goodman-variable-speed-dallas</loc>
-    <lastmod>2026-04-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/goodman-variable-speed-east-dallas</loc>
-    <lastmod>2026-04-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/goodman-variable-speed-garland-tx</loc>
-    <lastmod>2026-04-19</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/goodman-variable-speed-lake-highlands-dallas</loc>
-    <lastmod>2026-04-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/goodman-variable-speed-lower-greenville-dallas</loc>
-    <lastmod>2026-04-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/goodman-variable-speed-oak-cliff-dallas</loc>
-    <lastmod>2026-04-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/goodman-variable-speed-south-dallas-pleasant-grove</loc>
-    <lastmod>2026-04-19</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/goodman-variable-speed-west-dallas-trinity-groves</loc>
-    <lastmod>2026-04-19</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/goodman-variable-speed-west-dallas</loc>
-    <lastmod>2026-04-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/gree-mini-split-dallas-heat-island</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/gree-mini-split-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-island-hvac-bishop-arts-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-island-hvac-deep-ellum-dallas</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-island-hvac-design-district-dallas</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-island-hvac-downtown-dallas</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-island-hvac-glendale-park-dallas</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-island-hvac-ledbetter-gardens-dallas</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-island-hvac-love-field-dallas</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-island-hvac-medical-district-dallas</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-island-hvac-oak-lawn-dallas</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-island-hvac-stemmons-dallas</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-island-hvac-uptown-dallas</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-island-hvac-west-dallas</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-pump-installation-oak-lawn-dallas</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-pump-replacement-highland-park-dallas</loc>
-    <lastmod>2026-04-16</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-pump-replacement-lake-highlands-dallas</loc>
-    <lastmod>2026-04-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-pump-replacement-lakewood-dallas</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-pump-replacement-lower-greenville-dallas</loc>
-    <lastmod>2026-04-16</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-pump-replacement-oak-cliff-dallas</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-pump-texas-winter-freeze-performance</loc>
-    <lastmod>2026-04-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-pump-vs-gas-furnace-dallas-oak-cliff</loc>
-    <lastmod>2026-04-16</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/highland-park-university-park-heat-island</loc>
-    <lastmod>2026-04-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hitachi-mini-split-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/humidity-dehumidification-dallas-hvac</loc>
-    <lastmod>2026-04-19</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-75201</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-75202</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-75204</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-75205</loc>
-    <lastmod>2026-04-16</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-75206</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-75207</loc>
-    <lastmod>2026-04-14</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-75209</loc>
-    <lastmod>2026-04-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-75212</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-75214</loc>
-    <lastmod>2026-04-16</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-75219</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-casa-view-east-dallas</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-design-district-dallas</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-downtown-dallas</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-downtown-design-district-dallas</loc>
-    <lastmod>2026-04-19</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-duplex-east-dallas</loc>
-    <lastmod>2026-04-16</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-east-dallas-townhome-developers</loc>
-    <lastmod>2026-04-08</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-environmental-justice-dallas</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-far-north-dallas</loc>
-    <lastmod>2026-04-16</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-highland-park-university-park-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-lake-highlands-dallas</loc>
-    <lastmod>2026-04-16</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-lakewood-dallas</loc>
-    <lastmod>2026-04-14</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-lower-greenville-dallas</loc>
-    <lastmod>2026-04-14</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-lower-greenville-townhome-developers</loc>
-    <lastmod>2026-04-08</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-oak-cliff-townhome-developers</loc>
-    <lastmod>2026-04-08</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-plano-tx</loc>
-    <lastmod>2026-04-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-preston-hollow-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-richardson-tx</loc>
-    <lastmod>2026-04-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-sizing-dallas-heat-island</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-south-dallas-tx</loc>
-    <lastmod>2026-04-08</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-uptown-oak-lawn-dallas</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-west-dallas-tx</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/inverter-vs-single-stage-ac-dallas</loc>
-    <lastmod>2026-04-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/inverter-vs-single-stage-hvac-dallas</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/lake-highlands-heat-island-hvac-dallas</loc>
+    <loc>https://truficient.com/lower-greenville-heat-island-hvac-dallas.html</loc>
     <lastmod>2026-04-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/lg-lgred-heat-island-hvac-dallas</loc>
-    <lastmod>2026-04-14</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/lg-mini-split-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/lower-greenville-heat-island-hvac-dallas</loc>
+    <loc>https://truficient.com/lake-highlands-heat-island-hvac-dallas.html</loc>
     <lastmod>2026-04-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/mini-split-condo-downtown-dallas</loc>
-    <lastmod>2026-04-13</lastmod>
+    <loc>https://truficient.com/dallas-heat-island-city-policy.html</loc>
+    <lastmod>2026-04-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/mini-split-condo-uptown-dallas</loc>
-    <lastmod>2026-04-14</lastmod>
+    <loc>https://truficient.com/hvac-environmental-justice-dallas.html</loc>
+    <lastmod>2026-04-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/mini-split-garage-conversion-dallas</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/cool-roof-dallas-hvac-savings.html</loc>
+    <lastmod>2026-04-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/mini-split-installation-bishop-arts-dallas</loc>
+    <loc>https://truficient.com/duct-loss-dallas-hvac-attic.html</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-island-hvac-ledbetter-gardens-dallas.html</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-island-hvac-glendale-park-dallas.html</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-island-hvac-stemmons-dallas.html</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/dallas-tree-canopy-hvac-load-calculation.html</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-island-hvac-oak-lawn-dallas.html</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-island-hvac-downtown-dallas.html</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/inverter-vs-single-stage-hvac-dallas.html</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-sizing-dallas-heat-island.html</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-island-hvac-uptown-dallas.html</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-island-hvac-love-field-dallas.html</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-island-hvac-deep-ellum-dallas.html</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-island-hvac-west-dallas.html</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-island-hvac-medical-district-dallas.html</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-island-hvac-design-district-dallas.html</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/daikin-vrf-dallas-commercial-heat-island.html</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mitsubishi-mini-split-dallas-heat-island.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/oak-cliff-heat-island-paradox-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/trees-hvac-dallas-cooling.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/dallas-electricity-bill-summer-hvac.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/dallas-urban-heat-island-effect-energy-hvac.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/dallas-hvac-ercot-grid-demand.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/gree-mini-split-dallas-heat-island.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/heat-island-hvac-bishop-arts-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/ac-feedback-loop-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-highland-park-university-park-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mini-split-installation-highland-park-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-preston-hollow-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/ductless-hvac-bluffview-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mini-split-installation-west-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/samsung-mini-split-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mitsubishi-mini-split-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/lg-mini-split-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/pioneer-mini-split-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/gree-mini-split-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/fujitsu-mini-split-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hitachi-mini-split-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/ac-repair-lake-highlands-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/mini-split-installation-uptown-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/ductless-hvac-lakewood-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/commercial-hvac-design-district-dallas.html</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/hvac-lower-greenville-townhome-developers.html</loc>
     <lastmod>2026-04-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/mini-split-installation-casa-view-east-dallas</loc>
-    <lastmod>2026-04-16</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mini-split-installation-cockrell-hill-dallas</loc>
+    <loc>https://truficient.com/hvac-oak-cliff-townhome-developers.html</loc>
     <lastmod>2026-04-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/mini-split-installation-highland-park-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mini-split-installation-lake-highlands-dallas</loc>
-    <lastmod>2026-04-16</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mini-split-installation-lower-greenville-dallas</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mini-split-installation-oak-cliff-dallas</loc>
+    <loc>https://truficient.com/hvac-east-dallas-townhome-developers.html</loc>
     <lastmod>2026-04-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/mini-split-installation-preston-hollow-dallas</loc>
-    <lastmod>2026-04-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mini-split-installation-uptown-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mini-split-installation-west-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mitsubishi-12-year-warranty-dallas</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mitsubishi-city-multi-vrf-dallas</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mitsubishi-diamond-contractor-dallas</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mitsubishi-hyper-heat-dallas</loc>
-    <lastmod>2026-04-14</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mitsubishi-kumo-cloud-dallas</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mitsubishi-m-series-vs-p-series-dallas</loc>
-    <lastmod>2026-04-14</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mitsubishi-mini-split-dallas-heat-island</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mitsubishi-mini-split-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mitsubishi-mini-split-no-ductwork-dallas</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mitsubishi-mini-split-vs-central-ac-dallas</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mitsubishi-msz-wall-mount-dallas</loc>
-    <lastmod>2026-04-14</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mitsubishi-mxz-multi-zone-dallas</loc>
-    <lastmod>2026-04-14</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mitsubishi-pead-ducted-air-handler-dallas</loc>
-    <lastmod>2026-04-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mitsubishi-slz-ceiling-cassette-dallas</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mitsubishi-svz-kp-air-handler-dallas</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mitsubishi-whole-home-zoning-dallas</loc>
-    <lastmod>2026-04-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/new-construction-hvac-trinity-groves-dallas</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/oak-cliff-heat-island-paradox-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/office-hvac-energy-efficiency-uptown-dallas</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/pioneer-mini-split-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/plano-heat-island-hvac-tx</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/pleasant-grove-heat-island-hvac-dallas</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/preston-hollow-heat-island-hvac-dallas</loc>
-    <lastmod>2026-04-14</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/project/bosch-lower-greenville-quiet-install</loc>
-    <lastmod>2026-04-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/project/bosch-oak-cliff-dual-fuel-install</loc>
-    <lastmod>2026-04-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/project/bosch-uptown-townhome-install</loc>
-    <lastmod>2026-04-19</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/project/goodman-bishop-arts-dual-fuel</loc>
-    <lastmod>2026-04-19</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/project/goodman-lake-highlands-ranch-upgrade</loc>
-    <lastmod>2026-04-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/project/goodman-oak-cliff-bungalow-r22-upgrade</loc>
-    <lastmod>2026-04-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/project/trane-highland-park-trucomfort-upgrade</loc>
-    <lastmod>2026-04-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/project/trane-lakewood-humidity-resolution</loc>
-    <lastmod>2026-04-19</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/project/trane-preston-hollow-dual-system</loc>
-    <lastmod>2026-04-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/r32-refrigerant-hvac-dallas</loc>
-    <lastmod>2026-04-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/residential-hvac-oak-cliff-dallas</loc>
-    <lastmod>2026-04-08</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/residential-hvac-south-oak-cliff-dallas</loc>
+    <loc>https://truficient.com/hvac-south-dallas-tx.html</loc>
     <lastmod>2026-04-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/restaurant-hvac-dallas-tx</loc>
-    <lastmod>2026-04-20</lastmod>
+    <loc>https://truficient.com/ac-repair-pleasant-grove-dallas.html</loc>
+    <lastmod>2026-04-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/retail-hvac-upgrade-oak-lawn-dallas</loc>
-    <lastmod>2026-04-15</lastmod>
+    <loc>https://truficient.com/residential-hvac-south-oak-cliff-dallas.html</loc>
+    <lastmod>2026-04-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/richardson-heat-island-hvac-tx</loc>
-    <lastmod>2026-04-14</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/samsung-dvm-heat-island-hvac-dallas</loc>
-    <lastmod>2026-04-15</lastmod>
+    <loc>https://truficient.com/mini-split-installation-cockrell-hill-dallas.html</loc>
+    <lastmod>2026-04-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://truficient.com/samsung-mini-split-dallas</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/small-commercial-hvac-design-district-dallas</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/south-dallas-cedars-heat-island-hvac</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/trane-5twv0x-heat-pump-dallas</loc>
-    <lastmod>2026-04-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/trane-comfortlink-ii-controls-dallas</loc>
-    <lastmod>2026-04-19</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/trane-dual-fuel-heat-pump-dallas</loc>
-    <lastmod>2026-04-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/trane-trucomfort-highland-park-dallas</loc>
-    <lastmod>2026-04-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/trane-trucomfort-lakewood-dallas</loc>
-    <lastmod>2026-04-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/trane-trucomfort-preston-hollow-dallas</loc>
-    <lastmod>2026-04-19</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/trane-trucomfort-university-park-dallas</loc>
-    <lastmod>2026-04-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/trane-trucomfort-variable-speed-dallas</loc>
-    <lastmod>2026-04-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/trane-variable-speed-heat-island-dallas</loc>
-    <lastmod>2026-04-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/trane-vs-goodman-variable-speed-dallas</loc>
-    <lastmod>2026-04-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/trane-weatherguard-hail-protection-dallas</loc>
-    <lastmod>2026-04-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/trees-hvac-dallas-cooling</loc>
-    <lastmod>2026-04-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/ac-repair-oak-cliff-dallas</loc>
-    <lastmod>2026-04-09</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/commercial-hvac-south-dallas</loc>
-    <lastmod>2026-04-09</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/ductless-hvac-bishop-arts-dallas</loc>
-    <lastmod>2026-04-09</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/ductless-hvac-historic-home-dallas</loc>
-    <lastmod>2026-04-09</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-pump-replacement-cockrell-hill-dallas</loc>
-    <lastmod>2026-04-09</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/heat-pump-replacement-pleasant-grove-dallas</loc>
-    <lastmod>2026-04-09</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-1940s-bungalow-oak-cliff-dallas</loc>
-    <lastmod>2026-04-09</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-75208</loc>
-    <lastmod>2026-04-09</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-75211</loc>
-    <lastmod>2026-04-09</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-75215</loc>
-    <lastmod>2026-04-09</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/hvac-75217</loc>
-    <lastmod>2026-04-09</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/mini-split-installation-south-dallas-tx</loc>
-    <lastmod>2026-04-09</lastmod>
+    <loc>https://truficient.com/mini-split-installation-bishop-arts-dallas.html</loc>
+    <lastmod>2026-04-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
-  <!-- Blog Posts (10 total) -->
+  <!-- Blog Posts (11 total) -->
   <url>
-    <loc>https://truficient.com/blog/case-study-dual-zone-comfort-and-efficiency-with-a-mitsubishi-mini-vrf-system-in-a-texas-ranch-home</loc>
-    <lastmod>2026-01-24</lastmod>
+    <loc>https://truficient.com/blog/north-texas-water-crisis-conservation.html</loc>
+    <lastmod>2026-04-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/blog/dallas-urban-heat-island-effect-energy-hvac</loc>
+    <loc>https://truficient.com/blog/dallas-urban-heat-island-effect-energy-hvac.html</loc>
     <lastmod>2026-04-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/blog/deep-dive-into-residential-air-balancing</loc>
-    <lastmod>2026-02-03</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/blog/guide-to-insulation-for-your-home-types-benefits-and-costs</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/blog/home-office-comfort-mini-split-solutions-for-remote-workers-in-dallas</loc>
-    <lastmod>2026-01-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/blog/keeping-the-growing-family-comfortable-mini-splits-for-garage-conversions-and-home-additions</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/blog/seasonal-maintenance-tips-for-your-high-efficiency-hvac-system-in-dallas</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/blog/the-complete-guide-to-hvac-zoning-from-single-stage-to-multi-zone</loc>
+    <loc>https://truficient.com/blog/the-complete-guide-to-hvac-zoning-from-single-stage-to-multi-zone.html</loc>
     <lastmod>2026-02-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/blog/the-unsung-hero-of-commercial-comfort-why-air-balancing-matters</loc>
+    <loc>https://truficient.com/blog/deep-dive-into-residential-air-balancing.html</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/blog/the-unsung-hero-of-commercial-comfort-why-air-balancing-matters.html</loc>
     <lastmod>2026-01-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/blog/your-home-a-system-of-comfort-understanding-your-hvac-s-role</loc>
+    <loc>https://truficient.com/blog/your-home-a-system-of-comfort-understanding-your-hvac-s-role.html</loc>
     <lastmod>2026-01-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
+  <url>
+    <loc>https://truficient.com/blog/keeping-the-growing-family-comfortable-mini-splits-for-garage-conversions-and-home-additions.html</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/blog/guide-to-insulation-for-your-home-types-benefits-and-costs.html</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/blog/case-study-dual-zone-comfort-and-efficiency-with-a-mitsubishi-mini-vrf-system-in-a-texas-ranch-home.html</loc>
+    <lastmod>2026-01-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/blog/seasonal-maintenance-tips-for-your-high-efficiency-hvac-system-in-dallas.html</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/blog/home-office-comfort-mini-split-solutions-for-remote-workers-in-dallas.html</loc>
+    <lastmod>2026-01-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
 
-  <!-- Equipment Pages (81 total) -->
+  <!-- Equipment Pages (93 total) -->
   <url>
-    <loc>https://truficient.com/equipment/amana-asx160481fe</loc>
-    <lastmod>2026-04-18</lastmod>
+    <loc>https://truficient.com/equipment/amana-abm96-3y74e.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/equipment/trane-s8b1b080m4pscaa.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/equipment/carrier-eam4x60l21a1.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-mxz-sm36nl.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/equipment/carrier-26tpa860w003.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/equipment/carrier-bryant-payne-caamp6121amaeaaa.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-msz-gl06na.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-mxz-sm36namhz2.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-suz-ka24na2.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/equipment/carrier-international-comfort-products-n4a360ghc300.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/equipment/gree-vireo-series-vir24hp230v1bo.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/equipment/rheem-ruud-13ajn36a01.html</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://truficient.com/equipment/goodman-amana-gszs603610ab.html</loc>
+    <lastmod>2026-04-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/ameristar-trane-american-standard-m4ac3048a1000aa</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-sez-kd18na4-h.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/carrier-38auza08a0g5a0a0a0</loc>
+    <loc>https://truficient.com/equipment/carrier-rk-26-3-fo-212-fl00a00000000x.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/carrier-48kcda04a2a3adadad</loc>
+    <loc>https://truficient.com/equipment/lennox-allied-air-armstrong-airease-4ac17l36p-51a.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/carrier-ga5san448-a</loc>
+    <loc>https://truficient.com/equipment/first-co-gb-24a.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/carrier-icp-nxa448gkc101</loc>
+    <loc>https://truficient.com/equipment/daikin-goodman-amana-chpe-brand-chpea3626b3aa.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/carrier-ras060hocaoaaaa</loc>
+    <loc>https://truficient.com/equipment/lennox-armstrong-airease-allied-air-lsc070aewmc6k.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/carrier-rk-26-3-fo-212-fl00a00000000x</loc>
+    <loc>https://truficient.com/equipment/lennox-airflo-grandaire-comfortmaker-series-h2db036s06a.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/carrier-rk-26-3-fo-212-fl00a0000000x</loc>
+    <loc>https://truficient.com/equipment/gree-livo-gen3-liv09hp230v1r32ao.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/daikin-d1548haeal</loc>
+    <loc>https://truficient.com/equipment/lennox-adp-advanced-distributor-products-hd15436d175b260300.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/daikin-dcv-1011</loc>
+    <loc>https://truficient.com/equipment/goodman-amana-daikin-gsxs6s3610ab.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/daikin-fxfq24tvju</loc>
+    <loc>https://truficient.com/equipment/gree-livo-liv18hp230v1r32ah.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/daikin-fxmq30pbvju</loc>
+    <loc>https://truficient.com/equipment/carrier-icp-nxa448gkc101.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/daikin-goodman-amana-ahve24bp1400ba</loc>
+    <loc>https://truficient.com/equipment/carrier-rk-26-3-fo-212-fl00a0000000x.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/daikin-goodman-amana-chpe-brand-chpea3626b3aa</loc>
+    <loc>https://truficient.com/equipment/goodman-amana-everrest-er-3614-15-b-fs.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/first-co-gb-24a</loc>
+    <loc>https://truficient.com/equipment/ameristar-trane-american-standard-m4ac3048a1000aa.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/goodman-amana-ahve24bp1400ba</loc>
+    <loc>https://truficient.com/equipment/carrier-ras060hocaoaaaa.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/goodman-amana-daikin-gsxs6s3610ab</loc>
+    <loc>https://truficient.com/equipment/goodman-gsxs6s3610ab.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/goodman-amana-everrest-er-3614-15-b-fs</loc>
+    <loc>https://truficient.com/equipment/carrier-38auza08a0g5a0a0a0.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/goodman-amana-gpgm33608031aa</loc>
+    <loc>https://truficient.com/equipment/daikin-fxfq24tvju.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/goodman-amana-vsc130601aa</loc>
+    <loc>https://truficient.com/equipment/trane-ttp042c100a4.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/goodman-aruf37c14ad</loc>
+    <loc>https://truficient.com/equipment/rheem-ruud-rgedzt120adg152aa.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/goodman-ck60-1c</loc>
+    <loc>https://truficient.com/equipment/goodman-aruf37c14ad.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/goodman-gmvc960603bnbc</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-pla-a12ea7.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/goodman-gpgm33608031aa</loc>
+    <loc>https://truficient.com/equipment/trane-american-standard-ttp042c100a4.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/goodman-gree-g-hd036sa</loc>
+    <loc>https://truficient.com/equipment/rheem-rgedzt090adg152aa.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/goodman-gsx140601ka</loc>
+    <loc>https://truficient.com/equipment/lennox-14hpx-036-230-18.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/goodman-gsxs6s3610ab</loc>
+    <loc>https://truficient.com/equipment/goodman-amana-vsc130601aa.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/gree-livo-gen3-liv09hp230v1r32ao</loc>
+    <loc>https://truficient.com/equipment/carrier-48kcda04a2a3adadad.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/gree-livo-liv18hp230v1r32ah</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-pury-p192tgmu-a-bs.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/lennox-12acb36-4p</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-pac-sc51kua.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/lennox-14hpx-036-230-18</loc>
+    <loc>https://truficient.com/equipment/daikin-goodman-amana-ahve24bp1400ba.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/lennox-adp-advanced-distributor-products-hd15436d175b260300</loc>
+    <loc>https://truficient.com/equipment/payne-carrier-pf1mnc025.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/lennox-airflo-grandaire-comfortmaker-series-h2db036s06a</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-chto08x6bfm.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/lennox-allied-air-armstrong-airease-4ac17l36p-51a</loc>
+    <loc>https://truficient.com/equipment/rheem-ruud-rafz-042jas.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/lennox-armstrong-airease-allied-air-lsc070aewmc6k</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-pury-p120tjmu-a.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/lennox-ch23-51-1</loc>
+    <loc>https://truficient.com/equipment/carrier-ga5san448-a.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/lennox-ch33-36a-2f</loc>
+    <loc>https://truficient.com/equipment/rheem-ruud-13ajn60a01.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/lennox-er-361h-15-b-fs</loc>
+    <loc>https://truficient.com/equipment/payne-carrier-bryant-pf1mnc025.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/lennox-l3x400cc</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-mxz-sm60nam.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/lennox-lsc070aewmc6k</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-mua-he-2.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-6024-ex-2</loc>
+    <loc>https://truficient.com/equipment/lennox-l3x400cc.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-3hf10</loc>
+    <loc>https://truficient.com/equipment/daikin-fxmq30pbvju.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-3hf10f</loc>
+    <loc>https://truficient.com/equipment/goodman-gmvc960603bnbc.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-chto08x6bfm</loc>
+    <loc>https://truficient.com/equipment/goodman-gpgm33608031aa.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-msz-gs12na</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-3hf10.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-msz-gx24nl</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-6024-ex-2.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-mua-he-2</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-pvfy-p12namu-e1.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-mxz-2c20na2</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-pefy-p06nmau-e4.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-mxz-sm36namhz2</loc>
+    <loc>https://truficient.com/equipment/goodman-amana-ahve24bp1400ba.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-mxz-sm60nam</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-3hf10f.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-mxz-sm60nam2</loc>
+    <loc>https://truficient.com/equipment/daikin-dcv-1011.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-pac-sc51kua</loc>
+    <loc>https://truficient.com/equipment/trane-american-standard-swp080d27al2my220202020y.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-pefy-p06nmau-e4</loc>
+    <loc>https://truficient.com/equipment/daikin-d1548haeal.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-pla-a12ea7</loc>
+    <loc>https://truficient.com/equipment/trane-tzaa-360-2a757.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-pury-p120tjmu-a</loc>
+    <loc>https://truficient.com/equipment/lennox-lsc070aewmc6k.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-pury-p192tgmu-a-bs</loc>
+    <loc>https://truficient.com/equipment/trane-4twb3060b1000ca.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-pvfy-p12namu-e1</loc>
+    <loc>https://truficient.com/equipment/trane-american-standard-cht008x6bfm.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-sez-kd18na4-h</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-svz-kp36na.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-suz-ka30na2</loc>
+    <loc>https://truficient.com/equipment/trane-5ttv8x48a1000aa.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-suz-ka4na2</loc>
+    <loc>https://truficient.com/equipment/lennox-ch33-36a-2f.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/mitsubishi-electric-svz-kp36na</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-suz-ka4na2.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/payne-carrier-bryant-pf1mnc025</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-mxz-sm60nam2.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/payne-carrier-pf1mnc025</loc>
+    <loc>https://truficient.com/equipment/rheem-ruud-uhsa-hm3017ja.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/rheem-rgedzt090adg152aa</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-msz-gx24nl.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/rheem-ruud-13ajn60a01</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-suz-ka30na2.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/rheem-ruud-rafz-042jas</loc>
+    <loc>https://truficient.com/equipment/goodman-gree-g-hd036sa.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/rheem-ruud-rcf4821stamca</loc>
+    <loc>https://truficient.com/equipment/lennox-12acb36-4p.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/rheem-ruud-rgedzt120adg152aa</loc>
+    <loc>https://truficient.com/equipment/goodman-amana-gpgm33608031aa.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/rheem-ruud-uhsa-hm3017ja</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-msz-gs12na.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/rheem-uand-030jaz</loc>
+    <loc>https://truficient.com/equipment/lennox-ch23-51-1.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/trane-4twb3060b1000ca</loc>
+    <loc>https://truficient.com/equipment/rheem-uand-030jaz.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/trane-5ttv8x48a1000aa</loc>
+    <loc>https://truficient.com/equipment/lennox-er-361h-15-b-fs.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/trane-american-standard-ameristar-m4cxc048ab1caaa</loc>
+    <loc>https://truficient.com/equipment/rheem-ruud-rcf4821stamca.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/trane-american-standard-cht008x6bfm</loc>
+    <loc>https://truficient.com/equipment/goodman-ck60-1c.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/trane-american-standard-m801p080bd45aaa</loc>
+    <loc>https://truficient.com/equipment/trane-american-standard-m801p080bd45aaa.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/trane-american-standard-swp080d27al2my220202020y</loc>
+    <loc>https://truficient.com/equipment/trane-american-standard-ameristar-m4cxc048ab1caaa.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/trane-american-standard-ttp042c100a4</loc>
+    <loc>https://truficient.com/equipment/mitsubishi-electric-mxz-2c20na2.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/trane-ttp042c100a4</loc>
+    <loc>https://truficient.com/equipment/trane-ttx036d100ad.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/trane-ttx036d100ad</loc>
+    <loc>https://truficient.com/equipment/amana-asx160481fe.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://truficient.com/equipment/trane-tzaa-360-2a757</loc>
+    <loc>https://truficient.com/equipment/goodman-gsx140601ka.html</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

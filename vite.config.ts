@@ -11,6 +11,36 @@ import { pathToFileURL } from "node:url";
  * `vite build` directly. (Lovable hosting invokes `vite build` directly,
  * which previously skipped the npm-script chain.)
  */
+function syncSitemapPlugin(mode: string) {
+  return {
+    name: "truficient-sync-sitemap",
+    apply: "build" as const,
+    async buildStart() {
+      // Refresh public/sitemap.xml from the live generate-sitemap edge
+      // function BEFORE Vite copies the public/ directory into dist/.
+      // Lovable Hosting serves the static file, so this is the only way
+      // for the .html-suffixed URLs (emitted by the edge function) to
+      // actually reach production.
+      const env = loadEnv(mode, process.cwd(), "");
+      for (const [key, value] of Object.entries(env)) {
+        if (process.env[key] === undefined && value !== undefined) {
+          process.env[key] = value;
+        }
+      }
+      const scriptUrl = pathToFileURL(
+        path.resolve(__dirname, "scripts/sync-sitemap.mjs"),
+      ).href;
+      try {
+        await import(`${scriptUrl}?t=${Date.now()}`);
+      } catch (err) {
+        // Non-fatal: the script itself swallows fetch errors and keeps the
+        // existing file. Only an unexpected import failure lands here.
+        console.warn("[vite] sitemap sync skipped:", err);
+      }
+    },
+  };
+}
+
 function seoPrerenderPlugin(mode: string) {
   return {
     name: "truficient-seo-prerender",
@@ -76,6 +106,7 @@ export default defineConfig(({ mode }) => ({
       jpeg: { quality: 70 },
       png: { quality: 75 },
     }),
+    syncSitemapPlugin(mode),
     seoPrerenderPlugin(mode),
   ].filter(Boolean),
   resolve: {
