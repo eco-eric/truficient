@@ -62,11 +62,30 @@ const SITE_NAME = 'Truficient Energy Solutions';
 // Supabase
 // ---------------------------------------------------------------------------
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+// Hardcoded fallbacks — these are the PUBLISHABLE (anon) values, identical
+// to what's in src/integrations/supabase/client.ts and shipped in the client
+// bundle. They are safe to commit. Required because Lovable Hosting's deploy
+// build does not always populate process.env from the repo .env file, which
+// previously caused the prerender to silently fall back to static-routes-only
+// (26 routes) and ship a broken production manifest.
+const FALLBACK_SUPABASE_URL = 'https://xvsgdzwadxbwpevdezbp.supabase.co';
+const FALLBACK_SUPABASE_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2c2dkendhZHhid3BldmRlemJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzNDYwOTIsImV4cCI6MjA4MzkyMjA5Mn0.4mZeybSGCDJqQQDLLJdrJi0ZfTVXrMQkXn9rbEfERlM';
+
+const SUPABASE_URL =
+  process.env.VITE_SUPABASE_URL ||
+  process.env.SUPABASE_URL ||
+  FALLBACK_SUPABASE_URL;
 const SUPABASE_KEY =
   process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
   process.env.SUPABASE_PUBLISHABLE_KEY ||
-  process.env.SUPABASE_ANON_KEY;
+  process.env.SUPABASE_ANON_KEY ||
+  FALLBACK_SUPABASE_KEY;
+
+console.log(
+  `[prerender] Supabase env: URL=${SUPABASE_URL ? 'set' : 'MISSING'} KEY=${SUPABASE_KEY ? 'set' : 'MISSING'} ` +
+    `(VITE_SUPABASE_URL=${process.env.VITE_SUPABASE_URL ? 'env' : 'fallback'})`,
+);
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.warn(
