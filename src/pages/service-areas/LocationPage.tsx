@@ -466,6 +466,32 @@ const LocationPage = () => {
 };
 
 /** Markdown link renderer shared by all content sections */
+// react-markdown's default urlTransform strips `tel:` and `mailto:` (its
+// safeProtocol allowlist is http/https/mailto/xmpp/irc only — `tel` is NOT
+// included), which causes <a href="tel:..."> to render as <a href=""> and the
+// browser then resolves "" to the current page URL. This breaks every
+// click-to-call link on every neighborhood / brand / ZIP / service page.
+// Allow tel: and mailto: explicitly while keeping the default protections.
+const safeUrlTransform = (url: string) => {
+  if (!url) return url;
+  if (/^(tel:|mailto:)/i.test(url)) return url;
+  // Default behavior for everything else
+  const colon = url.indexOf(':');
+  const slash = url.indexOf('/');
+  const q = url.indexOf('?');
+  const hash = url.indexOf('#');
+  if (
+    colon === -1 ||
+    (slash !== -1 && colon > slash) ||
+    (q !== -1 && colon > q) ||
+    (hash !== -1 && colon > hash) ||
+    /^(https?|ircs?|mailto|xmpp|tel)$/i.test(url.slice(0, colon))
+  ) {
+    return url;
+  }
+  return '';
+};
+
 const markdownComponents = {
   a: ({ href, children, ...props }: any) => {
     if (href === '#contact') {
@@ -508,7 +534,7 @@ function FullContentWithGallery({ location }: { location: LocationData }) {
         {/* Chunk 1: up to paragraph 1 */}
         {chunks[0] && (
           <div className={proseClasses}>
-            <ReactMarkdown components={markdownComponents}>{chunks[0]}</ReactMarkdown>
+            <ReactMarkdown components={markdownComponents} urlTransform={safeUrlTransform}>{chunks[0]}</ReactMarkdown>
           </div>
         )}
 
@@ -531,7 +557,7 @@ function FullContentWithGallery({ location }: { location: LocationData }) {
         {/* Chunk 2: paragraphs 2-3 */}
         {chunks[1] && (
           <div className={proseClasses}>
-            <ReactMarkdown components={markdownComponents}>{chunks[1]}</ReactMarkdown>
+            <ReactMarkdown components={markdownComponents} urlTransform={safeUrlTransform}>{chunks[1]}</ReactMarkdown>
           </div>
         )}
 
@@ -555,7 +581,7 @@ function FullContentWithGallery({ location }: { location: LocationData }) {
         {/* Chunk 3: rest of content */}
         {chunks[2] && (
           <div className={proseClasses}>
-            <ReactMarkdown components={markdownComponents}>{chunks[2]}</ReactMarkdown>
+            <ReactMarkdown components={markdownComponents} urlTransform={safeUrlTransform}>{chunks[2]}</ReactMarkdown>
           </div>
         )}
 

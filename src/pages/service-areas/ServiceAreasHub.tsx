@@ -30,6 +30,29 @@ const CLUSTER_ORDER = ['Oak Cliff', 'East Dallas', 'North Dallas', 'Downtown Dal
 
 const PHONE_TEL = 'tel:2142384349';
 
+// react-markdown's default urlTransform strips `tel:` and `mailto:` (only
+// http/https/mailto/xmpp/irc are in its safeProtocol allowlist), causing
+// <a href="tel:..."> to render as <a href=""> which the browser resolves
+// to the current page URL. Allow tel: + mailto: while keeping defaults.
+const safeUrlTransform = (url: string) => {
+  if (!url) return url;
+  if (/^(tel:|mailto:)/i.test(url)) return url;
+  const colon = url.indexOf(':');
+  const slash = url.indexOf('/');
+  const q = url.indexOf('?');
+  const hash = url.indexOf('#');
+  if (
+    colon === -1 ||
+    (slash !== -1 && colon > slash) ||
+    (q !== -1 && colon > q) ||
+    (hash !== -1 && colon > hash) ||
+    /^(https?|ircs?|mailto|xmpp|tel)$/i.test(url.slice(0, colon))
+  ) {
+    return url;
+  }
+  return '';
+};
+
 const markdownComponents = {
   a: ({ href, children, ...props }: any) => {
     if (href === '#contact') {
@@ -164,7 +187,7 @@ const ServiceAreasHub = () => {
           <article className="container mx-auto px-4 py-10">
             <div className="max-w-4xl mx-auto">
               <div className={proseClasses}>
-                <ReactMarkdown components={markdownComponents}>{sanitizeHubMarkdown(hub.content)}</ReactMarkdown>
+                <ReactMarkdown components={markdownComponents} urlTransform={safeUrlTransform}>{sanitizeHubMarkdown(hub.content)}</ReactMarkdown>
               </div>
             </div>
           </article>
