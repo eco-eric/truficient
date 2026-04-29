@@ -24,12 +24,22 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT_PATH = resolve(__dirname, '..', 'public', 'sitemap.xml');
 
+// Hardcoded fallbacks — publishable values, identical to client.ts. Safe to
+// commit. Required because Lovable Hosting's deploy build does not always
+// populate process.env from the repo .env file.
+const FALLBACK_SUPABASE_URL = 'https://xvsgdzwadxbwpevdezbp.supabase.co';
+const FALLBACK_SUPABASE_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2c2dkendhZHhid3BldmRlemJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzNDYwOTIsImV4cCI6MjA4MzkyMjA5Mn0.4mZeybSGCDJqQQDLLJdrJi0ZfTVXrMQkXn9rbEfERlM';
+
 const SUPABASE_URL =
-  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  process.env.SUPABASE_URL ||
+  process.env.VITE_SUPABASE_URL ||
+  FALLBACK_SUPABASE_URL;
 const ANON_KEY =
   process.env.SUPABASE_ANON_KEY ||
   process.env.SUPABASE_PUBLISHABLE_KEY ||
-  process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  FALLBACK_SUPABASE_KEY;
 
 async function main() {
   if (!SUPABASE_URL) {
