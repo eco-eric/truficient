@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Build trigger: 2026-04-30 (force prerender after brand pages upload)
 /**
  * Build-time SEO prerender for Truficient.
  *
