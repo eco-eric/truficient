@@ -35,7 +35,7 @@ const TYPE_COLORS: Record<string, string> = {
   'Other': 'bg-gray-100 text-gray-800 border-gray-200',
 };
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE_OPTIONS = [25, 50, 100, 200];
 
 type SortField = 'brand' | 'model_number' | 'type' | 'size' | 'price' | 'is_active';
 type SortDir = 'asc' | 'desc';
@@ -73,6 +73,7 @@ export default function AdminIndividualEquipmentPricing() {
   const [brandFilter, setBrandFilter] = useState('all');
   const [activeOnly, setActiveOnly] = useState(true);
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState<number>(25);
   const [sortField, setSortField] = useState<SortField>('brand');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -119,8 +120,8 @@ export default function AdminIndividualEquipmentPricing() {
     return rows;
   }, [equipment, activeOnly, typeFilter, brandFilter, search, sortField, sortDir]);
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const pageRows = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageRows = filtered.slice(page * pageSize, (page + 1) * pageSize);
 
   const upsertMutation = useMutation({
     mutationFn: async (data: { brand: string; model_number: string; type: string; size: string; price: number; notes: string | null; is_active: boolean }) => {
@@ -394,11 +395,24 @@ export default function AdminIndividualEquipmentPricing() {
               ))}
             </TableBody>
           </Table>
-          <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-muted-foreground">
-            <span>Showing {filtered.length === 0 ? 0 : page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} of {filtered.length} items</span>
-            <div className="flex gap-1">
-              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Prev</Button>
-              <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Next</Button>
+          <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-muted-foreground gap-4 flex-wrap">
+            <span>Showing {filtered.length === 0 ? 0 : page * pageSize + 1}–{Math.min((page + 1) * pageSize, filtered.length)} of {filtered.length} items</span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span>Per page:</span>
+                <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(0); }}>
+                  <SelectTrigger className="h-8 w-[80px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PAGE_SIZE_OPTIONS.map(n => (
+                      <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-1">
+                <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Prev</Button>
+                <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Next</Button>
+              </div>
             </div>
           </div>
         </div>
