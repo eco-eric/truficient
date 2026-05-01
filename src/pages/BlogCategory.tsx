@@ -101,6 +101,7 @@ const BlogCategory = () => {
           .from('blog_posts' as any)
           .select('id, title, slug, excerpt, featured_image, published_at, category')
           .eq('status', 'published')
+          .lte('published_at', new Date().toISOString())
           .overlaps('category', category.related_post_categories as string[])
           .order('published_at', { ascending: false })
           .limit(12);
