@@ -50,6 +50,7 @@ const Blog = () => {
           .from('blog_posts' as any)
           .select('id, title, slug, excerpt, featured_image, published_at, category, tags')
           .eq('status', 'published')
+          .lte('published_at', new Date().toISOString())
           .order('published_at', { ascending: false });
 
         if (error) throw error;

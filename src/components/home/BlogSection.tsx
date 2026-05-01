@@ -27,6 +27,7 @@ const BlogSection = () => {
           .from('blog_posts')
           .select('id, title, slug, excerpt, featured_image')
           .eq('status', 'published')
+          .lte('published_at', new Date().toISOString())
           .order('published_at', { ascending: false })
           .limit(4);
 
