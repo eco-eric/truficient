@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { MediaLightbox } from "@/components/ui/media-lightbox";
 import { motion, AnimatePresence } from "framer-motion";
+import { optimizeImageUrl, buildImageSrcSet } from "@/lib/imageUtils";
 import { X } from "lucide-react";
 
 interface GalleryOverlayProps {
@@ -125,7 +126,9 @@ export default function GalleryOverlay({ open, onClose }: GalleryOverlayProps) {
                       }}
                     >
                       <img
-                        src={img.thumbnail_url || img.image_url}
+                        src={optimizeImageUrl(img.thumbnail_url || img.image_url, { width: 400, quality: 75 })}
+                        srcSet={buildImageSrcSet(img.thumbnail_url || img.image_url)}
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"
                         alt={img.alt_text || img.title || "Gallery image"}
                         loading="lazy"
                         decoding="async"
