@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { thumbnailUrl } from '@/lib/imageUtils';
+import { thumbnailUrl, buildImageSrcSet, GALLERY_SIZES } from '@/lib/imageUtils';
 import { ImageLightbox } from '@/components/ui/image-lightbox';
 import { Loader2 } from 'lucide-react';
 import { useLocationGalleryPhotos, type GalleryPhoto } from '@/hooks/useLocationGalleryPhotos';
@@ -81,9 +81,12 @@ export const LocationGallery = ({
           >
             <img
               src={thumbnailUrl(photo.image_url)}
+              srcSet={buildImageSrcSet(photo.image_url)}
+              sizes={GALLERY_SIZES}
               alt={photo.alt_text || photo.title}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
+              decoding="async"
               width={400}
               height={400}
             />
