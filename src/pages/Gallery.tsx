@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { thumbnailUrl } from '@/lib/imageUtils';
+import { thumbnailUrl, buildImageSrcSet, GALLERY_SIZES } from '@/lib/imageUtils';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/layout/Header';
@@ -326,8 +326,11 @@ const Gallery = () => {
                             {image.thumbnail_url ? (
                               <img
                                 src={thumbnailUrl(image.thumbnail_url)}
+                                srcSet={buildImageSrcSet(image.thumbnail_url)}
+                                sizes={GALLERY_SIZES}
                                 alt={image.alt_text || image.title}
                                 loading="lazy"
+                                decoding="async"
                                 width={400}
                                 height={400}
                                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -349,8 +352,11 @@ const Gallery = () => {
                         ) : (
                           <img
                             src={thumbnailUrl(image.image_url)}
+                            srcSet={buildImageSrcSet(image.image_url)}
+                            sizes={GALLERY_SIZES}
                             alt={image.alt_text || image.title}
                             loading="lazy"
+                            decoding="async"
                             width={400}
                             height={400}
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { ArrowRight, Play } from 'lucide-react';
-import { thumbnailUrl } from '@/lib/imageUtils';
+import { thumbnailUrl, buildImageSrcSet, GALLERY_SIZES } from '@/lib/imageUtils';
 
 interface GalleryImage {
   id: string;
@@ -57,9 +57,9 @@ const GalleryPreview = () => {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-w-6xl mx-auto">
           {images.slice(0, 8).map((image, index) => {
             const isVideo = image.media_type === 'video';
-            const imgUrl = isVideo && image.thumbnail_url 
-              ? thumbnailUrl(image.thumbnail_url) 
-              : thumbnailUrl(image.image_url);
+            const sourceUrl = isVideo && image.thumbnail_url ? image.thumbnail_url : image.image_url;
+            const imgUrl = thumbnailUrl(sourceUrl);
+            const imgSrcSet = buildImageSrcSet(sourceUrl);
             
             return (
               <motion.div
@@ -74,9 +74,12 @@ const GalleryPreview = () => {
                   <div className="aspect-square overflow-hidden rounded-lg bg-card relative">
                     <img
                       src={imgUrl}
+                      srcSet={imgSrcSet}
+                      sizes={GALLERY_SIZES}
                       alt={image.alt_text || image.title}
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       loading="lazy"
+                      decoding="async"
                       width={400}
                       height={400}
                     />
