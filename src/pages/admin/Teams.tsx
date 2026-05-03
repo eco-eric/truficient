@@ -89,6 +89,7 @@ export default function Teams() {
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [assigningToTeam, setAssigningToTeam] = useState<Team | null>(null);
   const [memberTypeFilter, setMemberTypeFilter] = useState<string>('all');
+  const [rateHistoryMember, setRateHistoryMember] = useState<TeamMember | null>(null);
 
   const { data: teams = [], isLoading: teamsLoading } = useQuery({
     queryKey: ['crm_teams'],
