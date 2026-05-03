@@ -790,7 +790,7 @@ function MemberCard({
           {/* Hourly Rate */}
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); setRateHistoryMember(member); }}
+            onClick={(e) => { e.stopPropagation(); onShowRateHistory(member); }}
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground hover:underline text-left"
           >
             <Clock className="h-3 w-3" />
