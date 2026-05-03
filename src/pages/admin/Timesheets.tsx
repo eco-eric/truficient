@@ -124,6 +124,23 @@ export default function Timesheets() {
     },
   });
 
+  // Look up effective rate from history (falls back to cached current rate)
+  const getEffectiveRate = async (memberId: string, onDate: string, fallback: { hourly_rate: number | null; overtime_rate: number | null }) => {
+    const { data } = await supabase
+      .from('crm_team_member_rate_history' as any)
+      .select('hourly_rate, overtime_rate')
+      .eq('team_member_id', memberId)
+      .lte('effective_date', onDate)
+      .order('effective_date', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const row = data as any;
+    return {
+      hourly_rate: row?.hourly_rate ?? fallback.hourly_rate,
+      overtime_rate: row?.overtime_rate ?? fallback.overtime_rate,
+    };
+  };
+
   // Add or update manual entry
   const saveEntry = useMutation({
     mutationFn: async () => {
@@ -137,6 +154,7 @@ export default function Timesheets() {
       const overtimeHours = Math.max(0, totalHours - OVERTIME_THRESHOLD);
 
       const entryDateStr = format(entryDate, 'yyyy-MM-dd');
+      const rate = await getEffectiveRate(selectedMember, entryDateStr, { hourly_rate: member.hourly_rate, overtime_rate: member.overtime_rate });
 
       if (editingEntryId) {
         const { error } = await supabase.from('time_entries').update({
@@ -147,8 +165,8 @@ export default function Timesheets() {
           break_minutes: Number(breakMinutes || 0),
           total_hours: Math.round(totalHours * 100) / 100,
           overtime_hours: Math.round(overtimeHours * 100) / 100,
-          hourly_rate: member.hourly_rate,
-          overtime_rate: member.overtime_rate,
+          hourly_rate: rate.hourly_rate,
+          overtime_rate: rate.overtime_rate,
           job_id: selectedJobs.length > 0 ? selectedJobs[0] : null,
           notes: notes || null,
           entry_type: 'manual',
@@ -165,8 +183,8 @@ export default function Timesheets() {
             break_minutes: Number(breakMinutes || 0),
             total_hours: Math.round(totalHours * 100) / 100,
             overtime_hours: Math.round(overtimeHours * 100) / 100,
-            hourly_rate: member.hourly_rate,
-            overtime_rate: member.overtime_rate,
+            hourly_rate: rate.hourly_rate,
+            overtime_rate: rate.overtime_rate,
             job_id: jobId,
             notes: notes || null,
             entry_type: 'manual',

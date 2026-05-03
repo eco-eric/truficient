@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { RateHistoryDialog } from '@/components/admin/teams/RateHistoryDialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -88,6 +89,7 @@ export default function Teams() {
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [assigningToTeam, setAssigningToTeam] = useState<Team | null>(null);
   const [memberTypeFilter, setMemberTypeFilter] = useState<string>('all');
+  const [rateHistoryMember, setRateHistoryMember] = useState<TeamMember | null>(null);
 
   const { data: teams = [], isLoading: teamsLoading } = useQuery({
     queryKey: ['crm_teams'],
@@ -594,6 +596,7 @@ export default function Teams() {
                     getLicenseStatus={getLicenseStatus}
                     onEdit={() => { setEditingMember(member); setIsMemberDialogOpen(true); }}
                     onDelete={() => deleteMemberMutation.mutate(member.id)}
+                    onShowRateHistory={setRateHistoryMember}
                   />
                 ))}
               </div>
@@ -624,6 +627,7 @@ export default function Teams() {
                     getLicenseStatus={getLicenseStatus}
                     onEdit={() => { setEditingMember(member); setIsMemberDialogOpen(true); }}
                     onDelete={() => deleteMemberMutation.mutate(member.id)}
+                    onShowRateHistory={setRateHistoryMember}
                   />
                 ))}
               </div>
@@ -707,6 +711,13 @@ export default function Teams() {
             )}
           </DialogContent>
         </Dialog>
+
+        <RateHistoryDialog
+          open={!!rateHistoryMember}
+          onOpenChange={(o) => !o && setRateHistoryMember(null)}
+          memberId={rateHistoryMember?.id ?? null}
+          memberName={rateHistoryMember ? `${rateHistoryMember.first_name} ${rateHistoryMember.last_name ?? ''}`.trim() : undefined}
+        />
       </div>
     </AdminLayout>
   );
@@ -718,7 +729,8 @@ function MemberCard({
   memberTypeColors, 
   getLicenseStatus,
   onEdit, 
-  onDelete 
+  onDelete,
+  onShowRateHistory,
 }: { 
   member: TeamMember; 
   jobCount: number;
@@ -726,6 +738,7 @@ function MemberCard({
   getLicenseStatus: (date: string | null) => { status: string; color: string; text: string } | null;
   onEdit: () => void;
   onDelete: () => void;
+  onShowRateHistory: (member: TeamMember) => void;
 }) {
   const licenseStatus = getLicenseStatus(member.license_expiry);
 
@@ -782,11 +795,15 @@ function MemberCard({
           </div>
 
           {/* Hourly Rate */}
-          {member.hourly_rate && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="h-3 w-3" /> ${member.hourly_rate}/hr
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onShowRateHistory(member); }}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground hover:underline text-left"
+          >
+            <Clock className="h-3 w-3" />
+            {member.hourly_rate ? `$${member.hourly_rate}/hr` : 'Set pay rate'}
+            <span className="text-xs opacity-70">(history)</span>
+          </button>
 
           {/* License */}
           {member.license_number && (

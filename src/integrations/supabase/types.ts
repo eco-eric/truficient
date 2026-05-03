@@ -2279,6 +2279,50 @@ export type Database = {
           },
         ]
       }
+      crm_team_member_rate_history: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          hourly_rate: number
+          id: string
+          notes: string | null
+          overtime_rate: number | null
+          team_member_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          effective_date: string
+          hourly_rate: number
+          id?: string
+          notes?: string | null
+          overtime_rate?: number | null
+          team_member_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          hourly_rate?: number
+          id?: string
+          notes?: string | null
+          overtime_rate?: number | null
+          team_member_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_team_member_rate_history_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "crm_team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_team_members: {
         Row: {
           certifications: string[] | null
@@ -5996,6 +6040,13 @@ export type Database = {
     Functions: {
       generate_estimate_number: { Args: never; Returns: string }
       generate_job_number: { Args: never; Returns: string }
+      get_effective_rate: {
+        Args: { _on_date: string; _team_member_id: string }
+        Returns: {
+          hourly_rate: number
+          overtime_rate: number
+        }[]
+      }
       get_new_submission_counts: { Args: never; Returns: Json }
       get_user_role: {
         Args: { _user_id: string }
