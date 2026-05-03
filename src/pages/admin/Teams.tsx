@@ -720,7 +720,8 @@ function MemberCard({
   memberTypeColors, 
   getLicenseStatus,
   onEdit, 
-  onDelete 
+  onDelete,
+  onShowRateHistory,
 }: { 
   member: TeamMember; 
   jobCount: number;
@@ -728,6 +729,7 @@ function MemberCard({
   getLicenseStatus: (date: string | null) => { status: string; color: string; text: string } | null;
   onEdit: () => void;
   onDelete: () => void;
+  onShowRateHistory: (member: TeamMember) => void;
 }) {
   const licenseStatus = getLicenseStatus(member.license_expiry);
 
