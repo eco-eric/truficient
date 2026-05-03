@@ -596,6 +596,7 @@ export default function Teams() {
                     getLicenseStatus={getLicenseStatus}
                     onEdit={() => { setEditingMember(member); setIsMemberDialogOpen(true); }}
                     onDelete={() => deleteMemberMutation.mutate(member.id)}
+                    onShowRateHistory={setRateHistoryMember}
                   />
                 ))}
               </div>
