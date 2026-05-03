@@ -703,7 +703,6 @@ const EstimateBuilder = () => {
       };
       setLineItems([...lineItems, newItem]);
       toast.success(`Added ${cost.name}`);
-      setIsAddDialogOpen(false);
       return;
     }
 
