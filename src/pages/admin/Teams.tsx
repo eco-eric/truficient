@@ -711,6 +711,13 @@ export default function Teams() {
             )}
           </DialogContent>
         </Dialog>
+
+        <RateHistoryDialog
+          open={!!rateHistoryMember}
+          onOpenChange={(o) => !o && setRateHistoryMember(null)}
+          memberId={rateHistoryMember?.id ?? null}
+          memberName={rateHistoryMember ? `${rateHistoryMember.first_name} ${rateHistoryMember.last_name ?? ''}`.trim() : undefined}
+        />
       </div>
     </AdminLayout>
   );
