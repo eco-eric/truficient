@@ -703,7 +703,6 @@ const EstimateBuilder = () => {
       };
       setLineItems([...lineItems, newItem]);
       toast.success(`Added ${cost.name}`);
-      setIsAddDialogOpen(false);
       return;
     }
 
@@ -1680,7 +1679,7 @@ const EstimateBuilder = () => {
                 <div
                   key={labor.id}
                   className="p-3 border rounded-lg hover:bg-muted cursor-pointer transition-colors"
-                  onClick={() => { handleAddLabor(labor); setIsAddDialogOpen(false); }}
+                  onClick={() => handleAddLabor(labor)}
                 >
                   <div className="flex justify-between">
                     <div>
