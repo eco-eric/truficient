@@ -784,11 +784,15 @@ function MemberCard({
           </div>
 
           {/* Hourly Rate */}
-          {member.hourly_rate && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="h-3 w-3" /> ${member.hourly_rate}/hr
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setRateHistoryMember(member); }}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground hover:underline text-left"
+          >
+            <Clock className="h-3 w-3" />
+            {member.hourly_rate ? `$${member.hourly_rate}/hr` : 'Set pay rate'}
+            <span className="text-xs opacity-70">(history)</span>
+          </button>
 
           {/* License */}
           {member.license_number && (
