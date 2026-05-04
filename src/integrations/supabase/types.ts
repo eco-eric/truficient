@@ -6048,6 +6048,14 @@ export type Database = {
         }[]
       }
       get_new_submission_counts: { Args: never; Returns: Json }
+      get_public_tracking_settings: {
+        Args: never
+        Returns: {
+          is_enabled: boolean
+          setting_key: string
+          setting_value: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
