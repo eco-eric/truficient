@@ -145,6 +145,23 @@ export const ContactForm = ({
           if (ghlError) console.error('GHL sync failed (non-critical):', ghlError);
         });
 
+      // Send email notifications (non-blocking — internal alert + customer ack)
+      supabase.functions
+        .invoke('send-contact-notification', {
+          body: {
+            firstName: parsed.data.firstName,
+            lastName: parsed.data.lastName,
+            email: parsed.data.email,
+            phone: parsed.data.phone,
+            serviceType: parsed.data.serviceType,
+            message: parsed.data.message,
+            source,
+          },
+        })
+        .then(({ error: emailError }) => {
+          if (emailError) console.error('Email notification failed (non-critical):', emailError);
+        });
+
       // Track conversion
       trackConversion('Lead', {
         content_name: 'Contact Form Submission',
