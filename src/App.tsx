@@ -252,6 +252,7 @@ const router = createBrowserRouter([
       { path: "/estimate/preview/:id", element: <PublicEstimatePreview /> },
       
       { path: "/:locationSlug", element: <LocationPage /> },
+      { path: "/:locationSlug.html", element: <LocationPage /> },
       
       // Admin Routes
       { path: "/admin/login", element: <AdminLogin /> },
