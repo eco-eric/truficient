@@ -42,17 +42,6 @@ const contactInfo = [
 const Contact = () => {
   usePageSEO();
 
-  // Load GHL form embed script
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://link.msgsndr.com/js/form_embed.js';
-    script.async = true;
-    document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
