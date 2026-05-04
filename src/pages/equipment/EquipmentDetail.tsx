@@ -85,7 +85,7 @@ export default function EquipmentDetail() {
   // Legacy slug redirect: /equipment/:brand/:model → /equipment/:brand-:model
   // (301 via <Navigate replace>; preserves SEO equity from old slash-format URLs.)
   // Also normalizes any other slashes/whitespace defensively.
-  const slug = rawSlug ?? '';
+  const slug = (rawSlug ?? '').replace(/\.html$/, '');
   const needsRedirect = slug.includes('/');
   const normalizedSlug = needsRedirect
     ? slug

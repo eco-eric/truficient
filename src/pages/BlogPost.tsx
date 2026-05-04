@@ -56,7 +56,8 @@ const BlogContent = ({ html }: { html: string }) => {
 };
 
 const BlogPostPage = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug: rawSlug } = useParams<{ slug: string }>();
+  const slug = rawSlug?.replace(/\.html$/, '');
   const [loading, setLoading] = useState(true);
   const [post, setPost] = useState<BlogPost | null>(null);
 

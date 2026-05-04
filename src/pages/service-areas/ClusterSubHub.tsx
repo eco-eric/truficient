@@ -32,7 +32,8 @@ const CLUSTER_MAP: Record<string, string> = {
 };
 
 const ClusterSubHub = () => {
-  const { clusterSlug } = useParams<{ clusterSlug: string }>();
+  const { clusterSlug: rawClusterSlug } = useParams<{ clusterSlug: string }>();
+  const clusterSlug = rawClusterSlug?.replace(/\.html$/, '');
   const clusterName = CLUSTER_MAP[clusterSlug || ''] || clusterSlug || '';
   usePageSEO(`/service-areas/${clusterSlug}`);
   const [locations, setLocations] = useState<LocationPage[]>([]);

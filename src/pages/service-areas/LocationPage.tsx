@@ -102,7 +102,8 @@ const PHONE = '214-238-4349';
 const PHONE_TEL = 'tel:2142384349';
 
 const LocationPage = () => {
-  const { locationSlug } = useParams<{ locationSlug: string }>();
+  const { locationSlug: rawLocationSlug } = useParams<{ locationSlug: string }>();
+  const locationSlug = rawLocationSlug?.replace(/\.html$/, '');
   const [location, setLocation] = useState<LocationData | null>(null);
   const [seo, setSeo] = useState<SeoData | null>(null);
   const [loading, setLoading] = useState(true);
