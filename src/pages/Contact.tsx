@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Phone, Mail, MapPin, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { usePageSEO } from '@/hooks/usePageSEO';
 import { trackPhoneCallClick } from '@/utils/conversionTracking';
+import { ContactForm } from '@/components/forms/ContactForm';
 
 const contactInfo = [
   {
@@ -41,17 +41,6 @@ const contactInfo = [
 
 const Contact = () => {
   usePageSEO();
-
-  // Load GHL form embed script
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://link.msgsndr.com/js/form_embed.js';
-    script.async = true;
-    document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -153,23 +142,7 @@ const Contact = () => {
                     Fill out the form below and we'll get back to you within 24 hours.
                   </p>
                   
-                  <iframe
-                    src="https://api.leadconnectorhq.com/widget/form/6b2igF5Olgw32kyyiZnb"
-                    style={{ width: '100%', height: '100%', border: 'none', borderRadius: '3px' }}
-                    id="inline-6b2igF5Olgw32kyyiZnb"
-                    data-layout="{'id':'INLINE'}"
-                    data-trigger-type="alwaysShow"
-                    data-trigger-value=""
-                    data-activation-type="alwaysActivated"
-                    data-activation-value=""
-                    data-deactivation-type="neverDeactivate"
-                    data-deactivation-value=""
-                    data-form-name="Website optin Form"
-                    data-height="1008"
-                    data-layout-iframe-id="inline-6b2igF5Olgw32kyyiZnb"
-                    data-form-id="6b2igF5Olgw32kyyiZnb"
-                    title="Website optin Form"
-                  />
+                  <ContactForm source="Website Contact Page" />
                 </CardContent>
               </Card>
             </motion.div>
