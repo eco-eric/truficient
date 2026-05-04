@@ -52,7 +52,8 @@ const PHONE = '214-238-4349';
 const PHONE_TEL = 'tel:2142384349';
 
 const BlogCategory = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug: rawSlug } = useParams<{ slug: string }>();
+  const slug = rawSlug?.replace(/\.html$/, '');
   usePageSEO();
 
   const [loading, setLoading] = useState(true);
