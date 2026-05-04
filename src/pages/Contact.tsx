@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Phone, Mail, MapPin, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { usePageSEO } from '@/hooks/usePageSEO';
 import { trackPhoneCallClick } from '@/utils/conversionTracking';
+import { ContactForm } from '@/components/forms/ContactForm';
 
 const contactInfo = [
   {
