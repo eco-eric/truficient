@@ -142,23 +142,7 @@ const Contact = () => {
                     Fill out the form below and we'll get back to you within 24 hours.
                   </p>
                   
-                  <iframe
-                    src="https://api.leadconnectorhq.com/widget/form/6b2igF5Olgw32kyyiZnb"
-                    style={{ width: '100%', height: '100%', border: 'none', borderRadius: '3px' }}
-                    id="inline-6b2igF5Olgw32kyyiZnb"
-                    data-layout="{'id':'INLINE'}"
-                    data-trigger-type="alwaysShow"
-                    data-trigger-value=""
-                    data-activation-type="alwaysActivated"
-                    data-activation-value=""
-                    data-deactivation-type="neverDeactivate"
-                    data-deactivation-value=""
-                    data-form-name="Website optin Form"
-                    data-height="1008"
-                    data-layout-iframe-id="inline-6b2igF5Olgw32kyyiZnb"
-                    data-form-id="6b2igF5Olgw32kyyiZnb"
-                    title="Website optin Form"
-                  />
+                  <ContactForm source="Website Contact Page" />
                 </CardContent>
               </Card>
             </motion.div>
