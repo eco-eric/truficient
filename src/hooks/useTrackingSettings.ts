@@ -2,26 +2,23 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface TrackingSetting {
-  id: string;
   setting_key: string;
   setting_value: string | null;
   is_enabled: boolean;
-  created_at: string;
-  updated_at: string;
 }
 
 export const useTrackingSettings = () => {
   return useQuery({
-    queryKey: ['tracking-settings'],
+    queryKey: ['tracking-settings-public'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tracking_settings')
-        .select('*');
-      
+      // Use the security-definer RPC that exposes only the enabled
+      // tracking IDs needed for runtime script injection. The table
+      // itself is admin-only.
+      const { data, error } = await supabase.rpc('get_public_tracking_settings');
       if (error) throw error;
-      return data as TrackingSetting[];
+      return (data ?? []) as TrackingSetting[];
     },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 };
 
