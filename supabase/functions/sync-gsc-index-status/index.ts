@@ -145,7 +145,16 @@ Deno.serve(async (req) => {
     let indexed = 0, notIndexed = 0, pending = 0, errors = 0, snapshotsWritten = 0;
 
     for (const page of pages ?? []) {
-      const pagePath = page.page_path?.startsWith("/") ? page.page_path : `/${page.page_path}`;
+      const rawPath = page.page_path?.startsWith("/") ? page.page_path : `/${page.page_path}`;
+      // Match sitemap: prerendered pages are served at <path>.html on Lovable Hosting,
+      // so GSC indexed them at the .html URL. Inspect that exact URL or GSC reports
+      // the extensionless variant as "not indexed".
+      const trimmed = rawPath.replace(/\/+$/, "");
+      const pagePath = !trimmed || trimmed === ""
+        ? "/"
+        : /\.[a-z0-9]{2,5}$/i.test(trimmed)
+          ? trimmed
+          : `${trimmed}.html`;
       const inspectionUrl = `${baseHost}${pagePath}`;
 
       try {
