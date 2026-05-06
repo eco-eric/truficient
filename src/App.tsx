@@ -55,6 +55,8 @@ const Scanner = lazy(() => import("./pages/scanner/Scanner"));
 const EquipmentReport = lazy(() => import("./pages/scanner/EquipmentReport"));
 const EquipmentLibrary = lazy(() => import("./pages/equipment/EquipmentLibrary"));
 const EquipmentDetail = lazy(() => import("./pages/equipment/EquipmentDetail"));
+const Catalogs = lazy(() => import("./pages/resources/Catalogs"));
+const CatalogDetail = lazy(() => import("./pages/resources/CatalogDetail"));
 
 // Lazy-loaded admin pages
 const AdminRouteLayout = lazy(() => import("./components/admin/AdminRouteLayout").then(m => ({ default: m.AdminRouteLayout })));
@@ -237,6 +239,8 @@ const router = createBrowserRouter([
       { path: "/equipment", element: <EquipmentLibrary /> },
       { path: "/equipment.html", element: <EquipmentLibrary /> },
       { path: "/equipment/*", element: <EquipmentDetail /> },
+      { path: "/resources/catalogs", element: <Catalogs /> },
+      { path: "/resources/catalogs/:slug", element: <CatalogDetail /> },
       { path: "/free-hvac-age-checker-fb-feb-2026", element: <FreeHvacAgeCheckerFB /> },
       { path: "/smart-group-march-F-26", element: <SmartGroupMarchLanding /> },
       { path: "/smart-group-march-F-26v2", element: <SmartGroupMarchV2Landing /> },
