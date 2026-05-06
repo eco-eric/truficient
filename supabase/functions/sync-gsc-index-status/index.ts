@@ -78,11 +78,22 @@ function mondayOfCurrentWeek(): string {
 }
 
 // ---------- GSC verdict → our enum ----------
+// `coverageState` is the most reliable signal — it's the same string GSC shows
+// in the UI ("Submitted and indexed", "Crawled - currently not indexed", etc.).
+// `verdict` alone misclassifies NEUTRAL/PARTIAL pages that are actually indexed.
 function verdictToStatus(verdict: string | undefined, coverage: string | undefined): string {
+  if (coverage) {
+    const c = coverage.toLowerCase();
+    // Anything that says "indexed" without a "not"/"currently not" prefix is indexed.
+    if (/\bindexed\b/.test(c) && !/not\s+indexed|currently not indexed/.test(c)) {
+      return "indexed";
+    }
+    if (/unknown|not on google|excluded|not indexed|redirect|noindex|blocked|duplicate|crawled - currently/.test(c)) {
+      return "not_indexed";
+    }
+  }
   if (verdict === "PASS") return "indexed";
-  if (verdict === "FAIL" || verdict === "NEUTRAL") return "not_indexed";
-  // PARTIAL or unknown → coverage may say "URL is unknown to Google"
-  if (coverage && /unknown|not on google|excluded/i.test(coverage)) return "not_indexed";
+  if (verdict === "FAIL") return "not_indexed";
   return "pending";
 }
 
