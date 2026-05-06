@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import truficientLogo from "@/assets/truficient-logo-sm.webp";
-import { Phone, Mail, Menu, ChevronDown, Search, ChevronRight, ScanLine, Library, CreditCard } from "lucide-react";
+import { Phone, Mail, Menu, ChevronDown, Search, ChevronRight, ScanLine, Library, CreditCard, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -320,6 +320,16 @@ const Header = () => {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
+                    <Link
+                      to="/resources/catalogs"
+                      className="cursor-pointer flex items-center gap-2"
+                      onClick={() => handleTrackClick('Catalogs', 'Header - Main Nav', '/resources/catalogs')}
+                    >
+                      <BookOpen className="w-4 h-4 text-secondary" />
+                      Catalogs
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link 
                       to="/financing" 
                       className="cursor-pointer flex items-center gap-2"
@@ -565,6 +575,26 @@ const Header = () => {
                         }}
                       >
                         Equipment Library
+                      </Link>
+                      <Link
+                        to="/resources/catalogs"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
+                        onClick={() => {
+                          handleTrackClick('Catalogs', 'Header - Mobile Menu', '/resources/catalogs');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Catalogs
+                      </Link>
+                      <Link
+                        to="/financing"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
+                        onClick={() => {
+                          handleTrackClick('Financing', 'Header - Mobile Menu', '/financing');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Financing
                       </Link>
                     </CollapsibleContent>
                   </Collapsible>
