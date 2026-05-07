@@ -333,7 +333,7 @@ const Financing = () => {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="font-semibold border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10"
+                  className="font-semibold border-primary-foreground bg-primary-foreground text-primary hover:bg-transparent hover:text-primary-foreground"
                   onClick={() =>
                     handleTrackClick("Call 214-238-4349 - CTA", "tel:214-238-4349")
                   }
