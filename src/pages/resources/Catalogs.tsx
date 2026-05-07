@@ -30,7 +30,16 @@ const brands: Brand[] = [
     status: "available",
   },
   { slug: "trane", name: "Trane", tagline: "Residential & Commercial", status: "coming-soon", expectedDate: "May 2026" },
-  { slug: "goodman", name: "Goodman", tagline: "Residential Systems", status: "coming-soon", expectedDate: "May 2026" },
+  {
+    slug: "goodman-sd-side-discharge",
+    name: "Goodman",
+    tagline: "SD Side Discharge Inverter Systems",
+    description:
+      "The side-discharge inverter line we install — up to 53% lighter and 40% smaller than traditional cube-style units, with R-32 refrigerant and up to 19.0 SEER2. Available as AC, heat pump, or dual fuel in 1.5 to 5 ton capacities.",
+    badge: "What We Install",
+    badgeStyle: "outline",
+    status: "available",
+  },
   { slug: "bosch", name: "Bosch", tagline: "Inverter Heat Pumps", status: "coming-soon", expectedDate: "May 2026" },
   { slug: "daikin", name: "Daikin", tagline: "Ductless & Ducted", status: "coming-soon", expectedDate: "June 2026" },
   { slug: "carrier", name: "Carrier", tagline: "Residential & Commercial", status: "coming-soon", expectedDate: "June 2026" },
