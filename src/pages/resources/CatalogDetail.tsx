@@ -43,6 +43,17 @@ const KNOWN_CATALOGS: Record<string, CatalogMeta> = {
     badgeStyle: "outline",
     breadcrumbLabel: "Goodman SD Side Discharge",
   },
+  "daikin-one-touch-thermostat": {
+    title: "Daikin ONE Touch Smart Thermostat",
+    brand: "Daikin",
+    pdfFile: "daikin-one-touch-thermostat.pdf",
+    pages: "2 pages",
+    sizeMb: "~1.3 MB",
+    updated: "2025 Brochure",
+    badge: "Smart Controls",
+    badgeStyle: "outline",
+    breadcrumbLabel: "Daikin ONE Touch Thermostat",
+  },
 };
 
 const MITSUBISHI_SECTIONS = [
@@ -78,12 +89,15 @@ const CatalogDetail = () => {
   if (typeof document !== "undefined") {
     if (slug === "goodman-sd-side-discharge") {
       document.title = "Goodman SD Side Discharge Catalog | Truficient HVAC";
+    } else if (slug === "daikin-one-touch-thermostat") {
+      document.title = "Daikin ONE Touch Smart Thermostat | Truficient HVAC";
     } else {
       document.title = `${catalog.brand === "Mitsubishi Electric" ? "Mitsubishi M & P Series Catalog 2026" : catalog.title} | Truficient HVAC`;
     }
   }
 
   const isGoodman = slug === "goodman-sd-side-discharge";
+  const isDaikin = slug === "daikin-one-touch-thermostat";
 
   return (
     <>
@@ -106,6 +120,8 @@ const CatalogDetail = () => {
 
         {isGoodman ? (
           <GoodmanContent pdfUrl={pdfUrl} trackButtonClick={trackButtonClick} catalog={catalog} />
+        ) : isDaikin ? (
+          <DaikinContent pdfUrl={pdfUrl} trackButtonClick={trackButtonClick} catalog={catalog} />
         ) : (
           <MitsubishiContent pdfUrl={pdfUrl} trackButtonClick={trackButtonClick} catalog={catalog} />
         )}
@@ -433,6 +449,173 @@ const GoodmanContent = ({ pdfUrl, trackButtonClick, catalog }: SectionProps) => 
             If a cube unit doesn't fit your space — or you just want a quieter, smaller-footprint install — the Goodman SD is built for it. We'll size it correctly and install it cleanly.
           </p>
           <BottomCTAButtons trackButtonClick={trackButtonClick} location="Goodman Catalog - Bottom CTA" estimatePath="/estimate/ducted" secondaryLabel="Contact Us" secondaryPath="/contact" />
+        </div>
+      </section>
+    </>
+  );
+};
+
+const DaikinContent = ({ pdfUrl, trackButtonClick, catalog }: SectionProps) => {
+  const features = [
+    "Capacitive touchscreen with simple, elegant industrial design",
+    "Wi-Fi-enabled with iOS and Android app control via SkyportHome",
+    "Voice control through Amazon Alexa and Google Assistant",
+    "Away mode and geo-fencing for automatic energy savings",
+    "Outdoor temperature, humidity, and weather forecast monitoring",
+    "Compatible with Daikin ONE home air monitor for IAQ visualization",
+    "Programmable 4-event schedule with adjustable hold function",
+    "Multi-language support: English, Spanish, and French",
+    "Over-the-air software updates (Wi-Fi required)",
+    "Open API compatible with Control4 and Crestron",
+    "Title 24 compliant, FCC Certified, and UL Listed",
+  ];
+
+  const compatibility = [
+    { group: "R-32 Unitary Split Systems", items: "Outdoor (DC_VS, DC7TC, DH_VS, DH_TC), Air Handlers (D_VE, A_VE), Coils (CAPE, CHPE), Modular Blower (MBVK), Gas Furnaces (DR/DD series)" },
+    { group: "Ductless Mini & Multi-Split Systems", items: "R-32 12RC (CMXV), R-410A S21 indoor units (CTXS, FTXS, FTXR, FVXS, etc.), R-410A P1/P2 (CDMQ, FDMQ, FFQ)" },
+    { group: "SkyAir & VRV Systems", items: "VRV indoor (FXAQ, FXDQ, FXFQ, FXLQ, FXMQ, FXNQ, FXSQ, FXZQ), SkyAir indoor (FAQ, FBQ, FCQ, FHQ, FTQ)" },
+  ];
+
+  const specs = [
+    { label: "Model Number", value: "DTST-TOU-A" },
+    { label: "Dimensions", value: "0.86\"L × 3.4\"W × 4.74\"H" },
+    { label: "Weight", value: "6.5 oz" },
+    { label: "Operation Temperature", value: "32°F to 120°F" },
+    { label: "Compliance", value: "California Title 24 (OCST listed), FCC Certified, UL Listed" },
+  ];
+
+  return (
+    <>
+      {/* Hero */}
+      <section className="bg-primary text-primary-foreground py-16">
+        <div className="container mx-auto px-4">
+          <p className="text-sm font-semibold tracking-widest text-secondary mb-3">DAIKIN ONE ECOSYSTEM</p>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">{catalog.title}</h1>
+          <p className="text-lg text-primary-foreground/80 max-w-3xl mb-6">
+            A Wi-Fi smart thermostat for Daikin's communicating unitary, ductless, SkyAir, and VRV equipment — with touchscreen control, voice assistants, and geo-fencing built in.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Badge className="bg-secondary text-secondary-foreground hover:bg-secondary">{catalog.badge}</Badge>
+            <Badge variant="outline" className="border-primary-foreground/40 text-primary-foreground">Wi-Fi Smart Thermostat</Badge>
+            <Badge variant="outline" className="border-primary-foreground/40 text-primary-foreground">Alexa & Google Assistant</Badge>
+            <Badge variant="outline" className="border-primary-foreground/40 text-primary-foreground">12-Year Warranty</Badge>
+          </div>
+        </div>
+      </section>
+
+      {/* About band */}
+      <section className="bg-secondary/10 py-6">
+        <div className="container mx-auto px-4">
+          <div className="bg-background border-l-4 border-secondary rounded-md p-5 flex items-start gap-3 shadow-sm">
+            <Info className="w-5 h-5 text-secondary shrink-0 mt-0.5" />
+            <p className="text-primary text-sm md:text-base leading-relaxed">
+              <span className="font-semibold">About this brochure:</span> The Daikin ONE Touch (model DTST-TOU-A) is the newest addition to the Daikin ONE ecosystem, joining the ONE+ as a control solution for Daikin's communicating equipment. Includes one year of SkyportCare cloud services so we can support your system remotely.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Body */}
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-3 gap-10">
+            <motion.div
+              className="lg:col-span-2 space-y-12"
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+            >
+              <div>
+                <h2 className="text-3xl font-bold text-foreground mb-4">What it does</h2>
+                <p className="text-muted-foreground leading-relaxed mb-6">
+                  Customizable settings and wireless control of heating and cooling from anywhere. The touchscreen interface is friendly when you want to use it manually, and voice control with Amazon and Google devices keeps the panel in your pocket the rest of the time.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-2xl font-semibold text-foreground mb-4">Key features</h3>
+                <ul className="space-y-3">
+                  {features.map((f) => (
+                    <li key={f} className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-secondary shrink-0 mt-0.5" />
+                      <span className="text-foreground/90">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-2xl font-semibold text-foreground mb-4">Equipment compatibility</h3>
+                <div className="space-y-4">
+                  {compatibility.map((c) => (
+                    <div key={c.group} className="border rounded-md p-5">
+                      <p className="font-semibold text-primary mb-1">{c.group}</p>
+                      <p className="text-sm text-foreground/80 leading-relaxed">{c.items}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs italic text-muted-foreground mt-3">
+                  Some ductless and VRV/SkyAir setups require a communication adaptor (DAPT-ONE-VMS or model-specific S21 adaptor). We'll confirm compatibility for your equipment during the quote.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-2xl font-semibold text-foreground mb-4">Specifications</h3>
+                <div className="border rounded-md overflow-hidden">
+                  <table className="w-full text-sm">
+                    <tbody className="divide-y">
+                      {specs.map((s) => (
+                        <tr key={s.label}>
+                          <td className="p-3 font-semibold text-foreground bg-muted/30 w-1/3">{s.label}</td>
+                          <td className="p-3 text-foreground/80">{s.value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs text-muted-foreground mt-3">
+                  Backed by a 12-year limited warranty for owner-occupied residences (5 years for multi-family/commercial). Online registration required within 60 days in most states.
+                </p>
+              </div>
+            </motion.div>
+
+            <DownloadSidebar
+              pdfUrl={pdfUrl}
+              trackButtonClick={trackButtonClick}
+              sizeLabel={`PDF, ${catalog.pages.replace(" pages", "")} pages, ${catalog.sizeMb}`}
+              pdfFile={catalog.pdfFile}
+              heading="Download the Brochure"
+              considerHeading="Want this thermostat?"
+              trackPrefix="Daikin ONE Touch Brochure"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* PDF embed */}
+      <section className="bg-muted/30 py-12">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-8">Browse the brochure</h2>
+          <div className="max-w-5xl mx-auto">
+            <div className="aspect-[8.5/11] w-full rounded-lg border shadow-md overflow-hidden bg-background">
+              <iframe src={pdfUrl} className="w-full h-full" title="Daikin ONE Touch Smart Thermostat Brochure" />
+            </div>
+            <p className="text-sm text-muted-foreground text-center mt-4">
+              Having trouble viewing? Download the PDF using the button above.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Bottom CTA */}
+      <section className="bg-primary text-primary-foreground py-12 text-center">
+        <div className="container mx-auto px-4 max-w-2xl">
+          <h2 className="text-3xl font-bold mb-3">Add the ONE Touch to your Daikin system.</h2>
+          <p className="text-primary-foreground/80 mb-8">
+            We can pair the ONE Touch with new Daikin installs or retrofit it onto compatible existing equipment. Ask us about controls during your estimate.
+          </p>
+          <BottomCTAButtons trackButtonClick={trackButtonClick} location="Daikin Catalog - Bottom CTA" estimatePath="/estimate/ducted" secondaryLabel="Contact Us" secondaryPath="/contact" />
         </div>
       </section>
     </>
