@@ -43,6 +43,17 @@ const KNOWN_CATALOGS: Record<string, CatalogMeta> = {
     badgeStyle: "outline",
     breadcrumbLabel: "Goodman SD Side Discharge",
   },
+  "daikin-one-touch-thermostat": {
+    title: "Daikin ONE Touch Smart Thermostat",
+    brand: "Daikin",
+    pdfFile: "daikin-one-touch-thermostat.pdf",
+    pages: "2 pages",
+    sizeMb: "~1.3 MB",
+    updated: "2025 Brochure",
+    badge: "Smart Controls",
+    badgeStyle: "outline",
+    breadcrumbLabel: "Daikin ONE Touch Thermostat",
+  },
 };
 
 const MITSUBISHI_SECTIONS = [
