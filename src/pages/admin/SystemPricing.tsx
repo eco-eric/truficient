@@ -1101,8 +1101,11 @@ const SystemPricing = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon" onClick={() => handleEdit(system)}>
+                            <Button variant="ghost" size="icon" onClick={() => handleEdit(system)} title="Edit">
                               <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDuplicate(system)} title="Duplicate">
+                              <Copy className="h-4 w-4" />
                             </Button>
                             <Button 
                               variant="ghost" 
@@ -1112,6 +1115,7 @@ const SystemPricing = () => {
                                   deleteMutation.mutate(system.id);
                                 }
                               }}
+                              title="Delete"
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
