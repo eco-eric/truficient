@@ -290,17 +290,12 @@ const BlogPostPage = () => {
 
       {/* Featured Image */}
       {post.featured_image && (
-        <div className="container mx-auto px-4 -mt-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <BlogHeroImage
-              src={displayUrl(post.featured_image)}
-              alt={post.featured_image_alt || post.title}
-            />
-          </motion.div>
+        <div className="w-full max-w-5xl mx-auto my-8 px-4">
+          <img
+            src={displayUrl(post.featured_image)}
+            alt={post.featured_image_alt || post.title}
+            className="w-full h-auto rounded-lg block"
+          />
         </div>
       )}
 
