@@ -25,6 +25,7 @@ import BlogPreview from '@/components/admin/BlogPreview';
 import TagSelector from '@/components/admin/TagSelector';
 import CategorySelector from '@/components/admin/CategorySelector';
 import AuthorSelector from '@/components/admin/AuthorSelector';
+import { compressImage } from '@/utils/imageCompression';
 
 interface AuthorProfile {
   id: string;
