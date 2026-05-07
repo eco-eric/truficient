@@ -42,7 +42,16 @@ const brands: Brand[] = [
     status: "available",
   },
   { slug: "bosch", name: "Bosch", tagline: "Inverter Heat Pumps", status: "coming-soon", expectedDate: "May 2026" },
-  { slug: "daikin", name: "Daikin", tagline: "Ductless & Ducted", status: "coming-soon", expectedDate: "June 2026" },
+  {
+    slug: "daikin-one-touch-thermostat",
+    name: "Daikin",
+    tagline: "ONE Touch Smart Thermostat",
+    description:
+      "Wi-Fi-enabled smart thermostat with capacitive touchscreen, voice control via Alexa and Google Assistant, geo-fencing, and app control for iOS and Android. Compatible with Daikin's communicating unitary, ductless, SkyAir, and VRV equipment. Includes 1 year of SkyportCare and a 12-year limited warranty.",
+    badge: "Smart Controls",
+    badgeStyle: "outline",
+    status: "available",
+  },
   { slug: "carrier", name: "Carrier", tagline: "Residential & Commercial", status: "coming-soon", expectedDate: "June 2026" },
   { slug: "lennox", name: "Lennox", tagline: "Premium Residential", status: "coming-soon", expectedDate: "June 2026" },
   { slug: "rheem", name: "Rheem", tagline: "HVAC & Water Heating", status: "coming-soon", expectedDate: "June 2026" },
