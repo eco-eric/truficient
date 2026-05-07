@@ -313,6 +313,42 @@ const SystemPricing = () => {
     setIsFormOpen(true);
   };
 
+  const handleDuplicate = (system: EquipmentSystem) => {
+    setEditingSystem(null);
+    setFormData({
+      system_name: `${system.system_name} (Copy)`,
+      system_type: system.system_type,
+      heating_source: system.heating_source,
+      tonnage: system.tonnage,
+      ahri_number: system.ahri_number,
+      refrigerant: system.refrigerant,
+      condenser_heat_pump_model: system.condenser_heat_pump_model,
+      furnace_model: system.furnace_model,
+      furnace_price: system.furnace_price,
+      furnace_btu_input: system.furnace_btu_input,
+      furnace_afue: system.furnace_afue,
+      air_handler_model: system.air_handler_model,
+      air_handler_price: system.air_handler_price,
+      air_handler_cfm: system.air_handler_cfm,
+      evap_coil_model: system.evap_coil_model,
+      heat_kit: system.heat_kit,
+      thermostat_model: system.thermostat_model,
+      thermostat_price: system.thermostat_price,
+      condenser_price: system.condenser_price,
+      evap_coil_price: system.evap_coil_price,
+      heat_kit_price: system.heat_kit_price,
+      system_price: system.system_price,
+      seer2: system.seer2,
+      eer2: system.eer2,
+      hspf2: system.hspf2,
+      capacity_btuh: system.capacity_btuh,
+      notes: system.notes,
+      needs_migration_review: false,
+    });
+    setIsFormOpen(true);
+    toast.info('Editing copy — adjust details and save to create a new system');
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.system_name) {
