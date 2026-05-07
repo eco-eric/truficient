@@ -3,6 +3,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import Underline from '@tiptap/extension-underline';
+import { compressImage } from '@/utils/imageCompression';
 import Placeholder from '@tiptap/extension-placeholder';
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
