@@ -109,7 +109,13 @@ const Catalogs = () => {
                         {brand.name}
                       </h3>
                       {brand.badge && (
-                        <Badge className="bg-secondary text-secondary-foreground hover:bg-secondary shrink-0">
+                        <Badge
+                          className={
+                            brand.badgeStyle === "outline"
+                              ? "border border-primary text-primary bg-primary/5 hover:bg-primary/5 shrink-0"
+                              : "bg-secondary text-secondary-foreground hover:bg-secondary shrink-0"
+                          }
+                        >
                           {brand.badge}
                         </Badge>
                       )}
