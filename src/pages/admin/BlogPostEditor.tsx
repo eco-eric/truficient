@@ -591,12 +591,19 @@ const BlogPostEditor = () => {
 
                               setUploadingImage(true);
                               try {
-                                const fileExt = file.name.split('.').pop();
+                                // Auto-compress/resize for blog (max 1600px, ~85% quality)
+                                const compressed = await compressImage(file, {
+                                  maxWidth: 1600,
+                                  maxHeight: 1600,
+                                  quality: 0.85,
+                                  maxSizeMB: 1.5,
+                                });
+                                const fileExt = (compressed.type === 'image/png' ? 'png' : 'jpg');
                                 const fileName = `featured/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
                                 const { error: uploadError } = await supabase.storage
                                   .from('blog_images')
-                                  .upload(fileName, file);
+                                  .upload(fileName, compressed, { contentType: compressed.type, cacheControl: '3600' });
 
                                 if (uploadError) throw uploadError;
 
