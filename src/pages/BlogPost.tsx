@@ -3,6 +3,7 @@ import { displayUrl } from '@/lib/imageUtils';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Header from '@/components/layout/Header';
+import BlogHeroImage from '@/components/blog/BlogHeroImage';
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
