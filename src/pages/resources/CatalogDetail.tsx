@@ -89,12 +89,15 @@ const CatalogDetail = () => {
   if (typeof document !== "undefined") {
     if (slug === "goodman-sd-side-discharge") {
       document.title = "Goodman SD Side Discharge Catalog | Truficient HVAC";
+    } else if (slug === "daikin-one-touch-thermostat") {
+      document.title = "Daikin ONE Touch Smart Thermostat | Truficient HVAC";
     } else {
       document.title = `${catalog.brand === "Mitsubishi Electric" ? "Mitsubishi M & P Series Catalog 2026" : catalog.title} | Truficient HVAC`;
     }
   }
 
   const isGoodman = slug === "goodman-sd-side-discharge";
+  const isDaikin = slug === "daikin-one-touch-thermostat";
 
   return (
     <>
@@ -117,6 +120,8 @@ const CatalogDetail = () => {
 
         {isGoodman ? (
           <GoodmanContent pdfUrl={pdfUrl} trackButtonClick={trackButtonClick} catalog={catalog} />
+        ) : isDaikin ? (
+          <DaikinContent pdfUrl={pdfUrl} trackButtonClick={trackButtonClick} catalog={catalog} />
         ) : (
           <MitsubishiContent pdfUrl={pdfUrl} trackButtonClick={trackButtonClick} catalog={catalog} />
         )}
