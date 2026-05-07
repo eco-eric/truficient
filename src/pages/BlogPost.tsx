@@ -3,6 +3,7 @@ import { displayUrl } from '@/lib/imageUtils';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Header from '@/components/layout/Header';
+import BlogHeroImage from '@/components/blog/BlogHeroImage';
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -290,15 +291,16 @@ const BlogPostPage = () => {
       {/* Featured Image */}
       {post.featured_image && (
         <div className="container mx-auto px-4 -mt-8">
-          <motion.img
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            src={displayUrl(post.featured_image)}
-            alt={post.featured_image_alt || post.title}
-            loading="lazy"
-            className="mx-auto rounded-lg shadow-lg w-full max-w-2xl max-h-[420px] object-contain bg-muted"
-          />
+          >
+            <BlogHeroImage
+              src={displayUrl(post.featured_image)}
+              alt={post.featured_image_alt || post.title}
+            />
+          </motion.div>
         </div>
       )}
 
