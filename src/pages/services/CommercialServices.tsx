@@ -394,7 +394,7 @@ const CommercialServices = () => {
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="border-2 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary font-semibold text-lg px-8"
+                  className="border-2 border-primary-foreground bg-primary-foreground text-primary hover:bg-transparent hover:text-primary-foreground font-semibold text-lg px-8"
                 >
                   <Phone className="w-5 h-5 mr-2" />
                   Call 214-238-4349
