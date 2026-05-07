@@ -15,6 +15,7 @@ interface Brand {
   tagline: string;
   description?: string;
   badge?: string;
+  badgeStyle?: "solid" | "outline";
   status: "available" | "coming-soon";
   expectedDate?: string;
 }
