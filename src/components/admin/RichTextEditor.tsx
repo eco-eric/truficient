@@ -3,6 +3,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import Underline from '@tiptap/extension-underline';
+import { compressImage } from '@/utils/imageCompression';
 import Placeholder from '@tiptap/extension-placeholder';
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -156,13 +157,20 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Start writing...' }: R
 
     setUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
+      // Auto-compress/resize inline blog images
+      const compressed = await compressImage(file, {
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.85,
+        maxSizeMB: 1.5,
+      });
+      const fileExt = compressed.type === 'image/png' ? 'png' : 'jpg';
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `content/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('blog_images')
-        .upload(filePath, file);
+        .upload(filePath, compressed, { contentType: compressed.type, cacheControl: '3600' });
 
       if (uploadError) throw uploadError;
 
