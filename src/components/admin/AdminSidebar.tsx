@@ -9,6 +9,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useRolePermissions, hasPermission } from '@/hooks/useRolePermissions';
 import { navSections } from './adminNavConfig';
 import { useOpenSeoActions } from '@/hooks/useOpenSeoActions';
+import { useNewSubmissionsCount } from '@/hooks/useNewSubmissionsCount';
 import {
   Collapsible,
   CollapsibleContent,
