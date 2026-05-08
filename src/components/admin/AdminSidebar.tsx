@@ -24,6 +24,7 @@ export const AdminSidebar = () => {
   const { isSuperAdmin } = useUserRole();
   const { permissions, loading: permissionsLoading } = useRolePermissions();
   const openSeoActions = useOpenSeoActions();
+  const newSubmissions = useNewSubmissionsCount();
   const [collapsed, setCollapsed] = useState(false);
   
   // Initialize expanded sections from localStorage or default all open
