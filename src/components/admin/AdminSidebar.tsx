@@ -133,6 +133,11 @@ export const AdminSidebar = () => {
                               {openSeoActions}
                             </span>
                           )}
+                          {item.href === '/admin/submissions' && newSubmissions > 0 && (
+                            <span className="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#FFB547] text-[#1e3a5f] text-[10px] font-semibold">
+                              {newSubmissions}
+                            </span>
+                          )}
                         </span>
                       )}
                     </Link>
