@@ -9,6 +9,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useRolePermissions, hasPermission } from '@/hooks/useRolePermissions';
 import { navSections } from './adminNavConfig';
 import { useOpenSeoActions } from '@/hooks/useOpenSeoActions';
+import { useNewSubmissionsCount } from '@/hooks/useNewSubmissionsCount';
 import {
   Collapsible,
   CollapsibleContent,
@@ -23,6 +24,7 @@ export const AdminSidebar = () => {
   const { isSuperAdmin } = useUserRole();
   const { permissions, loading: permissionsLoading } = useRolePermissions();
   const openSeoActions = useOpenSeoActions();
+  const newSubmissions = useNewSubmissionsCount();
   const [collapsed, setCollapsed] = useState(false);
   
   // Initialize expanded sections from localStorage or default all open
@@ -129,6 +131,11 @@ export const AdminSidebar = () => {
                           {item.href === '/admin/seo' && openSeoActions > 0 && (
                             <span className="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#FFB547] text-[#1e3a5f] text-[10px] font-semibold">
                               {openSeoActions}
+                            </span>
+                          )}
+                          {item.href === '/admin/submissions' && newSubmissions > 0 && (
+                            <span className="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#FFB547] text-[#1e3a5f] text-[10px] font-semibold">
+                              {newSubmissions}
                             </span>
                           )}
                         </span>
