@@ -683,8 +683,22 @@ const SystemPricing = () => {
                     <DialogHeader>
                       <DialogTitle>{editingSystem ? 'Edit System' : 'Add New System'}</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                      {/* Basic Info */}
+                    <Tabs defaultValue="details">
+                      <TabsList className="mb-4">
+                        <TabsTrigger value="details">Details</TabsTrigger>
+                        <TabsTrigger value="documents" disabled={!editingSystem}>
+                          <Paperclip className="h-3.5 w-3.5 mr-1.5" />
+                          Documents
+                          {editingSystem && (docMeta?.counts.get(editingSystem.id) ?? 0) > 0 && (
+                            <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-[10px]">
+                              {docMeta!.counts.get(editingSystem.id)}
+                            </Badge>
+                          )}
+                        </TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="details">
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                          {/* Basic Info */}
                       <div className="space-y-4">
                         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Basic Info</h3>
                         <div className="grid grid-cols-2 gap-4">
