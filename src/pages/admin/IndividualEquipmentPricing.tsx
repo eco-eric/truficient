@@ -88,6 +88,9 @@ export default function AdminIndividualEquipmentPricing() {
   const [importOpen, setImportOpen] = useState(false);
   const [importRows, setImportRows] = useState<Partial<EquipmentRow>[]>([]);
   const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [docsSheetFor, setDocsSheetFor] = useState<EquipmentRow | null>(null);
+
+  const { data: docMeta } = useEquipmentDocumentCounts('individual_equipment');
 
   const { data: equipment = [], isLoading } = useQuery({
     queryKey: ['individual-equipment-pricing'],
