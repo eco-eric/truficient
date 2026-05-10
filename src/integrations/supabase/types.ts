@@ -3215,6 +3215,60 @@ export type Database = {
         }
         Relationships: []
       }
+      equipment_documents: {
+        Row: {
+          display_name: string | null
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          is_default: boolean
+          mime_type: string | null
+          notes: string | null
+          owner_id: string
+          owner_type: string
+          sort_order: number
+          updated_at: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          display_name?: string | null
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          is_default?: boolean
+          mime_type?: string | null
+          notes?: string | null
+          owner_id: string
+          owner_type: string
+          sort_order?: number
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          display_name?: string | null
+          document_type?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          is_default?: boolean
+          mime_type?: string | null
+          notes?: string | null
+          owner_id?: string
+          owner_type?: string
+          sort_order?: number
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       equipment_page_conflicts: {
         Row: {
           created_at: string

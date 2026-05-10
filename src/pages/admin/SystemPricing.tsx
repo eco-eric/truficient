@@ -11,8 +11,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Plus, Search, Download, Upload, Pencil, Trash2, FileText, FileSpreadsheet, AlertTriangle, Copy } from 'lucide-react';
+import { Plus, Search, Download, Upload, Pencil, Trash2, FileText, FileSpreadsheet, AlertTriangle, Copy, Paperclip } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { EquipmentDocumentsPanel } from '@/components/admin/equipment/EquipmentDocumentsPanel';
+import { useEquipmentDocumentCounts } from '@/hooks/useEquipmentDocumentCounts';
 
 interface EquipmentSystem {
   id: string;
@@ -105,6 +108,8 @@ const SystemPricing = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSystem, setEditingSystem] = useState<EquipmentSystem | null>(null);
   const [formData, setFormData] = useState<SystemFormData>(defaultFormData);
+  const [docsSheetFor, setDocsSheetFor] = useState<EquipmentSystem | null>(null);
+  const { data: docMeta } = useEquipmentDocumentCounts('equipment_system');
 
   // Auto-calculate system price based on heating source
   useEffect(() => {
@@ -678,8 +683,22 @@ const SystemPricing = () => {
                     <DialogHeader>
                       <DialogTitle>{editingSystem ? 'Edit System' : 'Add New System'}</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                      {/* Basic Info */}
+                    <Tabs defaultValue="details">
+                      <TabsList className="mb-4">
+                        <TabsTrigger value="details">Details</TabsTrigger>
+                        <TabsTrigger value="documents" disabled={!editingSystem}>
+                          <Paperclip className="h-3.5 w-3.5 mr-1.5" />
+                          Documents
+                          {editingSystem && (docMeta?.counts.get(editingSystem.id) ?? 0) > 0 && (
+                            <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-[10px]">
+                              {docMeta!.counts.get(editingSystem.id)}
+                            </Badge>
+                          )}
+                        </TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="details">
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                          {/* Basic Info */}
                       <div className="space-y-4">
                         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Basic Info</h3>
                         <div className="grid grid-cols-2 gap-4">
@@ -1039,7 +1058,22 @@ const SystemPricing = () => {
                           {saveMutation.isPending ? 'Saving...' : editingSystem ? 'Update' : 'Add System'}
                         </Button>
                       </div>
-                    </form>
+                        </form>
+                      </TabsContent>
+                      <TabsContent value="documents">
+                        {editingSystem ? (
+                          <EquipmentDocumentsPanel
+                            ownerType="equipment_system"
+                            ownerId={editingSystem.id}
+                            ownerLabel={editingSystem.system_name}
+                          />
+                        ) : (
+                          <p className="text-sm text-muted-foreground py-8 text-center">
+                            Save the system first to attach documents.
+                          </p>
+                        )}
+                      </TabsContent>
+                    </Tabs>
                   </DialogContent>
                 </Dialog>
               </div>
@@ -1137,6 +1171,20 @@ const SystemPricing = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDocsSheetFor(system)}
+                              title="Documents"
+                              className="relative"
+                            >
+                              <Paperclip className="h-4 w-4" />
+                              {(docMeta?.counts.get(system.id) ?? 0) > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                                  {docMeta!.counts.get(system.id)}
+                                </span>
+                              )}
+                            </Button>
                             <Button variant="ghost" size="icon" onClick={() => handleEdit(system)} title="Edit">
                               <Pencil className="h-4 w-4" />
                             </Button>
@@ -1250,6 +1298,27 @@ const SystemPricing = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Documents Sheet (row-level) */}
+      <Sheet open={!!docsSheetFor} onOpenChange={(o) => !o && setDocsSheetFor(null)}>
+        <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Paperclip className="h-4 w-4" /> System Documents
+            </SheetTitle>
+            <SheetDescription>{docsSheetFor?.system_name}</SheetDescription>
+          </SheetHeader>
+          <div className="mt-4">
+            {docsSheetFor && (
+              <EquipmentDocumentsPanel
+                ownerType="equipment_system"
+                ownerId={docsSheetFor.id}
+                ownerLabel={docsSheetFor.system_name}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </AdminLayout>
   );
 };
