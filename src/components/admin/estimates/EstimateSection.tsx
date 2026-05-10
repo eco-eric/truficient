@@ -207,7 +207,12 @@ const SortableRow = ({ item, actualIndex, onUpdateItem, onRemoveItem }: Sortable
           />
         ) : (
           <div>
-            <div className="font-medium">{item.name}</div>
+            <div className="font-medium flex items-center gap-2">
+              {item.name}
+              {item.equipment_system_id && (
+                <EquipmentDocsIndicator systemId={item.equipment_system_id} />
+              )}
+            </div>
             {item.description && (
               <div className="text-xs text-muted-foreground">{item.description}</div>
             )}
