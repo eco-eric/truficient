@@ -1298,6 +1298,27 @@ const SystemPricing = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Documents Sheet (row-level) */}
+      <Sheet open={!!docsSheetFor} onOpenChange={(o) => !o && setDocsSheetFor(null)}>
+        <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Paperclip className="h-4 w-4" /> System Documents
+            </SheetTitle>
+            <SheetDescription>{docsSheetFor?.system_name}</SheetDescription>
+          </SheetHeader>
+          <div className="mt-4">
+            {docsSheetFor && (
+              <EquipmentDocumentsPanel
+                ownerType="equipment_system"
+                ownerId={docsSheetFor.id}
+                ownerLabel={docsSheetFor.system_name}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </AdminLayout>
   );
 };
