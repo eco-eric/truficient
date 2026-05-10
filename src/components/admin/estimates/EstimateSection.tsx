@@ -162,6 +162,53 @@ const getItemIcon = (itemType: string) => {
   }
 };
 
+// Indicator for default documents available on a system
+const EquipmentDocsIndicator = ({ systemId }: { systemId: string }) => {
+  const { data } = useEquipmentDocumentCounts('equipment_system');
+  const defaults = data?.defaultsByOwner.get(systemId) ?? [];
+  const [attached, setAttached] = useState<Set<string>>(new Set());
+  if (defaults.length === 0) return null;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          title="Default documents available"
+        >
+          <Paperclip className="h-3 w-3" /> {defaults.length} doc{defaults.length === 1 ? '' : 's'} available
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-3" align="start">
+        <div className="text-xs font-semibold mb-2 text-foreground">Default documents</div>
+        <div className="space-y-2">
+          {defaults.map((d) => (
+            <label key={d.id} className="flex items-center gap-2 text-xs cursor-pointer">
+              <Checkbox
+                checked={attached.has(d.id)}
+                onCheckedChange={(v) => {
+                  setAttached((prev) => {
+                    const next = new Set(prev);
+                    if (v) next.add(d.id); else next.delete(d.id);
+                    return next;
+                  });
+                }}
+              />
+              <Badge variant="outline" className={`${DOCUMENT_TYPE_BADGE[d.document_type]} h-5 px-1.5 text-[10px]`}>
+                {DOCUMENT_TYPE_LABELS[d.document_type]}
+              </Badge>
+              <span className="truncate flex-1">{d.display_name || d.file_name}</span>
+            </label>
+          ))}
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-3">
+          Attach-to-estimate wiring coming soon.
+        </p>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
 // Sortable row component
 interface SortableRowProps {
   item: LineItem;
