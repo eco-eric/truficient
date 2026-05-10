@@ -1058,7 +1058,22 @@ const SystemPricing = () => {
                           {saveMutation.isPending ? 'Saving...' : editingSystem ? 'Update' : 'Add System'}
                         </Button>
                       </div>
-                    </form>
+                        </form>
+                      </TabsContent>
+                      <TabsContent value="documents">
+                        {editingSystem ? (
+                          <EquipmentDocumentsPanel
+                            ownerType="equipment_system"
+                            ownerId={editingSystem.id}
+                            ownerLabel={editingSystem.system_name}
+                          />
+                        ) : (
+                          <p className="text-sm text-muted-foreground py-8 text-center">
+                            Save the system first to attach documents.
+                          </p>
+                        )}
+                      </TabsContent>
+                    </Tabs>
                   </DialogContent>
                 </Dialog>
               </div>
