@@ -11,8 +11,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Plus, Search, Download, Upload, Pencil, Trash2, FileText, FileSpreadsheet, AlertTriangle, Copy } from 'lucide-react';
+import { Plus, Search, Download, Upload, Pencil, Trash2, FileText, FileSpreadsheet, AlertTriangle, Copy, Paperclip } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { EquipmentDocumentsPanel } from '@/components/admin/equipment/EquipmentDocumentsPanel';
+import { useEquipmentDocumentCounts } from '@/hooks/useEquipmentDocumentCounts';
 
 interface EquipmentSystem {
   id: string;
