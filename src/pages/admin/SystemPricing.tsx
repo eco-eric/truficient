@@ -108,6 +108,8 @@ const SystemPricing = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSystem, setEditingSystem] = useState<EquipmentSystem | null>(null);
   const [formData, setFormData] = useState<SystemFormData>(defaultFormData);
+  const [docsSheetFor, setDocsSheetFor] = useState<EquipmentSystem | null>(null);
+  const { data: docMeta } = useEquipmentDocumentCounts('equipment_system');
 
   // Auto-calculate system price based on heating source
   useEffect(() => {
