@@ -14,7 +14,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Package, Plus, Search, Pencil, Trash2, Upload, Download, ArrowUpDown, ArrowUp, ArrowDown, Copy, ExternalLink } from 'lucide-react';
+import { Package, Plus, Search, Pencil, Trash2, Upload, Download, ArrowUpDown, ArrowUp, ArrowDown, Copy, ExternalLink, Paperclip } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { EquipmentDocumentsPanel } from '@/components/admin/equipment/EquipmentDocumentsPanel';
+import { useEquipmentDocumentCounts } from '@/hooks/useEquipmentDocumentCounts';
 
 const EQUIPMENT_TYPES = ['Air Handler', 'Condenser', 'Furnace', 'Heat Pump', 'Coil', 'Mini-Split', 'Wall Mount', 'Floor Mount', '1 Way Ceiling Cassette', '4 Way Cassette', 'Branch Box', 'Thermostat', 'Dehumidifier', 'Other'] as const;
 
