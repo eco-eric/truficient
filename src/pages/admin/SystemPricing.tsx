@@ -1171,6 +1171,20 @@ const SystemPricing = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDocsSheetFor(system)}
+                              title="Documents"
+                              className="relative"
+                            >
+                              <Paperclip className="h-4 w-4" />
+                              {(docMeta?.counts.get(system.id) ?? 0) > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                                  {docMeta!.counts.get(system.id)}
+                                </span>
+                              )}
+                            </Button>
                             <Button variant="ghost" size="icon" onClick={() => handleEdit(system)} title="Edit">
                               <Pencil className="h-4 w-4" />
                             </Button>
