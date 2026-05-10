@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Package, Users, Receipt, Wrench, Calculator, Plus, Trash2, GripVertical } from 'lucide-react';
+import { ChevronDown, ChevronRight, Package, Users, Receipt, Wrench, Calculator, Plus, Trash2, GripVertical, Paperclip } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { useEquipmentDocumentCounts } from '@/hooks/useEquipmentDocumentCounts';
+import { DOCUMENT_TYPE_LABELS, DOCUMENT_TYPE_BADGE } from '@/types/equipmentDocument';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
