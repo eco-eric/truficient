@@ -388,6 +388,20 @@ export default function AdminIndividualEquipmentPricing() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Documents"
+                        onClick={() => setDocsSheetFor(row)}
+                        className="relative"
+                      >
+                        <Paperclip className="h-4 w-4" />
+                        {(docMeta?.counts.get(row.id) ?? 0) > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                            {docMeta!.counts.get(row.id)}
+                          </span>
+                        )}
+                      </Button>
                       <Button variant="ghost" size="icon" title="Duplicate" onClick={() => {
                         setEditingId(null);
                         setForm({ brand: row.brand, model_number: row.model_number, type: row.type, size: row.size, price: String(row.price), notes: row.notes || '', is_active: row.is_active });
