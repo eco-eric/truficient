@@ -440,56 +440,106 @@ export default function AdminIndividualEquipmentPricing() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingId ? 'Edit Equipment' : 'Add Equipment'}</DialogTitle>
             <DialogDescription>Fill in the equipment details below.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Brand *</Label>
-              <Input value={form.brand} onChange={e => setForm(f => ({ ...f, brand: e.target.value }))} list="brand-list" placeholder="e.g. Carrier, Trane" />
-              <datalist id="brand-list">{brands.map(b => <option key={b} value={b} />)}</datalist>
-            </div>
-            <div>
-              <Label>Model Number *</Label>
-              <Input value={form.model_number} onChange={e => setForm(f => ({ ...f, model_number: e.target.value }))} placeholder="e.g. 24ACC636A003" />
-            </div>
-            <div>
-              <Label>Type *</Label>
-              <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {EQUIPMENT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Size</Label>
-              <Input value={form.size} onChange={e => setForm(f => ({ ...f, size: e.target.value }))} placeholder='e.g. 2 Ton, 80,000 BTU (optional)' />
-            </div>
-            <div>
-              <Label>Price *</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                <Input type="number" step="0.01" min="0" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} className="pl-7" />
+          <Tabs defaultValue="details">
+            <TabsList className="mb-4">
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="documents" disabled={!editingId}>
+                <Paperclip className="h-3.5 w-3.5 mr-1.5" />
+                Documents
+                {editingId && (docMeta?.counts.get(editingId) ?? 0) > 0 && (
+                  <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-[10px]">
+                    {docMeta!.counts.get(editingId)}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="details" className="space-y-4">
+              <div>
+                <Label>Brand *</Label>
+                <Input value={form.brand} onChange={e => setForm(f => ({ ...f, brand: e.target.value }))} list="brand-list" placeholder="e.g. Carrier, Trane" />
+                <datalist id="brand-list">{brands.map(b => <option key={b} value={b} />)}</datalist>
               </div>
-            </div>
-            <div>
-              <Label>Notes</Label>
-              <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} />
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: !!v }))} />
-              <Label>Active</Label>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={upsertMutation.isPending}>{upsertMutation.isPending ? 'Saving...' : 'Save Equipment'}</Button>
-          </DialogFooter>
+              <div>
+                <Label>Model Number *</Label>
+                <Input value={form.model_number} onChange={e => setForm(f => ({ ...f, model_number: e.target.value }))} placeholder="e.g. 24ACC636A003" />
+              </div>
+              <div>
+                <Label>Type *</Label>
+                <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {EQUIPMENT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Size</Label>
+                <Input value={form.size} onChange={e => setForm(f => ({ ...f, size: e.target.value }))} placeholder='e.g. 2 Ton, 80,000 BTU (optional)' />
+              </div>
+              <div>
+                <Label>Price *</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                  <Input type="number" step="0.01" min="0" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} className="pl-7" />
+                </div>
+              </div>
+              <div>
+                <Label>Notes</Label>
+                <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} />
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: !!v }))} />
+                <Label>Active</Label>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                <Button onClick={handleSave} disabled={upsertMutation.isPending}>{upsertMutation.isPending ? 'Saving...' : 'Save Equipment'}</Button>
+              </DialogFooter>
+            </TabsContent>
+            <TabsContent value="documents">
+              {editingId ? (
+                <EquipmentDocumentsPanel
+                  ownerType="individual_equipment"
+                  ownerId={editingId}
+                  ownerLabel={`${form.brand} ${form.model_number}`}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground py-8 text-center">
+                  Save the equipment first to attach documents.
+                </p>
+              )}
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
+
+      {/* Documents Sheet (row-level) */}
+      <Sheet open={!!docsSheetFor} onOpenChange={(o) => !o && setDocsSheetFor(null)}>
+        <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Paperclip className="h-4 w-4" /> Equipment Documents
+            </SheetTitle>
+            <SheetDescription>
+              {docsSheetFor && `${docsSheetFor.brand} ${docsSheetFor.model_number}`}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-4">
+            {docsSheetFor && (
+              <EquipmentDocumentsPanel
+                ownerType="individual_equipment"
+                ownerId={docsSheetFor.id}
+                ownerLabel={`${docsSheetFor.brand} ${docsSheetFor.model_number}`}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Delete Confirm */}
       <AlertDialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
