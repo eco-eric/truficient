@@ -32,6 +32,16 @@ const brands: Brand[] = [
   },
   { slug: "trane", name: "Trane", tagline: "Residential & Commercial", status: "coming-soon", expectedDate: "May 2026" },
   {
+    slug: "bosch-ids-family",
+    name: "Bosch",
+    tagline: "IDS Family — Inverter Heat Pumps",
+    description:
+      "High-efficiency inverter heat pump systems with R-454B refrigerant, sound levels as low as 56 dBA, and a 10-year limited warranty. Available from 15 SEER2 entry tier up to 20 SEER2 connected premium with smart app monitoring.",
+    badge: "Inverter Specialist",
+    badgeStyle: "outline",
+    status: "available",
+  },
+  {
     slug: "goodman-sd-side-discharge",
     name: "Goodman",
     tagline: "SD Side Discharge Inverter Systems",
@@ -41,7 +51,7 @@ const brands: Brand[] = [
     badgeStyle: "outline",
     status: "available",
   },
-  { slug: "bosch", name: "Bosch", tagline: "Inverter Heat Pumps", status: "coming-soon", expectedDate: "May 2026" },
+  
   {
     slug: "daikin-one-touch-thermostat",
     name: "Daikin",
