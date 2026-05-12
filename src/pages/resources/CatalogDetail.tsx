@@ -1,6 +1,6 @@
 import { Link, Navigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Download, ExternalLink, CheckCircle2, ChevronRight, Info, MapPin } from "lucide-react";
+import { Download, ExternalLink, CheckCircle2, ChevronRight, Info, MapPin, FileText } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,17 @@ const KNOWN_CATALOGS: Record<string, CatalogMeta> = {
     badgeStyle: "outline",
     breadcrumbLabel: "Daikin ONE Touch Thermostat",
   },
+  "bosch-ids-family": {
+    title: "Bosch IDS — Inverter Ducted Split Family",
+    brand: "Bosch",
+    pdfFile: "bosch-ids-family.pdf",
+    pages: "24 pages",
+    sizeMb: "~22 MB",
+    updated: "2025 Catalog",
+    badge: "Inverter Specialist",
+    badgeStyle: "outline",
+    breadcrumbLabel: "Bosch IDS Family",
+  },
 };
 
 const MITSUBISHI_SECTIONS = [
@@ -91,6 +102,8 @@ const CatalogDetail = () => {
       document.title = "Goodman SD Side Discharge Catalog | Truficient HVAC";
     } else if (slug === "daikin-one-touch-thermostat") {
       document.title = "Daikin ONE Touch Smart Thermostat | Truficient HVAC";
+    } else if (slug === "bosch-ids-family") {
+      document.title = "Bosch IDS Inverter Heat Pump Catalog | Truficient HVAC";
     } else {
       document.title = `${catalog.brand === "Mitsubishi Electric" ? "Mitsubishi M & P Series Catalog 2026" : catalog.title} | Truficient HVAC`;
     }
@@ -98,6 +111,7 @@ const CatalogDetail = () => {
 
   const isGoodman = slug === "goodman-sd-side-discharge";
   const isDaikin = slug === "daikin-one-touch-thermostat";
+  const isBosch = slug === "bosch-ids-family";
 
   return (
     <>
@@ -118,7 +132,9 @@ const CatalogDetail = () => {
           </ol>
         </nav>
 
-        {isGoodman ? (
+        {isBosch ? (
+          <BoschContent pdfUrl={pdfUrl} trackButtonClick={trackButtonClick} catalog={catalog} />
+        ) : isGoodman ? (
           <GoodmanContent pdfUrl={pdfUrl} trackButtonClick={trackButtonClick} catalog={catalog} />
         ) : isDaikin ? (
           <DaikinContent pdfUrl={pdfUrl} trackButtonClick={trackButtonClick} catalog={catalog} />
@@ -616,6 +632,428 @@ const DaikinContent = ({ pdfUrl, trackButtonClick, catalog }: SectionProps) => {
             We can pair the ONE Touch with new Daikin installs or retrofit it onto compatible existing equipment. Ask us about controls during your estimate.
           </p>
           <BottomCTAButtons trackButtonClick={trackButtonClick} location="Daikin Catalog - Bottom CTA" estimatePath="/estimate/ducted" secondaryLabel="Contact Us" secondaryPath="/contact" />
+        </div>
+      </section>
+    </>
+  );
+};
+
+interface BoschDoc {
+  id: string;
+  title: string;
+  description: string;
+  pages: number;
+  sizeMb: number;
+  filename: string;
+  isPrimary?: boolean;
+}
+
+const BOSCH_DOCS: BoschDoc[] = [
+  {
+    id: "ids-family-overview",
+    title: "IDS Family Overview",
+    description: "Full lineup brochure covering all IDS tiers, dual-fuel pairings, and air-handler options.",
+    pages: 24,
+    sizeMb: 22,
+    filename: "bosch-ids-family.pdf",
+    isPrimary: true,
+  },
+  {
+    id: "ids-light",
+    title: "IDS Light Spec Sheet",
+    description: "Entry-tier 15 SEER2 inverter system with R-454B. Includes compact wall (BIWA) and ceiling (BICA) air-handler variants.",
+    pages: 2,
+    sizeMb: 1,
+    filename: "bosch-ids-light.pdf",
+  },
+  {
+    id: "ids-premium-connected",
+    title: "IDS Premium Connected Spec Sheet",
+    description: "Top-tier 20 SEER2 connected system with the Bosch EasyAir app for remote monitoring and diagnostics.",
+    pages: 2,
+    sizeMb: 1,
+    filename: "bosch-ids-premium-connected.pdf",
+  },
+  {
+    id: "bmxf-blower",
+    title: "BMXF 115V Blower Spec Sheet",
+    description: "All-electric configuration option — pairs the IDS heat pump with a BMAC cased coil and BMXF blower instead of a gas furnace.",
+    pages: 2,
+    sizeMb: 1,
+    filename: "bosch-bmxf-blower.pdf",
+  },
+];
+
+const boschDocUrl = (filename: string) =>
+  `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/catalogs/${filename}`;
+
+const BoschContent = ({ trackButtonClick, catalog }: SectionProps) => {
+  const primary = BOSCH_DOCS.find((d) => d.isPrimary)!;
+  const secondaries = BOSCH_DOCS.filter((d) => !d.isPrimary);
+  const primaryUrl = boschDocUrl(primary.filename);
+
+  const tiers = [
+    {
+      name: "IDS Light",
+      seer: "Up to 16 SEER2",
+      desc: "Entry-tier inverter system. Pairs the BOVA15/BOVB15 condenser with the BIVA fixed-speed or BIVB ECM air handler.",
+      bestFor: "Best for: budget-conscious upgrades from a standard cube system.",
+    },
+    {
+      name: "IDS Plus",
+      seer: "Up to 18.5 SEER2",
+      desc: "Mid-tier system — Bosch's most popular IDS configuration. BOVB18 condenser plus BVA20 two-stage ECM air handler.",
+      bestFor: "Best for: homeowners who want strong efficiency without going to the top tier.",
+    },
+    {
+      name: "IDS Premium",
+      seer: "Up to 20.5 SEER2",
+      desc: "Top-tier non-connected system. BOVA20 condenser, BVA20 air handler, qualifies for maximum efficiency rebates.",
+      bestFor: "Best for: high-utility-bill homes where lifetime energy savings justify the higher upfront.",
+    },
+    {
+      name: "IDS Premium Connected",
+      seer: "Up to 20.5 SEER2",
+      desc: "Same premium efficiency as IDS Premium, plus wireless connectivity through the Bosch EasyAir app — remote monitoring, alerts, and faster diagnostics if something ever goes wrong.",
+      bestFor: "Best for: customers who want visibility into their system or want their installer to be able to troubleshoot remotely.",
+    },
+  ];
+
+  const configs = [
+    {
+      title: "Standard split with gas furnace",
+      desc: "IDS condenser + BMAC cased coil + Bosch BGH96 96% AFUE gas furnace. The traditional setup for homes with existing gas service.",
+    },
+    {
+      title: "All-electric with BMXF blower",
+      desc: "IDS condenser + BMAC cased coil + BMXF 115V blower. No gas furnace. Best for new construction, decarb-minded homeowners, or homes without gas hookups.",
+    },
+    {
+      title: "Compact wall or ceiling air handler",
+      desc: "IDS Light condenser + BIWA (wall-mount) or BICA (ceiling-mount) air handler. Designed for multi-family construction, additions, or any space where a vertical air handler doesn't fit.",
+    },
+  ];
+
+  const whyInstall = [
+    "R-454B low-GWP refrigerant on the entire lineup — already on the 2025+ standard",
+    "Inverter modulation as fine as 1% increments for steady comfort",
+    "Sound levels as low as 56 dBA outdoor (vs. 70+ dBA for typical cube systems)",
+    "10-year residential limited warranty on parts (2 years on gateway connectivity components)",
+    "EasyAir app integration on Premium Connected for remote diagnostics",
+    "AHRI 1380 compliance on Premium Connected when paired with a compatible Bosch thermostat",
+    "Endorsed by Mike Holmes (the contractor — Bosch is his stated brand of choice)",
+  ];
+
+  return (
+    <>
+      {/* Hero */}
+      <section className="bg-primary text-primary-foreground py-16">
+        <div className="container mx-auto px-4">
+          <p className="text-sm font-semibold tracking-widest text-secondary mb-3">INVERTER HEAT PUMPS</p>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">Bosch IDS — Inverter Ducted Split Family</h1>
+          <p className="text-lg text-primary-foreground/80 max-w-3xl mb-6">
+            Bosch's inverter heat pump lineup is one of the quietest and most efficient on the market. Four tiers from 15 SEER2 to 20 SEER2, all on R-454B low-GWP refrigerant, all backed by a 10-year limited warranty.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Badge className="bg-secondary text-secondary-foreground hover:bg-secondary">Bosch Engineering</Badge>
+            <Badge variant="outline" className="border-primary-foreground/40 text-primary-foreground">R-454B Low GWP</Badge>
+            <Badge variant="outline" className="border-primary-foreground/40 text-primary-foreground">Up to 20 SEER2</Badge>
+            <Badge variant="outline" className="border-primary-foreground/40 text-primary-foreground">As Quiet as 56 dBA</Badge>
+            <Badge variant="outline" className="border-primary-foreground/40 text-primary-foreground">10-Year Warranty</Badge>
+          </div>
+        </div>
+      </section>
+
+      {/* About this catalog set */}
+      <section className="bg-primary/5 py-6">
+        <div className="container mx-auto px-4">
+          <div className="bg-background border-l-4 border-primary rounded-md p-5 flex items-start gap-3 shadow-sm">
+            <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+            <p className="text-primary text-sm md:text-base leading-relaxed">
+              <span className="font-semibold">About this catalog set:</span> Bosch's IDS Family is a tiered lineup, not a single product. We've included the full family overview plus deeper spec sheets for the three configurations we install most often: IDS Light (the value tier), IDS Premium Connected (the top tier with smart app integration), and the BMXF blower configuration for all-electric installs. Pick the document that matches what you're researching, or download all four.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Body */}
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-3 gap-10">
+            <motion.div
+              className="lg:col-span-2 space-y-12"
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+            >
+              {/* What makes Bosch different */}
+              <div>
+                <h2 className="text-3xl font-bold text-foreground mb-4">What makes Bosch IDS different</h2>
+                <p className="text-muted-foreground leading-relaxed mb-6">
+                  Most heat pump systems cycle hard between full-on and off. Bosch's inverter compressor adjusts continuously — from as low as 26% capacity up to 130% — matching output to actual demand. The result is a system that's quieter, holds temperature steadier, dehumidifies better in Texas summers, and uses less energy than the on/off systems most homes still run.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[
+                    { stat: "Down to 56 dBA", note: "outdoor sound level on the BOVB18 condenser; quieter than a normal conversation" },
+                    { stat: "26% – 130%", note: "inverter modulation range on the Premium tier; precise capacity matching" },
+                    { stat: "R-454B", note: "current low-GWP A2L refrigerant; meets 2025+ EPA standards" },
+                  ].map((s) => (
+                    <div key={s.stat} className="bg-card border rounded-lg p-6 text-center">
+                      <p className="text-xl font-bold text-primary mb-1">{s.stat}</p>
+                      <p className="text-sm text-muted-foreground">{s.note}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Four tiers */}
+              <div>
+                <h3 className="text-2xl font-semibold text-foreground mb-4">The four IDS tiers</h3>
+                <p className="text-muted-foreground leading-relaxed mb-5">
+                  Bosch sells the IDS line in four efficiency tiers. We help homeowners pick the right one based on home size, electric rates, and what tradeoffs make sense.
+                </p>
+                <div className="space-y-4">
+                  {tiers.map((t) => (
+                    <div key={t.name} className="border rounded-md p-5">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <h4 className="font-bold text-primary">{t.name}</h4>
+                        <Badge variant="outline" className="border-primary text-primary bg-primary/5 shrink-0">{t.seer}</Badge>
+                      </div>
+                      <p className="text-sm text-foreground/80 mb-2">{t.desc}</p>
+                      <p className="text-xs text-muted-foreground italic">{t.bestFor}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Configuration options */}
+              <div>
+                <h3 className="text-2xl font-semibold text-foreground mb-4">Configuration options</h3>
+                <p className="text-muted-foreground leading-relaxed mb-5">
+                  Beyond the four tiers, the IDS condensers can be paired with different indoor equipment depending on what fits the home.
+                </p>
+                <div className="space-y-4">
+                  {configs.map((c) => (
+                    <div key={c.title} className="border rounded-md p-5">
+                      <p className="font-semibold text-primary mb-1">{c.title}</p>
+                      <p className="text-sm text-foreground/80">{c.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Why we install Bosch */}
+              <div>
+                <h3 className="text-2xl font-semibold text-foreground mb-4">Why we install Bosch</h3>
+                <ul className="space-y-3">
+                  {whyInstall.map((f) => (
+                    <li key={f} className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-secondary shrink-0 mt-0.5" />
+                      <span className="text-foreground/90">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Capacity & performance */}
+              <div>
+                <h3 className="text-2xl font-semibold text-foreground mb-4">Capacity & performance</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="border rounded-md p-5">
+                    <p className="font-semibold text-primary mb-3">Capacity range</p>
+                    <ul className="space-y-2 text-sm text-foreground/80 list-disc list-inside">
+                      <li>1.5 ton (18,000 BTU/h) up to 5 ton (60,000 BTU/h) — covers most DFW homes</li>
+                      <li>8 air-handler variants and 9 condenser variants for sizing flexibility</li>
+                    </ul>
+                  </div>
+                  <div className="border rounded-md p-5">
+                    <p className="font-semibold text-primary mb-3">Compressor modulation by tier</p>
+                    <ul className="space-y-2 text-sm text-foreground/80 list-disc list-inside">
+                      <li>BOVA15 (Light): 33% – 110%</li>
+                      <li>BOVB18 (Plus): 26% – 110%</li>
+                      <li>BOV*20 (Premium / Connected): 36% – 130%</li>
+                    </ul>
+                  </div>
+                </div>
+                <p className="text-xs italic text-muted-foreground mt-3">
+                  All adjustments in 1% increments — the compressor doesn't step, it slides.
+                </p>
+              </div>
+
+              {/* Documents grid */}
+              <div>
+                <h3 className="text-2xl font-semibold text-foreground mb-4">Documents in this catalog set</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {BOSCH_DOCS.map((doc) => {
+                    const url = boschDocUrl(doc.filename);
+                    return (
+                      <a
+                        key={doc.id}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download={doc.filename}
+                        onClick={() =>
+                          trackButtonClick({
+                            buttonName: `Bosch ${doc.title} Download`,
+                            buttonLocation: "Bosch Catalog - Documents Grid",
+                            destinationUrl: url,
+                          })
+                        }
+                        className="block bg-background border rounded-md p-5 hover:shadow-md transition-shadow"
+                      >
+                        <FileText className="w-6 h-6 text-secondary mb-3" />
+                        <h4 className="font-bold text-primary mb-1">{doc.title}</h4>
+                        <p className="text-sm text-muted-foreground mb-4">{doc.description}</p>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">{doc.pages} pages · ~{doc.sizeMb} MB</span>
+                          <span className="text-secondary font-semibold">Download →</span>
+                        </div>
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Right rail */}
+            <div className="lg:col-span-1">
+              <div className="lg:sticky lg:top-24">
+                <div className="bg-card border rounded-lg shadow-sm p-6">
+                  <h3 className="text-xl font-bold text-foreground mb-1">Quick Download</h3>
+                  <p className="text-sm text-muted-foreground mb-5">Most homeowners start with the family overview.</p>
+
+                  <a
+                    href={primaryUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download={primary.filename}
+                    onClick={() =>
+                      trackButtonClick({
+                        buttonName: "Bosch IDS Family Overview Download",
+                        buttonLocation: "Bosch Catalog - Sidebar",
+                        destinationUrl: primaryUrl,
+                      })
+                    }
+                  >
+                    <Button variant="secondary" className="w-full font-semibold mb-3">
+                      <Download className="w-4 h-4" />
+                      Download IDS Family Overview
+                    </Button>
+                  </a>
+
+                  <a
+                    href={primaryUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() =>
+                      trackButtonClick({
+                        buttonName: "Bosch IDS Family Overview View Online",
+                        buttonLocation: "Bosch Catalog - Sidebar",
+                        destinationUrl: primaryUrl,
+                      })
+                    }
+                  >
+                    <Button variant="outline" className="w-full font-semibold border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+                      <ExternalLink className="w-4 h-4" />
+                      View Online
+                    </Button>
+                  </a>
+
+                  <hr className="my-6 border-border" />
+
+                  <p className="text-sm font-semibold text-foreground mb-3">More documents</p>
+                  <div className="space-y-2 text-sm">
+                    {secondaries.map((doc) => {
+                      const url = boschDocUrl(doc.filename);
+                      return (
+                        <a
+                          key={doc.id}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download={doc.filename}
+                          onClick={() =>
+                            trackButtonClick({
+                              buttonName: `Bosch ${doc.title} Download`,
+                              buttonLocation: "Bosch Catalog - Sidebar More",
+                              destinationUrl: url,
+                            })
+                          }
+                          className="flex items-center gap-2 text-secondary hover:underline font-medium"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          {doc.title}
+                        </a>
+                      );
+                    })}
+                  </div>
+
+                  <hr className="my-6 border-border" />
+
+                  <p className="text-sm font-semibold text-foreground mb-3">Considering a Bosch system?</p>
+                  <div className="space-y-2 text-sm">
+                    <Link
+                      to="/estimate/ducted"
+                      className="block text-secondary hover:underline font-medium"
+                      onClick={() =>
+                        trackButtonClick({
+                          buttonName: "Get a free estimate (Bosch sidebar)",
+                          buttonLocation: "Bosch Catalog - Sidebar",
+                          destinationUrl: "/estimate/ducted",
+                        })
+                      }
+                    >
+                      Get a free estimate →
+                    </Link>
+                    <Link
+                      to="/contact"
+                      className="block text-secondary hover:underline font-medium"
+                      onClick={() =>
+                        trackButtonClick({
+                          buttonName: "Contact us (Bosch sidebar)",
+                          buttonLocation: "Bosch Catalog - Sidebar",
+                          destinationUrl: "/contact",
+                        })
+                      }
+                    >
+                      Contact us →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PDF embed */}
+      <section className="bg-muted/30 py-12">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-2">Browse the family overview</h2>
+          <p className="text-sm text-muted-foreground text-center mb-8">
+            This is the IDS Family overview. Spec sheets for individual tiers are available in the Documents section above.
+          </p>
+          <div className="max-w-5xl mx-auto">
+            <div className="aspect-[8.5/11] w-full rounded-lg border shadow-md overflow-hidden bg-background">
+              <iframe src={primaryUrl} className="w-full h-full" title="Bosch IDS Family Overview" />
+            </div>
+            <p className="text-sm text-muted-foreground text-center mt-4">
+              Having trouble viewing? Use the download buttons above.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Bottom CTA */}
+      <section className="bg-primary text-primary-foreground py-12 text-center">
+        <div className="container mx-auto px-4 max-w-2xl">
+          <h2 className="text-3xl font-bold mb-3">Quiet, efficient, and built to last.</h2>
+          <p className="text-primary-foreground/80 mb-8">
+            If you want a heat pump that runs steadier, sounds quieter, and shows up on your electric bill in a good way — Bosch IDS is one of the best inverter systems on the market. We'll help you pick the right tier for your home.
+          </p>
+          <BottomCTAButtons trackButtonClick={trackButtonClick} location="Bosch Catalog - Bottom CTA" estimatePath="/estimate/ducted" secondaryLabel="Contact Us" secondaryPath="/contact" />
         </div>
       </section>
     </>
