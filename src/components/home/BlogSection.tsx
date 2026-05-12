@@ -65,7 +65,7 @@ const BlogSection = () => {
             // Loading skeletons
             Array.from({ length: 4 }).map((_, index) => (
               <Card key={index} className="overflow-hidden bg-card h-full">
-                <Skeleton className="w-full h-40" />
+                <Skeleton className="w-full aspect-video" />
                 <CardContent className="p-4">
                   <Skeleton className="h-4 w-full mb-2" />
                   <Skeleton className="h-4 w-3/4 mb-3" />
@@ -85,14 +85,14 @@ const BlogSection = () => {
               >
                 <Link to={`/blog/${post.slug}`}>
                   <Card className="overflow-hidden hover-lift group bg-card h-full">
-                    <div className="relative overflow-hidden">
+                    <div className="relative overflow-hidden aspect-video">
                       <img
                         src={cardImageUrl(post.featured_image)}
                         alt={post.title}
-                        className="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         loading="lazy"
                         width={600}
-                        height={240}
+                        height={338}
                         onError={(e) => {
                           e.currentTarget.src = '/placeholder.svg';
                         }}
