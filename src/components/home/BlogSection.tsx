@@ -65,7 +65,7 @@ const BlogSection = () => {
             // Loading skeletons
             Array.from({ length: 4 }).map((_, index) => (
               <Card key={index} className="overflow-hidden bg-card h-full">
-                <Skeleton className="w-full h-40" />
+                <Skeleton className="w-full aspect-video" />
                 <CardContent className="p-4">
                   <Skeleton className="h-4 w-full mb-2" />
                   <Skeleton className="h-4 w-3/4 mb-3" />
