@@ -1,6 +1,6 @@
 import { Link, Navigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Download, ExternalLink, CheckCircle2, ChevronRight, Info, MapPin } from "lucide-react";
+import { Download, ExternalLink, CheckCircle2, ChevronRight, Info, MapPin, FileText } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,17 @@ const KNOWN_CATALOGS: Record<string, CatalogMeta> = {
     badgeStyle: "outline",
     breadcrumbLabel: "Daikin ONE Touch Thermostat",
   },
+  "bosch-ids-family": {
+    title: "Bosch IDS — Inverter Ducted Split Family",
+    brand: "Bosch",
+    pdfFile: "bosch-ids-family.pdf",
+    pages: "24 pages",
+    sizeMb: "~22 MB",
+    updated: "2025 Catalog",
+    badge: "Inverter Specialist",
+    badgeStyle: "outline",
+    breadcrumbLabel: "Bosch IDS Family",
+  },
 };
 
 const MITSUBISHI_SECTIONS = [
@@ -91,6 +102,8 @@ const CatalogDetail = () => {
       document.title = "Goodman SD Side Discharge Catalog | Truficient HVAC";
     } else if (slug === "daikin-one-touch-thermostat") {
       document.title = "Daikin ONE Touch Smart Thermostat | Truficient HVAC";
+    } else if (slug === "bosch-ids-family") {
+      document.title = "Bosch IDS Inverter Heat Pump Catalog | Truficient HVAC";
     } else {
       document.title = `${catalog.brand === "Mitsubishi Electric" ? "Mitsubishi M & P Series Catalog 2026" : catalog.title} | Truficient HVAC`;
     }
@@ -98,6 +111,7 @@ const CatalogDetail = () => {
 
   const isGoodman = slug === "goodman-sd-side-discharge";
   const isDaikin = slug === "daikin-one-touch-thermostat";
+  const isBosch = slug === "bosch-ids-family";
 
   return (
     <>
@@ -118,7 +132,9 @@ const CatalogDetail = () => {
           </ol>
         </nav>
 
-        {isGoodman ? (
+        {isBosch ? (
+          <BoschContent pdfUrl={pdfUrl} trackButtonClick={trackButtonClick} catalog={catalog} />
+        ) : isGoodman ? (
           <GoodmanContent pdfUrl={pdfUrl} trackButtonClick={trackButtonClick} catalog={catalog} />
         ) : isDaikin ? (
           <DaikinContent pdfUrl={pdfUrl} trackButtonClick={trackButtonClick} catalog={catalog} />
