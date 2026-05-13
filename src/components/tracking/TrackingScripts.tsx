@@ -116,11 +116,8 @@ export const TrackingScripts = () => {
                           location.pathname.startsWith('/landing/') ||
                           location.pathname.startsWith('/estimate/smart-group') ||
                           location.pathname.startsWith('/smart-group');
-    const shouldLoad = ghlChatWidget?.is_enabled && 
-                       ghlChatWidget.setting_value && 
-                       cookieConsent?.marketing &&
-                       !isAdminPage &&
-                       !isLandingPage;
+    // GHL chat widget temporarily disabled - building replacement chatbot engine
+    const shouldLoad = false;
 
     if (shouldLoad && !initializedRef.current.ghl) {
       // Load the widget
