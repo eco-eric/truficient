@@ -1,0 +1,54 @@
+# Truficient
+
+> Dallas–Fort Worth HVAC company specializing in high-efficiency residential and commercial heating, cooling, ductless mini-split, and heat pump installation, replacement, and service. TACLB77247C.
+
+Truficient serves the DFW metroplex with transparent online estimating, equipment scanning, and expert installation of Mitsubishi, Bosch, Trane, Daikin, Goodman, and other major HVAC brands. The site offers instant ducted and ductless quotes, equipment lookup, financing options, and educational content covering Dallas-specific topics like the urban heat island effect, ERCOT grid demand, and energy-efficient HVAC strategies.
+
+## Core Pages
+
+- [Home](/): Truficient HVAC overview, services, and instant estimate entry points.
+- [About](/about): Company background, certifications (TACLB77247C), and team.
+- [Contact](/contact): Phone, email, and contact form for the DFW service area.
+- [Careers](/careers): Open HVAC technician and installer positions.
+- [Gallery](/gallery): Recent installation projects across Dallas-Fort Worth.
+
+## Services
+
+- [Residential HVAC](/services/residential): Home heating, cooling, and indoor air quality.
+- [Commercial HVAC](/services/commercial): Light commercial system design and service.
+- [Ductless Mini-Split](/services/ductless): Single- and multi-zone ductless system installation.
+- [Heat Pump Advantage](/heat-pump-advantage): Why heat pumps win in Texas climates.
+- [Financing](/financing): Synchrony financing plans and payment options.
+
+## Estimators & Tools
+
+- [HVAC Estimate Hub](/hvac-estimate): Choose ducted or ductless online quoting.
+- [Ducted Estimator](/estimate/ducted): Step-by-step ducted system quote.
+- [Ductless Estimator](/estimate/ductless): Multi-zone ductless quote with discounts.
+- [Sizing Calculator](/estimators/sizing): Square-footage based system sizing.
+- [Cost Estimator](/estimators/cost): Ballpark replacement cost estimator.
+- [Savings Calculator](/estimators/savings): High-efficiency upgrade savings.
+- [Equipment Scanner](/scanner): Scan a unit's data plate for instant identification.
+- [Equipment Library](/equipment): Browse HVAC equipment specs and documentation.
+
+## Service Areas
+
+- [Service Areas Hub](/service-areas): All DFW areas served.
+- [Dallas](/service-areas/dallas-area): Dallas neighborhoods.
+- [North Dallas](/service-areas/north-dallas-area): Plano, Richardson, Addison.
+- [Frisco / McKinney](/service-areas/frisco-mckinney-area): North suburbs.
+- [Mid-Cities](/service-areas/mid-cities-area): Arlington, Grapevine, Bedford.
+- [South Dallas](/service-areas/south-dallas-area): South of downtown.
+
+## Content & Research
+
+- [Blog](/blog): HVAC guides, news, and Dallas-specific research.
+- [Dallas Urban Heat Island & HVAC](/dallas-urban-heat-island-effect-energy-hvac): UHI impact on cooling loads.
+- [ERCOT Grid Demand & HVAC](/dallas-hvac-ercot-grid-demand): How peak demand affects system selection.
+- [Summer Electricity Bills](/dallas-electricity-bill-summer-hvac): Cost drivers and mitigation.
+
+## Optional
+
+- [Privacy Policy](/privacy-policy)
+- [Terms of Service](/terms-of-service)
+- [Sitemap](/sitemap.xml)
