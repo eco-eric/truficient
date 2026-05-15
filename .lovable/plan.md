@@ -1,74 +1,89 @@
-# Blog Category Pages — PoC for `/category/hvac-maintenance`
+# Maintenance Contract Tracker — Phase 1 Plan
 
-Rebuilding the old WordPress `/category/{slug}` URLs as real React pages so they stop 404'ing and reactivate their existing crawl/link equity. This first pass ships **one** category end-to-end + the reusable template. Remaining 6 categories ship as a v2 batch after verification.
+Module under `/admin/contracts` for tracking residential & commercial maintenance agreements, linked to existing CRM customers, locations, and WorkEdge property records.
 
----
+## 1. Database (single migration)
 
-## Step 1 — Database migration: `blog_categories` table
+**Tables**
+- `crm_maintenance_contracts` — full field list per spec (contract_number auto `MNT-YYYY-####`, segment enum, status enum, billing_model enum, dates, pricing, visit cadence, filter rollup fields, notes).
+- `crm_contract_filters` — per-contract filter sizes with quantity, MERV, last/next dates.
+- `crm_contract_visits` — visit log linked to `crm_jobs` and `crm_team_members`.
 
-Create `public.blog_categories` with:
-- Identity: `slug` (unique), `name`, `status` (published/draft)
-- Hero: `hero_eyebrow`, `hero_heading`, `hero_subheading`, `hero_image`
-- Body: `intro_html`, `what_we_cover` (jsonb array of `{title, body}`), `faqs` (jsonb array of `{question, answer}`)
-- CTA: `cta_heading`, `cta_body`, `cta_button_label`, `cta_button_href`
-- Related selectors: `related_post_categories` (text[]), `related_service_links` (jsonb array of `{label, href}`)
-- Meta: `display_order`, timestamps
+**Enums**
+- `maintenance_segment` (residential, commercial)
+- `maintenance_status` (active, pending, paused, expired, cancelled)
+- `maintenance_billing_model` (paid_yearly, paid_monthly, pay_per_visit)
+- `maintenance_visit_type` (spring_tune_up, fall_tune_up, quarterly, filter_only, other)
 
-Plus:
-- `updated_at` trigger
-- RLS enabled — public SELECT for `status='published'`, authenticated full CRUD (mirrors existing `blog_posts` pattern)
-- Indexes on `slug` and `status`
+**Functions / Triggers**
+- `generate_contract_number()` → `MNT-YYYY-####` (mirrors existing job/estimate generators).
+- `set_contract_number()` BEFORE INSERT trigger.
+- `update_updated_at_column` reused for updated_at.
+- `recalculate_contract_filter_rollup()` trigger on `crm_contract_filters` (insert/update/delete) → updates parent `next_filter_due` = min of children, `last_filter_change` = max.
+- `recalculate_contract_next_visit()` trigger on `crm_contract_visits` insert → updates `last_visit_date`, `next_visit_due = last_visit_date + (365/visits_per_year)`.
+- Per-row default for `next_visit_due` set in app dialog when no visits yet (`start_date + 30 days`).
+- `notify_contract_events()` daily trigger replaced by simple insertion into `admin_notifications` from a future cron — Phase 1 inserts notification when contract is created and when a visit is logged. (T-30/T-14 cron deferred to a follow-up; spec allows hooking into existing center.)
 
-Types regenerate automatically post-migration.
+**RLS** — Enable on all 3 tables. Policies use `has_role(auth.uid(), 'admin')` / `'super_admin'` / `'manager'` for full access; `'sales'` and `'tech'` get SELECT. Mirrors patterns already used for `crm_jobs`.
 
-## Step 2 — New file: `src/pages/BlogCategory.tsx`
+## 2. Routes & Navigation
 
-Mirrors conventions from `Blog.tsx` / `BlogPost.tsx`:
-- Wrapped in `<Header />` / `<Footer />`
-- Uses `usePageSEO()` for meta + global HVACBusiness JSON-LD
-- Fetches the category by slug from `blog_categories`
-- Fetches related blog posts via `.overlaps('category', related_post_categories)` (handles the multi-category text[] migration)
-- Sections: Hero → Intro (HTML) → "What we cover" cards → Articles grid → FAQ (with `data-faq-question` / `data-faq-answer` attrs to satisfy the prerender FAQ-hash check) → Related services → Branded CTA with phone `214-238-4349`
-- Loading + 404-style "Category not found" states
+- Add route `/admin/contracts` and `/admin/contracts/:id` in admin router.
+- Add sidebar entry "Maintenance Contracts" (Wrench icon) in admin nav, near Jobs.
 
-## Step 3 — Route wiring in `src/App.tsx`
+## 3. List Page — `src/pages/admin/MaintenanceContracts.tsx`
 
-- Add lazy import next to `Blog` / `BlogPost` (line ~49):
-  ```ts
-  const BlogCategory = lazy(() => import("./pages/BlogCategory"));
-  ```
-- Add route **before** the `/:locationSlug` catch-all (line 223), placed at line 208:
-  ```tsx
-  { path: "/category/:slug", element: <BlogCategory /> },
-  ```
+- Tabs: All / Residential / Commercial
+- Search (customer name, address, contract number) + filters (status, billing_model, due-soon ≤30 days)
+- "+ New Contract" opens dialog
+- KPI strip: Active (residential/commercial split), visits due this month, filters due this month, renewals next 60 days, ARR sum
+- Table columns per spec with red/amber badges driven by date math helpers
+- Sticky header row using existing opaque-background pattern
 
-## Step 4 — Seed `hvac-maintenance` content
+## 4. Detail Page — `src/pages/admin/MaintenanceContractDetail.tsx`
 
-Two upserts (idempotent via `ON CONFLICT`):
+Header with customer/address/contract#/status+segment badges, "View on WorkEdge" link if `workedge_property_id` present.
 
-1. **`blog_categories`** row for `hvac-maintenance` — full hero copy, 6 "what we cover" cards (coil cleaning, refrigerant verification, static pressure, capacitor/contactor, drain line, honest replacement timing), 4 FAQs, CTA pointing to `/services/residential`, `related_post_categories = ['Maintenance', 'HVAC Tips', 'Seasonal Advice']`, 3 related service links.
+Tabs (Phase 1 only):
+1. **Overview** — editable form: dates, billing, price, visits/year, auto-renew toggle, notes
+2. **Visits** — table of `crm_contract_visits` + "Schedule next visit" button (creates `crm_jobs` row pre-filled with customer/location/maintenance type)
+3. **Filters** — list of filter rows w/ inline "Log filter change" action (sets last_changed=today, next_due=today+interval)
 
-2. **`page_seo`** row for `/category/hvac-maintenance` so the build-time prerender script writes proper `<head>` tags (title, description, canonical with trailing slash, og:*, robots `index, follow`).
+Equipment / Billing tabs render "Coming in Phase 2" placeholders.
 
-## Step 5 — Verification (post-deploy)
+## 5. New Contract Dialog — `NewContractDialog.tsx`
 
-- Page loads cleanly at `https://truficient.com/category/hvac-maintenance`
-- Source view shows page-specific `<title>`, meta description, canonical, og:* tags, JSON-LD
-- `prerender-manifest.json` includes the new route (count +1)
-- Old WP URL no longer 404s
-- Visual parity with `/blog`
+Stepper:
+1. Customer picker (existing CustomerSelector pattern) or "Create new"
+2. Location picker filtered to selected customer (or "Add new" via existing `AddLocationDialog`)
+3. Segment toggle — applies defaults:
+   - Residential: visits_per_year=2, billing=paid_yearly, price=$189
+   - Commercial: visits_per_year=4, billing=paid_yearly, price blank
+4. Terms: start/end dates (auto end = start+12mo), billing model, price, visits/year, auto-renew
+5. Filters: add rows (size, qty, MERV, interval days)
+6. Save → insert contract + filter rows; optionally insert first scheduled `crm_jobs` row
 
----
+## 6. Hooks & Helpers
 
-## Out of scope (v2, after PoC sign-off)
+- `src/hooks/useMaintenanceContracts.ts` — list query w/ filters, KPI aggregator, single-contract query, mutations (create/update/cancel), invalidates after writes (per project preference).
+- `src/lib/maintenance/dueDateUtils.ts` — `computeNextVisitDue`, `computeNextFilterDue`, `getDueBadge(date)` returning `red|amber|none`.
+- All date math in CST per project core rule (use existing `cstTimezone` helpers).
 
-- 6 more category rows (zoning, smart-home-hvac, sustainable-home, hvac-basics-fundamentals, allergies, home-improvement)
-- Redirects for junk legacy categories (`/category/daikin`, `/category/trane/feed`, `/category/city/oak-cliff`)
-- Sitemap regeneration
+## 7. Notifications
 
-## Files touched
+On contract insert: admin_notifications row "New maintenance contract created" linking to detail.
+On visit logged: "Maintenance visit logged for {customer}".
+T-30/T-14/overdue cron is deferred (noted in code TODO).
 
-- **NEW** `src/pages/BlogCategory.tsx`
-- **EDIT** `src/App.tsx` (lazy import + 1 route)
-- **MIGRATION** create `blog_categories` table + RLS + trigger + indexes
-- **DATA** upsert 1 row into `blog_categories`, 1 row into `page_seo`
+## 8. Out of Scope (Phase 2)
+
+Equipment-tab WorkEdge live pull, Billing-tab Otto Pay history, Bach tools, bulk renewals, customer portal view, scheduled cron notifications.
+
+## Technical Details
+
+- All new tables prefixed `crm_` and follow `created_at/updated_at` + trigger conventions from existing schema.
+- RLS uses `has_role()` (project core rule); no role data on profile tables.
+- Type definitions added to `src/types/maintenanceContracts.ts` (mirrors `src/types/crmLocations.ts` style).
+- Status auto-flip to `expired` handled via a SQL function called from the list query (cheap) plus a nightly cron later.
+- Cache invalidation explicitly awaited after mutations (project core rule).
+- UI uses semantic tokens only (Golden Amber #FFB547, Green #A5A983, Navy #002244 already in tokens).

@@ -999,6 +999,123 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_contract_filters: {
+        Row: {
+          contract_id: string
+          created_at: string
+          id: string
+          interval_days: number
+          last_changed: string | null
+          merv_rating: string | null
+          next_due: string | null
+          notes: string | null
+          quantity: number
+          size: string
+          updated_at: string
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          id?: string
+          interval_days?: number
+          last_changed?: string | null
+          merv_rating?: string | null
+          next_due?: string | null
+          notes?: string | null
+          quantity?: number
+          size: string
+          updated_at?: string
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          id?: string
+          interval_days?: number
+          last_changed?: string | null
+          merv_rating?: string | null
+          next_due?: string | null
+          notes?: string | null
+          quantity?: number
+          size?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_contract_filters_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "crm_maintenance_contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_contract_visits: {
+        Row: {
+          contract_id: string
+          created_at: string
+          created_by: string | null
+          filters_changed: boolean
+          id: string
+          job_id: string | null
+          notes: string | null
+          technician_id: string | null
+          updated_at: string
+          visit_date: string
+          visit_type: Database["public"]["Enums"]["maintenance_visit_type"]
+          workedge_media_url: string | null
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          created_by?: string | null
+          filters_changed?: boolean
+          id?: string
+          job_id?: string | null
+          notes?: string | null
+          technician_id?: string | null
+          updated_at?: string
+          visit_date?: string
+          visit_type?: Database["public"]["Enums"]["maintenance_visit_type"]
+          workedge_media_url?: string | null
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          created_by?: string | null
+          filters_changed?: boolean
+          id?: string
+          job_id?: string | null
+          notes?: string | null
+          technician_id?: string | null
+          updated_at?: string
+          visit_date?: string
+          visit_type?: Database["public"]["Enums"]["maintenance_visit_type"]
+          workedge_media_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_contract_visits_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "crm_maintenance_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_contract_visits_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "crm_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_contract_visits_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "crm_team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_customer_contacts: {
         Row: {
           contact_type: string
@@ -2099,6 +2216,105 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_maintenance_contracts: {
+        Row: {
+          auto_renew: boolean
+          billing_model: Database["public"]["Enums"]["maintenance_billing_model"]
+          contract_number: string
+          contract_price: number | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          end_date: string | null
+          filter_change_interval_days: number
+          id: string
+          last_filter_change: string | null
+          last_visit_date: string | null
+          location_id: string | null
+          next_filter_due: string | null
+          next_visit_due: string | null
+          notes: string | null
+          per_visit_price: number | null
+          renewal_term_months: number
+          segment: Database["public"]["Enums"]["maintenance_segment"]
+          start_date: string
+          status: Database["public"]["Enums"]["maintenance_status"]
+          tier: string | null
+          updated_at: string
+          visits_per_year: number
+          workedge_property_id: string | null
+        }
+        Insert: {
+          auto_renew?: boolean
+          billing_model?: Database["public"]["Enums"]["maintenance_billing_model"]
+          contract_number: string
+          contract_price?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          end_date?: string | null
+          filter_change_interval_days?: number
+          id?: string
+          last_filter_change?: string | null
+          last_visit_date?: string | null
+          location_id?: string | null
+          next_filter_due?: string | null
+          next_visit_due?: string | null
+          notes?: string | null
+          per_visit_price?: number | null
+          renewal_term_months?: number
+          segment?: Database["public"]["Enums"]["maintenance_segment"]
+          start_date?: string
+          status?: Database["public"]["Enums"]["maintenance_status"]
+          tier?: string | null
+          updated_at?: string
+          visits_per_year?: number
+          workedge_property_id?: string | null
+        }
+        Update: {
+          auto_renew?: boolean
+          billing_model?: Database["public"]["Enums"]["maintenance_billing_model"]
+          contract_number?: string
+          contract_price?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          end_date?: string | null
+          filter_change_interval_days?: number
+          id?: string
+          last_filter_change?: string | null
+          last_visit_date?: string | null
+          location_id?: string | null
+          next_filter_due?: string | null
+          next_visit_due?: string | null
+          notes?: string | null
+          per_visit_price?: number | null
+          renewal_term_months?: number
+          segment?: Database["public"]["Enums"]["maintenance_segment"]
+          start_date?: string
+          status?: Database["public"]["Enums"]["maintenance_status"]
+          tier?: string | null
+          updated_at?: string
+          visits_per_year?: number
+          workedge_property_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_maintenance_contracts_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_maintenance_contracts_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "crm_locations"
             referencedColumns: ["id"]
           },
         ]
@@ -6092,6 +6308,7 @@ export type Database = {
       }
     }
     Functions: {
+      generate_contract_number: { Args: never; Returns: string }
       generate_estimate_number: { Args: never; Returns: string }
       generate_job_number: { Args: never; Returns: string }
       get_effective_rate: {
@@ -6166,6 +6383,23 @@ export type Database = {
         | "labor"
         | "admin_cost"
         | "custom"
+      maintenance_billing_model:
+        | "paid_yearly"
+        | "paid_monthly"
+        | "pay_per_visit"
+      maintenance_segment: "residential" | "commercial"
+      maintenance_status:
+        | "active"
+        | "pending"
+        | "paused"
+        | "expired"
+        | "cancelled"
+      maintenance_visit_type:
+        | "spring_tune_up"
+        | "fall_tune_up"
+        | "quarterly"
+        | "filter_only"
+        | "other"
       material_category:
         | "refrigerant"
         | "copper"
@@ -6336,6 +6570,26 @@ export const Constants = {
         "labor",
         "admin_cost",
         "custom",
+      ],
+      maintenance_billing_model: [
+        "paid_yearly",
+        "paid_monthly",
+        "pay_per_visit",
+      ],
+      maintenance_segment: ["residential", "commercial"],
+      maintenance_status: [
+        "active",
+        "pending",
+        "paused",
+        "expired",
+        "cancelled",
+      ],
+      maintenance_visit_type: [
+        "spring_tune_up",
+        "fall_tune_up",
+        "quarterly",
+        "filter_only",
+        "other",
       ],
       material_category: [
         "refrigerant",
