@@ -106,6 +106,8 @@ const AdminLeadSourcesConfig = lazy(() => import("./pages/admin/LeadSourcesConfi
 const AdminCampaignTagsConfig = lazy(() => import("./pages/admin/CampaignTagsConfig"));
 const AdminJobs = lazy(() => import("./pages/admin/Jobs"));
 const AdminJobDetail = lazy(() => import("./pages/admin/JobDetail"));
+const AdminMaintenanceContracts = lazy(() => import("./pages/admin/MaintenanceContracts"));
+const AdminMaintenanceContractDetail = lazy(() => import("./pages/admin/MaintenanceContractDetail"));
 const AdminJobTypesConfig = lazy(() => import("./pages/admin/JobTypesConfig"));
 const AdminTeams = lazy(() => import("./pages/admin/Teams"));
 const AdminWorkEdgeProjects = lazy(() => import("./pages/admin/WorkEdgeProjects"));
