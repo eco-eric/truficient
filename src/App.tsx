@@ -31,6 +31,7 @@ const SmartGroupEntry = lazy(() => import("./pages/estimators/SmartGroupEntry"))
 const Contact = lazy(() => import("./pages/Contact"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const CookiePreferences = lazy(() => import("./pages/CookiePreferences"));
 const DallasArea = lazy(() => import("./pages/service-areas/DallasArea"));
 const NorthDallasArea = lazy(() => import("./pages/service-areas/NorthDallasArea"));
 const FriscoMcKinneyArea = lazy(() => import("./pages/service-areas/FriscoMcKinneyArea"));
@@ -229,6 +230,7 @@ const router = createBrowserRouter([
       { path: "/privacy-policy.html", element: <PrivacyPolicy /> },
       { path: "/terms-of-service", element: <TermsOfService /> },
       { path: "/terms-of-service.html", element: <TermsOfService /> },
+      { path: "/cookie-preferences", element: <CookiePreferences /> },
       
       { path: "/blog", element: <Blog /> },
       { path: "/blog.html", element: <Blog /> },
