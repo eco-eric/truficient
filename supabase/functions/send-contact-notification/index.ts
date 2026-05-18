@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
       const html = renderMergeTags(internalTpl.body_html || '', vars);
       const ccList = (internalTpl.cc_emails || '')
         .split(',')
-        .map((e) => e.trim())
+        .map((e: string) => e.trim())
         .filter(Boolean);
 
       // First CC becomes the primary "to" if no explicit list — else use all as recipients
@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
       const html = renderMergeTags(customerTpl.body_html || '', vars);
       const ccList = (customerTpl.cc_emails || '')
         .split(',')
-        .map((e) => e.trim())
+        .map((e: string) => e.trim())
         .filter(Boolean);
 
       sends.push(
