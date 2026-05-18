@@ -1,15 +1,10 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useButtonTracking } from '@/hooks/useButtonTracking';
+import { LandingPageForm } from '@/components/forms/LandingPageForm';
 import LandingPageShell from './components/LandingPageShell';
 import { useCampaignSource } from './components/useCampaignSource';
 
 export default function CampaignLandingPage() {
-  const { trackButtonClick } = useButtonTracking();
-  const navigate = useNavigate();
-  const { slug, platform, campaignName } = useCampaignSource();
+  const { platform, campaignName } = useCampaignSource();
 
   useEffect(() => {
     // Facebook Pixel
@@ -32,41 +27,31 @@ export default function CampaignLandingPage() {
     }
   }, [platform, campaignName]);
 
-  const handleCTAClick = () => {
-    trackButtonClick({
-      buttonName: 'Campaign CTA',
-      buttonLocation: `Landing Page - ${slug}`,
-      destinationUrl: '/scanner',
-    });
-    navigate('/scanner');
-  };
-
   return (
     <LandingPageShell>
-      {/* Placeholder hero — replace with campaign-specific content */}
-      <section className="py-24 md:py-32">
-        <div className="container mx-auto px-4 text-center max-w-2xl">
-          <div className="inline-block px-3 py-1 rounded-full bg-secondary/10 text-secondary text-sm font-medium mb-6">
-            {platform === 'google' ? 'Google Ads' : 'Facebook'} Campaign
+      <section className="relative py-20 md:py-28 bg-gradient-to-br from-[hsl(var(--primary))] via-[hsl(var(--primary))] to-[hsl(var(--primary)/0.85)] text-primary-foreground overflow-hidden">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <div className="grid md:grid-cols-2 gap-10 items-center">
+            <div>
+              <div className="inline-block px-3 py-1 rounded-full bg-white/15 backdrop-blur text-sm font-medium mb-6">
+                {platform === 'google' ? 'Google Ads' : 'Facebook'} Campaign
+              </div>
+
+              <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
+                {campaignName}
+              </h1>
+
+              <p className="text-lg md:text-xl text-primary-foreground/90 mb-6">
+                Get a transparent HVAC estimate from a Mitsubishi Diamond Contractor serving DFW homeowners. No callbacks required.
+              </p>
+            </div>
+
+            <div id="get-info" className="bg-white text-foreground rounded-xl shadow-2xl p-6 md:p-8">
+              <h2 className="text-2xl font-semibold mb-2">Get Your Free Estimate</h2>
+              <p className="text-sm text-muted-foreground mb-6">Tell us about your project — we'll be in touch shortly.</p>
+              <LandingPageForm slug="campaign-default" />
+            </div>
           </div>
-
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
-            Campaign: <span className="text-secondary">{campaignName}</span>
-          </h1>
-
-          <p className="text-lg text-muted-foreground mb-10">
-            This is a placeholder landing page. Update the content for this campaign in{' '}
-            <code className="text-sm bg-muted px-1.5 py-0.5 rounded">src/pages/landing/CampaignLandingPage.tsx</code>
-          </p>
-
-          <Button
-            size="lg"
-            onClick={handleCTAClick}
-            className="text-lg px-10 py-7 group bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold shadow-xl"
-          >
-            Get Started
-            <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </Button>
         </div>
       </section>
     </LandingPageShell>

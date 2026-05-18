@@ -77,7 +77,7 @@ export default function SmartGroupMarchGoogleLanding() {
 
       {/* NAV */}
       <nav className="sg-g-nav">
-        <a href="https://truficient.com" className="sg-g-logo">Truf<span>icient</span></a>
+        <span className="sg-g-logo">Truf<span>icient</span></span>
         <div className="sg-g-nav-right">
           <a href="tel:2142384349" className="sg-g-nav-phone">📞 (214) 238-4349</a>
           <Link to={ctaUrl} className="sg-g-nav-cta" onClick={() => handleCTA("Nav CTA")}>Get My Price →</Link>
