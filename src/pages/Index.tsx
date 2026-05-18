@@ -21,8 +21,8 @@ const Index = () => {
       <Header />
       <main>
         <HeroSection />
-        <FeaturesBar />
         <EstimatorCards />
+        <FeaturesBar />
         <ServiceAreaBanner />
         <MitsubishiSection />
         <ServicesOverview />

@@ -38,9 +38,9 @@ const HeroSection = () => {
 
   const handleScheduleClick = () => {
     trackButtonClick({
-      buttonName: 'Schedule Service',
+      buttonName: 'Get Instant Price',
       buttonLocation: 'Hero Section',
-      destinationUrl: '/contact',
+      destinationUrl: '/estimate',
     });
   };
 
@@ -64,15 +64,15 @@ const HeroSection = () => {
           >
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
               Your Comfort,<br />
-              <span className="text-primary">Our Assurance.</span>
+              <span className="text-primary">Priced Online.</span>
             </h1>
             <p className="text-lg md:text-xl text-foreground/70 mb-8 max-w-lg">
-              Maximize Comfort, Minimize Costs – Your Energy-Efficient HVAC Experts in DFW!
+              Transparent HVAC pricing for DFW homeowners. See your price in 2 minutes — no callback required.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/contact" onClick={handleScheduleClick}>
+              <Link to="/estimate" onClick={handleScheduleClick}>
                 <Button size="lg" className="bg-secondary hover:bg-gold-dark text-secondary-foreground font-semibold text-lg px-8">
-                  Schedule Service
+                  Get Instant Price
                 </Button>
               </Link>
               <a href="tel:214-238-4349" onClick={handleCallClick}>
@@ -82,6 +82,7 @@ const HeroSection = () => {
                 </Button>
               </a>
             </div>
+            <p className="text-sm text-foreground/60 mt-3">Real prices online · 2-minute estimate · No sales call required</p>
           </motion.div>
 
           {/* Right Image */}
