@@ -169,7 +169,7 @@ export default function SmartGroupMarchV2Landing() {
 
       {/* NAV */}
       <nav className="v2-nav">
-        <a href="https://truficient.com" className="v2-logo">Truf<span>icient</span></a>
+        <span className="v2-logo">Truf<span>icient</span></span>
         <a href="tel:2142384349" className="v2-nav-phone">📞 (214) 238-4349</a>
       </nav>
 
