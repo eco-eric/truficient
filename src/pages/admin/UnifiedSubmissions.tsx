@@ -343,12 +343,21 @@ const UnifiedSubmissions = () => {
   }, [allSubmissions, sourceFilter, statusFilter, searchQuery]);
 
   // Status update mutations
+  const onStatusError = (err: unknown) => {
+    console.error("Status update failed:", err);
+    toast.error("Couldn't update status", {
+      description: err instanceof Error ? err.message : "Please try again.",
+    });
+  };
+  const onStatusSuccess = () => toast.success("Status updated");
+
   const updateContactStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await supabase.from("contact_submissions").update({ status }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["contact_submissions"] }),
+    onSuccess: () => { onStatusSuccess(); queryClient.invalidateQueries({ queryKey: ["contact_submissions"] }); },
+    onError: onStatusError,
   });
 
   const updateLandingPageStatus = useMutation({
@@ -356,7 +365,8 @@ const UnifiedSubmissions = () => {
       const { error } = await supabase.from("landing_page_submissions").update({ status }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["landing_page_submissions"] }),
+    onSuccess: () => { onStatusSuccess(); queryClient.invalidateQueries({ queryKey: ["landing_page_submissions"] }); },
+    onError: onStatusError,
   });
 
   const updateDuctlessStatus = useMutation({
@@ -364,7 +374,8 @@ const UnifiedSubmissions = () => {
       const { error } = await supabase.from("ductless_estimate_submissions").update({ status }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ductless_estimate_submissions"] }),
+    onSuccess: () => { onStatusSuccess(); queryClient.invalidateQueries({ queryKey: ["ductless_estimate_submissions"] }); },
+    onError: onStatusError,
   });
 
   const updateDuctedStatus = useMutation({
@@ -372,12 +383,12 @@ const UnifiedSubmissions = () => {
       const { error } = await supabase.from("ducted_estimate_submissions").update({ status }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ducted_estimate_submissions"] }),
+    onSuccess: () => { onStatusSuccess(); queryClient.invalidateQueries({ queryKey: ["ducted_estimate_submissions"] }); },
+    onError: onStatusError,
   });
 
   const updateScannerStatus = useMutation({
     mutationFn: async ({ id, status, allEquipmentIds }: { id: string; status: string; allEquipmentIds?: string[] }) => {
-      // Update all equipment scans for this customer if we have the list
       const idsToUpdate = allEquipmentIds || [id];
       const { error } = await supabase
         .from("equipment_scans")
@@ -385,7 +396,8 @@ const UnifiedSubmissions = () => {
         .in("id", idsToUpdate);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["scanner_submissions"] }),
+    onSuccess: () => { onStatusSuccess(); queryClient.invalidateQueries({ queryKey: ["scanner_submissions"] }); },
+    onError: onStatusError,
   });
 
   const handleStatusChange = (submission: UnifiedSubmission, newStatus: string) => {
