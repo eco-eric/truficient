@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ export const getCookieConsent = (): CookiePreferences | null => {
 };
 
 const CookieConsent = () => {
+  const location = useLocation();
   const [showBanner, setShowBanner] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [preferences, setPreferences] = useState<CookiePreferences>({
@@ -31,30 +32,27 @@ const CookieConsent = () => {
     marketing: false,
   });
 
+  const isAdmin = location.pathname.startsWith('/admin');
+
   useEffect(() => {
+    if (isAdmin) return;
     const cookieConsent = getCookieConsent();
-    
+
     if (!cookieConsent) {
-      const timer = setTimeout(() => setShowBanner(true), 1000);
+      const timer = setTimeout(() => setShowBanner(true), 1500);
       return () => clearTimeout(timer);
     } else {
       setPreferences(cookieConsent);
     }
-  }, []);
+  }, [isAdmin]);
 
   const savePreferences = (prefs: CookiePreferences) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
-    // Dispatch event so TrackingScripts can react
     window.dispatchEvent(new CustomEvent('cookie-consent-updated', { detail: prefs }));
   };
 
   const handleAcceptAll = () => {
-    const allAccepted: CookiePreferences = {
-      essential: true,
-      analytics: true,
-      marketing: true,
-    };
-    
+    const allAccepted: CookiePreferences = { essential: true, analytics: true, marketing: true };
     setPreferences(allAccepted);
     savePreferences(allAccepted);
     setShowBanner(false);
@@ -66,12 +64,7 @@ const CookieConsent = () => {
   };
 
   const handleRejectAll = () => {
-    const essentialOnly: CookiePreferences = {
-      essential: true,
-      analytics: false,
-      marketing: false,
-    };
-    
+    const essentialOnly: CookiePreferences = { essential: true, analytics: false, marketing: false };
     setPreferences(essentialOnly);
     savePreferences(essentialOnly);
     setShowBanner(false);
@@ -79,150 +72,95 @@ const CookieConsent = () => {
 
   const handleTogglePreference = (key: keyof CookiePreferences) => {
     if (key === 'essential') return;
-    
-    setPreferences(prev => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
+    setPreferences(prev => ({ ...prev, [key]: !prev[key] }));
   };
+
+  if (isAdmin) return null;
 
   return (
     <AnimatePresence>
       {showBanner && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 pointer-events-none">
-          {/* Backdrop */}
-          <motion.div 
-            className="absolute inset-0 bg-black/50 pointer-events-auto"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          />
-          
-          {/* Cookie Banner */}
-          <motion.div 
-            className="relative w-full max-w-4xl bg-card rounded-lg shadow-2xl pointer-events-auto"
-            initial={{ y: '100%', opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '100%', opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          >
-            {/* Header */}
-            <div className="bg-primary text-primary-foreground px-6 py-4 rounded-t-lg">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold">Cookie Preferences</h3>
-                <button
-                  onClick={() => setShowBanner(false)}
-                  className="text-primary-foreground hover:text-primary-foreground/80 transition-colors"
-                  aria-label="Close cookie banner"
-                >
-                  <X className="w-6 h-6" />
-                </button>
+        <motion.div
+          className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border shadow-lg"
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 100, opacity: 0 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
+        >
+          {showDetails && (
+            <div className="max-w-6xl mx-auto px-4 pt-3 max-h-[60vh] overflow-y-auto">
+              <div className="space-y-2 pb-3 border-b border-border">
+                <div className="flex items-center justify-between rounded border border-border px-3 py-2">
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">Essential Cookies</h4>
+                    <p className="text-xs text-muted-foreground">Required for basic site functionality.</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Always Active</span>
+                </div>
+                <div className="flex items-center justify-between rounded border border-border px-3 py-2">
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">Analytics Cookies</h4>
+                    <p className="text-xs text-muted-foreground">Help us understand how visitors use the site.</p>
+                  </div>
+                  <Switch
+                    checked={preferences.analytics}
+                    onCheckedChange={() => handleTogglePreference('analytics')}
+                  />
+                </div>
+                <div className="flex items-center justify-between rounded border border-border px-3 py-2">
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">Marketing Cookies</h4>
+                    <p className="text-xs text-muted-foreground">Used to show you relevant ads.</p>
+                  </div>
+                  <Switch
+                    checked={preferences.marketing}
+                    onCheckedChange={() => handleTogglePreference('marketing')}
+                  />
+                </div>
               </div>
             </div>
+          )}
 
-            {/* Content */}
-            <div className="px-6 py-6">
-              <p className="text-card-foreground/80 mb-4">
-                We use cookies to enhance your browsing experience, analyze site traffic, and provide personalized content. 
-                By clicking "Accept All," you consent to our use of cookies. You can customize your preferences or learn more 
-                in our{' '}
-                <Link to="/privacy-policy" className="text-primary hover:underline font-semibold">
+          <div className="max-w-6xl mx-auto px-4 py-3">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <p className="text-sm text-card-foreground/80 pr-2">
+                We use cookies to improve your experience and analyze traffic.{' '}
+                <Link to="/privacy-policy" className="text-primary hover:underline font-medium">
                   Privacy Policy
-                </Link>.
+                </Link>
               </p>
 
-              {/* Cookie Details Toggle */}
-              {!showDetails ? (
-                <button
-                  onClick={() => setShowDetails(true)}
-                  className="text-primary hover:text-secondary font-semibold transition-colors mb-4"
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  size="sm"
+                  onClick={handleAcceptAll}
+                  className="bg-secondary hover:bg-secondary/90 text-secondary-foreground font-semibold"
                 >
-                  Customize Preferences →
-                </button>
-              ) : (
-                <div className="space-y-4 mb-6">
-                  {/* Essential Cookies */}
-                  <div className="border border-border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-bold text-foreground">Essential Cookies</h4>
-                      <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded">
-                        Always Active
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Required for basic site functionality, security, and navigation. These cannot be disabled.
-                    </p>
-                  </div>
-
-                  {/* Analytics Cookies */}
-                  <div className="border border-border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-bold text-foreground">Analytics Cookies</h4>
-                      <Switch
-                        checked={preferences.analytics}
-                        onCheckedChange={() => handleTogglePreference('analytics')}
-                      />
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Help us understand how visitors interact with our website to improve user experience (e.g., Google Analytics).
-                    </p>
-                  </div>
-
-                  {/* Marketing Cookies */}
-                  <div className="border border-border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-bold text-foreground">Marketing Cookies</h4>
-                      <Switch
-                        checked={preferences.marketing}
-                        onCheckedChange={() => handleTogglePreference('marketing')}
-                      />
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Allow us to show you relevant advertisements and measure campaign effectiveness.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3">
+                  Accept All
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleRejectAll} className="font-semibold">
+                  Reject All
+                </Button>
                 {showDetails ? (
-                  <>
-                    <Button
-                      onClick={handleAcceptSelected}
-                      className="flex-1 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold"
-                    >
-                      Save Preferences
-                    </Button>
-                    <Button
-                      onClick={handleRejectAll}
-                      variant="outline"
-                      className="flex-1 font-bold"
-                    >
-                      Reject All
-                    </Button>
-                  </>
+                  <Button size="sm" variant="ghost" onClick={handleAcceptSelected} className="font-semibold">
+                    Save Preferences
+                  </Button>
                 ) : (
-                  <>
-                    <Button
-                      onClick={handleAcceptAll}
-                      className="flex-1 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold"
-                    >
-                      Accept All
-                    </Button>
-                    <Button
-                      onClick={handleRejectAll}
-                      variant="outline"
-                      className="flex-1 font-bold"
-                    >
-                      Reject All
-                    </Button>
-                  </>
+                  <Button size="sm" variant="ghost" onClick={() => setShowDetails(true)} className="font-semibold">
+                    Customize
+                  </Button>
                 )}
+                <button
+                  onClick={handleRejectAll}
+                  className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                  aria-label="Close cookie banner"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             </div>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       )}
     </AnimatePresence>
   );
