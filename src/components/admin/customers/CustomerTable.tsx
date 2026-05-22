@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Table,
@@ -68,11 +69,27 @@ const statusColors: Record<string, string> = {
 
 export function CustomerTable({ onEdit, onDelete }: CustomerTableProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [sortField, setSortField] = useState<'created_at' | 'last_name'>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase
+        .from('crm_customers')
+        .update({ customer_status: status as Customer['customer_status'] })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_customers'] });
+      toast.success('Status updated');
+    },
+    onError: (e: Error) => toast.error(e.message || 'Failed to update status'),
+  });
 
   // Fetch lead sources for display names
   const { data: leadSources } = useQuery({
@@ -274,10 +291,24 @@ export function CustomerTable({ onEdit, onDelete }: CustomerTableProps) {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <Badge className={statusColors[customer.customer_status] || ''} variant="secondary">
-                      {customer.customer_status}
-                    </Badge>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Select
+                      value={customer.customer_status}
+                      onValueChange={(v) => updateStatusMutation.mutate({ id: customer.id, status: v })}
+                    >
+                      <SelectTrigger
+                        className={`h-7 w-[110px] border-0 px-2 text-xs font-medium capitalize focus:ring-0 focus:ring-offset-0 ${statusColors[customer.customer_status] || ''}`}
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="lead">Lead</SelectItem>
+                        <SelectItem value="prospect">Prospect</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="archived">Archived</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                     <TableCell className="capitalize">{customer.customer_type}</TableCell>
                     <TableCell>
