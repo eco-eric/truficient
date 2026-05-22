@@ -69,11 +69,27 @@ const statusColors: Record<string, string> = {
 
 export function CustomerTable({ onEdit, onDelete }: CustomerTableProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [sortField, setSortField] = useState<'created_at' | 'last_name'>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase
+        .from('crm_customers')
+        .update({ customer_status: status as Customer['customer_status'] })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_customers'] });
+      toast.success('Status updated');
+    },
+    onError: (e: Error) => toast.error(e.message || 'Failed to update status'),
+  });
 
   // Fetch lead sources for display names
   const { data: leadSources } = useQuery({
