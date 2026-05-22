@@ -291,10 +291,24 @@ export function CustomerTable({ onEdit, onDelete }: CustomerTableProps) {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <Badge className={statusColors[customer.customer_status] || ''} variant="secondary">
-                      {customer.customer_status}
-                    </Badge>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Select
+                      value={customer.customer_status}
+                      onValueChange={(v) => updateStatusMutation.mutate({ id: customer.id, status: v })}
+                    >
+                      <SelectTrigger
+                        className={`h-7 w-[110px] border-0 px-2 text-xs font-medium capitalize focus:ring-0 focus:ring-offset-0 ${statusColors[customer.customer_status] || ''}`}
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="lead">Lead</SelectItem>
+                        <SelectItem value="prospect">Prospect</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="archived">Archived</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                     <TableCell className="capitalize">{customer.customer_type}</TableCell>
                     <TableCell>
