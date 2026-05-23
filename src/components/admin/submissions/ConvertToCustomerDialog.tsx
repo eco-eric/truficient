@@ -214,6 +214,43 @@ export const ConvertToCustomerDialog = ({
     mutationFn: async (data: FormData) => {
       if (!submission) throw new Error('No submission data');
 
+      // 0. Check for existing customer (dedupe by email, then by name+phone, then exact name)
+      const normalizedPhone = (data.phone || '').replace(/\D/g, '').slice(-10);
+      const fullName = `${data.first_name} ${data.last_name || ''}`.trim();
+
+      let existing: { id: string; first_name: string | null; last_name: string | null; email: string | null } | null = null;
+
+      if (data.email) {
+        const { data: byEmail } = await supabase
+          .from('crm_customers')
+          .select('id, first_name, last_name, email')
+          .ilike('email', data.email)
+          .is('deleted_at', null)
+          .maybeSingle();
+        if (byEmail) existing = byEmail;
+      }
+
+      if (!existing && normalizedPhone.length === 10 && fullName) {
+        const { data: candidates } = await supabase
+          .from('crm_customers')
+          .select('id, first_name, last_name, email, phone')
+          .ilike('first_name', data.first_name)
+          .is('deleted_at', null);
+        const match = (candidates || []).find((c: any) => {
+          const cPhone = (c.phone || '').replace(/\D/g, '').slice(-10);
+          const cLast = (c.last_name || '').toLowerCase().trim();
+          return cPhone === normalizedPhone && cLast === (data.last_name || '').toLowerCase().trim();
+        });
+        if (match) existing = match as any;
+      }
+
+      if (existing) {
+        const err: any = new Error('DUPLICATE_CUSTOMER');
+        err.existingId = existing.id;
+        err.existingName = `${existing.first_name || ''} ${existing.last_name || ''}`.trim() || existing.email || 'this customer';
+        throw err;
+      }
+
       // 1. Create customer
       const { data: customer, error: customerError } = await supabase
         .from('crm_customers')
@@ -305,6 +342,7 @@ export const ConvertToCustomerDialog = ({
         });
       }
 
+      // 7. Mark submission as converted
       return customer.id;
     },
     onSuccess: (customerId) => {
@@ -315,9 +353,25 @@ export const ConvertToCustomerDialog = ({
       onSuccess?.();
       navigate(`/admin/customers/${customerId}`);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Conversion error:', error);
-      toast.error('Failed to convert submission');
+      if (error?.message === 'DUPLICATE_CUSTOMER' && error.existingId) {
+        toast.error(`Customer already exists: ${error.existingName}`, {
+          action: {
+            label: 'Open',
+            onClick: () => {
+              onOpenChange(false);
+              navigate(`/admin/customers/${error.existingId}`);
+            },
+          },
+          duration: 8000,
+        });
+        return;
+      }
+      const msg = error?.message || 'Failed to convert submission';
+      toast.error(msg.includes('customer_status_check')
+        ? 'Invalid status value. Please choose Lead, Prospect, Active, Inactive, or Archived.'
+        : `Failed to convert: ${msg}`);
     },
   });
 
@@ -381,7 +435,9 @@ export const ConvertToCustomerDialog = ({
                       <SelectContent>
                         <SelectItem value="lead">Lead</SelectItem>
                         <SelectItem value="prospect">Prospect</SelectItem>
-                        <SelectItem value="customer">Customer</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="archived">Archived</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
