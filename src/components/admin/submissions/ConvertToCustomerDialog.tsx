@@ -313,6 +313,7 @@ export const ConvertToCustomerDialog = ({
           .insert({
             customer_id: customer.id,
             stage_id: data.pipeline_stage_id,
+            title: data.pipeline_title?.trim() || null,
             estimated_value: data.estimated_value ? parseFloat(data.estimated_value) : null,
           });
 
