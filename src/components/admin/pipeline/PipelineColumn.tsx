@@ -35,16 +35,20 @@ interface PipelineEntry {
 
 interface PipelineColumnProps {
   stage: PipelineStage;
+  stages: PipelineStage[];
   entries: PipelineEntry[];
   onEditEntry: (entry: PipelineEntry) => void;
   onDeleteEntry: (entryId: string) => void;
+  onChangeStage: (entryId: string, newStageId: string, oldStageId: string) => void;
 }
 
 export const PipelineColumn = ({ 
   stage, 
+  stages,
   entries, 
   onEditEntry, 
-  onDeleteEntry 
+  onDeleteEntry,
+  onChangeStage,
 }: PipelineColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id: stage.id,
