@@ -179,6 +179,22 @@ export const PipelineCard = ({ entry, stages, onEdit, onDelete, onChangeStage }:
               {entry.probability}% likely
             </span>
           )}
+          {entry.created_at && (() => {
+            const days = differenceInDays(new Date(), new Date(entry.created_at));
+            const stale = days >= 14;
+            const warm = days >= 7;
+            return (
+              <span
+                className={cn(
+                  "text-[10px] ml-auto font-medium",
+                  stale ? "text-destructive" : warm ? "text-amber-600 dark:text-amber-500" : "text-muted-foreground"
+                )}
+                title={`Added ${format(new Date(entry.created_at), 'MMM d, yyyy')}`}
+              >
+                {days === 0 ? 'Today' : `${formatDistanceToNow(new Date(entry.created_at))} old`}
+              </span>
+            );
+          })()}
         </div>
 
         {/* Stage selector */}
