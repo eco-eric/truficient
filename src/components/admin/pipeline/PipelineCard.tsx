@@ -178,6 +178,7 @@ export const PipelineCard = ({ entry, stages, onEdit, onDelete, onChangeStage }:
               {entry.probability}% likely
             </span>
           )}
+        </div>
 
         {/* Stage selector */}
         <div className="mt-2" onPointerDown={(e) => e.stopPropagation()}>
