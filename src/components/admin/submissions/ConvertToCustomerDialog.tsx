@@ -55,6 +55,7 @@ const formSchema = z.object({
   // Pipeline
   add_to_pipeline: z.boolean().default(false),
   pipeline_stage_id: z.string().optional(),
+  pipeline_title: z.string().optional(),
   estimated_value: z.string().optional(),
 });
 
