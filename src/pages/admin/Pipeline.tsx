@@ -31,6 +31,7 @@ interface PipelineEntry {
   probability: number | null;
   expected_close_date: string | null;
   notes: string | null;
+  created_at: string;
   customer: {
     id: string;
     first_name: string | null;
