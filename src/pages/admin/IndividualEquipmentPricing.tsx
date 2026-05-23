@@ -20,7 +20,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { EquipmentDocumentsPanel } from '@/components/admin/equipment/EquipmentDocumentsPanel';
 import { useEquipmentDocumentCounts } from '@/hooks/useEquipmentDocumentCounts';
 
-const EQUIPMENT_TYPES = ['Air Handler', 'Condenser', 'Furnace', 'Heat Pump', 'Coil', 'Mini-Split', 'Wall Mount', 'Floor Mount', '1 Way Ceiling Cassette', '4 Way Cassette', 'Branch Box', 'Thermostat', 'Dehumidifier', 'ERV', 'Other'] as const;
+const EQUIPMENT_TYPES = ['Air Handler', 'Condenser', 'Furnace', 'Heat Pump', 'Coil', 'Mini-Split', 'Wall Mount', 'Floor Mount', '1 Way Ceiling Cassette', '4 Way Cassette', 'Branch Box', 'Thermostat', 'Dehumidifier', 'ERV', 'Zoning', 'Other'] as const;
 
 const TYPE_COLORS: Record<string, string> = {
   'Air Handler': 'bg-blue-100 text-blue-800 border-blue-200',
