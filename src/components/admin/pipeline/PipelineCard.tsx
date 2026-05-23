@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow, differenceInDays } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -52,6 +52,7 @@ interface PipelineEntry {
   probability: number | null;
   expected_close_date: string | null;
   notes: string | null;
+  created_at: string;
   customer: {
     id: string;
     first_name: string | null;
@@ -178,6 +179,22 @@ export const PipelineCard = ({ entry, stages, onEdit, onDelete, onChangeStage }:
               {entry.probability}% likely
             </span>
           )}
+          {entry.created_at && (() => {
+            const days = differenceInDays(new Date(), new Date(entry.created_at));
+            const stale = days >= 14;
+            const warm = days >= 7;
+            return (
+              <span
+                className={cn(
+                  "text-[10px] ml-auto font-medium",
+                  stale ? "text-destructive" : warm ? "text-amber-600 dark:text-amber-500" : "text-muted-foreground"
+                )}
+                title={`Added ${format(new Date(entry.created_at), 'MMM d, yyyy')}`}
+              >
+                {days === 0 ? 'Today' : `${formatDistanceToNow(new Date(entry.created_at))} old`}
+              </span>
+            );
+          })()}
         </div>
 
         {/* Stage selector */}

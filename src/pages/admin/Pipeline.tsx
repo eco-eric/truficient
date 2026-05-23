@@ -31,6 +31,7 @@ interface PipelineEntry {
   probability: number | null;
   expected_close_date: string | null;
   notes: string | null;
+  created_at: string;
   customer: {
     id: string;
     first_name: string | null;
@@ -85,6 +86,7 @@ const Pipeline = () => {
           probability,
           expected_close_date,
           notes,
+          created_at,
           customer:crm_customers!inner(
             id,
             first_name,
