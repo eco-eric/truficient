@@ -45,6 +45,7 @@ import { toast } from 'sonner';
 const formSchema = z.object({
   customer_id: z.string().min(1, 'Please select a customer'),
   stage_id: z.string().min(1, 'Please select a stage'),
+  title: z.string().optional(),
   estimated_value: z.string().optional(),
   probability: z.string().optional(),
   expected_close_date: z.string().optional(),
@@ -57,6 +58,7 @@ interface PipelineEntry {
   id: string;
   customer_id: string;
   stage_id: string;
+  title?: string | null;
   estimated_value: number | null;
   probability: number | null;
   expected_close_date: string | null;
@@ -83,6 +85,7 @@ export const AddToPipelineDialog = ({
     defaultValues: {
       customer_id: '',
       stage_id: '',
+      title: '',
       estimated_value: '',
       probability: '',
       expected_close_date: '',
@@ -137,6 +140,7 @@ export const AddToPipelineDialog = ({
       form.reset({
         customer_id: editingEntry.customer_id,
         stage_id: editingEntry.stage_id,
+        title: editingEntry.title || '',
         estimated_value: editingEntry.estimated_value?.toString() || '',
         probability: editingEntry.probability?.toString() || '',
         expected_close_date: editingEntry.expected_close_date || '',
@@ -146,6 +150,7 @@ export const AddToPipelineDialog = ({
       form.reset({
         customer_id: '',
         stage_id: stages[0]?.id || '',
+        title: '',
         estimated_value: '',
         probability: '',
         expected_close_date: '',
@@ -159,6 +164,7 @@ export const AddToPipelineDialog = ({
       const payload = {
         customer_id: data.customer_id,
         stage_id: data.stage_id,
+        title: data.title?.trim() || null,
         estimated_value: data.estimated_value ? parseFloat(data.estimated_value) : null,
         probability: data.probability ? parseInt(data.probability) : null,
         expected_close_date: data.expected_close_date || null,
@@ -293,6 +299,20 @@ export const AddToPipelineDialog = ({
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Title</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. New ductless mini-split for office" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

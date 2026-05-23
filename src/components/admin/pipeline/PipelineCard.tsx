@@ -24,11 +24,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 interface PipelineEntry {
   id: string;
   customer_id: string;
   stage_id: string;
+  title: string | null;
   estimated_value: number | null;
   probability: number | null;
   expected_close_date: string | null;
@@ -99,22 +101,30 @@ export const PipelineCard = ({ entry, onEdit, onDelete }: PipelineCardProps) => 
       className="bg-card border rounded-lg shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing group"
     >
       <div className="p-3">
-        {/* Header: name + actions */}
+        {/* Header: title/name + actions */}
         <div className="flex items-start justify-between gap-1">
-          <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex items-start gap-1.5 min-w-0 flex-1">
             <div
               {...attributes}
               {...listeners}
-              className="text-muted-foreground/40 group-hover:text-muted-foreground transition-colors shrink-0"
+              className="text-muted-foreground/40 group-hover:text-muted-foreground transition-colors shrink-0 mt-0.5"
             >
               <GripVertical className="h-3.5 w-3.5" />
             </div>
-            <Link 
-              to={`/admin/customers/${entry.customer_id}`}
-              className="font-semibold text-sm hover:text-primary truncate block transition-colors"
-            >
-              {customerName}
-            </Link>
+            <div className="min-w-0 flex-1">
+              {entry.title && (
+                <p className="font-semibold text-sm truncate leading-tight">{entry.title}</p>
+              )}
+              <Link
+                to={`/admin/customers/${entry.customer_id}`}
+                className={cn(
+                  "hover:text-primary truncate block transition-colors",
+                  entry.title ? "text-xs text-muted-foreground" : "font-semibold text-sm"
+                )}
+              >
+                {customerName}
+              </Link>
+            </div>
           </div>
           
           <DropdownMenu>

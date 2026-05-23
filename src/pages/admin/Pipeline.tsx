@@ -26,6 +26,7 @@ interface PipelineEntry {
   id: string;
   customer_id: string;
   stage_id: string;
+  title: string | null;
   estimated_value: number | null;
   probability: number | null;
   expected_close_date: string | null;
@@ -79,6 +80,7 @@ const Pipeline = () => {
           id,
           customer_id,
           stage_id,
+          title,
           estimated_value,
           probability,
           expected_close_date,
