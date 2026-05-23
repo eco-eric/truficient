@@ -164,6 +164,7 @@ export const ConvertToCustomerDialog = ({
       zip_code: '',
       add_to_pipeline: false,
       pipeline_stage_id: '',
+      pipeline_title: '',
       estimated_value: '',
     },
   });
