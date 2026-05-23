@@ -435,7 +435,9 @@ export const ConvertToCustomerDialog = ({
                       <SelectContent>
                         <SelectItem value="lead">Lead</SelectItem>
                         <SelectItem value="prospect">Prospect</SelectItem>
-                        <SelectItem value="customer">Customer</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="archived">Archived</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
