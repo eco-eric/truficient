@@ -22,9 +22,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+
+interface PipelineStage {
+  id: string;
+  name: string;
+  display_name: string;
+  color: string;
+  sort_order: number;
+  is_won_stage: boolean | null;
+  is_lost_stage: boolean | null;
+}
 
 interface PipelineEntry {
   id: string;
@@ -48,11 +65,13 @@ interface PipelineEntry {
 
 interface PipelineCardProps {
   entry: PipelineEntry;
+  stages: PipelineStage[];
   onEdit: (entry: PipelineEntry) => void;
   onDelete: (entryId: string) => void;
+  onChangeStage: (entryId: string, newStageId: string, oldStageId: string) => void;
 }
 
-export const PipelineCard = ({ entry, onEdit, onDelete }: PipelineCardProps) => {
+export const PipelineCard = ({ entry, stages, onEdit, onDelete, onChangeStage }: PipelineCardProps) => {
   const {
     attributes,
     listeners,
@@ -160,6 +179,36 @@ export const PipelineCard = ({ entry, onEdit, onDelete }: PipelineCardProps) => 
             </span>
           )}
         </div>
+
+        {/* Stage selector */}
+        <div className="mt-2" onPointerDown={(e) => e.stopPropagation()}>
+          <Select
+            value={entry.stage_id}
+            onValueChange={(newStageId) => {
+              if (newStageId !== entry.stage_id) {
+                onChangeStage(entry.id, newStageId, entry.stage_id);
+              }
+            }}
+          >
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder="Change stage" />
+            </SelectTrigger>
+            <SelectContent>
+              {stages.map((s) => (
+                <SelectItem key={s.id} value={s.id} className="text-xs">
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="inline-block h-2 w-2 rounded-full"
+                      style={{ backgroundColor: s.color }}
+                    />
+                    {s.display_name}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
 
         {/* Value */}
         {entry.estimated_value != null && (
