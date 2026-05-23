@@ -351,8 +351,10 @@ const Pipeline = () => {
                 <div className="w-[240px] opacity-90">
                   <PipelineCard
                     entry={activeEntry}
+                    stages={stages}
                     onEdit={() => {}}
                     onDelete={() => {}}
+                    onChangeStage={() => {}}
                   />
                 </div>
               )}
