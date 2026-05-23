@@ -333,9 +333,13 @@ const Pipeline = () => {
                   <div key={stage.id} className="w-[260px] shrink-0">
                     <PipelineColumn
                       stage={stage}
+                      stages={stages}
                       entries={entries.filter(e => e.stage_id === stage.id)}
                       onEditEntry={handleEditEntry}
                       onDeleteEntry={handleDeleteEntry}
+                      onChangeStage={(entryId, newStageId, oldStageId) =>
+                        moveMutation.mutate({ entryId, newStageId, oldStageId })
+                      }
                     />
                   </div>
                 ))}
