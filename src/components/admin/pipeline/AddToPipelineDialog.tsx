@@ -85,6 +85,7 @@ export const AddToPipelineDialog = ({
     defaultValues: {
       customer_id: '',
       stage_id: '',
+      title: '',
       estimated_value: '',
       probability: '',
       expected_close_date: '',
