@@ -52,7 +52,17 @@ interface PipelineEntry {
   probability: number | null;
   expected_close_date: string | null;
   notes: string | null;
+  created_at: string;
   customer: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    company_name: string | null;
+    email: string | null;
+    phone: string | null;
+    customer_type: string;
+  };
+}
     id: string;
     first_name: string | null;
     last_name: string | null;
