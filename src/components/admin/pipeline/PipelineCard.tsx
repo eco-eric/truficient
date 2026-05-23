@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 interface PipelineEntry {
   id: string;
