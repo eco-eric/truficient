@@ -107,8 +107,10 @@ export const PipelineColumn = ({
             <PipelineCard
               key={entry.id}
               entry={entry}
+              stages={stages}
               onEdit={onEditEntry}
               onDelete={onDeleteEntry}
+              onChangeStage={onChangeStage}
             />
           ))}
         </SortableContext>
