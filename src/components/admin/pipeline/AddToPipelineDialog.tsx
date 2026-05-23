@@ -140,6 +140,7 @@ export const AddToPipelineDialog = ({
       form.reset({
         customer_id: editingEntry.customer_id,
         stage_id: editingEntry.stage_id,
+        title: editingEntry.title || '',
         estimated_value: editingEntry.estimated_value?.toString() || '',
         probability: editingEntry.probability?.toString() || '',
         expected_close_date: editingEntry.expected_close_date || '',
@@ -149,6 +150,7 @@ export const AddToPipelineDialog = ({
       form.reset({
         customer_id: '',
         stage_id: stages[0]?.id || '',
+        title: '',
         estimated_value: '',
         probability: '',
         expected_close_date: '',
@@ -162,6 +164,7 @@ export const AddToPipelineDialog = ({
       const payload = {
         customer_id: data.customer_id,
         stage_id: data.stage_id,
+        title: data.title?.trim() || null,
         estimated_value: data.estimated_value ? parseFloat(data.estimated_value) : null,
         probability: data.probability ? parseInt(data.probability) : null,
         expected_close_date: data.expected_close_date || null,
