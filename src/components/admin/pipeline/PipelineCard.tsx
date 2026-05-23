@@ -63,15 +63,6 @@ interface PipelineEntry {
     customer_type: string;
   };
 }
-    id: string;
-    first_name: string | null;
-    last_name: string | null;
-    company_name: string | null;
-    email: string | null;
-    phone: string | null;
-    customer_type: string;
-  };
-}
 
 interface PipelineCardProps {
   entry: PipelineEntry;
