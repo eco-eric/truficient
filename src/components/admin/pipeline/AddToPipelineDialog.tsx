@@ -45,6 +45,7 @@ import { toast } from 'sonner';
 const formSchema = z.object({
   customer_id: z.string().min(1, 'Please select a customer'),
   stage_id: z.string().min(1, 'Please select a stage'),
+  title: z.string().optional(),
   estimated_value: z.string().optional(),
   probability: z.string().optional(),
   expected_close_date: z.string().optional(),
