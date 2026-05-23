@@ -614,45 +614,60 @@ export const ConvertToCustomerDialog = ({
               </div>
 
               {addToPipeline && (
-                <div className="grid grid-cols-2 gap-3 pl-6">
+                <div className="space-y-3 pl-6">
                   <FormField
                     control={form.control}
-                    name="pipeline_stage_id"
+                    name="pipeline_title"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Stage</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select stage" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {stages.map((stage) => (
-                              <SelectItem key={stage.id} value={stage.id}>
-                                {stage.display_name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="estimated_value"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Est. Value ($)</FormLabel>
+                        <FormLabel>Title</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="10000" {...field} />
+                          <Input placeholder="e.g. New ductless mini-split for office" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="pipeline_stage_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Stage</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select stage" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {stages.map((stage) => (
+                                <SelectItem key={stage.id} value={stage.id}>
+                                  {stage.display_name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="estimated_value"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Est. Value ($)</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="10000" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
               )}
             </div>
