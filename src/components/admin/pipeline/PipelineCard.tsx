@@ -178,7 +178,36 @@ export const PipelineCard = ({ entry, stages, onEdit, onDelete, onChangeStage }:
               {entry.probability}% likely
             </span>
           )}
+
+        {/* Stage selector */}
+        <div className="mt-2" onPointerDown={(e) => e.stopPropagation()}>
+          <Select
+            value={entry.stage_id}
+            onValueChange={(newStageId) => {
+              if (newStageId !== entry.stage_id) {
+                onChangeStage(entry.id, newStageId, entry.stage_id);
+              }
+            }}
+          >
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder="Change stage" />
+            </SelectTrigger>
+            <SelectContent>
+              {stages.map((s) => (
+                <SelectItem key={s.id} value={s.id} className="text-xs">
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="inline-block h-2 w-2 rounded-full"
+                      style={{ backgroundColor: s.color }}
+                    />
+                    {s.display_name}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+
 
         {/* Value */}
         {entry.estimated_value != null && (
