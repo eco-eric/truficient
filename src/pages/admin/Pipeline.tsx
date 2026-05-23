@@ -86,6 +86,7 @@ const Pipeline = () => {
           probability,
           expected_close_date,
           notes,
+          created_at,
           customer:crm_customers!inner(
             id,
             first_name,
