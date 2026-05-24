@@ -36,6 +36,7 @@ import { Loader2, Search, X, Eye, Inbox, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { SubmissionDetailSheet } from "@/components/admin/submissions/SubmissionDetailSheet";
 import { ExpandableEquipmentRow } from "@/components/admin/submissions/ExpandableEquipmentRow";
+import { ExistingCustomerBadge } from "@/components/admin/submissions/ExistingCustomerBadge";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -694,7 +695,14 @@ const UnifiedSubmissions = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="font-medium">
-                          {submission.customerName}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span>{submission.customerName}</span>
+                            <ExistingCustomerBadge
+                              email={submission.customerEmail}
+                              phone={submission.customerPhone}
+                              compact
+                            />
+                          </div>
                         </TableCell>
                         <TableCell className="hidden lg:table-cell text-muted-foreground">
                           {submission.customerEmail}

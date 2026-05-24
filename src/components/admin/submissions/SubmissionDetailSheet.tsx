@@ -35,6 +35,7 @@ import { DuctlessSubmissionDetail } from "./DuctlessSubmissionDetail";
 import { ScannerSubmissionDetail } from "./ScannerSubmissionDetail";
 import { DuctedSubmissionDetail } from "./DuctedSubmissionDetail";
 import { ConvertToCustomerDialog } from "./ConvertToCustomerDialog";
+import { ExistingCustomerBadge } from "./ExistingCustomerBadge";
 
 interface SubmissionDetailSheetProps {
   submission: UnifiedSubmission | null;
@@ -91,10 +92,14 @@ export const SubmissionDetailSheet = ({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="sm:max-w-lg overflow-y-auto">
           <SheetHeader>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge className={sourceColors[submission.source]} variant="secondary">
                 {sourceLabels[submission.source]}
               </Badge>
+              <ExistingCustomerBadge
+                email={submission.customerEmail}
+                phone={submission.customerPhone}
+              />
             </div>
             <SheetTitle className="text-left text-xl">{submission.customerName}</SheetTitle>
           </SheetHeader>
