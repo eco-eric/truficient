@@ -694,7 +694,14 @@ const UnifiedSubmissions = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="font-medium">
-                          {submission.customerName}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span>{submission.customerName}</span>
+                            <ExistingCustomerBadge
+                              email={submission.customerEmail}
+                              phone={submission.customerPhone}
+                              compact
+                            />
+                          </div>
                         </TableCell>
                         <TableCell className="hidden lg:table-cell text-muted-foreground">
                           {submission.customerEmail}
