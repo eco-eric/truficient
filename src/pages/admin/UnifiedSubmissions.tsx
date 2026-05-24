@@ -36,6 +36,7 @@ import { Loader2, Search, X, Eye, Inbox, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { SubmissionDetailSheet } from "@/components/admin/submissions/SubmissionDetailSheet";
 import { ExpandableEquipmentRow } from "@/components/admin/submissions/ExpandableEquipmentRow";
+import { ExistingCustomerBadge } from "@/components/admin/submissions/ExistingCustomerBadge";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
 
