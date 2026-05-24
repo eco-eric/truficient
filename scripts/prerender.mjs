@@ -122,8 +122,10 @@ const supabase = SUPABASE_URL && SUPABASE_KEY
 function toCanonical(input) {
   if (!input) return null;
   let s = String(input).trim();
-  // Strip protocol+host if present
-  s = s.replace(/^https?:\/\/(www\.)?truficient\.com/i, '');
+  // Strip ANY protocol+host if present (truficient.com, truficient.lovable.app,
+  // legacy preview domains, etc.) so the canonical always points at the
+  // production non-www host.
+  s = s.replace(/^https?:\/\/[^/]+/i, '');
   if (!s.startsWith('/')) s = `/${s}`;
   // Collapse repeated slashes
   s = s.replace(/\/{2,}/g, '/');
