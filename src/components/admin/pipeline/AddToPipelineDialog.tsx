@@ -69,12 +69,14 @@ interface AddToPipelineDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingEntry?: PipelineEntry | null;
+  defaultCustomerId?: string;
 }
 
 export const AddToPipelineDialog = ({ 
   open, 
   onOpenChange, 
-  editingEntry 
+  editingEntry,
+  defaultCustomerId,
 }: AddToPipelineDialogProps) => {
   const queryClient = useQueryClient();
   const isEditing = !!editingEntry;
