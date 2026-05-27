@@ -417,6 +417,7 @@ const CustomerDetail = () => {
                 <TabsTrigger value="locations">Locations ({locations?.length || 0})</TabsTrigger>
                 <TabsTrigger value="activity">Activity ({interactions?.length || 0})</TabsTrigger>
                 <TabsTrigger value="jobs">Jobs ({jobs?.length || 0})</TabsTrigger>
+                <TabsTrigger value="pipeline">Pipeline ({pipelineCount})</TabsTrigger>
                 <TabsTrigger value="estimates">Estimates ({(estimatesCount || 0) + (submissionLinksCount || 0)})</TabsTrigger>
                 <TabsTrigger value="equipment">Equipment ({equipmentCount})</TabsTrigger>
                 <TabsTrigger value="emails">Emails</TabsTrigger>
