@@ -122,7 +122,7 @@ export const CustomerPipelineTab = ({ customerId }: CustomerPipelineTabProps) =>
         <Button
           size="sm"
           onClick={() => {
-            setEditingEntry({ customer_id: customerId });
+            setEditingEntry(null);
             setDialogOpen(true);
           }}
         >
