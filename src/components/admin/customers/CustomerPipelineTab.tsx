@@ -251,6 +251,7 @@ export const CustomerPipelineTab = ({ customerId }: CustomerPipelineTabProps) =>
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         editingEntry={editingEntry}
+        defaultCustomerId={customerId}
       />
     </div>
   );
