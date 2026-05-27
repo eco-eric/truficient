@@ -41,6 +41,7 @@ import { FileAttachments } from '@/components/admin/FileAttachments';
 import { CustomerRelationships } from '@/components/admin/customers/CustomerRelationships';
 import { CustomerEmailHistory } from '@/components/admin/customers/CustomerEmailHistory';
 import JobFormDialog from '@/components/admin/jobs/JobFormDialog';
+import { CustomerPipelineTab } from '@/components/admin/customers/CustomerPipelineTab';
 import type { Database } from '@/integrations/supabase/types';
 
 type Customer = Database['public']['Tables']['crm_customers']['Row'];
@@ -209,6 +210,19 @@ const CustomerDetail = () => {
     queryFn: async () => {
       const { count, error } = await supabase
         .from('crm_submission_links')
+        .select('*', { count: 'exact', head: true })
+        .eq('customer_id', id!);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!id,
+  });
+
+  const { data: pipelineCount = 0 } = useQuery({
+    queryKey: ['customer-pipeline-count', id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('crm_pipeline_entries')
         .select('*', { count: 'exact', head: true })
         .eq('customer_id', id!);
       if (error) throw error;
@@ -403,6 +417,7 @@ const CustomerDetail = () => {
                 <TabsTrigger value="locations">Locations ({locations?.length || 0})</TabsTrigger>
                 <TabsTrigger value="activity">Activity ({interactions?.length || 0})</TabsTrigger>
                 <TabsTrigger value="jobs">Jobs ({jobs?.length || 0})</TabsTrigger>
+                <TabsTrigger value="pipeline">Pipeline ({pipelineCount})</TabsTrigger>
                 <TabsTrigger value="estimates">Estimates ({(estimatesCount || 0) + (submissionLinksCount || 0)})</TabsTrigger>
                 <TabsTrigger value="equipment">Equipment ({equipmentCount})</TabsTrigger>
                 <TabsTrigger value="emails">Emails</TabsTrigger>
@@ -530,6 +545,10 @@ const CustomerDetail = () => {
                     </Card>
                   )}
                 </div>
+              </TabsContent>
+
+              <TabsContent value="pipeline" className="mt-4">
+                <CustomerPipelineTab customerId={id!} />
               </TabsContent>
 
               <TabsContent value="estimates" className="mt-4">

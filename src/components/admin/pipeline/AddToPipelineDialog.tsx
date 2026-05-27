@@ -69,12 +69,14 @@ interface AddToPipelineDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingEntry?: PipelineEntry | null;
+  defaultCustomerId?: string;
 }
 
 export const AddToPipelineDialog = ({ 
   open, 
   onOpenChange, 
-  editingEntry 
+  editingEntry,
+  defaultCustomerId,
 }: AddToPipelineDialogProps) => {
   const queryClient = useQueryClient();
   const isEditing = !!editingEntry;
@@ -148,7 +150,7 @@ export const AddToPipelineDialog = ({
       });
     } else if (open) {
       form.reset({
-        customer_id: '',
+        customer_id: defaultCustomerId || '',
         stage_id: stages[0]?.id || '',
         title: '',
         estimated_value: '',
@@ -157,7 +159,7 @@ export const AddToPipelineDialog = ({
         notes: '',
       });
     }
-  }, [open, editingEntry, stages, form]);
+  }, [open, editingEntry, stages, form, defaultCustomerId]);
 
   const createMutation = useMutation({
     mutationFn: async (data: FormData) => {
