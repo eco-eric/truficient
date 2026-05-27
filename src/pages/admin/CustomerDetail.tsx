@@ -218,6 +218,19 @@ const CustomerDetail = () => {
     enabled: !!id,
   });
 
+  const { data: pipelineCount = 0 } = useQuery({
+    queryKey: ['customer-pipeline-count', id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('crm_pipeline_entries')
+        .select('*', { count: 'exact', head: true })
+        .eq('customer_id', id!);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!id,
+  });
+
   const getDisplayName = (cust: any) => {
     if (cust.crm_companies?.name) return cust.crm_companies.name;
     return `${cust.first_name || ''} ${cust.last_name || ''}`.trim() || 'Unnamed';
