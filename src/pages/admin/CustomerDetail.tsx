@@ -41,6 +41,7 @@ import { FileAttachments } from '@/components/admin/FileAttachments';
 import { CustomerRelationships } from '@/components/admin/customers/CustomerRelationships';
 import { CustomerEmailHistory } from '@/components/admin/customers/CustomerEmailHistory';
 import JobFormDialog from '@/components/admin/jobs/JobFormDialog';
+import { CustomerPipelineTab } from '@/components/admin/customers/CustomerPipelineTab';
 import type { Database } from '@/integrations/supabase/types';
 
 type Customer = Database['public']['Tables']['crm_customers']['Row'];
