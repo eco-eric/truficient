@@ -547,6 +547,10 @@ const CustomerDetail = () => {
                 </div>
               </TabsContent>
 
+              <TabsContent value="pipeline" className="mt-4">
+                <CustomerPipelineTab customerId={id!} />
+              </TabsContent>
+
               <TabsContent value="estimates" className="mt-4">
                 <div className="space-y-3">
                   <div className="flex justify-end">
