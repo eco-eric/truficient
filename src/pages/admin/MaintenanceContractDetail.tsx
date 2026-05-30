@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import {
   Card, CardContent, CardHeader, CardTitle,
 } from '@/components/ui/card';
