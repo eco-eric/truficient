@@ -328,6 +328,7 @@ const Header = () => {
                       <Library className="w-4 h-4 text-primary" />
                       Trane Systems
                     </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link
                       to="/resources/catalogs"
