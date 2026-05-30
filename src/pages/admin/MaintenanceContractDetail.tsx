@@ -104,6 +104,7 @@ export default function MaintenanceContractDetail() {
         </TabsContent>
       </Tabs>
     </div>
+    </AdminLayout>
   );
 }
 
