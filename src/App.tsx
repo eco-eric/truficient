@@ -243,6 +243,7 @@ const router = createBrowserRouter([
       { path: "/scanner/report", element: <EquipmentReport /> },
       { path: "/equipment", element: <EquipmentLibrary /> },
       { path: "/equipment.html", element: <EquipmentLibrary /> },
+      { path: "/equipment/trane", element: <TraneBrand /> },
       { path: "/equipment/*", element: <EquipmentDetail /> },
       { path: "/resources/catalogs", element: <Catalogs /> },
       { path: "/resources/catalogs/:slug", element: <CatalogDetail /> },
