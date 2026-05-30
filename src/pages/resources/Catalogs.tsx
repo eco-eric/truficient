@@ -179,12 +179,12 @@ const Catalogs = () => {
                   >
                     {isAvailable ? (
                       <Link
-                        to={`/resources/catalogs/${brand.slug}`}
+                        to={brand.href ?? `/resources/catalogs/${brand.slug}`}
                         onClick={() =>
                           trackButtonClick({
                             buttonName: `${brand.name} Catalog`,
                             buttonLocation: "Catalogs Hub",
-                            destinationUrl: `/resources/catalogs/${brand.slug}`,
+                            destinationUrl: brand.href ?? `/resources/catalogs/${brand.slug}`,
                           })
                         }
                       >
