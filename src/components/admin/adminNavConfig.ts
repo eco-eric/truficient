@@ -15,6 +15,7 @@ import {
   Package,
   Receipt,
   ClipboardList,
+  ClipboardCheck,
   LayoutTemplate,
   MessageSquare,
   AirVent,
