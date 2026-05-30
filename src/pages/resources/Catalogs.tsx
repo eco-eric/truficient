@@ -31,7 +31,17 @@ const brands: Brand[] = [
     badge: "Diamond Contractor",
     status: "available",
   },
-  { slug: "trane", name: "Trane", tagline: "Residential & Commercial", status: "coming-soon", expectedDate: "May 2026" },
+  {
+    slug: "trane",
+    name: "Trane",
+    tagline: "TruComfort Variable-Speed Lineup",
+    description:
+      "Trane's residential lineup including XV20i, XV18, XV19 Low Profile, and the 17 Multi-Speed (5TTR7/5TWR7/5TTX7/5TWX7) inverter systems. TruComfort variable-speed comfort with Climatuff compressors, SEET-tested durability, and a 12-year compressor warranty.",
+    badge: "Certified Installer",
+    badgeStyle: "outline",
+    status: "available",
+    href: "/equipment/trane",
+  },
   {
     slug: "bosch-ids-family",
     name: "Bosch",
