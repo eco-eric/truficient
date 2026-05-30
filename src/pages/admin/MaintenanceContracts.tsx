@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import {
   Card, CardContent, CardHeader, CardTitle,
 } from '@/components/ui/card';
@@ -58,6 +59,7 @@ export default function MaintenanceContracts() {
   }, [contracts]);
 
   return (
+    <AdminLayout title="Maintenance Contracts">
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -184,6 +186,7 @@ export default function MaintenanceContracts() {
 
       <NewContractDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
+    </AdminLayout>
   );
 }
 
