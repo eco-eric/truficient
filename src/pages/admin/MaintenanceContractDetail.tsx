@@ -41,13 +41,14 @@ export default function MaintenanceContractDetail() {
   const { data: filters = [] } = useContractFilters(id);
   const { data: visits = [] } = useContractVisits(id);
 
-  if (isLoading) return <div className="p-6">Loading…</div>;
-  if (!contract) return <div className="p-6">Contract not found.</div>;
+  if (isLoading) return <AdminLayout title="Maintenance Contract"><div className="p-6">Loading…</div></AdminLayout>;
+  if (!contract) return <AdminLayout title="Maintenance Contract"><div className="p-6">Contract not found.</div></AdminLayout>;
 
   const cust = contract.customer;
   const loc = contract.location;
 
   return (
+    <AdminLayout title="Maintenance Contract">
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" asChild>
