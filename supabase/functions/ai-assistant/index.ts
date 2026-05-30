@@ -495,6 +495,22 @@ const tools = [
       },
     },
   },
+  // === LEAD PASTE PARSER (Mitsubishi & similar label/value pastes) ===
+  {
+    type: "function" as const,
+    function: {
+      name: "parse_lead_paste",
+      description: "Parse a raw 'Accept Lead' style paste (Mitsubishi Partner Program or similar label/value format) into structured lead fields. Handles label-on-one-line / value-on-next-line, markdown-wrapped email/phone like [x](mailto:x) and [(123) 456-7890](tel:...), and splits the address. ALWAYS call this BEFORE intake_lead whenever the user pastes text that contains 'Lead Name', 'Lead source', or similar labeled fields. Then pass the returned `intake_params` straight into intake_lead (with confirmed: false) for the user's confirmation.",
+      parameters: {
+        type: "object",
+        properties: {
+          raw_text: { type: "string", description: "The full pasted lead text exactly as received." },
+          lead_source_override: { type: "string", description: "Optional default lead source if the paste doesn't specify one (e.g. 'Mitsubishi Partner Program')." },
+        },
+        required: ["raw_text"],
+      },
+    },
+  },
   // === SUBMISSION REVIEW TOOL ===
   {
     type: "function" as const,
