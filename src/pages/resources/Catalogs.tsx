@@ -18,6 +18,7 @@ interface Brand {
   badgeStyle?: "solid" | "outline";
   status: "available" | "coming-soon";
   expectedDate?: string;
+  href?: string;
 }
 
 const brands: Brand[] = [
