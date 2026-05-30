@@ -3423,6 +3423,160 @@ async function executeUpdateSEO(supabase: any, userId: string, input: any) {
 // TOOL ROUTER
 // ============================================================
 
+// ============================================================
+// LEAD PASTE PARSER (Mitsubishi & similar label/value formats)
+// ============================================================
+
+const LEAD_PASTE_LABELS: Record<string, string> = {
+  "lead name": "name",
+  "lead source": "leadSource",
+  "zip code": "zipCode",
+  "state": "state",
+  "email": "email",
+  "phone": "phone",
+  "customer type": "customerType",
+  "when are you planning to purchase": "purchaseTimeline",
+  "what is the best way to reach you": "bestContactMethod",
+  "address": "address",
+  "rooms": "rooms",
+  "customer comments": "notes",
+};
+
+function lp_stripMarkdownLink(value: string): string {
+  if (!value) return value;
+  const v = value.trim();
+  const m = v.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+  if (m) {
+    const target = m[2].trim();
+    if (/^mailto:/i.test(target)) return target.replace(/^mailto:/i, "").trim();
+    if (/^tel:/i.test(target)) return target.replace(/^tel:/i, "").trim();
+    return m[1].trim();
+  }
+  return v;
+}
+
+function lp_normalizePhone(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const digits = raw.replace(/\D/g, "");
+  let ten = digits;
+  if (digits.length === 11 && digits.startsWith("1")) ten = digits.slice(1);
+  if (ten.length !== 10) return raw.trim() || undefined;
+  return `(${ten.slice(0, 3)}) ${ten.slice(3, 6)}-${ten.slice(6)}`;
+}
+
+function parseMitsubishiLead(raw: string): Record<string, any> {
+  const out: Record<string, string> = {};
+  const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0);
+  const labelKeys = Object.keys(LEAD_PASTE_LABELS);
+  const labelPattern = new RegExp(
+    `^(${labelKeys.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\s*[:：]?\\s*(.*)$`,
+    "i",
+  );
+
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(labelPattern);
+    if (!m) continue;
+    const field = LEAD_PASTE_LABELS[m[1].toLowerCase().replace(/\s+/g, " ")];
+    if (!field) continue;
+    let value = m[2].trim();
+    if (!value) {
+      for (let j = i + 1; j < lines.length; j++) {
+        if (labelPattern.test(lines[j])) break;
+        value = lines[j].trim();
+        i = j;
+        break;
+      }
+    }
+    if (!value) continue;
+    out[field] = lp_stripMarkdownLink(value);
+  }
+
+  const parsed: Record<string, any> = {};
+  if (out.name) {
+    const parts = out.name.trim().split(/\s+/).filter(Boolean);
+    parsed.firstName = parts[0] ?? "";
+    if (parts.length > 1) parsed.lastName = parts.slice(1).join(" ");
+  }
+  if (out.email) parsed.email = out.email.trim();
+  if (out.phone) parsed.phone = lp_normalizePhone(out.phone);
+  if (out.leadSource) parsed.leadSource = out.leadSource.trim();
+  if (out.zipCode) {
+    const z = out.zipCode.match(/\b(\d{5})\b/);
+    if (z) parsed.zipCode = z[1];
+  }
+  if (out.state) parsed.state = out.state.trim();
+  if (out.customerType) {
+    const ct = out.customerType.toLowerCase();
+    if (ct.includes("commercial")) parsed.customerType = "commercial";
+    else if (ct.includes("residential")) parsed.customerType = "residential";
+  }
+  if (out.address) {
+    const parts = out.address.split(/\s*,\s*/).map((p) => p.trim()).filter(Boolean);
+    if (parts[0]) parsed.addressLine1 = parts[0];
+    if (parts[1]) parsed.city = parts[1];
+    for (let i = 2; i < parts.length; i++) {
+      const z = parts[i].match(/\b(\d{5})(?:-\d{4})?\b/);
+      if (z) { if (!parsed.zipCode) parsed.zipCode = z[1]; break; }
+    }
+  }
+  if (out.rooms) parsed.rooms = out.rooms.trim();
+  if (out.bestContactMethod) parsed.bestContactMethod = out.bestContactMethod.trim();
+  if (out.purchaseTimeline) parsed.purchaseTimeline = out.purchaseTimeline.trim();
+  if (out.notes) parsed.notes = out.notes.trim();
+
+  // Fallback regex sweeps
+  if (!parsed.email) {
+    const m = raw.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    if (m) parsed.email = m[0];
+  }
+  if (!parsed.phone) {
+    const tel = raw.match(/tel:([+\d().\s-]+)/i);
+    if (tel) parsed.phone = lp_normalizePhone(tel[1]);
+    else {
+      const digits = raw.replace(/[^\d]/g, " ").match(/\b1?\d{10}\b/);
+      if (digits) parsed.phone = lp_normalizePhone(digits[0]);
+    }
+  }
+  return parsed;
+}
+
+function executeParseLeadPaste(input: { raw_text?: string; lead_source_override?: string }) {
+  const raw = (input?.raw_text ?? "").toString();
+  if (!raw.trim()) {
+    return { success: false, error: "raw_text is required" };
+  }
+  const p = parseMitsubishiLead(raw);
+  const noteBits: string[] = [];
+  if (p.purchaseTimeline) noteBits.push(`Timeline: ${p.purchaseTimeline}`);
+  if (p.bestContactMethod) noteBits.push(`Best contact: ${p.bestContactMethod}`);
+  if (p.rooms) noteBits.push(`Rooms: ${p.rooms}`);
+  if (p.notes) noteBits.push(p.notes);
+
+  const stateValue = p.state && typeof p.state === "string" && p.state.length > 2 ? "TX" : p.state;
+
+  const intake_params = {
+    first_name: p.firstName ?? "",
+    last_name: p.lastName ?? "",
+    email: p.email,
+    phone: p.phone,
+    address_line1: p.addressLine1,
+    city: p.city,
+    state: stateValue,
+    zip_code: p.zipCode,
+    lead_source: p.leadSource || input?.lead_source_override || "Mitsubishi Partner Program",
+    customer_type: p.customerType ?? "residential",
+    notes: noteBits.join(" | ") || undefined,
+    confirmed: false,
+  };
+
+  return {
+    success: true,
+    parsed: p,
+    intake_params,
+    instructions: "Call intake_lead with these intake_params (confirmed: false) to show the confirmation prompt to the user. Do NOT skip confirmation.",
+  };
+}
+
 async function executeTool(supabase: any, toolName: string, toolInput: any, userId: string): Promise<any> {
   switch (toolName) {
     // Read tools
