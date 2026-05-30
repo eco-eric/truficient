@@ -186,6 +186,7 @@ export default function MaintenanceContracts() {
 
       <NewContractDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
+    </AdminLayout>
   );
 }
 
