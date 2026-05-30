@@ -487,7 +487,10 @@ function ReportDetail({ reportId, onBack }: { reportId: string; onBack: () => vo
                         ? 'bg-[#1e3a5f] text-white'
                         : 'bg-white border'
                     )}>
-                      <div className="prose prose-sm max-w-none prose-p:my-1">
+                      <div className={cn(
+                        'prose prose-sm max-w-none prose-p:my-1',
+                        m.role === 'user' && 'prose-invert prose-p:text-white prose-strong:text-white prose-headings:text-white prose-li:text-white'
+                      )}>
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
                       </div>
                       <div className={cn('text-[10px] mt-1', m.role === 'user' ? 'text-white/60' : 'text-muted-foreground')}>
