@@ -51,7 +51,7 @@ function stripMarkdownLink(value: string): string {
   if (!value) return value;
   const v = value.trim();
   // [text](mailto:x) or [text](tel:x) — prefer the target
-  const linkMatch = v.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+  const linkMatch = v.match(/^\[(.+?)\]\((.+)\)\s*$/);
   if (linkMatch) {
     const target = linkMatch[2].trim();
     if (/^mailto:/i.test(target)) return target.replace(/^mailto:/i, "").trim();
