@@ -3445,7 +3445,7 @@ const LEAD_PASTE_LABELS: Record<string, string> = {
 function lp_stripMarkdownLink(value: string): string {
   if (!value) return value;
   const v = value.trim();
-  const m = v.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+  const m = v.match(/^\[(.+?)\]\((.+)\)\s*$/);
   if (m) {
     const target = m[2].trim();
     if (/^mailto:/i.test(target)) return target.replace(/^mailto:/i, "").trim();
