@@ -56,6 +56,7 @@ const Scanner = lazy(() => import("./pages/scanner/Scanner"));
 const EquipmentReport = lazy(() => import("./pages/scanner/EquipmentReport"));
 const EquipmentLibrary = lazy(() => import("./pages/equipment/EquipmentLibrary"));
 const EquipmentDetail = lazy(() => import("./pages/equipment/EquipmentDetail"));
+const TraneBrand = lazy(() => import("./pages/equipment/TraneBrand"));
 const Catalogs = lazy(() => import("./pages/resources/Catalogs"));
 const CatalogDetail = lazy(() => import("./pages/resources/CatalogDetail"));
 
