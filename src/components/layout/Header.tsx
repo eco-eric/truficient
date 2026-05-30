@@ -321,6 +321,15 @@ const Header = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link
+                      to="/equipment/trane"
+                      className="cursor-pointer flex items-center gap-2"
+                      onClick={() => handleTrackClick('Trane Brand', 'Header - Main Nav', '/equipment/trane')}
+                    >
+                      <Library className="w-4 h-4 text-primary" />
+                      Trane Systems
+                    </Link>
+                  <DropdownMenuItem asChild>
+                    <Link
                       to="/resources/catalogs"
                       className="cursor-pointer flex items-center gap-2"
                       onClick={() => handleTrackClick('Catalogs', 'Header - Main Nav', '/resources/catalogs')}
