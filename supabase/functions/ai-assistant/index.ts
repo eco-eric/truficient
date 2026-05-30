@@ -3449,6 +3449,7 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "reschedule_appointment": return executeRescheduleAppointment(supabase, userId, toolInput);
     case "cancel_appointment": return executeCancelAppointment(supabase, userId, toolInput);
     case "intake_lead": return executeIntakeLead(supabase, userId, toolInput);
+    case "parse_lead_paste": return executeParseLeadPaste(toolInput);
     case "review_submissions": return executeReviewSubmissions(supabase, userId, toolInput);
     case "scan_watch_list": return executeScanWatchList(supabase, userId, toolInput);
     case "draft_estimate": return executeDraftEstimate(supabase, userId, toolInput);
