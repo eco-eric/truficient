@@ -29,6 +29,9 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated?: (id: string) => void;
+  initialCustomerId?: string;
+  initialLocationId?: string;
+  initialSegment?: MaintenanceSegment;
 }
 
 interface FilterRow {
