@@ -32,6 +32,10 @@ export interface MaintenanceContract {
   last_filter_change: string | null;
   next_filter_due: string | null;
   notes: string | null;
+  tier_id?: string | null;
+  tier_name_snapshot?: string | null;
+  inclusions_text?: string | null;
+  unit_count?: number | null;
   created_at: string;
   updated_at: string;
   // joined
