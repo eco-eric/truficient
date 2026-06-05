@@ -14,7 +14,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Plus, Wrench, AlertTriangle, Calendar, Filter as FilterIcon, DollarSign, Sparkles } from 'lucide-react';
+import { Plus, Wrench, AlertTriangle, Calendar, Filter as FilterIcon, DollarSign, Sparkles, Tags } from 'lucide-react';
 import { useMaintenanceContracts } from '@/hooks/useMaintenanceContracts';
 import {
   STATUS_OPTIONS, BILLING_OPTIONS,
@@ -71,6 +71,9 @@ export default function MaintenanceContracts() {
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild>
             <Link to="/admin/contracts/candidates"><Sparkles className="w-4 h-4" /> Find Candidates</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to="/admin/maintenance-contracts/tiers"><Tags className="w-4 h-4" /> Pricing & Tiers</Link>
           </Button>
           <Button onClick={() => setDialogOpen(true)}>
             <Plus className="w-4 h-4" /> New Contract
