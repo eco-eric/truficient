@@ -140,8 +140,9 @@ export default function MaintenanceContractCandidates() {
 
     // group completed jobs by customer+location
     const groups = new Map<string, JobRow[]>();
+    const COMPLETED_STAGES = new Set(['completed', 'closed_won', 'review']);
     for (const j of bundle.jobs) {
-      if (j.stage?.stage_type !== 'completed') continue;
+      if (!j.stage?.stage_type || !COMPLETED_STAGES.has(j.stage.stage_type)) continue;
       const key = `${j.customer_id}::${j.location_id ?? ''}`;
       const arr = groups.get(key) ?? [];
       arr.push(j);
