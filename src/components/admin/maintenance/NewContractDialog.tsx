@@ -60,6 +60,15 @@ export function NewContractDialog({ open, onOpenChange, onCreated, initialCustom
 
   const createContract = useCreateContract();
 
+  // Apply prefill when dialog opens
+  useEffect(() => {
+    if (open) {
+      if (initialCustomerId !== undefined) setCustomerId(initialCustomerId);
+      if (initialLocationId !== undefined) setLocationId(initialLocationId);
+      if (initialSegment !== undefined) setSegment(initialSegment);
+    }
+  }, [open, initialCustomerId, initialLocationId, initialSegment]);
+
   // Apply segment defaults
   useEffect(() => {
     const def = SEGMENT_DEFAULTS[segment];
