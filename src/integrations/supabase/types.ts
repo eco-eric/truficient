@@ -999,6 +999,48 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_contract_candidate_dismissals: {
+        Row: {
+          customer_id: string
+          dismissed_at: string
+          dismissed_by: string | null
+          id: string
+          location_id: string | null
+          reason: string | null
+        }
+        Insert: {
+          customer_id: string
+          dismissed_at?: string
+          dismissed_by?: string | null
+          id?: string
+          location_id?: string | null
+          reason?: string | null
+        }
+        Update: {
+          customer_id?: string
+          dismissed_at?: string
+          dismissed_by?: string | null
+          id?: string
+          location_id?: string | null
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_contract_candidate_dismissals_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_contract_candidate_dismissals_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "crm_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_contract_filters: {
         Row: {
           contract_id: string
