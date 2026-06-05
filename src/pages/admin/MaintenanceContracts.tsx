@@ -14,7 +14,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Plus, Wrench, AlertTriangle, Calendar, Filter as FilterIcon, DollarSign, Sparkles } from 'lucide-react';
+import { Plus, Wrench, AlertTriangle, Calendar, Filter as FilterIcon, DollarSign, Sparkles, Tags } from 'lucide-react';
 import { useMaintenanceContracts } from '@/hooks/useMaintenanceContracts';
 import {
   STATUS_OPTIONS, BILLING_OPTIONS,
