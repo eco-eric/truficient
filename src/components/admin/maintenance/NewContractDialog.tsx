@@ -12,10 +12,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, Lock, Unlock } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCreateContract } from '@/hooks/useMaintenanceContracts';
+import { useContractTiers, type ContractTier } from '@/pages/admin/MaintenanceContractTiers';
 import {
   SEGMENT_DEFAULTS,
   BILLING_OPTIONS,
@@ -45,7 +46,11 @@ export function NewContractDialog({ open, onOpenChange, onCreated, initialCustom
   const [customerId, setCustomerId] = useState<string>(initialCustomerId ?? '');
   const [locationId, setLocationId] = useState<string>(initialLocationId ?? '');
   const [segment, setSegment] = useState<MaintenanceSegment>(initialSegment ?? 'residential');
-  const [tier, setTier] = useState('');
+  const [tierId, setTierId] = useState<string>('');
+  const [unitCount, setUnitCount] = useState(1);
+  const [priceLocked, setPriceLocked] = useState(true);
+  const [inclusionsLocked, setInclusionsLocked] = useState(true);
+  const [inclusionsText, setInclusionsText] = useState('');
   const [startDate, setStartDate] = useState(toISODate(new Date()));
   const [endDate, setEndDate] = useState(toISODate(addDays(new Date(), 365)));
   const [autoRenew, setAutoRenew] = useState(true);
@@ -59,6 +64,16 @@ export function NewContractDialog({ open, onOpenChange, onCreated, initialCustom
   const [submitting, setSubmitting] = useState(false);
 
   const createContract = useCreateContract();
+  const { data: allTiers = [] } = useContractTiers(false);
+
+  const availableTiers = useMemo(
+    () => allTiers.filter((t) => t.segment === segment || t.segment === 'both'),
+    [allTiers, segment],
+  );
+  const selectedTier: ContractTier | undefined = useMemo(
+    () => allTiers.find((t) => t.id === tierId),
+    [allTiers, tierId],
+  );
 
   // Apply prefill when dialog opens
   useEffect(() => {
@@ -69,13 +84,43 @@ export function NewContractDialog({ open, onOpenChange, onCreated, initialCustom
     }
   }, [open, initialCustomerId, initialLocationId, initialSegment]);
 
-  // Apply segment defaults
+  // Reset tier when segment changes (if current tier no longer matches)
   useEffect(() => {
+    if (selectedTier && selectedTier.segment !== 'both' && selectedTier.segment !== segment) {
+      setTierId('');
+    }
+  }, [segment, selectedTier]);
+
+  // Apply segment defaults when no tier selected
+  useEffect(() => {
+    if (selectedTier) return;
     const def = SEGMENT_DEFAULTS[segment];
     setVisitsPerYear(def.visits_per_year);
     setBillingModel(def.billing_model);
     setContractPrice(def.contract_price?.toString() ?? '');
-  }, [segment]);
+  }, [segment, selectedTier]);
+
+  // Apply tier defaults when tier selected (or unit count changes)
+  useEffect(() => {
+    if (!selectedTier) return;
+    setVisitsPerYear(selectedTier.visits_per_year);
+    setFilterIntervalDays(selectedTier.filter_interval_days);
+    setInclusionsText(selectedTier.inclusions_text ?? '');
+    setInclusionsLocked(true);
+    setPriceLocked(true);
+    if (selectedTier.per_visit_price != null && billingModel === 'pay_per_visit') {
+      setPerVisitPrice(String(selectedTier.per_visit_price));
+    }
+  }, [selectedTier?.id]);
+
+  // Auto-calc annual price from tier + unit count whenever locked
+  useEffect(() => {
+    if (!selectedTier || !priceLocked) return;
+    const base = Number(selectedTier.base_price ?? 0);
+    const addl = Number(selectedTier.additional_unit_price ?? 0);
+    const total = base + addl * Math.max(0, unitCount - 1);
+    setContractPrice(total.toFixed(2));
+  }, [selectedTier, unitCount, priceLocked]);
 
   // Auto end date = start + 12 months
   useEffect(() => {
@@ -119,6 +164,10 @@ export function NewContractDialog({ open, onOpenChange, onCreated, initialCustom
     [locations, locationId],
   );
 
+  // For residential tier, price is read-only by default. Commercial always editable.
+  const residentialLocked = !!selectedTier && segment === 'residential' && priceLocked;
+  const inclusionsReadOnly = !!selectedTier && segment === 'residential' && inclusionsLocked;
+
   function addFilter() {
     setFilters([...filters, { size: '', quantity: 1, interval_days: filterIntervalDays }]);
   }
@@ -133,7 +182,9 @@ export function NewContractDialog({ open, onOpenChange, onCreated, initialCustom
     setCustomerId('');
     setLocationId('');
     setSegment('residential');
-    setTier('');
+    setTierId('');
+    setUnitCount(1);
+    setInclusionsText('');
     setNotes('');
     setFilters([]);
   }
@@ -152,7 +203,11 @@ export function NewContractDialog({ open, onOpenChange, onCreated, initialCustom
           location_id: locationId || null,
           workedge_property_id: selectedLocation?.workedge_property_id ?? null,
           segment,
-          tier: tier || null,
+          tier: selectedTier?.name ?? null,
+          tier_id: selectedTier?.id ?? null,
+          tier_name_snapshot: selectedTier?.name ?? null,
+          inclusions_text: inclusionsText || null,
+          unit_count: unitCount,
           status: 'active',
           start_date: startDate,
           end_date: endDate,
@@ -164,9 +219,8 @@ export function NewContractDialog({ open, onOpenChange, onCreated, initialCustom
           visits_per_year: visitsPerYear,
           filter_change_interval_days: filterIntervalDays,
           notes: notes || null,
-          // Initial next_visit_due = start + 30 days
           next_visit_due: toISODate(addDays(new Date(startDate), 30)),
-        },
+        } as any,
         filters: filters
           .filter((f) => f.size.trim().length > 0)
           .map((f) => ({
@@ -216,6 +270,31 @@ export function NewContractDialog({ open, onOpenChange, onCreated, initialCustom
             </Button>
           </div>
 
+          {/* Tier */}
+          <div>
+            <Label>Tier</Label>
+            <Select value={tierId || 'none'} onValueChange={(v) => setTierId(v === 'none' ? '' : v)}>
+              <SelectTrigger><SelectValue placeholder="Select a tier" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No tier (custom)</SelectItem>
+                {availableTiers.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name} — ${Number(t.base_price ?? 0).toFixed(0)}{t.additional_unit_price ? ` + $${Number(t.additional_unit_price).toFixed(0)}/unit` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Unit count for residential tiers */}
+          {selectedTier && segment === 'residential' && (
+            <div>
+              <Label>Unit Count (systems)</Label>
+              <Input type="number" min={1} value={unitCount}
+                onChange={(e) => setUnitCount(Math.max(1, Number(e.target.value) || 1))} />
+            </div>
+          )}
+
           {/* Customer */}
           <div>
             <Label>Customer</Label>
@@ -247,12 +326,6 @@ export function NewContractDialog({ open, onOpenChange, onCreated, initialCustom
               </Select>
             </div>
           )}
-
-          {/* Tier */}
-          <div>
-            <Label>Tier (optional)</Label>
-            <Input value={tier} onChange={(e) => setTier(e.target.value)} placeholder="Comfort Club, Platinum…" />
-          </div>
 
           {/* Dates */}
           <div className="grid grid-cols-2 gap-3">
@@ -294,8 +367,17 @@ export function NewContractDialog({ open, onOpenChange, onCreated, initialCustom
           <div className="grid grid-cols-2 gap-3">
             {billingModel !== 'pay_per_visit' && (
               <div>
-                <Label>Annual Price</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Annual Price</Label>
+                  {selectedTier && segment === 'residential' && (
+                    <button type="button" className="text-xs text-primary inline-flex items-center gap-1"
+                      onClick={() => setPriceLocked((v) => !v)}>
+                      {priceLocked ? <><Unlock className="w-3 h-3" /> Override</> : <><Lock className="w-3 h-3" /> Lock</>}
+                    </button>
+                  )}
+                </div>
                 <Input type="number" step="0.01" value={contractPrice}
+                  readOnly={residentialLocked}
                   onChange={(e) => setContractPrice(e.target.value)} />
               </div>
             )}
@@ -312,6 +394,24 @@ export function NewContractDialog({ open, onOpenChange, onCreated, initialCustom
                 onChange={(e) => setFilterIntervalDays(Number(e.target.value) || 90)} />
             </div>
           </div>
+
+          {/* Inclusions */}
+          {(selectedTier || inclusionsText) && (
+            <div>
+              <div className="flex items-center justify-between">
+                <Label>What's Included</Label>
+                {selectedTier && segment === 'residential' && (
+                  <button type="button" className="text-xs text-primary inline-flex items-center gap-1"
+                    onClick={() => setInclusionsLocked((v) => !v)}>
+                    {inclusionsLocked ? <><Unlock className="w-3 h-3" /> Edit</> : <><Lock className="w-3 h-3" /> Lock</>}
+                  </button>
+                )}
+              </div>
+              <Textarea rows={3} value={inclusionsText}
+                readOnly={inclusionsReadOnly}
+                onChange={(e) => setInclusionsText(e.target.value)} />
+            </div>
+          )}
 
           {/* Filters */}
           <div className="border rounded-md p-3 space-y-2">
