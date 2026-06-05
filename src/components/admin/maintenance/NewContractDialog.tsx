@@ -29,6 +29,9 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated?: (id: string) => void;
+  initialCustomerId?: string;
+  initialLocationId?: string;
+  initialSegment?: MaintenanceSegment;
 }
 
 interface FilterRow {
@@ -38,10 +41,10 @@ interface FilterRow {
   interval_days: number;
 }
 
-export function NewContractDialog({ open, onOpenChange, onCreated }: Props) {
-  const [customerId, setCustomerId] = useState<string>('');
-  const [locationId, setLocationId] = useState<string>('');
-  const [segment, setSegment] = useState<MaintenanceSegment>('residential');
+export function NewContractDialog({ open, onOpenChange, onCreated, initialCustomerId, initialLocationId, initialSegment }: Props) {
+  const [customerId, setCustomerId] = useState<string>(initialCustomerId ?? '');
+  const [locationId, setLocationId] = useState<string>(initialLocationId ?? '');
+  const [segment, setSegment] = useState<MaintenanceSegment>(initialSegment ?? 'residential');
   const [tier, setTier] = useState('');
   const [startDate, setStartDate] = useState(toISODate(new Date()));
   const [endDate, setEndDate] = useState(toISODate(addDays(new Date(), 365)));
@@ -56,6 +59,15 @@ export function NewContractDialog({ open, onOpenChange, onCreated }: Props) {
   const [submitting, setSubmitting] = useState(false);
 
   const createContract = useCreateContract();
+
+  // Apply prefill when dialog opens
+  useEffect(() => {
+    if (open) {
+      if (initialCustomerId !== undefined) setCustomerId(initialCustomerId);
+      if (initialLocationId !== undefined) setLocationId(initialLocationId);
+      if (initialSegment !== undefined) setSegment(initialSegment);
+    }
+  }, [open, initialCustomerId, initialLocationId, initialSegment]);
 
   // Apply segment defaults
   useEffect(() => {
