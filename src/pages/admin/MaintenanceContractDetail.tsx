@@ -152,6 +152,18 @@ function OverviewTab({ contract }: { contract: ReturnType<typeof useMaintenanceC
   }
 
   return (
+    <div className="space-y-4">
+      {contract.inclusions_text && (
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-base">What's Included</CardTitle></CardHeader>
+          <CardContent>
+            <p className="text-sm whitespace-pre-wrap text-muted-foreground">{contract.inclusions_text}</p>
+            {contract.billing_model === 'pay_per_visit' && contract.per_visit_price != null && (
+              <p className="text-sm mt-3"><span className="text-muted-foreground">Per-visit price:</span> <span className="font-medium">${Number(contract.per_visit_price).toFixed(2)}</span></p>
+            )}
+          </CardContent>
+        </Card>
+      )}
     <Card>
       <CardContent className="p-6 space-y-4">
         <div className="grid md:grid-cols-3 gap-4">
