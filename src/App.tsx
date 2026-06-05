@@ -280,6 +280,7 @@ const router = createBrowserRouter([
           { path: "/admin/jobs/:id", element: <ProtectedRoute><AdminJobDetail /></ProtectedRoute> },
           { path: "/admin/job-types", element: <ProtectedRoute><AdminJobTypesConfig /></ProtectedRoute> },
           { path: "/admin/contracts", element: <ProtectedRoute><AdminMaintenanceContracts /></ProtectedRoute> },
+          { path: "/admin/contracts/candidates", element: <ProtectedRoute><AdminMaintenanceContractCandidates /></ProtectedRoute> },
           { path: "/admin/contracts/:id", element: <ProtectedRoute><AdminMaintenanceContractDetail /></ProtectedRoute> },
           { path: "/admin/teams", element: <ProtectedRoute><AdminTeams /></ProtectedRoute> },
           { path: "/admin/timesheets", element: <ProtectedRoute><AdminTimesheets /></ProtectedRoute> },
