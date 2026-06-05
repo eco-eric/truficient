@@ -1091,6 +1091,54 @@ export type Database = {
           },
         ]
       }
+      crm_contract_tiers: {
+        Row: {
+          additional_unit_price: number | null
+          base_price: number | null
+          created_at: string | null
+          filter_interval_days: number | null
+          id: string
+          inclusions_text: string | null
+          is_active: boolean | null
+          name: string
+          per_visit_price: number | null
+          segment: string
+          sort_order: number | null
+          updated_at: string | null
+          visits_per_year: number | null
+        }
+        Insert: {
+          additional_unit_price?: number | null
+          base_price?: number | null
+          created_at?: string | null
+          filter_interval_days?: number | null
+          id?: string
+          inclusions_text?: string | null
+          is_active?: boolean | null
+          name: string
+          per_visit_price?: number | null
+          segment: string
+          sort_order?: number | null
+          updated_at?: string | null
+          visits_per_year?: number | null
+        }
+        Update: {
+          additional_unit_price?: number | null
+          base_price?: number | null
+          created_at?: string | null
+          filter_interval_days?: number | null
+          id?: string
+          inclusions_text?: string | null
+          is_active?: boolean | null
+          name?: string
+          per_visit_price?: number | null
+          segment?: string
+          sort_order?: number | null
+          updated_at?: string | null
+          visits_per_year?: number | null
+        }
+        Relationships: []
+      }
       crm_contract_visits: {
         Row: {
           contract_id: string
@@ -2274,6 +2322,7 @@ export type Database = {
           end_date: string | null
           filter_change_interval_days: number
           id: string
+          inclusions_text: string | null
           last_filter_change: string | null
           last_visit_date: string | null
           location_id: string | null
@@ -2286,6 +2335,9 @@ export type Database = {
           start_date: string
           status: Database["public"]["Enums"]["maintenance_status"]
           tier: string | null
+          tier_id: string | null
+          tier_name_snapshot: string | null
+          unit_count: number | null
           updated_at: string
           visits_per_year: number
           workedge_property_id: string | null
@@ -2301,6 +2353,7 @@ export type Database = {
           end_date?: string | null
           filter_change_interval_days?: number
           id?: string
+          inclusions_text?: string | null
           last_filter_change?: string | null
           last_visit_date?: string | null
           location_id?: string | null
@@ -2313,6 +2366,9 @@ export type Database = {
           start_date?: string
           status?: Database["public"]["Enums"]["maintenance_status"]
           tier?: string | null
+          tier_id?: string | null
+          tier_name_snapshot?: string | null
+          unit_count?: number | null
           updated_at?: string
           visits_per_year?: number
           workedge_property_id?: string | null
@@ -2328,6 +2384,7 @@ export type Database = {
           end_date?: string | null
           filter_change_interval_days?: number
           id?: string
+          inclusions_text?: string | null
           last_filter_change?: string | null
           last_visit_date?: string | null
           location_id?: string | null
@@ -2340,6 +2397,9 @@ export type Database = {
           start_date?: string
           status?: Database["public"]["Enums"]["maintenance_status"]
           tier?: string | null
+          tier_id?: string | null
+          tier_name_snapshot?: string | null
+          unit_count?: number | null
           updated_at?: string
           visits_per_year?: number
           workedge_property_id?: string | null
@@ -2357,6 +2417,13 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "crm_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_maintenance_contracts_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contract_tiers"
             referencedColumns: ["id"]
           },
         ]
