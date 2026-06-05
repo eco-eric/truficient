@@ -68,9 +68,14 @@ export default function MaintenanceContracts() {
           </h1>
           <p className="text-sm text-muted-foreground">Track residential & commercial agreements, visits, and filters.</p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="w-4 h-4" /> New Contract
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/admin/contracts/candidates"><Sparkles className="w-4 h-4" /> Find Candidates</Link>
+          </Button>
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="w-4 h-4" /> New Contract
+          </Button>
+        </div>
       </div>
 
       {/* KPIs */}
