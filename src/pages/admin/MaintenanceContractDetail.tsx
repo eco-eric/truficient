@@ -249,6 +249,7 @@ function OverviewTab({ contract }: { contract: ReturnType<typeof useMaintenanceC
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 }
 
