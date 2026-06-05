@@ -72,6 +72,9 @@ export default function MaintenanceContracts() {
           <Button variant="outline" asChild>
             <Link to="/admin/contracts/candidates"><Sparkles className="w-4 h-4" /> Find Candidates</Link>
           </Button>
+          <Button variant="outline" asChild>
+            <Link to="/admin/maintenance-contracts/tiers"><Tags className="w-4 h-4" /> Pricing & Tiers</Link>
+          </Button>
           <Button onClick={() => setDialogOpen(true)}>
             <Plus className="w-4 h-4" /> New Contract
           </Button>
