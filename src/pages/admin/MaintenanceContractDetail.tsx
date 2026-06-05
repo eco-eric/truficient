@@ -67,12 +67,15 @@ export default function MaintenanceContractDetail() {
               {loc.address_line1}, {loc.city}, {loc.state} {loc.zip_code}
             </div>
           )}
-          <div className="flex gap-2 mt-2">
+          <div className="flex gap-2 mt-2 flex-wrap">
             <Badge variant="outline" className="capitalize">{contract.segment}</Badge>
             <Badge variant={contract.status === 'active' ? 'default' : 'secondary'} className="capitalize">
               {contract.status}
             </Badge>
             {contract.tier && <Badge variant="secondary">{contract.tier}</Badge>}
+            {contract.tier_name_snapshot && contract.tier_name_snapshot !== contract.tier && (
+              <Badge variant="outline">Snapshot: {contract.tier_name_snapshot}</Badge>
+            )}
           </div>
         </div>
         {contract.workedge_property_id && (
