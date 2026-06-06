@@ -41,6 +41,7 @@ export default function KnowledgeBase() {
   const [categories, setCategories] = useState<KbCategory[]>([]);
   const [articles, setArticles] = useState<KbArticle[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | 'all'>('all');
+  const [lang, setLang] = useState<'en' | 'es'>('en');
 
   const [catOpen, setCatOpen] = useState(false);
   const [catForm, setCatForm] = useState({ name: '', slug: '', icon: '' });
@@ -162,7 +163,7 @@ export default function KnowledgeBase() {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button variant={activeCategory === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setActiveCategory('all')}>
           All ({articles.length})
         </Button>
@@ -183,6 +184,10 @@ export default function KnowledgeBase() {
             )}
           </div>
         ))}
+        <div className="ml-auto inline-flex rounded-md border overflow-hidden">
+          <Button variant={lang === 'en' ? 'default' : 'ghost'} size="sm" className="rounded-none" onClick={() => setLang('en')}>EN</Button>
+          <Button variant={lang === 'es' ? 'default' : 'ghost'} size="sm" className="rounded-none" onClick={() => setLang('es')}>ES</Button>
+        </div>
       </div>
 
 
@@ -192,13 +197,20 @@ export default function KnowledgeBase() {
         <div className="grid gap-3">
           {filtered.map(a => {
             const cat = categories.find(c => c.id === a.category_id);
+            const showEs = lang === 'es';
+            const title = showEs ? (a.title_es || a.title_en) : a.title_en;
+            const content = showEs ? (a.content_es || a.content_en) : a.content_en;
+            const altTitle = showEs ? a.title_en : a.title_es;
+            const altLabel = showEs ? 'EN' : 'ES';
+            const missingEs = showEs && !a.title_es;
             return (
               <Card key={a.id}>
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <CardTitle className="text-base">{a.title_en}</CardTitle>
-                      {a.title_es && <p className="text-xs text-muted-foreground mt-1">ES: {a.title_es}</p>}
+                      <CardTitle className="text-base">{title}</CardTitle>
+                      {altTitle && <p className="text-xs text-muted-foreground mt-1">{altLabel}: {altTitle}</p>}
+                      {missingEs && <p className="text-xs text-amber-600 mt-1">No Spanish translation yet</p>}
                     </div>
                     <div className="flex items-center gap-2">
                       {cat && <Badge variant="secondary">{cat.name}</Badge>}
@@ -213,9 +225,9 @@ export default function KnowledgeBase() {
                     </div>
                   </div>
                 </CardHeader>
-                {(a.content_en || (a.tags && a.tags.length)) && (
+                {(content || (a.tags && a.tags.length)) && (
                   <CardContent className="pt-0">
-                    {a.content_en && <p className="text-sm text-muted-foreground line-clamp-2">{a.content_en}</p>}
+                    {content && <p className="text-sm text-muted-foreground line-clamp-2">{content}</p>}
                     {a.tags && a.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {a.tags.map(t => <Badge key={t} variant="outline" className="text-xs">{t}</Badge>)}
