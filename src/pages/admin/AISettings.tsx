@@ -146,8 +146,17 @@ const MODELS_BY_PROVIDER: Record<string, { value: string; label: string }[]> = {
   ],
 };
 
+const CONFIG_KEY_LABELS: Record<string, string> = {
+  ai_assistant: 'AI Assistant',
+  knowledge_base: 'Knowledge Base (Translation)',
+};
+
+const KNOWN_CONFIG_KEYS = ['ai_assistant', 'knowledge_base'];
+
 const AISettingsPage = () => {
   const [config, setConfig] = useState<AIConfig | null>(null);
+  const [allConfigs, setAllConfigs] = useState<AIConfig[]>([]);
+  const [configKey, setConfigKey] = useState<string>('ai_assistant');
   const [logs, setLogs] = useState<AIRequestLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -164,25 +173,35 @@ const AISettingsPage = () => {
   const [systemPrompt, setSystemPrompt] = useState('');
   const [isActive, setIsActive] = useState(true);
 
-  const fetchConfig = async () => {
+  const applyConfig = (data: AIConfig | null) => {
+    setConfig(data);
+    if (data) {
+      setProvider(data.provider);
+      setModel(data.model);
+      setTemperature(Number(data.temperature) || 0.7);
+      setMaxTokens(data.max_tokens || 2048);
+      setSystemPrompt(data.system_prompt || '');
+      setIsActive(data.is_active);
+    } else {
+      setProvider('lovable');
+      setModel('google/gemini-2.5-flash');
+      setTemperature(0.7);
+      setMaxTokens(2048);
+      setSystemPrompt('');
+      setIsActive(true);
+    }
+  };
+
+  const fetchConfig = async (key: string) => {
     try {
-      const { data, error } = await supabase
+      const { data: list, error } = await supabase
         .from('ai_config')
         .select('*')
-        .eq('config_key', 'ai_assistant')
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      
-      if (data) {
-        setConfig(data);
-        setProvider(data.provider);
-        setModel(data.model);
-        setTemperature(Number(data.temperature) || 0.7);
-        setMaxTokens(data.max_tokens || 2048);
-        setSystemPrompt(data.system_prompt || '');
-        setIsActive(data.is_active);
-      }
+        .order('config_key');
+      if (error) throw error;
+      setAllConfigs((list || []) as any);
+      const match = ((list || []) as any[]).find((c) => c.config_key === key) || null;
+      applyConfig(match);
     } catch (error) {
       console.error('Error fetching AI config:', error);
     }
@@ -206,16 +225,16 @@ const AISettingsPage = () => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([fetchConfig(), fetchLogs()]);
+      await Promise.all([fetchConfig(configKey), fetchLogs()]);
       setLoading(false);
     };
-    
+
     if (isSuperAdmin) {
       loadData();
     } else if (!roleLoading) {
       setLoading(false);
     }
-  }, [isSuperAdmin, roleLoading]);
+  }, [isSuperAdmin, roleLoading, configKey]);
 
   const saveConfig = async () => {
     setSaving(true);
@@ -241,7 +260,7 @@ const AISettingsPage = () => {
         const { error } = await supabase
           .from('ai_config')
           .insert({
-            config_key: 'ai_assistant',
+            config_key: configKey,
             ...updateData,
           });
 
@@ -250,10 +269,10 @@ const AISettingsPage = () => {
 
       toast({
         title: 'Configuration Saved',
-        description: 'AI settings have been updated successfully.',
+        description: `${CONFIG_KEY_LABELS[configKey] || configKey} settings have been updated.`,
       });
 
-      fetchConfig();
+      fetchConfig(configKey);
     } catch (error: any) {
       console.error('Error saving config:', error);
       toast({
@@ -408,7 +427,29 @@ const AISettingsPage = () => {
           </TabsList>
 
           <TabsContent value="configuration" className="space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Feature Configuration</CardTitle>
+                <CardDescription>Select which AI feature to configure</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Select value={configKey} onValueChange={setConfigKey}>
+                  <SelectTrigger className="max-w-md">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {KNOWN_CONFIG_KEYS.map((k) => (
+                      <SelectItem key={k} value={k}>
+                        {CONFIG_KEY_LABELS[k] || k}
+                        {!allConfigs.find((c) => c.config_key === k) && ' (not configured)'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
               {/* Provider & Model */}
               <Card>
                 <CardHeader>
