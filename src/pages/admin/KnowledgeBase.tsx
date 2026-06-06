@@ -67,15 +67,47 @@ export default function KnowledgeBase() {
   const saveCategory = async () => {
     if (!catForm.name) return;
     const slug = catForm.slug || slugify(catForm.name);
-    const { error } = await (supabase as any).from('kb_categories').insert({
-      name: catForm.name,
-      slug,
-      icon: catForm.icon || null,
-    });
-    if (error) return toast.error(error.message);
-    toast.success('Category created');
+    if (editingCategory) {
+      const { error } = await (supabase as any).from('kb_categories').update({
+        name: catForm.name,
+        slug,
+        icon: catForm.icon || null,
+      }).eq('id', editingCategory.id);
+      if (error) return toast.error(error.message);
+      toast.success('Category updated');
+    } else {
+      const { error } = await (supabase as any).from('kb_categories').insert({
+        name: catForm.name,
+        slug,
+        icon: catForm.icon || null,
+      });
+      if (error) return toast.error(error.message);
+      toast.success('Category created');
+    }
     setCatOpen(false);
+    setEditingCategory(null);
     setCatForm({ name: '', slug: '', icon: '' });
+    load();
+  };
+
+  const openCategoryEditor = (cat?: KbCategory) => {
+    if (cat) {
+      setEditingCategory(cat);
+      setCatForm({ name: cat.name, slug: cat.slug, icon: cat.icon || '' });
+    } else {
+      setEditingCategory(null);
+      setCatForm({ name: '', slug: '', icon: '' });
+    }
+    setCatOpen(true);
+  };
+
+  const deleteCategory = async (cat: KbCategory) => {
+    const count = articles.filter(a => a.category_id === cat.id).length;
+    if (!confirm(`Delete category "${cat.name}"?${count > 0 ? ` This will also delete ${count} article(s).` : ''}`)) return;
+    const { error } = await (supabase as any).from('kb_categories').delete().eq('id', cat.id);
+    if (error) return toast.error(error.message);
+    toast.success('Category deleted');
+    if (activeCategory === cat.id) setActiveCategory('all');
     load();
   };
 
