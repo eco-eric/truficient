@@ -143,18 +143,18 @@ export default function KnowledgeBase() {
         </div>
         {canEdit && (
           <div className="flex gap-2">
-            <Dialog open={catOpen} onOpenChange={setCatOpen}>
+            <Dialog open={catOpen} onOpenChange={(o) => { setCatOpen(o); if (!o) { setEditingCategory(null); setCatForm({ name: '', slug: '', icon: '' }); } }}>
               <DialogTrigger asChild>
-                <Button variant="outline"><Plus className="h-4 w-4 mr-2" />Category</Button>
+                <Button variant="outline" onClick={() => openCategoryEditor()}><Plus className="h-4 w-4 mr-2" />Category</Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>New Category</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{editingCategory ? 'Edit Category' : 'New Category'}</DialogTitle></DialogHeader>
                 <div className="space-y-3">
                   <Input placeholder="Name" value={catForm.name} onChange={e => setCatForm({ ...catForm, name: e.target.value })} />
                   <Input placeholder="Slug (auto)" value={catForm.slug} onChange={e => setCatForm({ ...catForm, slug: e.target.value })} />
                   <IconPicker value={catForm.icon} onChange={v => setCatForm({ ...catForm, icon: v })} />
                 </div>
-                <DialogFooter><Button onClick={saveCategory}>Create</Button></DialogFooter>
+                <DialogFooter><Button onClick={saveCategory}>{editingCategory ? 'Save' : 'Create'}</Button></DialogFooter>
               </DialogContent>
             </Dialog>
             <Button onClick={() => openEditor()}><Plus className="h-4 w-4 mr-2" />Add Article</Button>
@@ -167,11 +167,24 @@ export default function KnowledgeBase() {
           All ({articles.length})
         </Button>
         {categories.map(c => (
-          <Button key={c.id} variant={activeCategory === c.id ? 'default' : 'outline'} size="sm" onClick={() => setActiveCategory(c.id)}>
-            {c.name} ({articles.filter(a => a.category_id === c.id).length})
-          </Button>
+          <div key={c.id} className="inline-flex items-center rounded-md border bg-background overflow-hidden">
+            <Button variant={activeCategory === c.id ? 'default' : 'ghost'} size="sm" className="rounded-none border-0" onClick={() => setActiveCategory(c.id)}>
+              {c.name} ({articles.filter(a => a.category_id === c.id).length})
+            </Button>
+            {canEdit && (
+              <>
+                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-none" onClick={() => openCategoryEditor(c)}>
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-none" onClick={() => deleteCategory(c)}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </>
+            )}
+          </div>
         ))}
       </div>
+
 
       {filtered.length === 0 ? (
         <Card><CardContent className="py-12 text-center text-muted-foreground">No articles yet.</CardContent></Card>
