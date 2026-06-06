@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Plus, BookOpen, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import ArticleEditor from '@/components/admin/knowledge-base/ArticleEditor';
+import IconPicker from '@/components/admin/knowledge-base/IconPicker';
 import { useUserRole } from '@/hooks/useUserRole';
 
 interface KbCategory {
@@ -118,7 +119,7 @@ export default function KnowledgeBase() {
                 <div className="space-y-3">
                   <Input placeholder="Name" value={catForm.name} onChange={e => setCatForm({ ...catForm, name: e.target.value })} />
                   <Input placeholder="Slug (auto)" value={catForm.slug} onChange={e => setCatForm({ ...catForm, slug: e.target.value })} />
-                  <Input placeholder="Lucide icon name (optional)" value={catForm.icon} onChange={e => setCatForm({ ...catForm, icon: e.target.value })} />
+                  <IconPicker value={catForm.icon} onChange={v => setCatForm({ ...catForm, icon: v })} />
                 </div>
                 <DialogFooter><Button onClick={saveCategory}>Create</Button></DialogFooter>
               </DialogContent>
