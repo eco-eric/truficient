@@ -87,6 +87,7 @@ export const navSections: NavSection[] = [
       { label: 'WorkEdge Projects', href: '/admin/workedge', icon: Camera, permissionKey: 'nav.workedge' },
       { label: 'Job Types', href: '/admin/job-types', icon: Wrench, permissionKey: 'nav.job-types' },
       { label: 'Calendar Settings', href: '/admin/calendars', icon: Settings, permissionKey: 'nav.calendars' },
+      { label: 'Knowledge Base', href: '/admin/knowledge-base', icon: BookOpen, permissionKey: 'nav.knowledge-base' },
     ],
   },
   {
@@ -110,7 +111,6 @@ export const navSections: NavSection[] = [
       { label: 'Blog', href: '/admin/blog', icon: PenSquare, permissionKey: 'nav.blog' },
       { label: 'Gallery', href: '/admin/gallery', icon: Images, permissionKey: 'nav.gallery' },
       { label: 'Equipment Library', href: '/admin/equipment-library', icon: Library, permissionKey: 'nav.equipment-library' },
-      { label: 'Knowledge Base', href: '/admin/knowledge-base', icon: BookOpen, permissionKey: 'nav.knowledge-base' },
     ],
   },
   {
