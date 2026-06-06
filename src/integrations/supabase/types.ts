@@ -5058,6 +5058,136 @@ export type Database = {
           },
         ]
       }
+      kb_articles: {
+        Row: {
+          category_id: string | null
+          content_en: string | null
+          content_es: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          model_number: string | null
+          tag_type: string | null
+          tags: string[]
+          title_en: string
+          title_es: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          content_en?: string | null
+          content_es?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          model_number?: string | null
+          tag_type?: string | null
+          tags?: string[]
+          title_en: string
+          title_es?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          content_en?: string | null
+          content_es?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          model_number?: string | null
+          tag_type?: string | null
+          tags?: string[]
+          title_en?: string
+          title_es?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_articles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "kb_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_categories: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      kb_media: {
+        Row: {
+          article_id: string
+          caption_en: string | null
+          caption_es: string | null
+          created_at: string
+          id: string
+          media_type: string
+          sort_order: number
+          url: string
+        }
+        Insert: {
+          article_id: string
+          caption_en?: string | null
+          caption_es?: string | null
+          created_at?: string
+          id?: string
+          media_type: string
+          sort_order?: number
+          url: string
+        }
+        Update: {
+          article_id?: string
+          caption_en?: string | null
+          caption_es?: string | null
+          created_at?: string
+          id?: string
+          media_type?: string
+          sort_order?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_media_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "kb_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_base: {
         Row: {
           category: string
