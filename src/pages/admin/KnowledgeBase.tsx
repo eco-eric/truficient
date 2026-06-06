@@ -41,6 +41,7 @@ export default function KnowledgeBase() {
   const [categories, setCategories] = useState<KbCategory[]>([]);
   const [articles, setArticles] = useState<KbArticle[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | 'all'>('all');
+  const [lang, setLang] = useState<'en' | 'es'>('en');
 
   const [catOpen, setCatOpen] = useState(false);
   const [catForm, setCatForm] = useState({ name: '', slug: '', icon: '' });
