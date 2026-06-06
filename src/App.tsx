@@ -112,7 +112,6 @@ const AdminMaintenanceContracts = lazy(() => import("./pages/admin/MaintenanceCo
 const AdminMaintenanceContractDetail = lazy(() => import("./pages/admin/MaintenanceContractDetail"));
 const AdminMaintenanceContractCandidates = lazy(() => import("./pages/admin/MaintenanceContractCandidates"));
 const AdminMaintenanceContractTiers = lazy(() => import("./pages/admin/MaintenanceContractTiers"));
-const AdminKnowledgeBase = lazy(() => import("./pages/admin/KnowledgeBase"));
 const AdminJobTypesConfig = lazy(() => import("./pages/admin/JobTypesConfig"));
 const AdminTeams = lazy(() => import("./pages/admin/Teams"));
 const AdminWorkEdgeProjects = lazy(() => import("./pages/admin/WorkEdgeProjects"));

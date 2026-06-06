@@ -37,7 +37,9 @@ import {
   Camera,
   Shield,
   Building2,
-  Mail
+  Mail,
+  BookOpen
+
 } from 'lucide-react';
 
 export interface NavItem {
