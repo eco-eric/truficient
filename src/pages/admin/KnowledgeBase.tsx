@@ -163,7 +163,7 @@ export default function KnowledgeBase() {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button variant={activeCategory === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setActiveCategory('all')}>
           All ({articles.length})
         </Button>
@@ -184,6 +184,10 @@ export default function KnowledgeBase() {
             )}
           </div>
         ))}
+        <div className="ml-auto inline-flex rounded-md border overflow-hidden">
+          <Button variant={lang === 'en' ? 'default' : 'ghost'} size="sm" className="rounded-none" onClick={() => setLang('en')}>EN</Button>
+          <Button variant={lang === 'es' ? 'default' : 'ghost'} size="sm" className="rounded-none" onClick={() => setLang('es')}>ES</Button>
+        </div>
       </div>
 
 
