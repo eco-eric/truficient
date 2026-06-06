@@ -1,243 +1,291 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Plus, Search, BookOpen, Pencil, Trash2, Copy } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, BookOpen, Loader2, Pencil, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
-const CATEGORIES = ['general', 'process', 'pricing', 'scheduling', 'customer-service', 'technical', 'sales', 'hr', 'seo'];
-
-interface KBEntry {
+interface KbCategory {
   id: string;
-  title: string;
+  name: string;
   slug: string;
-  category: string;
-  content: string;
-  tags: string[];
+  icon: string | null;
+  sort_order: number;
   is_active: boolean;
-  created_at: string;
+}
+
+interface KbArticle {
+  id: string;
+  category_id: string | null;
+  title_en: string;
+  title_es: string | null;
+  content_en: string | null;
+  content_es: string | null;
+  tag_type: string | null;
+  model_number: string | null;
+  tags: string[] | null;
   updated_at: string;
 }
 
-const emptyEntry = { title: '', slug: '', category: 'general', content: '', tags: [] as string[], is_active: true };
+export default function KnowledgeBase() {
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<KbCategory[]>([]);
+  const [articles, setArticles] = useState<KbArticle[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string | 'all'>('all');
 
-export default function AdminKnowledgeBase() {
-  const qc = useQueryClient();
-  const [search, setSearch] = useState('');
-  const [catFilter, setCatFilter] = useState('all');
-  const [editing, setEditing] = useState<Partial<KBEntry> | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [tagInput, setTagInput] = useState('');
+  const [catOpen, setCatOpen] = useState(false);
+  const [catForm, setCatForm] = useState({ name: '', slug: '', icon: '' });
 
-  const { data: entries = [], isLoading } = useQuery({
-    queryKey: ['knowledge_base'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('knowledge_base')
-        .select('*')
-        .order('category')
-        .order('title');
-      if (error) throw error;
-      return data as KBEntry[];
-    },
+  const [artOpen, setArtOpen] = useState(false);
+  const [editingArticle, setEditingArticle] = useState<KbArticle | null>(null);
+  const [artForm, setArtForm] = useState({
+    category_id: '',
+    title_en: '',
+    title_es: '',
+    content_en: '',
+    content_es: '',
+    tag_type: 'general',
+    model_number: '',
+    tags: '',
   });
 
-  const saveMutation = useMutation({
-    mutationFn: async (entry: Partial<KBEntry>) => {
-      if (entry.id) {
-        const { error } = await supabase.from('knowledge_base').update({
-          title: entry.title, slug: entry.slug, category: entry.category,
-          content: entry.content, tags: entry.tags, is_active: entry.is_active,
-        }).eq('id', entry.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('knowledge_base').insert({
-          title: entry.title, slug: entry.slug, category: entry.category,
-          content: entry.content, tags: entry.tags, is_active: entry.is_active,
-        });
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['knowledge_base'] });
-      toast.success(editing?.id ? 'Updated' : 'Created');
-      setEditing(null);
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
+  const load = async () => {
+    setLoading(true);
+    const [{ data: cats }, { data: arts }] = await Promise.all([
+      (supabase as any).from('kb_categories').select('*').order('sort_order'),
+      (supabase as any).from('kb_articles').select('*').order('updated_at', { ascending: false }),
+    ]);
+    setCategories(cats || []);
+    setArticles(arts || []);
+    setLoading(false);
+  };
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('knowledge_base').delete().eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['knowledge_base'] });
-      toast.success('Deleted');
-      setDeleteId(null);
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
+  useEffect(() => { load(); }, []);
 
-  const filtered = entries.filter(e => {
-    if (catFilter !== 'all' && e.category !== catFilter) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      return e.title.toLowerCase().includes(q) || e.content.toLowerCase().includes(q) || e.tags?.some(t => t.toLowerCase().includes(q));
+  const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+  const saveCategory = async () => {
+    if (!catForm.name) return;
+    const slug = catForm.slug || slugify(catForm.name);
+    const { error } = await (supabase as any).from('kb_categories').insert({
+      name: catForm.name,
+      slug,
+      icon: catForm.icon || null,
+    });
+    if (error) return toast.error(error.message);
+    toast.success('Category created');
+    setCatOpen(false);
+    setCatForm({ name: '', slug: '', icon: '' });
+    load();
+  };
+
+  const openArticleDialog = (article?: KbArticle) => {
+    if (article) {
+      setEditingArticle(article);
+      setArtForm({
+        category_id: article.category_id || '',
+        title_en: article.title_en,
+        title_es: article.title_es || '',
+        content_en: article.content_en || '',
+        content_es: article.content_es || '',
+        tag_type: article.tag_type || 'general',
+        model_number: article.model_number || '',
+        tags: (article.tags || []).join(', '),
+      });
+    } else {
+      setEditingArticle(null);
+      setArtForm({
+        category_id: activeCategory !== 'all' ? activeCategory : '',
+        title_en: '',
+        title_es: '',
+        content_en: '',
+        content_es: '',
+        tag_type: 'general',
+        model_number: '',
+        tags: '',
+      });
     }
-    return true;
-  });
+    setArtOpen(true);
+  };
 
-  const autoSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const saveArticle = async () => {
+    if (!artForm.title_en || !artForm.category_id) {
+      return toast.error('Title and category are required');
+    }
+    const payload = {
+      category_id: artForm.category_id,
+      title_en: artForm.title_en,
+      title_es: artForm.title_es || null,
+      content_en: artForm.content_en || null,
+      content_es: artForm.content_es || null,
+      tag_type: artForm.tag_type,
+      model_number: artForm.model_number || null,
+      tags: artForm.tags ? artForm.tags.split(',').map(t => t.trim()).filter(Boolean) : null,
+    };
+    const { error } = editingArticle
+      ? await (supabase as any).from('kb_articles').update(payload).eq('id', editingArticle.id)
+      : await (supabase as any).from('kb_articles').insert(payload);
+    if (error) return toast.error(error.message);
+    toast.success(editingArticle ? 'Article updated' : 'Article created');
+    setArtOpen(false);
+    load();
+  };
+
+  const deleteArticle = async (id: string) => {
+    if (!confirm('Delete this article?')) return;
+    const { error } = await (supabase as any).from('kb_articles').delete().eq('id', id);
+    if (error) return toast.error(error.message);
+    toast.success('Deleted');
+    load();
+  };
+
+  const filtered = activeCategory === 'all'
+    ? articles
+    : articles.filter(a => a.category_id === activeCategory);
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <BookOpen className="h-6 w-6" /> Knowledge Base
           </h1>
-          <p className="text-sm text-muted-foreground">Instruction documents accessible by agents via API/MCP</p>
+          <p className="text-muted-foreground text-sm">Bilingual install &amp; service articles for technicians.</p>
         </div>
-        <Button onClick={() => { setEditing({ ...emptyEntry }); setTagInput(''); }}>
-          <Plus className="h-4 w-4 mr-2" /> New Document
+        <div className="flex gap-2">
+          <Dialog open={catOpen} onOpenChange={setCatOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline"><Plus className="h-4 w-4 mr-2" />Category</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>New Category</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <Input placeholder="Name" value={catForm.name} onChange={e => setCatForm({ ...catForm, name: e.target.value })} />
+                <Input placeholder="Slug (auto)" value={catForm.slug} onChange={e => setCatForm({ ...catForm, slug: e.target.value })} />
+                <Input placeholder="Lucide icon name (optional)" value={catForm.icon} onChange={e => setCatForm({ ...catForm, icon: e.target.value })} />
+              </div>
+              <DialogFooter><Button onClick={saveCategory}>Create</Button></DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <Button onClick={() => openArticleDialog()}><Plus className="h-4 w-4 mr-2" />Article</Button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Button variant={activeCategory === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setActiveCategory('all')}>
+          All ({articles.length})
         </Button>
+        {categories.map(c => (
+          <Button key={c.id} variant={activeCategory === c.id ? 'default' : 'outline'} size="sm" onClick={() => setActiveCategory(c.id)}>
+            {c.name} ({articles.filter(a => a.category_id === c.id).length})
+          </Button>
+        ))}
       </div>
 
-      <div className="flex gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
-        </div>
-        <Select value={catFilter} onValueChange={setCatFilter}>
-          <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {isLoading ? (
-        <p className="text-center text-muted-foreground py-8">Loading...</p>
-      ) : filtered.length === 0 ? (
-        <p className="text-center text-muted-foreground py-8">No documents found</p>
+      {filtered.length === 0 ? (
+        <Card><CardContent className="py-12 text-center text-muted-foreground">No articles yet.</CardContent></Card>
       ) : (
         <div className="grid gap-3">
-          {filtered.map(entry => (
-            <Card key={entry.id} className={!entry.is_active ? 'opacity-60' : ''}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold truncate">{entry.title}</h3>
-                      <Badge variant="secondary" className="text-xs shrink-0">{entry.category}</Badge>
-                      {!entry.is_active && <Badge variant="outline" className="text-xs">Inactive</Badge>}
+          {filtered.map(a => {
+            const cat = categories.find(c => c.id === a.category_id);
+            return (
+              <Card key={a.id}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <CardTitle className="text-base">{a.title_en}</CardTitle>
+                      {a.title_es && <p className="text-xs text-muted-foreground mt-1">ES: {a.title_es}</p>}
                     </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{entry.content.substring(0, 200)}</p>
-                    {entry.tags?.length > 0 && (
-                      <div className="flex gap-1 mt-2 flex-wrap">
-                        {entry.tags.map(t => <Badge key={t} variant="outline" className="text-xs">{t}</Badge>)}
+                    <div className="flex items-center gap-2">
+                      {cat && <Badge variant="secondary">{cat.name}</Badge>}
+                      {a.tag_type && <Badge variant="outline">{a.tag_type}</Badge>}
+                      {a.model_number && <Badge variant="outline">{a.model_number}</Badge>}
+                      <Button size="icon" variant="ghost" onClick={() => openArticleDialog(a)}><Pencil className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => deleteArticle(a.id)}><Trash2 className="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                {(a.content_en || a.tags?.length) && (
+                  <CardContent className="pt-0">
+                    {a.content_en && <p className="text-sm text-muted-foreground line-clamp-2">{a.content_en}</p>}
+                    {a.tags && a.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {a.tags.map(t => <Badge key={t} variant="outline" className="text-xs">{t}</Badge>)}
                       </div>
                     )}
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { setEditing({ ...entry }); setTagInput(entry.tags?.join(', ') || ''); }}>
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { navigator.clipboard.writeText(entry.slug); toast.success('Slug copied'); }}>
-                      <Copy className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(entry.id)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  </CardContent>
+                )}
+              </Card>
+            );
+          })}
         </div>
       )}
 
-      {/* Edit/Create Dialog */}
-      <Dialog open={!!editing} onOpenChange={open => !open && setEditing(null)}>
+      <Dialog open={artOpen} onOpenChange={setArtOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editing?.id ? 'Edit Document' : 'New Document'}</DialogTitle>
-          </DialogHeader>
-          {editing && (
-            <div className="space-y-4">
+          <DialogHeader><DialogTitle>{editingArticle ? 'Edit Article' : 'New Article'}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Title</Label>
-                <Input value={editing.title || ''} onChange={e => setEditing({ ...editing, title: e.target.value, slug: editing.id ? editing.slug : autoSlug(e.target.value) })} />
+                <label className="text-xs font-medium">Category *</label>
+                <Select value={artForm.category_id} onValueChange={v => setArtForm({ ...artForm, category_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectContent>
+                    {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <Label>Slug (used by agents to reference)</Label>
-                <Input value={editing.slug || ''} onChange={e => setEditing({ ...editing, slug: e.target.value })} />
-              </div>
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <Label>Category</Label>
-                  <Select value={editing.category || 'general'} onValueChange={v => setEditing({ ...editing, category: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center gap-2 pt-6">
-                  <Switch checked={editing.is_active !== false} onCheckedChange={v => setEditing({ ...editing, is_active: v })} />
-                  <Label>Active</Label>
-                </div>
-              </div>
-              <div>
-                <Label>Content</Label>
-                <Textarea value={editing.content || ''} onChange={e => setEditing({ ...editing, content: e.target.value })} rows={12} className="font-mono text-sm" />
-              </div>
-              <div>
-                <Label>Tags (comma separated)</Label>
-                <Input value={tagInput} onChange={e => { setTagInput(e.target.value); setEditing({ ...editing, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) }); }} />
+                <label className="text-xs font-medium">Type</label>
+                <Select value={artForm.tag_type} onValueChange={v => setArtForm({ ...artForm, tag_type: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">General</SelectItem>
+                    <SelectItem value="install">Install</SelectItem>
+                    <SelectItem value="service">Service</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
-            <Button onClick={() => editing && saveMutation.mutate(editing)} disabled={!editing?.title || !editing?.slug || !editing?.content || saveMutation.isPending}>
-              {saveMutation.isPending ? 'Saving...' : 'Save'}
-            </Button>
-          </DialogFooter>
+            <div>
+              <label className="text-xs font-medium">Title (English) *</label>
+              <Input value={artForm.title_en} onChange={e => setArtForm({ ...artForm, title_en: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-xs font-medium">Title (Spanish)</label>
+              <Input value={artForm.title_es} onChange={e => setArtForm({ ...artForm, title_es: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-xs font-medium">Content (English)</label>
+              <Textarea rows={6} value={artForm.content_en} onChange={e => setArtForm({ ...artForm, content_en: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-xs font-medium">Content (Spanish)</label>
+              <Textarea rows={6} value={artForm.content_es} onChange={e => setArtForm({ ...artForm, content_es: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium">Model Number</label>
+                <Input value={artForm.model_number} onChange={e => setArtForm({ ...artForm, model_number: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-xs font-medium">Tags (comma-separated)</label>
+                <Input value={artForm.tags} onChange={e => setArtForm({ ...artForm, tags: e.target.value })} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter><Button onClick={saveArticle}>{editingArticle ? 'Save' : 'Create'}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Delete Confirm */}
-      <AlertDialog open={!!deleteId} onOpenChange={open => !open && setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Document</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently remove this instruction document.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => deleteId && deleteMutation.mutate(deleteId)}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
