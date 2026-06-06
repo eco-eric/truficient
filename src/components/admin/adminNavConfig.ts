@@ -37,7 +37,9 @@ import {
   Camera,
   Shield,
   Building2,
-  Mail
+  Mail,
+  BookOpen
+
 } from 'lucide-react';
 
 export interface NavItem {
@@ -108,6 +110,7 @@ export const navSections: NavSection[] = [
       { label: 'Blog', href: '/admin/blog', icon: PenSquare, permissionKey: 'nav.blog' },
       { label: 'Gallery', href: '/admin/gallery', icon: Images, permissionKey: 'nav.gallery' },
       { label: 'Equipment Library', href: '/admin/equipment-library', icon: Library, permissionKey: 'nav.equipment-library' },
+      { label: 'Knowledge Base', href: '/admin/knowledge-base', icon: BookOpen, permissionKey: 'nav.knowledge-base' },
     ],
   },
   {
