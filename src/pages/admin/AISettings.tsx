@@ -427,7 +427,29 @@ const AISettingsPage = () => {
           </TabsList>
 
           <TabsContent value="configuration" className="space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Feature Configuration</CardTitle>
+                <CardDescription>Select which AI feature to configure</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Select value={configKey} onValueChange={setConfigKey}>
+                  <SelectTrigger className="max-w-md">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {KNOWN_CONFIG_KEYS.map((k) => (
+                      <SelectItem key={k} value={k}>
+                        {CONFIG_KEY_LABELS[k] || k}
+                        {!allConfigs.find((c) => c.config_key === k) && ' (not configured)'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
               {/* Provider & Model */}
               <Card>
                 <CardHeader>
