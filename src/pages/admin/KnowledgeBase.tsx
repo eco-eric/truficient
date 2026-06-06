@@ -44,6 +44,7 @@ export default function KnowledgeBase() {
 
   const [catOpen, setCatOpen] = useState(false);
   const [catForm, setCatForm] = useState({ name: '', slug: '', icon: '' });
+  const [editingCategory, setEditingCategory] = useState<KbCategory | null>(null);
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<KbArticle | null>(null);
