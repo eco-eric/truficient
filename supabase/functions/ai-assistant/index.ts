@@ -1282,6 +1282,143 @@ async function executeUpdateCustomerStatus(supabase: any, userId: string, input:
   return { success: true, message: `Updated ${customerName}'s status from "${customer.customer_status}" to "${input.new_status}"` };
 }
 
+// ---- Editable field maps for update_customer / update_job ----
+const CUSTOMER_EDITABLE = ["first_name", "last_name", "email", "phone", "alternate_phone", "preferred_contact_method", "customer_type", "company_name", "lead_source", "tags", "notes"] as const;
+const JOB_EDITABLE = ["title", "scheduled_date", "scheduled_end_date", "priority", "quoted_amount", "final_amount", "payment_status", "internal_notes", "customer_notes", "location_id"] as const;
+
+function buildUpdatePayload(input: any, allowed: readonly string[]) {
+  const payload: Record<string, any> = {};
+  const changes: { field: string; from: any; to: any }[] = [];
+  for (const key of allowed) {
+    if (input[key] === undefined) continue;
+    // Empty string clears nullable text fields
+    payload[key] = input[key] === "" ? null : input[key];
+  }
+  return { payload, changes };
+}
+
+function diffChanges(before: Record<string, any>, payload: Record<string, any>) {
+  const changes: { field: string; from: any; to: any }[] = [];
+  for (const [k, v] of Object.entries(payload)) {
+    const prev = before[k];
+    const same = Array.isArray(prev) && Array.isArray(v)
+      ? JSON.stringify(prev) === JSON.stringify(v)
+      : prev === v;
+    if (!same) changes.push({ field: k, from: prev ?? null, to: v ?? null });
+  }
+  return changes;
+}
+
+async function executeUpdateCustomer(supabase: any, userId: string, input: any) {
+  const { data: customer, error: fetchErr } = await supabase
+    .from("crm_customers")
+    .select("id, first_name, last_name, email, phone, alternate_phone, preferred_contact_method, customer_type, company_name, lead_source, tags, notes")
+    .eq("id", input.customer_id)
+    .is("deleted_at", null)
+    .single();
+  if (fetchErr || !customer) return { error: "Customer not found." };
+
+  const { payload } = buildUpdatePayload(input, CUSTOMER_EDITABLE);
+  if (Object.keys(payload).length === 0) {
+    return { error: "No fields provided to update. Pass at least one editable field." };
+  }
+  const changes = diffChanges(customer, payload);
+  if (changes.length === 0) {
+    return { success: true, message: `No changes — all values already match for ${customer.first_name} ${customer.last_name}.` };
+  }
+
+  const customerName = `${customer.first_name || ""} ${customer.last_name || ""}`.trim() || "customer";
+  if (!input.confirmed) {
+    return {
+      needs_confirmation: true,
+      action: "update_customer",
+      summary: {
+        customer: customerName,
+        changes: changes.map(c => `${c.field}: ${JSON.stringify(c.from)} → ${JSON.stringify(c.to)}`),
+      },
+      confirmation_prompt: `Update **${customerName}** with these changes?\n${changes.map(c => `• **${c.field}**: ${c.from === null ? "(empty)" : c.from} → ${c.to === null ? "(empty)" : c.to}`).join("\n")}`,
+    };
+  }
+
+  const { error: updateErr } = await supabase
+    .from("crm_customers")
+    .update({ ...payload, updated_at: new Date().toISOString() })
+    .eq("id", input.customer_id);
+  if (updateErr) throw new Error(`Failed to update customer: ${updateErr.message}`);
+
+  await supabase.from("crm_interactions").insert({
+    customer_id: input.customer_id,
+    interaction_type: "note",
+    content: `Customer updated via AI Assistant: ${changes.map(c => c.field).join(", ")}`,
+    logged_by: userId,
+  });
+
+  return { success: true, message: `Updated ${customerName} — changed ${changes.map(c => c.field).join(", ")}.` };
+}
+
+async function executeUpdateJob(supabase: any, userId: string, input: any) {
+  const { data: job, error: fetchErr } = await supabase
+    .from("crm_jobs")
+    .select("id, job_number, customer_id, title, scheduled_date, scheduled_end_date, priority, quoted_amount, final_amount, payment_status, internal_notes, customer_notes, location_id, crm_customers(first_name, last_name)")
+    .eq("id", input.job_id)
+    .is("deleted_at", null)
+    .single();
+  if (fetchErr || !job) return { error: "Job not found." };
+
+  const { payload } = buildUpdatePayload(input, JOB_EDITABLE);
+  if (Object.keys(payload).length === 0) {
+    return { error: "No fields provided to update. Pass at least one editable field." };
+  }
+
+  // If a new location_id is provided, validate it belongs to this customer
+  if (payload.location_id) {
+    const { data: loc } = await supabase
+      .from("crm_locations")
+      .select("id, customer_id")
+      .eq("id", payload.location_id)
+      .single();
+    if (!loc || loc.customer_id !== job.customer_id) {
+      return { error: "Provided location_id does not belong to this job's customer." };
+    }
+  }
+
+  const changes = diffChanges(job, payload);
+  if (changes.length === 0) {
+    return { success: true, message: `No changes — all values already match for ${job.job_number}.` };
+  }
+
+  const customerName = `${job.crm_customers?.first_name || ""} ${job.crm_customers?.last_name || ""}`.trim();
+  if (!input.confirmed) {
+    return {
+      needs_confirmation: true,
+      action: "update_job",
+      summary: {
+        job_number: job.job_number,
+        customer: customerName,
+        changes: changes.map(c => `${c.field}: ${JSON.stringify(c.from)} → ${JSON.stringify(c.to)}`),
+      },
+      confirmation_prompt: `Update job **${job.job_number}** (${customerName}) with these changes?\n${changes.map(c => `• **${c.field}**: ${c.from === null ? "(empty)" : c.from} → ${c.to === null ? "(empty)" : c.to}`).join("\n")}`,
+    };
+  }
+
+  const { error: updateErr } = await supabase
+    .from("crm_jobs")
+    .update({ ...payload, updated_at: new Date().toISOString() })
+    .eq("id", input.job_id);
+  if (updateErr) throw new Error(`Failed to update job: ${updateErr.message}`);
+
+  await supabase.from("crm_interactions").insert({
+    customer_id: job.customer_id,
+    interaction_type: "note",
+    content: `Job ${job.job_number} updated via AI Assistant: ${changes.map(c => c.field).join(", ")}`,
+    logged_by: userId,
+  });
+
+  return { success: true, message: `Updated job ${job.job_number} — changed ${changes.map(c => c.field).join(", ")}.` };
+}
+
+
+
 async function executeAddToPipeline(supabase: any, userId: string, input: any) {
   const { data: customer } = await supabase.from("crm_customers").select("first_name, last_name").eq("id", input.customer_id).single();
   if (!customer) return { error: "Customer not found." };
