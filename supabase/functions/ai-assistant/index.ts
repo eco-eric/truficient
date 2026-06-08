@@ -326,6 +326,8 @@ const tools = [
           confirmed: { type: "boolean", description: "Set true ONLY after user confirms." },
         },
         required: ["customer_id", "new_status", "confirmed"],
+      },
+    },
   },
   {
     type: "function" as const,
