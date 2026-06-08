@@ -380,8 +380,6 @@ const tools = [
       },
     },
   },
-    },
-  },
   {
     type: "function" as const,
     function: {
