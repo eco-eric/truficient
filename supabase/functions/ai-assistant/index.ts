@@ -87,6 +87,8 @@ const TOOL_PERMISSIONS: Record<string, string> = {
   update_job_stage: "can_use_write_tools",
   log_interaction: "can_use_write_tools",
   update_customer_status: "can_use_write_tools",
+  update_customer: "can_use_write_tools",
+  update_job: "can_use_write_tools",
   create_customer: "can_use_write_tools",
   create_pipeline_entry: "can_use_write_tools",
   intake_lead: "can_use_write_tools",
