@@ -3786,6 +3786,8 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "update_job_stage": return executeUpdateJobStage(supabase, userId, toolInput);
     case "log_interaction": return executeLogInteraction(supabase, userId, toolInput);
     case "update_customer_status": return executeUpdateCustomerStatus(supabase, userId, toolInput);
+    case "update_customer": return executeUpdateCustomer(supabase, userId, toolInput);
+    case "update_job": return executeUpdateJob(supabase, userId, toolInput);
     case "add_to_pipeline": return executeAddToPipeline(supabase, userId, toolInput);
     case "move_pipeline_entry": return executeMovePipelineEntry(supabase, userId, toolInput);
     case "update_pipeline_entry": return executeUpdatePipelineEntry(supabase, userId, toolInput);
