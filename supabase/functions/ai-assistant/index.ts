@@ -3841,7 +3841,9 @@ Write operations (ALWAYS confirm first):
 - Review and filter all incoming submissions using review_submissions — classifies each as real, junk, or unsure using signal-based scoring, automatically runs intake_lead on confirmed real leads, and asks for confirmation before archiving junk
 - Scan the equipment scanner watch list using scan_watch_list — identifies high-priority leads based on equipment age (15+ years), R-22 refrigerant, DFW location, email and phone presence, and known brands. Automatically runs intake_lead on confirmed high-priority leads with appropriate tags and pipeline stage assignment
 - Create new customers (with optional address that becomes their primary location)
+- Edit existing customers using update_customer (name, email, phone, alternate phone, type, company name, lead source, tags, notes, preferred contact method). For lifecycle status, use update_customer_status instead.
 - Create new jobs for existing customers
+- Edit existing jobs using update_job (title, scheduled dates, priority, quoted/final amounts, payment status, internal/customer notes, location). For stage changes, use update_job_stage instead.
 - Move jobs between workflow stages
 - Log interactions (calls, emails, notes, meetings, texts, tasks)
 - Update customer lifecycle status
