@@ -87,6 +87,8 @@ const TOOL_PERMISSIONS: Record<string, string> = {
   update_job_stage: "can_use_write_tools",
   log_interaction: "can_use_write_tools",
   update_customer_status: "can_use_write_tools",
+  update_customer: "can_use_write_tools",
+  update_job: "can_use_write_tools",
   create_customer: "can_use_write_tools",
   create_pipeline_entry: "can_use_write_tools",
   intake_lead: "can_use_write_tools",
@@ -324,6 +326,57 @@ const tools = [
           confirmed: { type: "boolean", description: "Set true ONLY after user confirms." },
         },
         required: ["customer_id", "new_status", "confirmed"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "update_customer",
+      description: "Edit an existing customer's basic information (name, email, phone, type, lead source, tags, notes, alternate phone, preferred contact method, company name). Only the fields provided will be updated. Do NOT use this for lifecycle status — use update_customer_status instead. ALWAYS confirm first.",
+      parameters: {
+        type: "object",
+        properties: {
+          customer_id: { type: "string", description: "UUID of the customer to update" },
+          first_name: { type: "string", description: "New first name (optional)" },
+          last_name: { type: "string", description: "New last name (optional)" },
+          email: { type: "string", description: "New email address (optional, pass empty string to clear)" },
+          phone: { type: "string", description: "New primary phone (optional, pass empty string to clear)" },
+          alternate_phone: { type: "string", description: "New alternate phone (optional, pass empty string to clear)" },
+          preferred_contact_method: { type: "string", enum: ["phone", "email", "text"], description: "Preferred contact method (optional)" },
+          customer_type: { type: "string", enum: ["residential", "commercial"], description: "Customer type (optional)" },
+          company_name: { type: "string", description: "Company name for commercial accounts (optional)" },
+          lead_source: { type: "string", description: "Lead source (optional, pass empty string to clear)" },
+          tags: { type: "array", items: { type: "string" }, description: "REPLACES the full tag list. Omit to leave tags alone." },
+          notes: { type: "string", description: "Internal notes (REPLACES existing notes; omit to leave alone)" },
+          confirmed: { type: "boolean", description: "Set true ONLY after user confirms. First call: always false." },
+        },
+        required: ["customer_id", "confirmed"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "update_job",
+      description: "Edit an existing job's details (title, scheduled date, priority, quoted amount, internal notes, customer notes, location). Only the fields provided will be updated. Do NOT use this for stage changes — use update_job_stage instead. ALWAYS confirm first.",
+      parameters: {
+        type: "object",
+        properties: {
+          job_id: { type: "string", description: "UUID of the job to update" },
+          title: { type: "string", description: "New job title (optional)" },
+          scheduled_date: { type: "string", description: "Scheduled start date YYYY-MM-DD (optional, pass empty string to clear)" },
+          scheduled_end_date: { type: "string", description: "Estimated completion date YYYY-MM-DD (optional, pass empty string to clear)" },
+          priority: { type: "string", enum: ["low", "normal", "high", "urgent"], description: "Job priority (optional)" },
+          quoted_amount: { type: "number", description: "Quoted dollar amount (optional)" },
+          final_amount: { type: "number", description: "Final dollar amount (optional)" },
+          payment_status: { type: "string", enum: ["no_charge_yet", "pending", "deposit_received", "partial", "paid", "refunded", "not_charging"], description: "Payment status (optional)" },
+          internal_notes: { type: "string", description: "Internal notes (REPLACES existing; omit to leave alone)" },
+          customer_notes: { type: "string", description: "Notes visible to the customer (REPLACES existing; omit to leave alone)" },
+          location_id: { type: "string", description: "UUID of a different service location for this customer (optional)" },
+          confirmed: { type: "boolean", description: "Set true ONLY after user confirms. First call: always false." },
+        },
+        required: ["job_id", "confirmed"],
       },
     },
   },
@@ -1228,6 +1281,143 @@ async function executeUpdateCustomerStatus(supabase: any, userId: string, input:
 
   return { success: true, message: `Updated ${customerName}'s status from "${customer.customer_status}" to "${input.new_status}"` };
 }
+
+// ---- Editable field maps for update_customer / update_job ----
+const CUSTOMER_EDITABLE = ["first_name", "last_name", "email", "phone", "alternate_phone", "preferred_contact_method", "customer_type", "company_name", "lead_source", "tags", "notes"] as const;
+const JOB_EDITABLE = ["title", "scheduled_date", "scheduled_end_date", "priority", "quoted_amount", "final_amount", "payment_status", "internal_notes", "customer_notes", "location_id"] as const;
+
+function buildUpdatePayload(input: any, allowed: readonly string[]) {
+  const payload: Record<string, any> = {};
+  const changes: { field: string; from: any; to: any }[] = [];
+  for (const key of allowed) {
+    if (input[key] === undefined) continue;
+    // Empty string clears nullable text fields
+    payload[key] = input[key] === "" ? null : input[key];
+  }
+  return { payload, changes };
+}
+
+function diffChanges(before: Record<string, any>, payload: Record<string, any>) {
+  const changes: { field: string; from: any; to: any }[] = [];
+  for (const [k, v] of Object.entries(payload)) {
+    const prev = before[k];
+    const same = Array.isArray(prev) && Array.isArray(v)
+      ? JSON.stringify(prev) === JSON.stringify(v)
+      : prev === v;
+    if (!same) changes.push({ field: k, from: prev ?? null, to: v ?? null });
+  }
+  return changes;
+}
+
+async function executeUpdateCustomer(supabase: any, userId: string, input: any) {
+  const { data: customer, error: fetchErr } = await supabase
+    .from("crm_customers")
+    .select("id, first_name, last_name, email, phone, alternate_phone, preferred_contact_method, customer_type, company_name, lead_source, tags, notes")
+    .eq("id", input.customer_id)
+    .is("deleted_at", null)
+    .single();
+  if (fetchErr || !customer) return { error: "Customer not found." };
+
+  const { payload } = buildUpdatePayload(input, CUSTOMER_EDITABLE);
+  if (Object.keys(payload).length === 0) {
+    return { error: "No fields provided to update. Pass at least one editable field." };
+  }
+  const changes = diffChanges(customer, payload);
+  if (changes.length === 0) {
+    return { success: true, message: `No changes — all values already match for ${customer.first_name} ${customer.last_name}.` };
+  }
+
+  const customerName = `${customer.first_name || ""} ${customer.last_name || ""}`.trim() || "customer";
+  if (!input.confirmed) {
+    return {
+      needs_confirmation: true,
+      action: "update_customer",
+      summary: {
+        customer: customerName,
+        changes: changes.map(c => `${c.field}: ${JSON.stringify(c.from)} → ${JSON.stringify(c.to)}`),
+      },
+      confirmation_prompt: `Update **${customerName}** with these changes?\n${changes.map(c => `• **${c.field}**: ${c.from === null ? "(empty)" : c.from} → ${c.to === null ? "(empty)" : c.to}`).join("\n")}`,
+    };
+  }
+
+  const { error: updateErr } = await supabase
+    .from("crm_customers")
+    .update({ ...payload, updated_at: new Date().toISOString() })
+    .eq("id", input.customer_id);
+  if (updateErr) throw new Error(`Failed to update customer: ${updateErr.message}`);
+
+  await supabase.from("crm_interactions").insert({
+    customer_id: input.customer_id,
+    interaction_type: "note",
+    content: `Customer updated via AI Assistant: ${changes.map(c => c.field).join(", ")}`,
+    logged_by: userId,
+  });
+
+  return { success: true, message: `Updated ${customerName} — changed ${changes.map(c => c.field).join(", ")}.` };
+}
+
+async function executeUpdateJob(supabase: any, userId: string, input: any) {
+  const { data: job, error: fetchErr } = await supabase
+    .from("crm_jobs")
+    .select("id, job_number, customer_id, title, scheduled_date, scheduled_end_date, priority, quoted_amount, final_amount, payment_status, internal_notes, customer_notes, location_id, crm_customers(first_name, last_name)")
+    .eq("id", input.job_id)
+    .is("deleted_at", null)
+    .single();
+  if (fetchErr || !job) return { error: "Job not found." };
+
+  const { payload } = buildUpdatePayload(input, JOB_EDITABLE);
+  if (Object.keys(payload).length === 0) {
+    return { error: "No fields provided to update. Pass at least one editable field." };
+  }
+
+  // If a new location_id is provided, validate it belongs to this customer
+  if (payload.location_id) {
+    const { data: loc } = await supabase
+      .from("crm_locations")
+      .select("id, customer_id")
+      .eq("id", payload.location_id)
+      .single();
+    if (!loc || loc.customer_id !== job.customer_id) {
+      return { error: "Provided location_id does not belong to this job's customer." };
+    }
+  }
+
+  const changes = diffChanges(job, payload);
+  if (changes.length === 0) {
+    return { success: true, message: `No changes — all values already match for ${job.job_number}.` };
+  }
+
+  const customerName = `${job.crm_customers?.first_name || ""} ${job.crm_customers?.last_name || ""}`.trim();
+  if (!input.confirmed) {
+    return {
+      needs_confirmation: true,
+      action: "update_job",
+      summary: {
+        job_number: job.job_number,
+        customer: customerName,
+        changes: changes.map(c => `${c.field}: ${JSON.stringify(c.from)} → ${JSON.stringify(c.to)}`),
+      },
+      confirmation_prompt: `Update job **${job.job_number}** (${customerName}) with these changes?\n${changes.map(c => `• **${c.field}**: ${c.from === null ? "(empty)" : c.from} → ${c.to === null ? "(empty)" : c.to}`).join("\n")}`,
+    };
+  }
+
+  const { error: updateErr } = await supabase
+    .from("crm_jobs")
+    .update({ ...payload, updated_at: new Date().toISOString() })
+    .eq("id", input.job_id);
+  if (updateErr) throw new Error(`Failed to update job: ${updateErr.message}`);
+
+  await supabase.from("crm_interactions").insert({
+    customer_id: job.customer_id,
+    interaction_type: "note",
+    content: `Job ${job.job_number} updated via AI Assistant: ${changes.map(c => c.field).join(", ")}`,
+    logged_by: userId,
+  });
+
+  return { success: true, message: `Updated job ${job.job_number} — changed ${changes.map(c => c.field).join(", ")}.` };
+}
+
+
 
 async function executeAddToPipeline(supabase: any, userId: string, input: any) {
   const { data: customer } = await supabase.from("crm_customers").select("first_name, last_name").eq("id", input.customer_id).single();
@@ -3596,6 +3786,8 @@ async function executeTool(supabase: any, toolName: string, toolInput: any, user
     case "update_job_stage": return executeUpdateJobStage(supabase, userId, toolInput);
     case "log_interaction": return executeLogInteraction(supabase, userId, toolInput);
     case "update_customer_status": return executeUpdateCustomerStatus(supabase, userId, toolInput);
+    case "update_customer": return executeUpdateCustomer(supabase, userId, toolInput);
+    case "update_job": return executeUpdateJob(supabase, userId, toolInput);
     case "add_to_pipeline": return executeAddToPipeline(supabase, userId, toolInput);
     case "move_pipeline_entry": return executeMovePipelineEntry(supabase, userId, toolInput);
     case "update_pipeline_entry": return executeUpdatePipelineEntry(supabase, userId, toolInput);
@@ -3649,7 +3841,9 @@ Write operations (ALWAYS confirm first):
 - Review and filter all incoming submissions using review_submissions — classifies each as real, junk, or unsure using signal-based scoring, automatically runs intake_lead on confirmed real leads, and asks for confirmation before archiving junk
 - Scan the equipment scanner watch list using scan_watch_list — identifies high-priority leads based on equipment age (15+ years), R-22 refrigerant, DFW location, email and phone presence, and known brands. Automatically runs intake_lead on confirmed high-priority leads with appropriate tags and pipeline stage assignment
 - Create new customers (with optional address that becomes their primary location)
+- Edit existing customers using update_customer (name, email, phone, alternate phone, type, company name, lead source, tags, notes, preferred contact method). For lifecycle status, use update_customer_status instead.
 - Create new jobs for existing customers
+- Edit existing jobs using update_job (title, scheduled dates, priority, quoted/final amounts, payment status, internal/customer notes, location). For stage changes, use update_job_stage instead.
 - Move jobs between workflow stages
 - Log interactions (calls, emails, notes, meetings, texts, tasks)
 - Update customer lifecycle status
