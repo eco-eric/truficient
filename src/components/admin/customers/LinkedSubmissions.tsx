@@ -87,7 +87,7 @@ export function LinkedSubmissions({ customerId }: LinkedSubmissionsProps) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('estimates')
-        .select('id, estimate_number, customer_name, status, grand_total, created_at')
+        .select('id, estimate_number, title, customer_name, status, grand_total, created_at')
         .eq('customer_id', customerId)
         .order('created_at', { ascending: false });
       
