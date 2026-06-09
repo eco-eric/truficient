@@ -51,7 +51,7 @@ const sourceConfig: Record<string, { icon: React.ReactNode; label: string; color
   },
   estimate: { 
     icon: <Calculator className="h-4 w-4" />, 
-    label: 'Estimate',
+    label: 'Job Estimate',
     color: 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-300',
   },
 };
