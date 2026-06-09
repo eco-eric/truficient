@@ -24,8 +24,10 @@ export const usePageSEO = (customPath?: string, options?: UsePageSEOOptions) => 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Always set a canonical tag, even before/without DB data
-    const normalizedCanonical = `https://truficient.com${path.replace(/\/$/, '')}/`;
+    // Always set a self-referencing canonical (non-www, https, no trailing
+    // slash on non-root paths) so every route maps to one canonical URL.
+    const trimmed = path.replace(/\/+$/, '');
+    const normalizedCanonical = `https://truficient.com${trimmed === '' ? '/' : trimmed}`;
     let canonical = document.querySelector('link[rel="canonical"]');
     if (!canonical) {
       canonical = document.createElement('link');
