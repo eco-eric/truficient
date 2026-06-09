@@ -182,13 +182,13 @@ export function LinkedSubmissions({ customerId }: LinkedSubmissionsProps) {
       status: est.status,
       estimatedValue: est.grand_total,
       createdAt: est.created_at,
-      label: est.estimate_number || undefined,
+      label: est.title || est.estimate_number || undefined,
     })),
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const handleViewSubmission = (submission: SubmissionDetail) => {
     if (submission.type === 'estimate') {
-      navigate(`/admin/estimates/builder?id=${submission.id}`);
+      navigate(`/admin/estimates/${submission.id}`);
     } else {
       // Map DB types back to route segments
       const routeType = submission.type === 'ducted_estimate' ? 'ducted'
