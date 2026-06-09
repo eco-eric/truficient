@@ -51,7 +51,7 @@ const sourceConfig: Record<string, { icon: React.ReactNode; label: string; color
   },
   estimate: { 
     icon: <Calculator className="h-4 w-4" />, 
-    label: 'Estimate',
+    label: 'Job Estimate',
     color: 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-300',
   },
 };
@@ -87,7 +87,7 @@ export function LinkedSubmissions({ customerId }: LinkedSubmissionsProps) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('estimates')
-        .select('id, estimate_number, customer_name, status, grand_total, created_at')
+        .select('id, estimate_number, title, customer_name, status, grand_total, created_at')
         .eq('customer_id', customerId)
         .order('created_at', { ascending: false });
       
@@ -182,13 +182,13 @@ export function LinkedSubmissions({ customerId }: LinkedSubmissionsProps) {
       status: est.status,
       estimatedValue: est.grand_total,
       createdAt: est.created_at,
-      label: est.estimate_number || undefined,
+      label: est.title || est.estimate_number || undefined,
     })),
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const handleViewSubmission = (submission: SubmissionDetail) => {
     if (submission.type === 'estimate') {
-      navigate(`/admin/estimates/builder?id=${submission.id}`);
+      navigate(`/admin/estimates/${submission.id}`);
     } else {
       // Map DB types back to route segments
       const routeType = submission.type === 'ducted_estimate' ? 'ducted'
