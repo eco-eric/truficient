@@ -18,5 +18,19 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 
+# Block phantom video/media paths that were never hosted on truficient.com
+# (legacy crawl artifacts surfacing as 404s in GSC Coverage)
+Disallow: /assets/mp4/
+Disallow: /assets/content/
+Disallow: /assets/video/
+Disallow: /content/stream/
+Disallow: /media/mp4/
+Disallow: /public/video/
+Disallow: /static/uploads/
+Disallow: /resource/video_files/
+
+# Block legacy spliced-preview-domain paths (e.g. /https:/truficient.lovable.app/...)
+Disallow: /https:/
+
 # Sitemap location
 Sitemap: https://truficient.com/sitemap.xml
