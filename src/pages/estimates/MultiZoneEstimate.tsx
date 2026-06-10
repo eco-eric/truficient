@@ -16,6 +16,7 @@ import {
   ThermometerSun,
   Award,
 } from "lucide-react";
+import EstimateRequestForm from "@/components/forms/EstimateRequestForm";
 
 const MultiZoneEstimate = () => {
   usePageSEO("/multi-zone-estimate");
@@ -74,7 +75,7 @@ const MultiZoneEstimate = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button asChild size="lg">
-                <Link to="/contact">Request a Design Consultation</Link>
+                <a href="#estimate-form">Schedule an Estimate</a>
               </Button>
               <Button asChild size="lg" variant="outline">
                 <a href="tel:2142384349"><Phone className="w-4 h-4 mr-2" />214-238-4349</a>
@@ -176,22 +177,23 @@ const MultiZoneEstimate = () => {
         </section>
 
         {/* SECTION 5 — CTA */}
+        <section className="py-12">
+          <div className="container px-4 mx-auto max-w-3xl text-center">
+            <h2 className="text-xl md:text-2xl font-semibold mb-4">Ready to design your system?</h2>
+            <Button asChild size="lg">
+              <a href="#estimate-form">Schedule an Estimate</a>
+            </Button>
+          </div>
+        </section>
+
         <section className="py-16 bg-primary/5">
-          <div className="container px-4 mx-auto max-w-2xl text-center">
-            <h2 className="text-2xl md:text-3xl font-bold mb-3">
-              Every multi-zone system we install starts with a conversation about how you live in your home.
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              Tell us about the spaces that need work, and we'll design a system around them.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button asChild size="lg">
-                <Link to="/contact">Request a Design Consultation</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <a href="tel:2142384349"><Phone className="w-4 h-4 mr-2" />Call 214-238-4349</a>
-              </Button>
-            </div>
+          <div className="container px-4 mx-auto max-w-2xl">
+            <EstimateRequestForm
+              systemType="Multi-Zone"
+              sourcePage="/multi-zone-estimate"
+              heading="Request a Multi-Zone Design Consultation"
+              subheading="Tell us about the spaces that need work and we'll design a system around them."
+            />
           </div>
         </section>
       </main>
