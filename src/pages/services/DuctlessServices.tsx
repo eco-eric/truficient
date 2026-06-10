@@ -394,8 +394,102 @@ const DuctlessServices = () => {
         </div>
       </section>
 
+      {/* Value Brand Section */}
+      <section id="value-brands" className="py-16 lg:py-24 bg-background">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="text-center mb-12 max-w-3xl mx-auto"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+              The Right Brand for the Right Space
+            </h2>
+            <p className="text-muted-foreground">
+              Mitsubishi is our flagship for a reason — but not every space needs flagship pricing. We also install proven, cost-competitive mini-split brands that deliver reliable comfort at a lower price point. The key isn't the badge on the unit; it's the quality of the installation. Every system we install gets the same Diamond Contractor-level craftsmanship, proper sizing, and clean workmanship.
+            </p>
+          </motion.div>
+
+          <h3 className="text-xl md:text-2xl font-bold text-center mb-8 text-foreground">
+            Where value brands shine
+          </h3>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-12">
+            {[
+              {
+                icon: Wrench,
+                title: 'Garages & Workshops',
+                description: 'Conditioning a garage gym or workshop? A value-brand single zone keeps the investment proportional to the space — without compromising comfort.',
+              },
+              {
+                icon: Thermometer,
+                title: 'Bedrooms & Hot/Cold Rooms',
+                description: "Solving one stubborn room doesn't require a premium system. A right-sized value unit fixes the problem at a fraction of the cost of a ductwork rework.",
+              },
+              {
+                icon: Home,
+                title: 'ADUs & Guest Houses',
+                description: 'Casitas and guest quarters with intermittent use are perfect candidates — full heating and cooling independence without flagship spend.',
+              },
+              {
+                icon: Building2,
+                title: 'Converted Attics & Bonus Spaces',
+                description: 'Attic conversions need dedicated climate control. A value-brand system handles the load and leaves more budget for the renovation itself.',
+              },
+            ].map((item, index) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <Card className="h-full hover-lift bg-card">
+                  <CardContent className="p-6">
+                    <div className="w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center mb-4">
+                      <item.icon className="w-6 h-6 text-secondary" />
+                    </div>
+                    <h4 className="text-lg font-bold mb-2 text-card-foreground">{item.title}</h4>
+                    <p className="text-sm text-muted-foreground">{item.description}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="text-center max-w-2xl mx-auto"
+          >
+            <p className="text-muted-foreground mb-6">
+              Not sure which tier fits your project? We'll walk the space, run the numbers on both, and let you decide.
+            </p>
+            <Link
+              to="/contact"
+              onClick={() =>
+                trackButtonClick({
+                  buttonName: 'Get a Recommendation',
+                  buttonLocation: 'Value Brands Section',
+                  destinationUrl: '/contact',
+                })
+              }
+            >
+              <Button size="lg" className="bg-secondary hover:bg-gold-dark text-secondary-foreground font-semibold text-lg px-8">
+                Get a Recommendation
+              </Button>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Installation Process */}
       <section id="installation" className="py-16 lg:py-24 bg-muted">
+
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
