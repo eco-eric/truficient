@@ -54,8 +54,6 @@ Deno.serve(async (req) => {
       { loc: '/central-ac-estimate', changefreq: 'monthly', priority: '0.9' },
       { loc: '/mini-split-estimate', changefreq: 'monthly', priority: '0.9' },
       { loc: '/multi-zone-estimate', changefreq: 'monthly', priority: '0.9' },
-      { loc: '/estimate/ducted', changefreq: 'monthly', priority: '0.9' },
-      { loc: '/estimate/ductless', changefreq: 'monthly', priority: '0.9' },
       { loc: '/estimators/sizing', changefreq: 'monthly', priority: '0.8' },
       { loc: '/estimators/cost', changefreq: 'monthly', priority: '0.8' },
       { loc: '/estimators/savings', changefreq: 'monthly', priority: '0.8' },
