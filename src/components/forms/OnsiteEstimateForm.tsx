@@ -10,7 +10,7 @@ import { Loader2, CheckCircle, Calendar, Home, ClipboardList, MapPin } from 'luc
 import { trackConversion } from '@/utils/conversionTracking';
 import { useFormSourceTags } from '@/hooks/useFormSourceTags';
 import { AddressAutocomplete, AddressComponents } from '@/components/AddressAutocomplete';
-import { isInServiceArea, getServiceAreaDisplay } from '@/pages/estimators/ductless/constants/serviceArea';
+import { isInServiceArea, getServiceAreaDisplay } from '@/lib/serviceArea';
 
 // Phone formatting utility
 const formatPhoneNumber = (value: string): string => {

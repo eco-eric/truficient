@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CreditCard, Info } from "lucide-react";
-import { formatMoney } from "@/pages/estimators/ductless/hooks/usePricing";
+import { formatMoney } from "@/lib/serviceArea";
 
 interface FinancingOption {
   id: string;
