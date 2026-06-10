@@ -53,6 +53,35 @@ const CentralAcEstimate = () => {
         </section>
 
         <section className="py-12 md:py-16 bg-muted/30">
+          <div className="container px-4 mx-auto max-w-5xl">
+            <h2 className="text-2xl md:text-3xl font-bold mb-3">Brands We Install</h2>
+            <p className="text-muted-foreground mb-8 max-w-3xl">
+              Four trusted brands, one specialty: variable-speed and inverter-driven systems built for Texas summers.
+            </p>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { name: "Mitsubishi", logo: "/brands/mitsubishi.png", badge: "Variable-Speed Inverter", text: "Diamond Contractor certified. The benchmark for inverter comfort." },
+                { name: "Trane", logo: "/brands/trane.png", badge: "Multi-Speed", text: "American-built reliability with proven multi-speed performance." },
+                { name: "Bosch", logo: "/brands/bosch.png", badge: "Inverter-Driven", text: "European engineering with quiet, efficient inverter heat pumps." },
+                { name: "Goodman", logo: "/brands/goodman.png", badge: "Single-Stage Value", text: "Dependable comfort backed by strong warranties at a budget-friendly tier." },
+              ].map((b) => (
+                <Card key={b.name} className="p-5 flex flex-col">
+                  <div className="h-12 flex items-center justify-center mb-4">
+                    <img src={b.logo} alt={`${b.name} logo`} className="max-h-12 max-w-[140px] object-contain" loading="lazy" />
+                  </div>
+                  <span className="inline-block self-start text-xs font-semibold px-2 py-1 rounded bg-primary/10 text-primary mb-2">{b.badge}</span>
+                  <p className="text-sm text-muted-foreground">{b.text}</p>
+                </Card>
+              ))}
+            </div>
+            <p className="text-sm text-muted-foreground mt-6 max-w-3xl">
+              For Texas summers, variable-speed systems are our specialty — they hold tighter temperatures, pull more humidity, and run quieter while using less power. It's the tier we install in our own homes.
+            </p>
+          </div>
+        </section>
+
+        <section className="py-12 md:py-16">
+
           <div className="container px-4 mx-auto max-w-4xl">
             <h2 className="text-2xl md:text-3xl font-bold mb-6">What to expect from our process</h2>
             <ol className="space-y-4">
