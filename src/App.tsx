@@ -28,6 +28,9 @@ const SavingsCalculator = lazy(() => import("./pages/estimators/SavingsCalculato
 const DuctlessEstimator = lazy(() => import("./pages/estimators/ductless/DuctlessEstimator"));
 const DuctedEstimator = lazy(() => import("./pages/estimators/ducted/DuctedEstimator"));
 const SmartGroupEntry = lazy(() => import("./pages/estimators/SmartGroupEntry"));
+const CentralAcEstimate = lazy(() => import("./pages/estimates/CentralAcEstimate"));
+const MiniSplitEstimate = lazy(() => import("./pages/estimates/MiniSplitEstimate"));
+const MultiZoneEstimate = lazy(() => import("./pages/estimates/MultiZoneEstimate"));
 const Contact = lazy(() => import("./pages/Contact"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
@@ -225,6 +228,9 @@ const router = createBrowserRouter([
       { path: "/estimate/ductless", element: <DuctlessEstimator /> },
       { path: "/estimate/ducted", element: <DuctedEstimator /> },
       { path: "/estimate/smart-group-march", element: <SmartGroupEntry /> },
+      { path: "/central-ac-estimate", element: <CentralAcEstimate /> },
+      { path: "/mini-split-estimate", element: <MiniSplitEstimate /> },
+      { path: "/multi-zone-estimate", element: <MultiZoneEstimate /> },
       { path: "/careers", element: <Careers /> },
       { path: "/careers.html", element: <Careers /> },
       { path: "/financing", element: <Financing /> },
