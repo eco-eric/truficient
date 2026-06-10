@@ -116,6 +116,21 @@ export const STATIC_ROUTES_SEO = [
     description: 'Get a free HVAC estimate for your Dallas-Fort Worth home. Ducted or ductless.',
   },
   {
+    path: '/central-ac-estimate',
+    title: 'Central AC Estimate | How We Quote | Truficient',
+    description: 'How Truficient estimates central AC installs in DFW: Manual J load calc, ductwork & electrical review, equipment tiers. Request a free in-home estimate.',
+  },
+  {
+    path: '/mini-split-estimate',
+    title: 'Mini Split Estimate | How We Quote | Truficient',
+    description: 'How Truficient estimates single-zone mini split installs in DFW: room load, line set, electrical, equipment tier. Request a free in-home estimate.',
+  },
+  {
+    path: '/multi-zone-estimate',
+    title: 'Multi-Zone Mini Split Estimate | How We Quote | Truficient',
+    description: 'How Truficient estimates multi-zone ductless systems in DFW: per-zone Manual J, branch sizing, line routing. Request a free in-home estimate.',
+  },
+  {
     path: '/heat-pump-advantage',
     title: 'Heat Pump Advantage Calculator | Truficient',
     description: 'See how much a heat pump can save you over conventional heating in Dallas-Fort Worth.',
