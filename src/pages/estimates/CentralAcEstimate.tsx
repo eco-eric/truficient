@@ -23,7 +23,7 @@ const CentralAcEstimate = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button asChild size="lg">
-                <Link to="/contact">Request a Free Estimate</Link>
+                <a href="#estimate-form">Schedule an Estimate</a>
               </Button>
               <Button asChild size="lg" variant="outline">
                 <a href="tel:2142384349"><Phone className="w-4 h-4 mr-2" />214-238-4349</a>
