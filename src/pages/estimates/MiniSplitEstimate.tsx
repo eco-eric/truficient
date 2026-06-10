@@ -96,18 +96,23 @@ const MiniSplitEstimate = () => {
           </div>
         </section>
 
+        <section className="py-12 bg-muted/30">
+          <div className="container px-4 mx-auto max-w-3xl text-center">
+            <h2 className="text-xl md:text-2xl font-semibold mb-4">Ready to get started?</h2>
+            <Button asChild size="lg">
+              <a href="#estimate-form">Schedule an Estimate</a>
+            </Button>
+          </div>
+        </section>
+
         <section className="py-16 bg-primary/5">
-          <div className="container px-4 mx-auto max-w-2xl text-center">
-            <h2 className="text-2xl md:text-3xl font-bold mb-3">Ready for a real estimate?</h2>
-            <p className="text-muted-foreground mb-6">Schedule a free in-home consultation with a certified Truficient technician.</p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button asChild size="lg">
-                <Link to="/contact">Request a Free Estimate</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <a href="tel:2142384349"><Phone className="w-4 h-4 mr-2" />Call 214-238-4349</a>
-              </Button>
-            </div>
+          <div className="container px-4 mx-auto max-w-2xl">
+            <EstimateRequestForm
+              systemType="Mini Split"
+              sourcePage="/mini-split-estimate"
+              heading="Request Your Mini Split Estimate"
+              subheading="Free in-home consultation with a Mitsubishi Diamond Contractor."
+            />
           </div>
         </section>
       </main>
