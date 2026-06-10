@@ -38,9 +38,9 @@ const HeroSection = () => {
 
   const handleScheduleClick = () => {
     trackButtonClick({
-      buttonName: 'Get Instant Price',
+      buttonName: 'Schedule an Estimate',
       buttonLocation: 'Hero Section',
-      destinationUrl: '/estimate',
+      destinationUrl: '/contact',
     });
   };
 
@@ -64,15 +64,15 @@ const HeroSection = () => {
           >
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
               Your Comfort,<br />
-              <span className="text-primary">Priced Online.</span>
+              <span className="text-primary">Done Right.</span>
             </h1>
             <p className="text-lg md:text-xl text-foreground/70 mb-8 max-w-lg">
-              Transparent HVAC pricing for DFW homeowners. See your price in 2 minutes — no callback required.
+              Free, no-pressure HVAC estimates from certified installers serving DFW. We assess your home in person and quote it accurately the first time.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/estimate" onClick={handleScheduleClick}>
+              <Link to="/contact" onClick={handleScheduleClick}>
                 <Button size="lg" className="bg-secondary hover:bg-gold-dark text-secondary-foreground font-semibold text-lg px-8">
-                  Get Instant Price
+                  Schedule an Estimate
                 </Button>
               </Link>
               <a href="tel:214-238-4349" onClick={handleCallClick}>
@@ -82,8 +82,9 @@ const HeroSection = () => {
                 </Button>
               </a>
             </div>
-            <p className="text-sm text-foreground/60 mt-3">Real prices online · 2-minute estimate · No sales call required</p>
+            <p className="text-sm text-foreground/60 mt-3">Mitsubishi Diamond Contractor · HERS Certified · 1,000+ DFW Installs</p>
           </motion.div>
+
 
           {/* Right Image */}
           <motion.div

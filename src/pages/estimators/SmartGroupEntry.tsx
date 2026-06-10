@@ -14,7 +14,7 @@ const SmartGroupEntry = () => {
       source: "smart_group_march_v2",
       zip: zip,
     });
-    navigate(`/estimate/ducted?${params.toString()}`);
+    navigate(`/central-ac-estimate?${params.toString()}`);
   };
 
   return (

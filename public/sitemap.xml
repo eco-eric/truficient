@@ -57,16 +57,6 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://truficient.com/estimate/ducted.html</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://truficient.com/estimate/ductless.html</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
     <loc>https://truficient.com/estimators/sizing.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>

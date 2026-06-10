@@ -150,16 +150,8 @@ export const STATIC_ROUTES_SEO = [
     title: 'HVAC Savings Calculator | Truficient',
     description: 'See projected savings from a high-efficiency HVAC upgrade in Dallas-Fort Worth.',
   },
-  {
-    path: '/estimate/ductless',
-    title: 'Free Ductless Mini-Split Estimate | Truficient',
-    description: 'Get a free ductless mini-split estimate for your Dallas-Fort Worth home in minutes.',
-  },
-  {
-    path: '/estimate/ducted',
-    title: 'Free Ducted HVAC Estimate | Truficient',
-    description: 'Get a free ducted HVAC system estimate for your Dallas-Fort Worth home in minutes.',
-  },
+
+
 
   // Library / blog hubs (also in DB but kept as defensive fallback)
   { path: '/blog', title: 'HVAC Tips & News | Truficient Energy Solutions Blog', description: 'Read the latest HVAC tips, energy-saving advice, and news from Truficient Energy Solutions.' },

@@ -22,9 +22,9 @@ Truficient serves the DFW metroplex with transparent online estimating, equipmen
 
 ## Estimators & Tools
 
-- [HVAC Estimate Hub](/hvac-estimate): Choose ducted or ductless online quoting.
-- [Ducted Estimator](/estimate/ducted): Step-by-step ducted system quote.
-- [Ductless Estimator](/estimate/ductless): Multi-zone ductless quote with discounts.
+- [Central AC Estimate](/central-ac-estimate): How we estimate central AC and heat pump installs.
+- [Mini Split Estimate](/mini-split-estimate): How we estimate single-zone ductless installs.
+- [Multi-Zone Estimate](/multi-zone-estimate): How we estimate multi-zone ductless systems.
 - [Sizing Calculator](/estimators/sizing): Square-footage based system sizing.
 - [Cost Estimator](/estimators/cost): Ballpark replacement cost estimator.
 - [Savings Calculator](/estimators/savings): High-efficiency upgrade savings.
