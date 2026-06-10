@@ -244,20 +244,29 @@ const Header = () => {
                 <DropdownMenuContent className="bg-background border-border">
                   <DropdownMenuItem asChild>
                     <Link 
-                      to="/estimate/ducted" 
+                      to="/central-ac-estimate" 
                       className="cursor-pointer"
-                      onClick={() => handleTrackClick('AC | Heat Pump Estimator', 'Header - Main Nav', '/estimate/ducted')}
+                      onClick={() => handleTrackClick('Central AC Estimate', 'Header - Main Nav', '/central-ac-estimate')}
                     >
-                      AC | Heat Pump Estimator
+                      Central AC Estimate
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link 
-                      to="/estimate/ductless" 
+                      to="/mini-split-estimate" 
                       className="cursor-pointer"
-                      onClick={() => handleTrackClick('Ductless Estimator', 'Header - Main Nav', '/estimate/ductless')}
+                      onClick={() => handleTrackClick('Mini Split Estimate', 'Header - Main Nav', '/mini-split-estimate')}
                     >
-                      Ductless Estimator
+                      Mini Split Estimate
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/multi-zone-estimate" 
+                      className="cursor-pointer"
+                      onClick={() => handleTrackClick('Multi-Zone Estimate', 'Header - Main Nav', '/multi-zone-estimate')}
+                    >
+                      Multi-Zone Estimate
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -497,24 +506,34 @@ const Header = () => {
                     </CollapsibleTrigger>
                     <CollapsibleContent className="pl-4 space-y-1 pb-2">
                       <Link
-                        to="/estimate/ducted"
+                        to="/central-ac-estimate"
                         className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
-                          handleTrackClick('AC | Heat Pump Estimator', 'Header - Mobile Menu', '/estimate/ducted');
+                          handleTrackClick('Central AC Estimate', 'Header - Mobile Menu', '/central-ac-estimate');
                           setIsOpen(false);
                         }}
                       >
-                        AC | Heat Pump Estimator
+                        Central AC Estimate
                       </Link>
                       <Link
-                        to="/estimate/ductless"
+                        to="/mini-split-estimate"
                         className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
                         onClick={() => {
-                          handleTrackClick('Ductless Estimator', 'Header - Mobile Menu', '/estimate/ductless');
+                          handleTrackClick('Mini Split Estimate', 'Header - Mobile Menu', '/mini-split-estimate');
                           setIsOpen(false);
                         }}
                       >
-                        Ductless Estimator
+                        Mini Split Estimate
+                      </Link>
+                      <Link
+                        to="/multi-zone-estimate"
+                        className="block text-base text-muted-foreground hover:text-primary transition-colors py-2.5 touch-target"
+                        onClick={() => {
+                          handleTrackClick('Multi-Zone Estimate', 'Header - Mobile Menu', '/multi-zone-estimate');
+                          setIsOpen(false);
+                        }}
+                      >
+                        Multi-Zone Estimate
                       </Link>
                       <Link
                         to="/estimators/sizing"

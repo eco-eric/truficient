@@ -25,8 +25,6 @@ const HeatPumpAdvantage = lazy(() => import("./pages/HeatPumpAdvantage"));
 const SizingCalculator = lazy(() => import("./pages/estimators/SizingCalculator"));
 const CostEstimator = lazy(() => import("./pages/estimators/CostEstimator"));
 const SavingsCalculator = lazy(() => import("./pages/estimators/SavingsCalculator"));
-const DuctlessEstimator = lazy(() => import("./pages/estimators/ductless/DuctlessEstimator"));
-const DuctedEstimator = lazy(() => import("./pages/estimators/ducted/DuctedEstimator"));
 const SmartGroupEntry = lazy(() => import("./pages/estimators/SmartGroupEntry"));
 const CentralAcEstimate = lazy(() => import("./pages/estimates/CentralAcEstimate"));
 const MiniSplitEstimate = lazy(() => import("./pages/estimates/MiniSplitEstimate"));
@@ -225,8 +223,6 @@ const router = createBrowserRouter([
       { path: "/estimators/sizing", element: <SizingCalculator /> },
       { path: "/estimators/cost", element: <CostEstimator /> },
       { path: "/estimators/savings", element: <SavingsCalculator /> },
-      { path: "/estimate/ductless", element: <DuctlessEstimator /> },
-      { path: "/estimate/ducted", element: <DuctedEstimator /> },
       { path: "/estimate/smart-group-march", element: <SmartGroupEntry /> },
       { path: "/central-ac-estimate", element: <CentralAcEstimate /> },
       { path: "/mini-split-estimate", element: <MiniSplitEstimate /> },
