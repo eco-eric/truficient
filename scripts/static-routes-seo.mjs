@@ -127,8 +127,8 @@ export const STATIC_ROUTES_SEO = [
   },
   {
     path: '/multi-zone-estimate',
-    title: 'Multi-Zone Mini Split Estimate | How We Quote | Truficient',
-    description: 'How Truficient estimates multi-zone ductless systems in DFW: per-zone Manual J, branch sizing, line routing. Request a free in-home estimate.',
+    title: 'Multi-Zone Mini-Split Systems | Ducted & Ductless | Truficient Energy Solutions',
+    description: 'Multi-zone HVAC systems in DFW that mix ducted and ductless indoor units on one outdoor condenser. Mitsubishi Diamond Contractor. Request a design consultation.',
   },
   {
     path: '/heat-pump-advantage',
