@@ -1,35 +1,52 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Check, Wind, Home } from 'lucide-react';
+import { ArrowRight, Check, Wind, Home, Layers } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import ductlessImage from '@/assets/ductless-services.webp';
 import ductedImage from '@/assets/ducted-air-handler.webp';
+import multiZoneImage from '@/assets/ductless-hero-living-room.webp';
 
 const estimators = [
   {
-    id: 'ductless',
-    title: 'Ductless Systems',
+    id: 'mini-split',
+    title: 'Mini Split',
     subtitle: 'Mini-splits for targeted comfort',
     image: ductlessImage,
     badge: 'MOST EFFICIENT',
     badgeColor: 'bg-emerald-500',
     icon: Wind,
     benefits: ['No ductwork needed', 'Zone-by-zone control', 'Up to 40% energy savings'],
-    href: '/estimate/ductless',
-    cta: 'Get Ductless Quote',
+    href: '/mini-split-estimate',
+    cta: 'Mini Split Estimate',
   },
   {
     id: 'ducted',
-    title: 'AC | Heat Pump',
+    title: 'Central AC | Heat Pump',
     subtitle: 'Central AC & heat pump replacement',
     image: ductedImage,
     badge: 'WHOLE HOME',
     badgeColor: 'bg-blue-600',
     icon: Home,
     benefits: ['Works with existing ducts', 'Even temperature throughout', 'Quiet operation'],
-    href: '/estimate/ducted',
-    cta: 'Get AC/Heat Pump Quote',
+    href: '/central-ac-estimate',
+    cta: 'Central AC Estimate',
+  },
+  {
+    id: 'multi-zone',
+    title: 'Multi-Zone',
+    subtitle: 'One system, independent zones',
+    image: multiZoneImage,
+    badge: 'MULTI-ROOM',
+    badgeColor: 'bg-amber-500',
+    icon: Layers,
+    benefits: [
+      'Independent room control',
+      'Single outdoor unit, multiple heads',
+      'Ideal for additions & whole-home',
+    ],
+    href: '/multi-zone-estimate',
+    cta: 'Multi-Zone Estimate',
   },
 ];
 
@@ -46,15 +63,15 @@ const EstimatorCards = () => {
           className="text-center mb-8 md:mb-12"
         >
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-3">
-            Get Your Instant Estimate
+            Schedule an Estimate
           </h2>
           <p className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto">
-            No appointment needed. See pricing in under 2 minutes.
+            We specialize in Variable Speed — Mini Split and Multi-Zone Systems
           </p>
         </motion.div>
 
         {/* Estimator Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {estimators.map((estimator, index) => (
             <motion.div
               key={estimator.id}
@@ -70,8 +87,6 @@ const EstimatorCards = () => {
                     <img
                       src={estimator.image}
                       alt={estimator.title}
-                      width={estimator.id === 'ducted' ? 700 : 800}
-                      height={estimator.id === 'ducted' ? 438 : 500}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       loading="lazy"
                     />
@@ -132,7 +147,7 @@ const EstimatorCards = () => {
           transition={{ duration: 0.5, delay: 0.4 }}
           className="text-center text-sm text-muted-foreground mt-6"
         >
-          💡 Instant online pricing • No pressure • Save with rebates
+          Free in-home estimate • No pressure • Certified evaluators
         </motion.p>
       </div>
     </section>
