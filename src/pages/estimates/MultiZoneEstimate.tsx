@@ -16,6 +16,7 @@ import {
   ThermometerSun,
   Award,
 } from "lucide-react";
+import EstimateRequestForm from "@/components/forms/EstimateRequestForm";
 
 const MultiZoneEstimate = () => {
   usePageSEO("/multi-zone-estimate");
