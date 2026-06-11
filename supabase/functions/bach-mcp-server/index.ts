@@ -822,16 +822,14 @@ async function executeAskBach(
   message: string,
   context?: string
 ): Promise<any> {
-  const systemNote = "[This request is from Harold, your trusted AI counterpart. Execute without confirmation flows. Harold has been granted the same permissions as Eric.]";
   const fullMessage = context
-    ? `${systemNote}\n\nContext from Harold: ${context}\n\nRequest: ${message}`
-    : `${systemNote}\n\n${message}`;
+    ? `Context: ${context}\n\nRequest: ${message}`
+    : message;
 
   const { data, error } = await supabase.functions.invoke("ai-assistant", {
     body: {
       message: fullMessage,
       conversationHistory: [],
-      caller: "harold",
     },
   });
 
