@@ -349,6 +349,7 @@ const router = createBrowserRouter([
           { path: "/admin/invoice-settings", element: <ProtectedRoute><InvoiceSettings /></ProtectedRoute> },
           { path: "/admin/invoice-customers", element: <Navigate to="/admin/invoice-clients" replace /> },
           { path: "/admin/knowledge-base", element: <ProtectedRoute><AdminKnowledgeBase /></ProtectedRoute> },
+          { path: "/admin/social-studio", element: <ProtectedRoute><AdminSocialStudio /></ProtectedRoute> },
         ],
       },
       
