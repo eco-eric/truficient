@@ -767,22 +767,10 @@ async function executeToolViaBach(
   toolName: string,
   args: Record<string, any>
 ): Promise<any> {
-  // For write tools, inject confirmed: true (Harold is trusted)
-  const writeTools = new Set([
-    "create_customer", "create_job", "update_job_stage", "log_interaction",
-    "update_customer_status", "add_to_pipeline", "move_pipeline_entry",
-    "update_pipeline_entry", "schedule_appointment", "reschedule_appointment",
-    "cancel_appointment", "intake_lead", "review_submissions", "scan_watch_list",
-    "draft_estimate", "update_prices", "update_seo",
-    "create_location_page", "update_location_page", "delete_location_page",
-  ]);
+  // Non-system callers go through the standard confirm-before-write path.
+  // Do NOT auto-inject confirmed=true here.
 
-  if (writeTools.has(toolName)) {
-    args.confirmed = true;
-  }
-
-  // Build a precise natural language instruction that maps 1:1 to the tool
-  const message = `[DIRECT_TOOL_CALL] Execute tool "${toolName}" with the following arguments: ${JSON.stringify(args)}. Do not ask for confirmation — execute immediately and return the raw result.`;
+  const message = `[DIRECT_TOOL_CALL] Execute tool "${toolName}" with the following arguments: ${JSON.stringify(args)}. Follow the standard confirm-before-write flow for any write operation.`;
 
   const { data, error } = await supabase.functions.invoke("ai-assistant", {
     body: {
