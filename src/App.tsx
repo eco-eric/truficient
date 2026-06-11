@@ -140,6 +140,7 @@ const InvoiceCatalog = lazy(() => import("./pages/admin/invoicing/InvoiceCatalog
 const InvoiceExpenses = lazy(() => import("./pages/admin/invoicing/InvoiceExpenses"));
 const InvoiceReports = lazy(() => import("./pages/admin/invoicing/InvoiceReports"));
 const InvoiceSettings = lazy(() => import("./pages/admin/invoicing/InvoiceSettings"));
+const AdminSocialStudio = lazy(() => import("./pages/admin/SocialStudio"));
 
 // Eagerly loaded (small, needed everywhere)
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
@@ -348,6 +349,7 @@ const router = createBrowserRouter([
           { path: "/admin/invoice-settings", element: <ProtectedRoute><InvoiceSettings /></ProtectedRoute> },
           { path: "/admin/invoice-customers", element: <Navigate to="/admin/invoice-clients" replace /> },
           { path: "/admin/knowledge-base", element: <ProtectedRoute><AdminKnowledgeBase /></ProtectedRoute> },
+          { path: "/admin/social-studio", element: <ProtectedRoute><AdminSocialStudio /></ProtectedRoute> },
         ],
       },
       

@@ -136,6 +136,7 @@ export const navSections: NavSection[] = [
   {
     title: 'Marketing',
     items: [
+      { label: 'Social Studio', href: '/admin/social-studio', icon: Megaphone, permissionKey: 'nav.social-studio' },
       { label: 'SEO', href: '/admin/seo', icon: Search, permissionKey: 'nav.seo' },
       { label: 'Calculators', href: '/admin/calculators', icon: Calculator, permissionKey: 'nav.calculators' },
       { label: 'Landing Pages', href: '/admin/landing-pages', icon: FileInput, permissionKey: 'nav.landing-pages' },
