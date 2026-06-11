@@ -140,6 +140,7 @@ const InvoiceCatalog = lazy(() => import("./pages/admin/invoicing/InvoiceCatalog
 const InvoiceExpenses = lazy(() => import("./pages/admin/invoicing/InvoiceExpenses"));
 const InvoiceReports = lazy(() => import("./pages/admin/invoicing/InvoiceReports"));
 const InvoiceSettings = lazy(() => import("./pages/admin/invoicing/InvoiceSettings"));
+const AdminSocialStudio = lazy(() => import("./pages/admin/SocialStudio"));
 
 // Eagerly loaded (small, needed everywhere)
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
