@@ -2533,6 +2533,167 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_social_ideas: {
+        Row: {
+          ai_model: string | null
+          angle: string | null
+          created_at: string
+          hook: string
+          id: string
+          pillar: string | null
+          source_context: string | null
+          status: string
+          suggested_platforms: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          ai_model?: string | null
+          angle?: string | null
+          created_at?: string
+          hook: string
+          id?: string
+          pillar?: string | null
+          source_context?: string | null
+          status?: string
+          suggested_platforms?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          ai_model?: string | null
+          angle?: string | null
+          created_at?: string
+          hook?: string
+          id?: string
+          pillar?: string | null
+          source_context?: string | null
+          status?: string
+          suggested_platforms?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_social_post_targets: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          external_id: string | null
+          id: string
+          platform: string
+          platform_copy: string | null
+          post_id: string
+          posted_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          external_id?: string | null
+          id?: string
+          platform: string
+          platform_copy?: string | null
+          post_id: string
+          posted_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          external_id?: string | null
+          id?: string
+          platform?: string
+          platform_copy?: string | null
+          post_id?: string
+          posted_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_social_post_targets_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "crm_social_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_social_posts: {
+        Row: {
+          ai_model: string | null
+          ai_provider: string | null
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          media_urls: string[] | null
+          pillar: string | null
+          scheduled_for: string | null
+          source_idea_id: string | null
+          status: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_model?: string | null
+          ai_provider?: string | null
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          media_urls?: string[] | null
+          pillar?: string | null
+          scheduled_for?: string | null
+          source_idea_id?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_model?: string | null
+          ai_provider?: string | null
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          media_urls?: string[] | null
+          pillar?: string | null
+          scheduled_for?: string | null
+          source_idea_id?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_social_strategy: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_active: boolean
+          title: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          title: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          title?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       crm_submission_links: {
         Row: {
           created_at: string
