@@ -1363,13 +1363,8 @@ Deno.serve(async (req) => {
     );
   }
 
-  const callerHeader = req.headers.get("x-caller");
-  if (callerHeader !== "harold") {
-    return new Response(
-      JSON.stringify(jsonRpcError(null, RPC_INVALID_REQUEST, "Missing or invalid x-caller header. Expected: harold")),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
+  // x-caller is optional and informational only — bearer token auth above is the gate.
+
 
   // === Parse JSON-RPC body ===
   let body: any;
