@@ -181,6 +181,8 @@ Return the JSON array only.`
     return { ok: false, status: 502, error: `Failed to parse Bach response as JSON array: ${e instanceof Error ? e.message : String(e)}`, raw }
   }
 
+  const ALL_FORMATS = ['reel', 'short_video', 'carousel', 'photo_post', 'story', 'text_post', 'gmb_update', 'gmb_offer', 'gmb_event']
+
   // Light validation/normalization
   const valid = ideas
     .filter(i => i && typeof i.hook === 'string' && i.hook.trim().length > 0)
@@ -191,6 +193,7 @@ Return the JSON array only.`
       suggested_platforms: Array.isArray(i.suggested_platforms)
         ? i.suggested_platforms.filter((p: any) => ALL_PLATFORMS.includes(p))
         : platforms,
+      format: typeof i.format === 'string' && ALL_FORMATS.includes(i.format) ? i.format : null,
       source_context: typeof i.source_context === 'string' ? i.source_context.trim() : 'evergreen',
     }))
 
