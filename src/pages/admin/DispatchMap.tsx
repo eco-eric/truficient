@@ -204,7 +204,7 @@ export default function DispatchMap() {
 
   // ---- Queries ----
   const jobsQuery = useQuery({
-    queryKey: ['dispatch-map-jobs'],
+    queryKey: ['dispatch-map-jobs', 'v2'],
     enabled: isJobView(view),
     queryFn: async (): Promise<JobRow[]> => {
       const { data, error } = await supabase
@@ -267,9 +267,10 @@ export default function DispatchMap() {
   const { mappableJobs, unmappableJobs } = useMemo(() => {
     const all = jobsQuery.data || [];
     const rows = all.filter(j => {
-      const slug = j.job_type?.slug || '';
-      if (view === 'service') return slug.includes('service-call') || slug.includes('maintenance');
-      if (view === 'installs') return slug.includes('installation') || slug.includes('minisplit');
+      const slug = (j.job_type?.slug || '').toLowerCase();
+      const name = (j.job_type?.name || '').toLowerCase();
+      if (view === 'service') return slug.includes('service-call') || name.includes('service call') || slug.includes('maintenance') || name.includes('maintenance');
+      if (view === 'installs') return slug.includes('installation') || name.includes('install') || slug.includes('minisplit') || name.includes('minisplit');
       return true;
     });
     return {
