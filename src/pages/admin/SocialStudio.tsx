@@ -67,6 +67,18 @@ const PLATFORMS = [
   { value: 'tiktok', label: 'TikTok' },
 ];
 
+const FORMATS: Record<string, string> = {
+  reel: 'Reel',
+  short_video: 'Short Video',
+  carousel: 'Carousel',
+  photo_post: 'Photo Post',
+  story: 'Story',
+  text_post: 'Text Post',
+  gmb_update: 'GMB Update',
+  gmb_offer: 'GMB Offer',
+  gmb_event: 'GMB Event',
+};
+
 const IDEA_STATUSES = ['suggested', 'approved', 'dismissed', 'used'] as const;
 type IdeaStatus = typeof IDEA_STATUSES[number];
 
