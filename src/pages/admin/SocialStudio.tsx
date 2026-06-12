@@ -16,6 +16,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Loader2, Sparkles, Save, Trash2, Megaphone, Lightbulb, Check, X, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { ConnectionsPanel } from './social-studio/ConnectionsPanel';
+import { QueuePanel } from './social-studio/QueuePanel';
+
 
 const PROVIDERS = [
   { value: 'lovable', label: 'Lovable AI (Built-in)' },
@@ -631,11 +634,12 @@ export default function SocialStudio() {
         </TabsContent>
 
         <TabsContent value="queue" className="mt-6">
-          <Card><CardContent className="py-12 text-center text-muted-foreground">Scheduled queue + live publishing coming soon.</CardContent></Card>
+          <QueuePanel />
         </TabsContent>
         <TabsContent value="connections" className="mt-6">
-          <Card><CardContent className="py-12 text-center text-muted-foreground">Platform OAuth connections coming soon.</CardContent></Card>
+          <ConnectionsPanel />
         </TabsContent>
+
       </Tabs>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
