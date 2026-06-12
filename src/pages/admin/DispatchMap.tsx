@@ -171,14 +171,32 @@ export default function DispatchMap() {
   // Init map
   useEffect(() => {
     if (!mapsReady || !mapContainerRef.current || mapRef.current) return;
-    mapRef.current = new google.maps.Map(mapContainerRef.current, {
+    const el = mapContainerRef.current;
+    mapRef.current = new google.maps.Map(el, {
       center: DFW_CENTER,
-      zoom: 10,
+      zoom: 9,
+      minZoom: 7,
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: true,
+      restriction: {
+        latLngBounds: { north: 34.5, south: 31.5, west: -98.8, east: -95.5 },
+        strictBounds: false,
+      },
     });
     infoWindowRef.current = new google.maps.InfoWindow();
+
+    // Re-center to DFW whenever container resizes (fixes mobile "world map" on first paint with 0-size container)
+    const ro = new ResizeObserver(() => {
+      if (!mapRef.current) return;
+      google.maps.event.trigger(mapRef.current, 'resize');
+      if (markersRef.current.length === 0) {
+        mapRef.current.setCenter(DFW_CENTER);
+        mapRef.current.setZoom(9);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
   }, [mapsReady]);
 
   // ---- Queries ----
