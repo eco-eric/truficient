@@ -386,7 +386,7 @@ export default function DispatchMap() {
   const unmappableLocations = useMemo(() => {
     const rows: { id: string; address_line1: string; city: string; state: string; zip_code: string }[] = [];
     const seen = new Set<string>();
-    const items = view === 'jobs'
+    const items = isJobView(view)
       ? unmappableJobs.map(j => j.location).filter(Boolean)
       : unmappableAppts.map(a => a.job?.location).filter(Boolean);
     for (const loc of items as any[]) {
