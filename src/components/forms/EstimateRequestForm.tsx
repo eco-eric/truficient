@@ -108,17 +108,6 @@ export const EstimateRequestForm = ({
           },
         })
         .then(({ error }) => error && console.error("Email notify failed:", error));
-          body: {
-            firstName,
-            lastName,
-            email: "",
-            phone: parsed.data.phone,
-            serviceType: systemType,
-            message,
-            source,
-          },
-        })
-        .then(({ error }) => error && console.error("Email notify failed:", error));
 
       supabase.functions
         .invoke("sync-ghl-contact", {
