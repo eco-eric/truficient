@@ -127,7 +127,9 @@ Return the JSON array only.`
     ],
   }
   if (isGpt5) {
-    aiBody.max_completion_tokens = 2200
+    // GPT-5 reasoning models consume tokens internally before emitting output —
+    // give plenty of headroom or `content` comes back empty.
+    aiBody.max_completion_tokens = 8000
   } else {
     aiBody.max_tokens = 2200
     aiBody.temperature = 0.9
