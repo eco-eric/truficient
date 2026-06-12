@@ -36,8 +36,9 @@ const MODELS_BY_PROVIDER: Record<string, { value: string; label: string }[]> = {
     { value: 'openai/gpt-5-mini', label: 'GPT-5 Mini (Balanced)' },
   ],
   openai: [
-    { value: 'gpt-4o', label: 'GPT-4o' },
-    { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
+    { value: 'openai/gpt-5', label: 'GPT-5' },
+    { value: 'openai/gpt-5-mini', label: 'GPT-5 Mini' },
+    { value: 'openai/gpt-5.4', label: 'GPT-5.4' },
   ],
   anthropic: [
     { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
