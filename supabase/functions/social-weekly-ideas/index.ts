@@ -35,6 +35,7 @@ Deno.serve(async (req) => {
       angle: i.angle,
       pillar: i.pillar,
       suggested_platforms: i.suggested_platforms,
+      format: i.format,
       source_context: i.source_context,
       status: 'suggested',
       ai_model: data?.model || 'google/gemini-2.5-flash',

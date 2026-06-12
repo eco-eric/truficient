@@ -95,7 +95,18 @@ export async function generateIdeas(opts: {
 
   const systemPrompt = `You are Bach, Truficient HVAC's in-house content strategist. Generate strong, on-strategy social post IDEAS — not finished copy. Anchor every idea to the strategy doc below (80/20 educate-first, five pillars, per-platform format/cadence).
 
-Each idea must have a scroll-stopping hook, a clear angle, the pillar, and platform(s) it fits best. When real context is provided, prefer ideas that reference real cities, equipment, or job types — never invent customer PII (no last names, no addresses).
+Each idea must have a scroll-stopping hook, a clear angle, the pillar, the platform(s) it fits best, AND the specific content format. When real context is provided, prefer ideas that reference real cities, equipment, or job types — never invent customer PII (no last names, no addresses).
+
+Pick the format that best matches the suggested platform(s):
+- reel — vertical short video for Instagram/Facebook (15-60s)
+- short_video — vertical short video for TikTok (15-60s)
+- carousel — multi-slide image post (Instagram/Facebook)
+- photo_post — single static image with caption (Instagram/Facebook)
+- story — 24-hr vertical Story (Instagram/Facebook)
+- text_post — primarily text (Facebook update, long-form)
+- gmb_update — Google Business "What's New" post with photo
+- gmb_offer — Google Business "Offer" post (discount/promo)
+- gmb_event — Google Business "Event" post (dated)
 
 Return ONLY a JSON array of exactly ${count} objects. No preamble. No markdown fences. No trailing commentary. Schema for each object:
 {
@@ -103,6 +114,7 @@ Return ONLY a JSON array of exactly ${count} objects. No preamble. No markdown f
   "angle": "string — 1-2 sentences on the content approach and why it works",
   "pillar": "comfort | energy_costs | equipment_education | how_we_think | proof",
   "suggested_platforms": ["google_business" | "facebook" | "instagram" | "tiktok", ...],
+  "format": "reel | short_video | carousel | photo_post | story | text_post | gmb_update | gmb_offer | gmb_event",
   "source_context": "string — the real job/city/equipment that seeded it, or 'evergreen' if none"
 }
 
@@ -169,6 +181,8 @@ Return the JSON array only.`
     return { ok: false, status: 502, error: `Failed to parse Bach response as JSON array: ${e instanceof Error ? e.message : String(e)}`, raw }
   }
 
+  const ALL_FORMATS = ['reel', 'short_video', 'carousel', 'photo_post', 'story', 'text_post', 'gmb_update', 'gmb_offer', 'gmb_event']
+
   // Light validation/normalization
   const valid = ideas
     .filter(i => i && typeof i.hook === 'string' && i.hook.trim().length > 0)
@@ -179,6 +193,7 @@ Return the JSON array only.`
       suggested_platforms: Array.isArray(i.suggested_platforms)
         ? i.suggested_platforms.filter((p: any) => ALL_PLATFORMS.includes(p))
         : platforms,
+      format: typeof i.format === 'string' && ALL_FORMATS.includes(i.format) ? i.format : null,
       source_context: typeof i.source_context === 'string' ? i.source_context.trim() : 'evergreen',
     }))
 

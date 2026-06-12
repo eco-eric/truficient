@@ -67,6 +67,18 @@ const PLATFORMS = [
   { value: 'tiktok', label: 'TikTok' },
 ];
 
+const FORMATS: Record<string, string> = {
+  reel: 'Reel',
+  short_video: 'Short Video',
+  carousel: 'Carousel',
+  photo_post: 'Photo Post',
+  story: 'Story',
+  text_post: 'Text Post',
+  gmb_update: 'GMB Update',
+  gmb_offer: 'GMB Offer',
+  gmb_event: 'GMB Event',
+};
+
 const IDEA_STATUSES = ['suggested', 'approved', 'dismissed', 'used'] as const;
 type IdeaStatus = typeof IDEA_STATUSES[number];
 
@@ -88,6 +100,7 @@ interface DraftIdea {
   angle: string;
   pillar: string | null;
   suggested_platforms: string[];
+  format: string | null;
   source_context: string;
 }
 
@@ -146,7 +159,7 @@ export default function SocialStudio() {
     setLoadingSaved(true);
     const { data, error } = await supabase
       .from('crm_social_ideas')
-      .select('id, hook, angle, pillar, suggested_platforms, source_context, status, ai_model, created_at')
+      .select('id, hook, angle, pillar, suggested_platforms, format, source_context, status, ai_model, created_at')
       .order('created_at', { ascending: false })
       .limit(200);
     if (error) toast({ title: 'Failed to load ideas', description: error.message, variant: 'destructive' });
@@ -286,7 +299,7 @@ export default function SocialStudio() {
     if (!i) return;
     const { error } = await supabase.from('crm_social_ideas').insert({
       hook: i.hook, angle: i.angle, pillar: i.pillar, suggested_platforms: i.suggested_platforms,
-      source_context: i.source_context, status: 'suggested', ai_model: ideasModel,
+      format: i.format, source_context: i.source_context, status: 'suggested', ai_model: ideasModel,
     });
     if (error) return toast({ title: 'Save failed', description: error.message, variant: 'destructive' });
     discardDraft(idx);
@@ -299,7 +312,7 @@ export default function SocialStudio() {
     if (draftIdeas.length === 0) return;
     const rows = draftIdeas.map(i => ({
       hook: i.hook, angle: i.angle, pillar: i.pillar, suggested_platforms: i.suggested_platforms,
-      source_context: i.source_context, status: 'suggested' as const, ai_model: ideasModel,
+      format: i.format, source_context: i.source_context, status: 'suggested' as const, ai_model: ideasModel,
     }));
     const { error } = await supabase.from('crm_social_ideas').insert(rows);
     if (error) return toast({ title: 'Save failed', description: error.message, variant: 'destructive' });
@@ -558,6 +571,7 @@ export default function SocialStudio() {
                     {i.angle && <div className="text-sm text-muted-foreground">{i.angle}</div>}
                     <div className="flex flex-wrap gap-2 items-center">
                       {i.pillar && <Badge variant="secondary">{PILLARS.find(p => p.value === i.pillar)?.label || i.pillar}</Badge>}
+                      {i.format && <Badge className="bg-[#FFB547] text-[#002244] hover:bg-[#FFB547]">{FORMATS[i.format] || i.format}</Badge>}
                       {i.suggested_platforms.map(p => (
                         <Badge key={p} variant="outline">{PLATFORMS.find(pl => pl.value === p)?.label || p}</Badge>
                       ))}
@@ -602,6 +616,7 @@ export default function SocialStudio() {
                       {idea.angle && <div className="text-sm text-muted-foreground">{idea.angle}</div>}
                       <div className="flex flex-wrap gap-2 items-center">
                         {idea.pillar && <Badge variant="secondary">{PILLARS.find(p => p.value === idea.pillar)?.label || idea.pillar}</Badge>}
+                        {idea.format && <Badge className="bg-[#FFB547] text-[#002244] hover:bg-[#FFB547]">{FORMATS[idea.format] || idea.format}</Badge>}
                         {(idea.suggested_platforms || []).map(p => (
                           <Badge key={p} variant="outline">{PLATFORMS.find(pl => pl.value === p)?.label || p}</Badge>
                         ))}

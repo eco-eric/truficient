@@ -2589,6 +2589,7 @@ export type Database = {
           ai_model: string | null
           angle: string | null
           created_at: string
+          format: string | null
           hook: string
           id: string
           pillar: string | null
@@ -2601,6 +2602,7 @@ export type Database = {
           ai_model?: string | null
           angle?: string | null
           created_at?: string
+          format?: string | null
           hook: string
           id?: string
           pillar?: string | null
@@ -2613,6 +2615,7 @@ export type Database = {
           ai_model?: string | null
           angle?: string | null
           created_at?: string
+          format?: string | null
           hook?: string
           id?: string
           pillar?: string | null
