@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
         sendEmail({
           from: FROM,
           to: recipients,
-          reply_to: body.email,
+          reply_to: hasRealEmail ? body.email : REPLY_TO,
           subject,
           html,
           text: htmlToText(html),
