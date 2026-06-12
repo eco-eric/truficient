@@ -204,7 +204,7 @@ export default function DispatchMap() {
 
   // ---- Queries ----
   const jobsQuery = useQuery({
-    queryKey: ['dispatch-map-jobs'],
+    queryKey: ['dispatch-map-jobs', 'v2'],
     enabled: isJobView(view),
     queryFn: async (): Promise<JobRow[]> => {
       const { data, error } = await supabase
