@@ -351,17 +351,15 @@ export default function DispatchMap() {
 
     if (count > 0) {
       mapRef.current.fitBounds(bounds, 60);
-      if (count === 1) {
-        // Avoid over-zoom on single marker
-        const listener = google.maps.event.addListenerOnce(mapRef.current, 'bounds_changed', () => {
-          mapRef.current?.setZoom(13);
-        });
-        // safety cleanup
-        setTimeout(() => google.maps.event.removeListener(listener), 1000);
-      }
+      const listener = google.maps.event.addListenerOnce(mapRef.current, 'bounds_changed', () => {
+        const z = mapRef.current?.getZoom() ?? 10;
+        if (count === 1 || z > 14) mapRef.current?.setZoom(13);
+        if (z < 8) mapRef.current?.setZoom(9);
+      });
+      setTimeout(() => google.maps.event.removeListener(listener), 1000);
     } else {
       mapRef.current.setCenter(DFW_CENTER);
-      mapRef.current.setZoom(10);
+      mapRef.current.setZoom(9);
     }
   }, [mapsReady, view, mappableJobs, mappableAppts, teamColorMap]);
 
