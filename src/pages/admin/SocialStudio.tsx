@@ -616,6 +616,7 @@ export default function SocialStudio() {
                       {idea.angle && <div className="text-sm text-muted-foreground">{idea.angle}</div>}
                       <div className="flex flex-wrap gap-2 items-center">
                         {idea.pillar && <Badge variant="secondary">{PILLARS.find(p => p.value === idea.pillar)?.label || idea.pillar}</Badge>}
+                        {idea.format && <Badge className="bg-[#FFB547] text-[#002244] hover:bg-[#FFB547]">{FORMATS[idea.format] || idea.format}</Badge>}
                         {(idea.suggested_platforms || []).map(p => (
                           <Badge key={p} variant="outline">{PLATFORMS.find(pl => pl.value === p)?.label || p}</Badge>
                         ))}
