@@ -462,7 +462,9 @@ export default function DispatchMap() {
           <div className="flex items-center gap-3">
             <Tabs value={view} onValueChange={(v) => setView(v as ViewMode)}>
               <TabsList>
-                <TabsTrigger value="jobs">Open Jobs</TabsTrigger>
+                <TabsTrigger value="jobs">All Open</TabsTrigger>
+                <TabsTrigger value="service">Service Calls</TabsTrigger>
+                <TabsTrigger value="installs">Installs</TabsTrigger>
                 <TabsTrigger value="appointments">Appointments</TabsTrigger>
               </TabsList>
             </Tabs>
