@@ -79,12 +79,20 @@ Deno.serve(async (req) => {
   try {
     const body = (await req.json()) as Payload;
 
-    if (!body.email || !body.firstName || !body.lastName) {
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+    if (!body.firstName || !body.lastName) {
+      return new Response(JSON.stringify({ error: 'Missing required fields: firstName, lastName' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // Detect placeholder/empty emails — we still send the internal alert,
+    // but skip the customer acknowledgement (no real inbox to reach).
+    const hasRealEmail =
+      !!body.email &&
+      body.email.includes('@') &&
+      !body.email.startsWith('noemail+') &&
+      !body.email.endsWith('@truficient.com');
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -98,7 +106,7 @@ Deno.serve(async (req) => {
       first_name: body.firstName,
       last_name: body.lastName,
       full_name: `${body.firstName} ${body.lastName}`.trim(),
-      email: body.email,
+      email: hasRealEmail ? body.email : '(not provided)',
       phone: body.phone,
       service_type: body.serviceType,
       message: body.message,
@@ -140,7 +148,7 @@ Deno.serve(async (req) => {
         sendEmail({
           from: FROM,
           to: recipients,
-          reply_to: body.email,
+          reply_to: hasRealEmail ? body.email : REPLY_TO,
           subject,
           html,
           text: htmlToText(html),
@@ -152,7 +160,7 @@ Deno.serve(async (req) => {
     }
 
     // ---------- CUSTOMER ACK ----------
-    if (customerTpl) {
+    if (customerTpl && hasRealEmail) {
       const subject = renderMergeTags(customerTpl.subject || '', vars);
       const html = renderMergeTags(customerTpl.body_html || '', vars);
       const ccList = (customerTpl.cc_emails || '')

@@ -81,10 +81,12 @@ export const EstimateRequestForm = ({
       const message = `System Type: ${systemType}\nZIP: ${parsed.data.zip}\nSource Page: ${sourcePage}\n\n${parsed.data.message}`;
       const source = `Estimate Page – ${systemType}`;
 
+      const placeholderEmail = `noemail+${Date.now()}@truficient.com`;
+
       const { error: insertError } = await supabase.from("contact_submissions").insert({
         first_name: firstName,
         last_name: lastName,
-        email: `noemail+${Date.now()}@truficient.com`,
+        email: placeholderEmail,
         phone: parsed.data.phone,
         service_type: systemType,
         message,
@@ -98,7 +100,7 @@ export const EstimateRequestForm = ({
           body: {
             firstName,
             lastName,
-            email: "",
+            email: placeholderEmail,
             phone: parsed.data.phone,
             serviceType: systemType,
             message,
