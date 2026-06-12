@@ -117,18 +117,25 @@ ${platformList}
 
 Return the JSON array only.`
 
+  // GPT-5 family uses `max_completion_tokens` and does not accept custom temperature
+  const isGpt5 = /^openai\/gpt-5/i.test(useModel)
+  const aiBody: Record<string, unknown> = {
+    model: useModel,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ],
+  }
+  if (isGpt5) {
+    aiBody.max_completion_tokens = 2200
+  } else {
+    aiBody.max_tokens = 2200
+    aiBody.temperature = 0.9
+  }
   const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${LOVABLE_API_KEY}` },
-    body: JSON.stringify({
-      model: useModel,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      temperature: 0.9,
-      max_tokens: 2200,
-    }),
+    body: JSON.stringify(aiBody),
   })
 
   if (aiRes.status === 429) {
