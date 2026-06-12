@@ -117,6 +117,7 @@ const AdminJobTypesConfig = lazy(() => import("./pages/admin/JobTypesConfig"));
 const AdminTeams = lazy(() => import("./pages/admin/Teams"));
 const AdminWorkEdgeProjects = lazy(() => import("./pages/admin/WorkEdgeProjects"));
 const AdminCalendar = lazy(() => import("./pages/admin/Calendar"));
+const AdminDispatchMap = lazy(() => import("./pages/admin/DispatchMap"));
 const AdminCalendarSettings = lazy(() => import("./pages/admin/CalendarSettings"));
 const AdminAISettings = lazy(() => import("./pages/admin/AISettings"));
 const AdminAutomations = lazy(() => import("./pages/admin/Automations"));
@@ -282,6 +283,7 @@ const router = createBrowserRouter([
           { path: "/admin/dfw-watchlist", element: <ProtectedRoute><AdminDFWWatchList /></ProtectedRoute> },
           { path: "/admin/jobs", element: <ProtectedRoute><AdminJobs /></ProtectedRoute> },
           { path: "/admin/jobs/:id", element: <ProtectedRoute><AdminJobDetail /></ProtectedRoute> },
+          { path: "/admin/dispatch-map", element: <ProtectedRoute><AdminDispatchMap /></ProtectedRoute> },
           { path: "/admin/job-types", element: <ProtectedRoute><AdminJobTypesConfig /></ProtectedRoute> },
           { path: "/admin/contracts", element: <ProtectedRoute><AdminMaintenanceContracts /></ProtectedRoute> },
           { path: "/admin/contracts/candidates", element: <ProtectedRoute><AdminMaintenanceContractCandidates /></ProtectedRoute> },

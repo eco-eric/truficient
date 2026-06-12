@@ -80,6 +80,7 @@ export const navSections: NavSection[] = [
     title: 'Operations',
     items: [
       { label: 'Calendar', href: '/admin/calendar', icon: LayoutDashboard, permissionKey: 'nav.calendar' },
+      { label: 'Map', href: '/admin/dispatch-map', icon: MapPin, permissionKey: 'nav.dispatch-map' },
       { label: 'Jobs Board', href: '/admin/jobs', icon: Briefcase, permissionKey: 'nav.jobs' },
       { label: 'Maintenance Contracts', href: '/admin/contracts', icon: ClipboardCheck, permissionKey: 'nav.maintenance-contracts' },
       { label: 'Teams & Crew', href: '/admin/teams', icon: UsersRound, permissionKey: 'nav.teams' },
