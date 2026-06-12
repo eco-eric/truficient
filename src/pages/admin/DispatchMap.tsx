@@ -87,7 +87,7 @@ interface JobRow {
   customer: { first_name: string | null; last_name: string | null; company_name: string | null } | null;
   location: { id: string; address_line1: string; city: string; state: string; zip_code: string; latitude: number | null; longitude: number | null } | null;
   stage: { name: string | null; stage_type: string | null; color: string | null } | null;
-  job_type: { name: string | null } | null;
+  job_type: { name: string | null; slug?: string | null } | null;
 }
 
 interface AppointmentRow {
