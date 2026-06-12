@@ -25,7 +25,10 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-type ViewMode = 'jobs' | 'appointments';
+type ViewMode = 'jobs' | 'service' | 'installs' | 'appointments';
+
+const OPEN_STAGE_TYPES = new Set(['initial', 'in_progress', 'review']);
+const isJobView = (v: ViewMode) => v === 'jobs' || v === 'service' || v === 'installs';
 
 const DFW_CENTER = { lat: 32.85, lng: -97.05 };
 const NAVY = '#1e3a5f';
@@ -84,7 +87,7 @@ interface JobRow {
   customer: { first_name: string | null; last_name: string | null; company_name: string | null } | null;
   location: { id: string; address_line1: string; city: string; state: string; zip_code: string; latitude: number | null; longitude: number | null } | null;
   stage: { name: string | null; stage_type: string | null; color: string | null } | null;
-  job_type: { name: string | null } | null;
+  job_type: { name: string | null; slug?: string | null } | null;
 }
 
 interface AppointmentRow {
@@ -202,7 +205,7 @@ export default function DispatchMap() {
   // ---- Queries ----
   const jobsQuery = useQuery({
     queryKey: ['dispatch-map-jobs'],
-    enabled: view === 'jobs',
+    enabled: isJobView(view),
     queryFn: async (): Promise<JobRow[]> => {
       const { data, error } = await supabase
         .from('crm_jobs')
@@ -211,12 +214,13 @@ export default function DispatchMap() {
           customer:crm_customers!crm_jobs_customer_id_fkey(first_name, last_name, company_name),
           location:crm_locations!crm_jobs_location_id_fkey(id, address_line1, city, state, zip_code, latitude, longitude),
           stage:crm_job_stages!crm_jobs_current_stage_id_fkey(name, stage_type, color),
-          job_type:crm_job_types!crm_jobs_job_type_id_fkey(name)
+          job_type:crm_job_types!crm_jobs_job_type_id_fkey(name, slug)
         `)
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []).filter((j: any) => j.stage?.stage_type !== 'end') as JobRow[];
+      // Only show truly open jobs: exclude completed, closed_won, cancelled, end
+      return (data || []).filter((j: any) => OPEN_STAGE_TYPES.has(j.stage?.stage_type)) as JobRow[];
     },
   });
 
@@ -259,14 +263,20 @@ export default function DispatchMap() {
     return map;
   }, [apptsQuery.data]);
 
-  // Split into mappable / unmappable
+  // Split into mappable / unmappable (with optional Service/Install sub-filter)
   const { mappableJobs, unmappableJobs } = useMemo(() => {
-    const rows = jobsQuery.data || [];
+    const all = jobsQuery.data || [];
+    const rows = all.filter(j => {
+      const slug = j.job_type?.slug || '';
+      if (view === 'service') return slug.includes('service-call') || slug.includes('maintenance');
+      if (view === 'installs') return slug.includes('installation') || slug.includes('minisplit');
+      return true;
+    });
     return {
       mappableJobs: rows.filter(j => j.location?.latitude != null && j.location?.longitude != null),
       unmappableJobs: rows.filter(j => !j.location || j.location.latitude == null || j.location.longitude == null),
     };
-  }, [jobsQuery.data]);
+  }, [jobsQuery.data, view]);
 
   const { mappableAppts, unmappableAppts } = useMemo(() => {
     const rows = apptsQuery.data || [];
@@ -287,7 +297,7 @@ export default function DispatchMap() {
     const bounds = new google.maps.LatLngBounds();
     let count = 0;
 
-    if (view === 'jobs') {
+    if (isJobView(view)) {
       for (const j of mappableJobs) {
         const pos = { lat: Number(j.location!.latitude), lng: Number(j.location!.longitude) };
         const color = PRIORITY_COLORS[j.priority || 'normal'] || NAVY;
@@ -376,7 +386,7 @@ export default function DispatchMap() {
   const unmappableLocations = useMemo(() => {
     const rows: { id: string; address_line1: string; city: string; state: string; zip_code: string }[] = [];
     const seen = new Set<string>();
-    const items = view === 'jobs'
+    const items = isJobView(view)
       ? unmappableJobs.map(j => j.location).filter(Boolean)
       : unmappableAppts.map(a => a.job?.location).filter(Boolean);
     for (const loc of items as any[]) {
@@ -452,7 +462,9 @@ export default function DispatchMap() {
           <div className="flex items-center gap-3">
             <Tabs value={view} onValueChange={(v) => setView(v as ViewMode)}>
               <TabsList>
-                <TabsTrigger value="jobs">Open Jobs</TabsTrigger>
+                <TabsTrigger value="jobs">All Open</TabsTrigger>
+                <TabsTrigger value="service">Service Calls</TabsTrigger>
+                <TabsTrigger value="installs">Installs</TabsTrigger>
                 <TabsTrigger value="appointments">Appointments</TabsTrigger>
               </TabsList>
             </Tabs>
@@ -514,7 +526,7 @@ export default function DispatchMap() {
               <div className="p-3 border-b">
                 <div className="flex items-center justify-between">
                   <h2 className="font-semibold text-sm" style={{ color: NAVY }}>
-                    {view === 'jobs'
+                    {isJobView(view)
                       ? `${mappableJobs.length} open job${mappableJobs.length === 1 ? '' : 's'}`
                       : `${mappableAppts.length} appointment${mappableAppts.length === 1 ? '' : 's'}`}
                   </h2>
@@ -562,7 +574,7 @@ export default function DispatchMap() {
                 )}
               </div>
               <div className="flex-1 overflow-auto">
-                {view === 'jobs' ? (
+                {isJobView(view) ? (
                   mappableJobs.length === 0 ? (
                     <p className="p-4 text-sm text-muted-foreground">No open jobs to show.</p>
                   ) : (
