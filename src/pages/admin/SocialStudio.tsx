@@ -147,7 +147,7 @@ export default function SocialStudio() {
     setLoadingSaved(true);
     const { data, error } = await supabase
       .from('crm_social_ideas')
-      .select('id, hook, angle, pillar, suggested_platforms, source_context, status, ai_model, created_at')
+      .select('id, hook, angle, pillar, suggested_platforms, format, source_context, status, ai_model, created_at')
       .order('created_at', { ascending: false })
       .limit(200);
     if (error) toast({ title: 'Failed to load ideas', description: error.message, variant: 'destructive' });
