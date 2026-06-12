@@ -25,7 +25,10 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-type ViewMode = 'jobs' | 'appointments';
+type ViewMode = 'jobs' | 'service' | 'installs' | 'appointments';
+
+const OPEN_STAGE_TYPES = new Set(['initial', 'in_progress', 'review']);
+const isJobView = (v: ViewMode) => v === 'jobs' || v === 'service' || v === 'installs';
 
 const DFW_CENTER = { lat: 32.85, lng: -97.05 };
 const NAVY = '#1e3a5f';
