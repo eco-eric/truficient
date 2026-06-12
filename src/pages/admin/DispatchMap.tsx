@@ -263,14 +263,20 @@ export default function DispatchMap() {
     return map;
   }, [apptsQuery.data]);
 
-  // Split into mappable / unmappable
+  // Split into mappable / unmappable (with optional Service/Install sub-filter)
   const { mappableJobs, unmappableJobs } = useMemo(() => {
-    const rows = jobsQuery.data || [];
+    const all = jobsQuery.data || [];
+    const rows = all.filter(j => {
+      const slug = j.job_type?.slug || '';
+      if (view === 'service') return slug.includes('service-call') || slug.includes('maintenance');
+      if (view === 'installs') return slug.includes('installation') || slug.includes('minisplit');
+      return true;
+    });
     return {
       mappableJobs: rows.filter(j => j.location?.latitude != null && j.location?.longitude != null),
       unmappableJobs: rows.filter(j => !j.location || j.location.latitude == null || j.location.longitude == null),
     };
-  }, [jobsQuery.data]);
+  }, [jobsQuery.data, view]);
 
   const { mappableAppts, unmappableAppts } = useMemo(() => {
     const rows = apptsQuery.data || [];
