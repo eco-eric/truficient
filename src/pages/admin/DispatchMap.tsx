@@ -574,7 +574,7 @@ export default function DispatchMap() {
                 )}
               </div>
               <div className="flex-1 overflow-auto">
-                {view === 'jobs' ? (
+                {isJobView(view) ? (
                   mappableJobs.length === 0 ? (
                     <p className="p-4 text-sm text-muted-foreground">No open jobs to show.</p>
                   ) : (
