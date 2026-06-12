@@ -79,12 +79,20 @@ Deno.serve(async (req) => {
   try {
     const body = (await req.json()) as Payload;
 
-    if (!body.email || !body.firstName || !body.lastName) {
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+    if (!body.firstName || !body.lastName) {
+      return new Response(JSON.stringify({ error: 'Missing required fields: firstName, lastName' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // Detect placeholder/empty emails — we still send the internal alert,
+    // but skip the customer acknowledgement (no real inbox to reach).
+    const hasRealEmail =
+      !!body.email &&
+      body.email.includes('@') &&
+      !body.email.startsWith('noemail+') &&
+      !body.email.endsWith('@truficient.com');
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
