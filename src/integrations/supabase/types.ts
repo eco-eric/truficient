@@ -2533,6 +2533,57 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_social_connections: {
+        Row: {
+          account_id: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          is_connected: boolean
+          last_check_detail: string | null
+          last_checked_at: string | null
+          live_enabled: boolean
+          meta: Json
+          platform: string
+          scopes: string[]
+          token_expires_at: string | null
+          token_status: string
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_connected?: boolean
+          last_check_detail?: string | null
+          last_checked_at?: string | null
+          live_enabled?: boolean
+          meta?: Json
+          platform: string
+          scopes?: string[]
+          token_expires_at?: string | null
+          token_status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_connected?: boolean
+          last_check_detail?: string | null
+          last_checked_at?: string | null
+          live_enabled?: boolean
+          meta?: Json
+          platform?: string
+          scopes?: string[]
+          token_expires_at?: string | null
+          token_status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_social_ideas: {
         Row: {
           ai_model: string | null
