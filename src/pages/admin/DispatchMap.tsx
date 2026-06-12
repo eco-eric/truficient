@@ -205,7 +205,7 @@ export default function DispatchMap() {
   // ---- Queries ----
   const jobsQuery = useQuery({
     queryKey: ['dispatch-map-jobs'],
-    enabled: view === 'jobs',
+    enabled: isJobView(view),
     queryFn: async (): Promise<JobRow[]> => {
       const { data, error } = await supabase
         .from('crm_jobs')
@@ -214,12 +214,13 @@ export default function DispatchMap() {
           customer:crm_customers!crm_jobs_customer_id_fkey(first_name, last_name, company_name),
           location:crm_locations!crm_jobs_location_id_fkey(id, address_line1, city, state, zip_code, latitude, longitude),
           stage:crm_job_stages!crm_jobs_current_stage_id_fkey(name, stage_type, color),
-          job_type:crm_job_types!crm_jobs_job_type_id_fkey(name)
+          job_type:crm_job_types!crm_jobs_job_type_id_fkey(name, slug)
         `)
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []).filter((j: any) => j.stage?.stage_type !== 'end') as JobRow[];
+      // Only show truly open jobs: exclude completed, closed_won, cancelled, end
+      return (data || []).filter((j: any) => OPEN_STAGE_TYPES.has(j.stage?.stage_type)) as JobRow[];
     },
   });
 
