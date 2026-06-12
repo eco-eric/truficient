@@ -526,7 +526,7 @@ export default function DispatchMap() {
               <div className="p-3 border-b">
                 <div className="flex items-center justify-between">
                   <h2 className="font-semibold text-sm" style={{ color: NAVY }}>
-                    {view === 'jobs'
+                    {isJobView(view)
                       ? `${mappableJobs.length} open job${mappableJobs.length === 1 ? '' : 's'}`
                       : `${mappableAppts.length} appointment${mappableAppts.length === 1 ? '' : 's'}`}
                   </h2>
