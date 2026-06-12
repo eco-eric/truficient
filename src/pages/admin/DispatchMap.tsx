@@ -171,14 +171,32 @@ export default function DispatchMap() {
   // Init map
   useEffect(() => {
     if (!mapsReady || !mapContainerRef.current || mapRef.current) return;
-    mapRef.current = new google.maps.Map(mapContainerRef.current, {
+    const el = mapContainerRef.current;
+    mapRef.current = new google.maps.Map(el, {
       center: DFW_CENTER,
-      zoom: 10,
+      zoom: 9,
+      minZoom: 7,
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: true,
+      restriction: {
+        latLngBounds: { north: 34.5, south: 31.5, west: -98.8, east: -95.5 },
+        strictBounds: false,
+      },
     });
     infoWindowRef.current = new google.maps.InfoWindow();
+
+    // Re-center to DFW whenever container resizes (fixes mobile "world map" on first paint with 0-size container)
+    const ro = new ResizeObserver(() => {
+      if (!mapRef.current) return;
+      google.maps.event.trigger(mapRef.current, 'resize');
+      if (markersRef.current.length === 0) {
+        mapRef.current.setCenter(DFW_CENTER);
+        mapRef.current.setZoom(9);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
   }, [mapsReady]);
 
   // ---- Queries ----
@@ -333,17 +351,15 @@ export default function DispatchMap() {
 
     if (count > 0) {
       mapRef.current.fitBounds(bounds, 60);
-      if (count === 1) {
-        // Avoid over-zoom on single marker
-        const listener = google.maps.event.addListenerOnce(mapRef.current, 'bounds_changed', () => {
-          mapRef.current?.setZoom(13);
-        });
-        // safety cleanup
-        setTimeout(() => google.maps.event.removeListener(listener), 1000);
-      }
+      const listener = google.maps.event.addListenerOnce(mapRef.current, 'bounds_changed', () => {
+        const z = mapRef.current?.getZoom() ?? 10;
+        if (count === 1 || z > 14) mapRef.current?.setZoom(13);
+        if (z < 8) mapRef.current?.setZoom(9);
+      });
+      setTimeout(() => google.maps.event.removeListener(listener), 1000);
     } else {
       mapRef.current.setCenter(DFW_CENTER);
-      mapRef.current.setZoom(10);
+      mapRef.current.setZoom(9);
     }
   }, [mapsReady, view, mappableJobs, mappableAppts, teamColorMap]);
 
