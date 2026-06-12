@@ -117,6 +117,7 @@ const AdminJobTypesConfig = lazy(() => import("./pages/admin/JobTypesConfig"));
 const AdminTeams = lazy(() => import("./pages/admin/Teams"));
 const AdminWorkEdgeProjects = lazy(() => import("./pages/admin/WorkEdgeProjects"));
 const AdminCalendar = lazy(() => import("./pages/admin/Calendar"));
+const AdminDispatchMap = lazy(() => import("./pages/admin/DispatchMap"));
 const AdminCalendarSettings = lazy(() => import("./pages/admin/CalendarSettings"));
 const AdminAISettings = lazy(() => import("./pages/admin/AISettings"));
 const AdminAutomations = lazy(() => import("./pages/admin/Automations"));
