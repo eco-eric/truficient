@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
       first_name: body.firstName,
       last_name: body.lastName,
       full_name: `${body.firstName} ${body.lastName}`.trim(),
-      email: body.email,
+      email: hasRealEmail ? body.email : '(not provided)',
       phone: body.phone,
       service_type: body.serviceType,
       message: body.message,
