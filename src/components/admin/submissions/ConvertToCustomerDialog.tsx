@@ -216,7 +216,7 @@ export const ConvertToCustomerDialog = ({
         email: submission.customerEmail || '',
         phone: submission.customerPhone || '',
         lead_source: getLeadSource(submission.source),
-        notes: '',
+        notes: extractSubmissionNotes(submission.metadata, submission.source),
         address_line1: address.address_line1,
         city: address.city,
         state: address.state,
