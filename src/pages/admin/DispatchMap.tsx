@@ -297,7 +297,7 @@ export default function DispatchMap() {
     const bounds = new google.maps.LatLngBounds();
     let count = 0;
 
-    if (view === 'jobs') {
+    if (isJobView(view)) {
       for (const j of mappableJobs) {
         const pos = { lat: Number(j.location!.latitude), lng: Number(j.location!.longitude) };
         const color = PRIORITY_COLORS[j.priority || 'normal'] || NAVY;
