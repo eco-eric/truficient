@@ -146,6 +146,23 @@ export const ConvertToCustomerDialog = ({
     return '';
   };
 
+  // Extract message/notes from submission so it carries over to the customer record
+  const extractSubmissionNotes = (metadata: Record<string, unknown>, source: string) => {
+    const parts: string[] = [];
+    const serviceType = metadata.serviceType as string | undefined;
+    const message = metadata.message as string | undefined;
+    const notes = metadata.notes as string | undefined;
+    const bestTime = metadata.bestTimeToCall as string | undefined;
+
+    if (serviceType) parts.push(`Service Type: ${serviceType}`);
+    if (message?.trim()) parts.push(`Message: ${message.trim()}`);
+    if (notes?.trim()) parts.push(`Notes: ${notes.trim()}`);
+    if (bestTime) parts.push(`Best time to call: ${bestTime}`);
+
+    const sourceLabel = source.replace('_', ' ');
+    return parts.length ? `From ${sourceLabel} submission —\n${parts.join('\n')}` : '';
+  };
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -199,7 +216,7 @@ export const ConvertToCustomerDialog = ({
         email: submission.customerEmail || '',
         phone: submission.customerPhone || '',
         lead_source: getLeadSource(submission.source),
-        notes: '',
+        notes: extractSubmissionNotes(submission.metadata, submission.source),
         address_line1: address.address_line1,
         city: address.city,
         state: address.state,
@@ -273,7 +290,13 @@ export const ConvertToCustomerDialog = ({
 
       if (customerError) throw customerError;
 
-      // 2. Create location if address provided
+      // 1b. Mirror the prefilled notes into the notes timeline so staff see it on the customer page
+      if (data.notes && data.notes.trim()) {
+        const { error: noteErr } = await supabase
+          .from('crm_customer_notes')
+          .insert({ customer_id: customer.id, content: data.notes.trim() });
+        if (noteErr) console.error('Failed to insert customer note:', noteErr);
+      }
       if (data.address_line1 && data.city && data.state && data.zip_code) {
         const { error: locationError } = await supabase
           .from('crm_locations')
