@@ -290,7 +290,13 @@ export const ConvertToCustomerDialog = ({
 
       if (customerError) throw customerError;
 
-      // 2. Create location if address provided
+      // 1b. Mirror the prefilled notes into the notes timeline so staff see it on the customer page
+      if (data.notes && data.notes.trim()) {
+        const { error: noteErr } = await supabase
+          .from('crm_customer_notes')
+          .insert({ customer_id: customer.id, content: data.notes.trim() });
+        if (noteErr) console.error('Failed to insert customer note:', noteErr);
+      }
       if (data.address_line1 && data.city && data.state && data.zip_code) {
         const { error: locationError } = await supabase
           .from('crm_locations')
