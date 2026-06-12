@@ -88,6 +88,7 @@ interface DraftIdea {
   angle: string;
   pillar: string | null;
   suggested_platforms: string[];
+  format: string | null;
   source_context: string;
 }
 
