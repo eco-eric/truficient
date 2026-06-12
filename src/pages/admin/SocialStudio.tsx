@@ -287,7 +287,7 @@ export default function SocialStudio() {
     if (!i) return;
     const { error } = await supabase.from('crm_social_ideas').insert({
       hook: i.hook, angle: i.angle, pillar: i.pillar, suggested_platforms: i.suggested_platforms,
-      source_context: i.source_context, status: 'suggested', ai_model: ideasModel,
+      format: i.format, source_context: i.source_context, status: 'suggested', ai_model: ideasModel,
     });
     if (error) return toast({ title: 'Save failed', description: error.message, variant: 'destructive' });
     discardDraft(idx);
