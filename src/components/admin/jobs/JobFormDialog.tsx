@@ -96,6 +96,46 @@ export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose
     enabled: !!formData.customer_id
   });
 
+  // Fetch customer notes + legacy notes for "Import notes" helper
+  const { data: customerNotesData } = useQuery({
+    queryKey: ['crm_customer_notes_for_job', formData.customer_id],
+    queryFn: async () => {
+      if (!formData.customer_id) return { notes: [] as { content: string; created_at: string }[], legacy: null as string | null };
+      const [{ data: notes }, { data: customer }] = await Promise.all([
+        supabase
+          .from('crm_customer_notes')
+          .select('content, created_at')
+          .eq('customer_id', formData.customer_id)
+          .order('created_at', { ascending: false })
+          .limit(10),
+        supabase
+          .from('crm_customers')
+          .select('notes')
+          .eq('id', formData.customer_id)
+          .maybeSingle(),
+      ]);
+      return { notes: notes || [], legacy: customer?.notes || null };
+    },
+    enabled: !!formData.customer_id,
+  });
+
+  const hasImportableNotes =
+    (customerNotesData?.notes?.length || 0) > 0 || !!customerNotesData?.legacy;
+
+  const importCustomerNotes = (target: 'internal_notes' | 'customer_notes') => {
+    if (!customerNotesData) return;
+    const lines: string[] = [];
+    customerNotesData.notes.forEach((n) => lines.push(`• ${n.content}`));
+    if (customerNotesData.legacy) lines.push(`• ${customerNotesData.legacy}`);
+    if (!lines.length) return;
+    const imported = `Customer notes:\n${lines.join('\n')}`;
+    setFormData((prev) => ({
+      ...prev,
+      [target]: prev[target] ? `${prev[target]}\n\n${imported}` : imported,
+    }));
+    toast.success('Customer notes imported');
+  };
+
   // Fetch estimates for linking (filtered by customer if selected)
   const { data: estimates = [] } = useQuery({
     queryKey: ['estimates-for-job-link', formData.customer_id],
