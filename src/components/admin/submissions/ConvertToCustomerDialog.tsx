@@ -146,6 +146,23 @@ export const ConvertToCustomerDialog = ({
     return '';
   };
 
+  // Extract message/notes from submission so it carries over to the customer record
+  const extractSubmissionNotes = (metadata: Record<string, unknown>, source: string) => {
+    const parts: string[] = [];
+    const serviceType = metadata.serviceType as string | undefined;
+    const message = metadata.message as string | undefined;
+    const notes = metadata.notes as string | undefined;
+    const bestTime = metadata.bestTimeToCall as string | undefined;
+
+    if (serviceType) parts.push(`Service Type: ${serviceType}`);
+    if (message?.trim()) parts.push(`Message: ${message.trim()}`);
+    if (notes?.trim()) parts.push(`Notes: ${notes.trim()}`);
+    if (bestTime) parts.push(`Best time to call: ${bestTime}`);
+
+    const sourceLabel = source.replace('_', ' ');
+    return parts.length ? `From ${sourceLabel} submission —\n${parts.join('\n')}` : '';
+  };
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
