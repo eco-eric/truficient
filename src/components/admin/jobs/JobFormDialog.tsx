@@ -451,6 +451,22 @@ export default function JobFormDialog({ editingJob, jobTypes, allStages, onClose
           </div>
         </div>
 
+        {hasImportableNotes && (
+          <div className="flex items-center justify-between rounded-md border border-dashed bg-muted/30 px-3 py-2">
+            <p className="text-xs text-muted-foreground">
+              This customer has saved notes from prior submissions or staff updates.
+            </p>
+            <div className="flex gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={() => importCustomerNotes('internal_notes')}>
+                Import to Internal
+              </Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => importCustomerNotes('customer_notes')}>
+                Import to Customer
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Internal Notes</Label>
