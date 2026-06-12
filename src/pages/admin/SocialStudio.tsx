@@ -300,7 +300,7 @@ export default function SocialStudio() {
     if (draftIdeas.length === 0) return;
     const rows = draftIdeas.map(i => ({
       hook: i.hook, angle: i.angle, pillar: i.pillar, suggested_platforms: i.suggested_platforms,
-      source_context: i.source_context, status: 'suggested' as const, ai_model: ideasModel,
+      format: i.format, source_context: i.source_context, status: 'suggested' as const, ai_model: ideasModel,
     }));
     const { error } = await supabase.from('crm_social_ideas').insert(rows);
     if (error) return toast({ title: 'Save failed', description: error.message, variant: 'destructive' });
