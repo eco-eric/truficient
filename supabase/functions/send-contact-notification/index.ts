@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
     }
 
     // ---------- CUSTOMER ACK ----------
-    if (customerTpl) {
+    if (customerTpl && hasRealEmail) {
       const subject = renderMergeTags(customerTpl.subject || '', vars);
       const html = renderMergeTags(customerTpl.body_html || '', vars);
       const ccList = (customerTpl.cc_emails || '')
