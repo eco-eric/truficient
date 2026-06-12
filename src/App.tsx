@@ -282,6 +282,7 @@ const router = createBrowserRouter([
           { path: "/admin/dfw-watchlist", element: <ProtectedRoute><AdminDFWWatchList /></ProtectedRoute> },
           { path: "/admin/jobs", element: <ProtectedRoute><AdminJobs /></ProtectedRoute> },
           { path: "/admin/jobs/:id", element: <ProtectedRoute><AdminJobDetail /></ProtectedRoute> },
+          { path: "/admin/dispatch-map", element: <ProtectedRoute><AdminDispatchMap /></ProtectedRoute> },
           { path: "/admin/job-types", element: <ProtectedRoute><AdminJobTypesConfig /></ProtectedRoute> },
           { path: "/admin/contracts", element: <ProtectedRoute><AdminMaintenanceContracts /></ProtectedRoute> },
           { path: "/admin/contracts/candidates", element: <ProtectedRoute><AdminMaintenanceContractCandidates /></ProtectedRoute> },
