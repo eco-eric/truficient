@@ -85,3 +85,23 @@ verify_jwt = false
 [functions.backfill-equipment-install-counts]
 verify_jwt = false
 
+[functions.social-generate]
+verify_jwt = false
+
+[functions.social-suggest-ideas]
+verify_jwt = false
+
+[functions.social-weekly-ideas]
+verify_jwt = false
+
+[functions.social-publish]
+verify_jwt = false
+
+[functions.social-connection-check]
+verify_jwt = false
+
+[functions.social-scheduled-publish]
+verify_jwt = false
+
+
+
