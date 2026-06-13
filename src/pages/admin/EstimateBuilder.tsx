@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { EstimateTagAutocomplete } from '@/components/admin/EstimateTagAutocomplete';
 import { toast } from 'sonner';
 import { 
   Save, 
