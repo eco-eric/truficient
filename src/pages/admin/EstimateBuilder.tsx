@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { EstimateTagAutocomplete } from '@/components/admin/EstimateTagAutocomplete';
 import { toast } from 'sonner';
 import { 
   Save, 
@@ -1113,40 +1114,10 @@ const EstimateBuilder = () => {
             </div>
             <div className="space-y-2">
               <Label>Tags</Label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {formData.tags.map((tag, i) => (
-                  <span key={i} className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                    {tag}
-                    <button type="button" onClick={() => setFormData({ ...formData, tags: formData.tags.filter((_, idx) => idx !== i) })} className="hover:text-destructive">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add a tag and press Enter"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && tagInput.trim()) {
-                      e.preventDefault();
-                      if (!formData.tags.includes(tagInput.trim())) {
-                        setFormData({ ...formData, tags: [...formData.tags, tagInput.trim()] });
-                      }
-                      setTagInput('');
-                    }
-                  }}
-                />
-                <Button type="button" variant="outline" size="sm" onClick={() => {
-                  if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
-                    setFormData({ ...formData, tags: [...formData.tags, tagInput.trim()] });
-                  }
-                  setTagInput('');
-                }}>
-                  Add
-                </Button>
-              </div>
+              <EstimateTagAutocomplete
+                tags={formData.tags}
+                onChange={(tags) => setFormData({ ...formData, tags })}
+              />
             </div>
           </CardContent>
         </Card>
