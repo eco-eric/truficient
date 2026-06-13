@@ -290,6 +290,44 @@ export default function DispatchMap() {
     };
   }, [apptsQuery.data]);
 
+  // Reset selection when view tab or appointments date changes
+  useEffect(() => {
+    setSelectedIds(new Set());
+    setFilterToSelection(false);
+  }, [view, ymd]);
+
+  // Apply selection filter for map rendering
+  const visibleJobs = useMemo(
+    () => (filterToSelection ? mappableJobs.filter(j => selectedIds.has(j.id)) : mappableJobs),
+    [mappableJobs, filterToSelection, selectedIds],
+  );
+  const visibleAppts = useMemo(
+    () => (filterToSelection ? mappableAppts.filter(a => selectedIds.has(a.id)) : mappableAppts),
+    [mappableAppts, filterToSelection, selectedIds],
+  );
+
+  // Map id -> marker for sidebar click-to-focus
+  const markerByIdRef = useRef<Map<string, google.maps.Marker>>(new Map());
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const currentListIds = isJobView(view)
+    ? mappableJobs.map(j => j.id)
+    : mappableAppts.map(a => a.id);
+  const allSelected = currentListIds.length > 0 && currentListIds.every(id => selectedIds.has(id));
+  const someSelected = currentListIds.some(id => selectedIds.has(id));
+  const toggleSelectAll = () => {
+    if (allSelected) setSelectedIds(new Set());
+    else setSelectedIds(new Set(currentListIds));
+  };
+
   // Render markers
   useEffect(() => {
     if (!mapsReady || !mapRef.current) return;
