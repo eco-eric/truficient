@@ -334,13 +334,14 @@ export default function DispatchMap() {
     // Clear existing markers
     markersRef.current.forEach(m => m.setMap(null));
     markersRef.current = [];
+    markerByIdRef.current.clear();
     infoWindowRef.current?.close();
 
     const bounds = new google.maps.LatLngBounds();
     let count = 0;
 
     if (isJobView(view)) {
-      for (const j of mappableJobs) {
+      for (const j of visibleJobs) {
         const pos = { lat: Number(j.location!.latitude), lng: Number(j.location!.longitude) };
         const color = PRIORITY_COLORS[j.priority || 'normal'] || NAVY;
         const marker = new google.maps.Marker({
@@ -365,11 +366,12 @@ export default function DispatchMap() {
           infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
         });
         markersRef.current.push(marker);
+        markerByIdRef.current.set(j.id, marker);
         bounds.extend(pos);
         count++;
       }
     } else {
-      for (const a of mappableAppts) {
+      for (const a of visibleAppts) {
         const loc = a.job!.location!;
         const pos = { lat: Number(loc.latitude), lng: Number(loc.longitude) };
         const color = a.team?.id ? (teamColorMap.get(a.team.id) || NAVY) : '#6b7280';
@@ -396,6 +398,7 @@ export default function DispatchMap() {
           infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
         });
         markersRef.current.push(marker);
+        markerByIdRef.current.set(a.id, marker);
         bounds.extend(pos);
         count++;
       }
@@ -413,11 +416,11 @@ export default function DispatchMap() {
       mapRef.current.setCenter(DFW_CENTER);
       mapRef.current.setZoom(9);
     }
-  }, [mapsReady, view, mappableJobs, mappableAppts, teamColorMap]);
+  }, [mapsReady, view, visibleJobs, visibleAppts, teamColorMap]);
 
-  // Pan/open marker from sidebar list
-  const focusMarker = (idx: number) => {
-    const m = markersRef.current[idx];
+  // Pan/open marker from sidebar list by item id
+  const focusMarker = (id: string) => {
+    const m = markerByIdRef.current.get(id);
     if (!m || !mapRef.current) return;
     mapRef.current.panTo(m.getPosition()!);
     mapRef.current.setZoom(Math.max(mapRef.current.getZoom() || 12, 13));
