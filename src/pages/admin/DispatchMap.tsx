@@ -159,6 +159,8 @@ export default function DispatchMap() {
   const [showGeocodeConfirm, setShowGeocodeConfirm] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [geocodeProgress, setGeocodeProgress] = useState({ done: 0, total: 0, failed: 0 });
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [filterToSelection, setFilterToSelection] = useState(false);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
