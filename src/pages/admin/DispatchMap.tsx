@@ -69,14 +69,16 @@ function loadGoogleMaps(): Promise<void> {
 }
 
 function svgMarkerIcon(color: string) {
+  // Teardrop pin — only M/C/Z commands. Google Maps Symbol path does NOT accept
+  // SVG arc ('a') commands, so we approximate the circle/teardrop with cubics.
   return {
-    path: 'M12 2C7.6 2 4 5.6 4 10c0 5.2 7 12 8 12s8-6.8 8-12c0-4.4-3.6-8-8-8zm0 11a3 3 0 110-6 3 3 0 010 6z',
+    path: 'M0,0 C-6,-12 -10,-16 -10,-22 C-10,-28 -4,-32 0,-32 C4,-32 10,-28 10,-22 C10,-16 6,-12 0,0 Z',
     fillColor: color,
     fillOpacity: 1,
     strokeColor: '#ffffff',
     strokeWeight: 1.5,
-    scale: 1.6,
-    anchor: new google.maps.Point(12, 22),
+    scale: 1,
+    anchor: new google.maps.Point(0, 0),
   } as google.maps.Symbol;
 }
 
