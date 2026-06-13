@@ -568,18 +568,42 @@ export default function DispatchMap() {
           {/* Sidebar */}
           {sidebarOpen && (
             <aside className="w-[320px] border-l bg-white flex flex-col">
-              <div className="p-3 border-b">
+              <div className="p-3 border-b space-y-2">
                 <div className="flex items-center justify-between">
                   <h2 className="font-semibold text-sm" style={{ color: NAVY }}>
                     {isJobView(view)
                       ? `${mappableJobs.length} open job${mappableJobs.length === 1 ? '' : 's'}`
                       : `${mappableAppts.length} appointment${mappableAppts.length === 1 ? '' : 's'}`}
                   </h2>
+                  <span className="text-xs text-muted-foreground">
+                    {selectedIds.size} of {currentListIds.length} selected
+                  </span>
                 </div>
+                {currentListIds.length > 0 && (
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="flex items-center gap-2 text-xs cursor-pointer select-none">
+                      <Checkbox
+                        checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                      <span>{allSelected ? 'Clear all' : 'Select all'}</span>
+                    </label>
+                    <Button
+                      size="sm"
+                      variant={filterToSelection ? 'default' : 'outline'}
+                      className="h-7 text-xs"
+                      style={filterToSelection ? { backgroundColor: NAVY, color: 'white' } : undefined}
+                      onClick={() => setFilterToSelection(v => !v)}
+                      disabled={selectedIds.size === 0 && !filterToSelection}
+                    >
+                      {filterToSelection ? 'Showing selection' : 'Filter map to selection'}
+                    </Button>
+                  </div>
+                )}
                 {unmappableLocations.length > 0 && (
                   <Collapsible>
                     <CollapsibleTrigger asChild>
-                      <button className="mt-2 w-full text-left">
+                      <button className="w-full text-left">
                         <Badge
                           variant="outline"
                           className="cursor-pointer"
@@ -624,11 +648,19 @@ export default function DispatchMap() {
                     <p className="p-4 text-sm text-muted-foreground">No open jobs to show.</p>
                   ) : (
                     <ul className="divide-y">
-                      {mappableJobs.map((j, idx) => (
-                        <li key={j.id}>
+                      {mappableJobs.map((j) => (
+                        <li key={j.id} className="flex items-start gap-2 px-3 py-2 hover:bg-gray-50">
+                          <div className="pt-1" onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                              checked={selectedIds.has(j.id)}
+                              onCheckedChange={() => toggleSelected(j.id)}
+                              aria-label="Select job"
+                            />
+                          </div>
                           <button
-                            className="w-full text-left px-3 py-2 hover:bg-gray-50 focus:bg-gray-50 outline-none"
-                            onClick={() => focusMarker(idx)}
+                            type="button"
+                            className="flex-1 min-w-0 text-left outline-none"
+                            onClick={() => focusMarker(j.id)}
                           >
                             <div className="flex items-center gap-2">
                               <span
@@ -655,13 +687,21 @@ export default function DispatchMap() {
                     <p className="p-4 text-sm text-muted-foreground">No appointments scheduled.</p>
                   ) : (
                     <ul className="divide-y">
-                      {mappableAppts.map((a, idx) => {
+                      {mappableAppts.map((a) => {
                         const color = a.team?.id ? (teamColorMap.get(a.team.id) || NAVY) : '#6b7280';
                         return (
-                          <li key={a.id}>
+                          <li key={a.id} className="flex items-start gap-2 px-3 py-2 hover:bg-gray-50">
+                            <div className="pt-1" onClick={(e) => e.stopPropagation()}>
+                              <Checkbox
+                                checked={selectedIds.has(a.id)}
+                                onCheckedChange={() => toggleSelected(a.id)}
+                                aria-label="Select appointment"
+                              />
+                            </div>
                             <button
-                              className="w-full text-left px-3 py-2 hover:bg-gray-50 focus:bg-gray-50 outline-none"
-                              onClick={() => focusMarker(idx)}
+                              type="button"
+                              className="flex-1 min-w-0 text-left outline-none"
+                              onClick={() => focusMarker(a.id)}
                             >
                               <div className="flex items-center gap-2">
                                 <span
