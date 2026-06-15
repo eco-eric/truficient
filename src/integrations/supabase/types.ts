@@ -1768,6 +1768,110 @@ export type Database = {
           },
         ]
       }
+      crm_job_list_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_manually_edited: boolean
+          job_list_id: string
+          manually_added: boolean
+          name: string
+          quantity: number
+          sort_order: number
+          source_line_item_id: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_manually_edited?: boolean
+          job_list_id: string
+          manually_added?: boolean
+          name: string
+          quantity?: number
+          sort_order?: number
+          source_line_item_id?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_manually_edited?: boolean
+          job_list_id?: string
+          manually_added?: boolean
+          name?: string
+          quantity?: number
+          sort_order?: number
+          source_line_item_id?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_job_list_items_job_list_id_fkey"
+            columns: ["job_list_id"]
+            isOneToOne: false
+            referencedRelation: "crm_job_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_job_list_items_source_line_item_id_fkey"
+            columns: ["source_line_item_id"]
+            isOneToOne: false
+            referencedRelation: "estimate_line_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_job_lists: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          estimate_id: string
+          estimate_synced_at: string | null
+          id: string
+          notes: string | null
+          status: string
+          supplier_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          estimate_id: string
+          estimate_synced_at?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          supplier_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          estimate_id?: string
+          estimate_synced_at?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          supplier_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_job_lists_estimate_id_fkey"
+            columns: ["estimate_id"]
+            isOneToOne: true
+            referencedRelation: "estimates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_job_stage_history: {
         Row: {
           changed_by: string | null

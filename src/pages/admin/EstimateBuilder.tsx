@@ -68,6 +68,7 @@ import {
   type EstimateSection,
   type LineItem 
 } from '@/components/admin/estimates/EstimateSection';
+import { JobListPanel } from '@/components/admin/estimates/JobListPanel';
 
 type JobType = 'residential_new' | 'residential_replacement' | 'commercial_new' | 'commercial_replacement' | 'maintenance' | 'repair';
 type HeatingType = 'gas' | 'electric' | 'heat_pump' | 'dual_fuel';
@@ -1395,7 +1396,12 @@ const EstimateBuilder = () => {
                 );
               })}
             </div>
+
+            {!isNew && id && (
+              <JobListPanel estimateId={id} />
+            )}
           </div>
+
 
           {/* Summary Panel */}
           <div className="space-y-6">
