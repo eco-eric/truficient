@@ -1395,7 +1395,12 @@ const EstimateBuilder = () => {
                 );
               })}
             </div>
+
+            {!isNew && id && (
+              <JobListPanel estimateId={id} />
+            )}
           </div>
+
 
           {/* Summary Panel */}
           <div className="space-y-6">
