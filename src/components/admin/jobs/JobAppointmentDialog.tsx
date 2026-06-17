@@ -50,6 +50,36 @@ export default function JobAppointmentDialog({
 }: JobAppointmentDialogProps) {
   const queryClient = useQueryClient();
   const [syncing, setSyncing] = useState(false);
+  const [translating, setTranslating] = useState(false);
+
+  const handleTranslateNotes = async () => {
+    const current = formData.notes?.trim() ?? '';
+    if (!current) {
+      toast.info('Add notes first');
+      return;
+    }
+    const divider = '----------';
+    const lastIdx = current.lastIndexOf(divider);
+    const englishSource = lastIdx >= 0 ? current.slice(0, lastIdx).replace(/\s+$/, '') : current;
+
+    setTranslating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('kb-translate', {
+        body: { title_en: '', content_en: englishSource, media: [] },
+      });
+      if (error) throw error;
+      const spanish = (data?.content_es || '').trim();
+      if (!spanish) throw new Error('empty translation');
+      const combined = `${englishSource}\n\n${divider}\n\n${spanish}`;
+      setFormData((prev) => ({ ...prev, notes: combined }));
+      toast.success('Translated to Spanish');
+    } catch (e) {
+      console.error('translate notes failed', e);
+      toast.error('Translation failed, try again');
+    } finally {
+      setTranslating(false);
+    }
+  };
   
   const [formData, setFormData] = useState({
     title: '',
