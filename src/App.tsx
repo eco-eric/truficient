@@ -329,6 +329,7 @@ const router = createBrowserRouter([
           { path: "/admin/equipment-library", element: <ProtectedRoute><AdminEquipmentLibrary /></ProtectedRoute> },
           { path: "/admin/trash-bin", element: <ProtectedRoute><AdminTrashBin /></ProtectedRoute> },
           { path: "/admin/settings", element: <ProtectedRoute><AdminSettings /></ProtectedRoute> },
+          { path: "/admin/suppliers", element: <ProtectedRoute><AdminSuppliers /></ProtectedRoute> },
           { path: "/admin/button-clicks", element: <ProtectedRoute><AdminButtonClicks /></ProtectedRoute> },
           { path: "/admin/scanner-analytics", element: <ProtectedRoute><AdminScannerAnalytics /></ProtectedRoute> },
           { path: "/admin/lead-sources", element: <ProtectedRoute><AdminLeadSourcesConfig /></ProtectedRoute> },
