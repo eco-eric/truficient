@@ -2884,6 +2884,80 @@ export type Database = {
           },
         ]
       }
+      crm_supplier_contacts: {
+        Row: {
+          contact_name: string
+          created_at: string
+          email: string
+          id: string
+          is_active: boolean
+          phone: string | null
+          sort_order: number
+          supplier_id: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact_name: string
+          created_at?: string
+          email: string
+          id?: string
+          is_active?: boolean
+          phone?: string | null
+          sort_order?: number
+          supplier_id: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact_name?: string
+          created_at?: string
+          email?: string
+          id?: string
+          is_active?: boolean
+          phone?: string | null
+          sort_order?: number
+          supplier_id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_supplier_contacts_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "crm_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_suppliers: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_team_assignments: {
         Row: {
           created_at: string
