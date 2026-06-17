@@ -82,6 +82,8 @@ const INCLUDED_SECTIONS = ['equipment_controls', 'miscellaneous_inside', 'ductin
 
 export const JobListPanel = ({ estimateId }: JobListPanelProps) => {
   const qc = useQueryClient();
+  const [emailOpen, setEmailOpen] = useState(false);
+
 
   const { data: jobList, isLoading } = useQuery({
     queryKey: ['job-list', estimateId],
