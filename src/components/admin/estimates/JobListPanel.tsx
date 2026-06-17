@@ -541,3 +541,236 @@ const SortableItemRow = ({ item, onUpdate, onDelete }: RowProps) => {
     </TableRow>
   );
 };
+
+interface Supplier {
+  id: string;
+  name: string;
+}
+
+interface SupplierContact {
+  id: string;
+  supplier_id: string;
+  contact_name: string;
+  email: string;
+  title: string | null;
+  is_active: boolean;
+  sort_order: number;
+}
+
+interface EmailDialogProps {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  estimateNumber: string;
+  items: JobListItem[];
+  jobListId: string;
+  onSent: () => void;
+}
+
+const EmailSupplierDialog = ({
+  open,
+  onOpenChange,
+  estimateNumber,
+  items,
+  onSent,
+}: EmailDialogProps) => {
+  const [supplierId, setSupplierId] = useState<string>('');
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setSubject(`Parts Request — Job List for Estimate ${estimateNumber}`);
+      setMessage(
+        `Hi,\n\nPlease see the parts request below for estimate ${estimateNumber}. Let me know availability and pickup options.\n\nThanks,`
+      );
+      setSupplierId('');
+      setChecked({});
+    }
+  }, [open, estimateNumber]);
+
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ['crm_suppliers_active_for_email'],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_suppliers')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+      if (error) throw error;
+      return data as Supplier[];
+    },
+  });
+
+  const { data: contacts = [] } = useQuery({
+    queryKey: ['crm_supplier_contacts_for_email', supplierId],
+    enabled: open && !!supplierId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_supplier_contacts')
+        .select('*')
+        .eq('supplier_id', supplierId)
+        .eq('is_active', true)
+        .order('sort_order');
+      if (error) throw error;
+      return data as SupplierContact[];
+    },
+  });
+
+  useEffect(() => {
+    if (contacts.length > 0) {
+      const next: Record<string, boolean> = {};
+      contacts.forEach((c) => { next[c.id] = true; });
+      setChecked(next);
+    } else {
+      setChecked({});
+    }
+  }, [contacts]);
+
+  const selectedEmails = useMemo(
+    () => contacts.filter((c) => checked[c.id]).map((c) => c.email),
+    [contacts, checked]
+  );
+
+  const buildBody = () => {
+    const rowsHtml = items
+      .map(
+        (i) =>
+          `<tr><td style="padding:6px 10px;border:1px solid #ccc;">${i.quantity}</td><td style="padding:6px 10px;border:1px solid #ccc;">${i.unit || 'each'}</td><td style="padding:6px 10px;border:1px solid #ccc;">${escapeHtml(i.name)}</td><td style="padding:6px 10px;border:1px solid #ccc;">${escapeHtml(i.description || '')}</td></tr>`
+      )
+      .join('');
+    const html = `
+      <div style="font-family:Arial,sans-serif;color:#1e3a5f;">
+        <p style="white-space:pre-wrap;">${escapeHtml(message)}</p>
+        <h3 style="color:#1e3a5f;border-bottom:2px solid #d4a84b;padding-bottom:4px;">Parts Request — Estimate ${escapeHtml(estimateNumber)}</h3>
+        <table style="border-collapse:collapse;width:100%;font-size:14px;">
+          <thead>
+            <tr style="background:#1e3a5f;color:#fff;">
+              <th style="padding:6px 10px;text-align:left;">Qty</th>
+              <th style="padding:6px 10px;text-align:left;">Unit</th>
+              <th style="padding:6px 10px;text-align:left;">Item</th>
+              <th style="padding:6px 10px;text-align:left;">Description</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+    `;
+    const textLines = items.map(
+      (i) => `${i.quantity} ${i.unit || 'each'} — ${i.name}${i.description ? ` (${i.description})` : ''}`
+    );
+    const text = `${message}\n\nParts Request — Estimate ${estimateNumber}\n\n${textLines.join('\n')}`;
+    return { html, text };
+  };
+
+  const handleSend = async () => {
+    if (selectedEmails.length === 0) return;
+    setSending(true);
+    try {
+      const { html, text } = buildBody();
+      const [to, ...cc] = selectedEmails;
+      const { error } = await supabase.functions.invoke('send-crm-email', {
+        body: { to, cc, subject, bodyHtml: html, bodyText: text },
+      });
+      if (error) throw error;
+      toast.success('Parts request sent');
+      onSent();
+    } catch (e: any) {
+      toast.error(e.message || 'Send failed');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle style={{ color: '#1e3a5f' }}>Email Parts Request to Supplier</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Supplier</Label>
+            <Select value={supplierId} onValueChange={setSupplierId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a supplier..." />
+              </SelectTrigger>
+              <SelectContent>
+                {suppliers.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {supplierId && (
+            <div className="space-y-2">
+              <Label>Recipients</Label>
+              {contacts.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No active contacts for this supplier.</p>
+              ) : (
+                <div className="rounded border divide-y max-h-48 overflow-y-auto">
+                  {contacts.map((c) => (
+                    <label
+                      key={c.id}
+                      className="flex items-center gap-3 p-2 cursor-pointer hover:bg-muted/40"
+                    >
+                      <Checkbox
+                        checked={!!checked[c.id]}
+                        onCheckedChange={(v) =>
+                          setChecked((prev) => ({ ...prev, [c.id]: !!v }))
+                        }
+                      />
+                      <div className="text-sm">
+                        <span className="font-medium">{c.contact_name}</span>
+                        <span className="text-muted-foreground"> — {c.email}</span>
+                        {c.title && <span className="text-muted-foreground"> — {c.title}</span>}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label>Subject</Label>
+            <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Message</Label>
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={5}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSend}
+            disabled={selectedEmails.length === 0 || !subject.trim() || sending}
+            style={{ backgroundColor: '#1e3a5f', color: 'white' }}
+          >
+            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+            Send to {selectedEmails.length || 0} recipient{selectedEmails.length === 1 ? '' : 's'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
