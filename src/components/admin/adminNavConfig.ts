@@ -162,6 +162,7 @@ export const navSections: NavSection[] = [
     title: 'System',
     items: [
       { label: 'Users', href: '/admin/users', icon: Users, permissionKey: 'nav.users' },
+      { label: 'Suppliers', href: '/admin/suppliers', icon: Truck, permissionKey: 'nav.suppliers' },
       { label: 'Role Permissions', href: '/admin/permissions', icon: Shield, permissionKey: 'nav.permissions' },
       { label: 'AI Settings', href: '/admin/ai-settings', icon: Settings, permissionKey: 'nav.ai-settings' },
       { label: 'Automations', href: '/admin/automations', icon: Wrench, permissionKey: 'nav.automations' },
