@@ -80,6 +80,19 @@ export const JobListPanel = ({ estimateId }: JobListPanelProps) => {
     },
   });
 
+  const { data: estimateMeta } = useQuery({
+    queryKey: ['estimate-meta-for-joblist', estimateId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('estimates')
+        .select('estimate_number')
+        .eq('id', estimateId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { estimate_number: string } | null;
+    },
+  });
+
   const { data: items = [] } = useQuery({
     queryKey: ['job-list-items', jobList?.id],
     enabled: !!jobList?.id,
