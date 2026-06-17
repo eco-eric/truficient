@@ -100,6 +100,7 @@ const AdminDFWWatchList = lazy(() => import("./pages/admin/DFWWatchList"));
 const AdminCustomerEquipment = lazy(() => import("./pages/admin/CustomerEquipment"));
 const AdminIndividualEquipmentPricing = lazy(() => import("./pages/admin/IndividualEquipmentPricing"));
 const AdminTrashBin = lazy(() => import("./pages/admin/TrashBin"));
+const AdminSuppliers = lazy(() => import("./pages/admin/Suppliers"));
 const AdminAbandonedCarts = lazy(() => import("./pages/admin/AbandonedCarts"));
 const AdminCustomers = lazy(() => import("./pages/admin/Customers"));
 const AdminCustomerDetail = lazy(() => import("./pages/admin/CustomerDetail"));
