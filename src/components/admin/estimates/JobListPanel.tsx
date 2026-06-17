@@ -444,9 +444,21 @@ export const JobListPanel = ({ estimateId }: JobListPanelProps) => {
           </Button>
         </div>
       </CardContent>
+      <EmailSupplierDialog
+        open={emailOpen}
+        onOpenChange={setEmailOpen}
+        estimateNumber={estimateMeta?.estimate_number ?? '—'}
+        items={items}
+        jobListId={jobList.id}
+        onSent={() => {
+          updateListMutation.mutate({ status: 'sent' });
+          setEmailOpen(false);
+        }}
+      />
     </Card>
   );
 };
+
 
 interface RowProps {
   item: JobListItem;
