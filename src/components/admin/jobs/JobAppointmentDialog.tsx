@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MultiSelect } from '@/components/ui/multi-select';
-import { Calendar, RefreshCw, CheckCircle2, Users, MapPin, Copy } from 'lucide-react';
+import { Calendar, RefreshCw, CheckCircle2, Users, MapPin, Copy, Languages } from 'lucide-react';
 import { format, addHours } from 'date-fns';
 import { toast } from 'sonner';
 import { formatInCST, buildCSTDateTime } from '@/lib/cstTimezone';
@@ -50,6 +50,36 @@ export default function JobAppointmentDialog({
 }: JobAppointmentDialogProps) {
   const queryClient = useQueryClient();
   const [syncing, setSyncing] = useState(false);
+  const [translating, setTranslating] = useState(false);
+
+  const handleTranslateNotes = async () => {
+    const current = formData.notes?.trim() ?? '';
+    if (!current) {
+      toast.info('Add notes first');
+      return;
+    }
+    const divider = '----------';
+    const lastIdx = current.lastIndexOf(divider);
+    const englishSource = lastIdx >= 0 ? current.slice(0, lastIdx).replace(/\s+$/, '') : current;
+
+    setTranslating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('kb-translate', {
+        body: { title_en: '', content_en: englishSource, media: [] },
+      });
+      if (error) throw error;
+      const spanish = (data?.content_es || '').trim();
+      if (!spanish) throw new Error('empty translation');
+      const combined = `${englishSource}\n\n${divider}\n\n${spanish}`;
+      setFormData((prev) => ({ ...prev, notes: combined }));
+      toast.success('Translated to Spanish');
+    } catch (e) {
+      console.error('translate notes failed', e);
+      toast.error('Translation failed, try again');
+    } finally {
+      setTranslating(false);
+    }
+  };
   
   const [formData, setFormData] = useState({
     title: '',
@@ -573,14 +603,32 @@ export default function JobAppointmentDialog({
 
           {/* Notes */}
           <div className="space-y-2">
-            <Label>Notes</Label>
+            <div className="flex items-center justify-between">
+              <Label>Notes</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleTranslateNotes}
+                disabled={translating || !formData.notes?.trim()}
+                className="border-[#d4a84b] text-[#d4a84b] hover:bg-[#d4a84b]/10 hover:text-[#d4a84b]"
+              >
+                {translating ? (
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Languages className="h-3.5 w-3.5" />
+                )}
+                Translate to Spanish
+              </Button>
+            </div>
             <Textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               placeholder="Appointment notes..."
-              rows={2}
+              rows={4}
             />
           </div>
+
 
           {/* Sync status indicator */}
           {syncedCount > 0 && (
