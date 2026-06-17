@@ -285,6 +285,41 @@ export const JobListPanel = ({ estimateId }: JobListPanelProps) => {
     );
   }
 
+  const handleExportPDF = () => {
+    downloadJobListPDF(
+      {
+        estimate_number: estimateMeta?.estimate_number ?? '—',
+        supplier_name: jobList.supplier_name,
+        notes: jobList.notes,
+      },
+      items.map((i) => ({
+        name: i.name,
+        description: i.description,
+        quantity: i.quantity,
+        unit: i.unit,
+      }))
+    );
+  };
+
+  const handleCopyText = async () => {
+    const header = `Job List — Estimate ${estimateMeta?.estimate_number ?? '—'}${
+      jobList.supplier_name ? ` — Supplier: ${jobList.supplier_name}` : ''
+    }`;
+    const lines = items.map(
+      (i) =>
+        `${i.quantity} ${i.unit || 'each'} — ${i.name}${
+          i.description ? ` (${i.description})` : ''
+        }`
+    );
+    const text = [header, '', ...lines].join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Copied to clipboard');
+    } catch {
+      toast.error('Copy failed');
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -296,6 +331,14 @@ export const JobListPanel = ({ estimateId }: JobListPanelProps) => {
               {jobList.status}
             </Badge>
           </CardTitle>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleCopyText} disabled={items.length === 0}>
+              <Copy className="h-4 w-4" /> Copy as text
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={items.length === 0}>
+              <FileDown className="h-4 w-4" /> Export PDF
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
