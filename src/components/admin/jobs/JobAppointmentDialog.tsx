@@ -620,7 +620,7 @@ export default function JobAppointmentDialog({
                 variant="outline"
                 size="sm"
                 onClick={handleTranslateNotes}
-                disabled={translating || !formData.notes?.trim()}
+                disabled={translating || (!formData.notes?.trim() && !formData.title?.trim())}
                 className="border-[#d4a84b] text-[#d4a84b] hover:bg-[#d4a84b]/10 hover:text-[#d4a84b]"
               >
                 {translating ? (
