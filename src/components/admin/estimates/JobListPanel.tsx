@@ -15,7 +15,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ClipboardList, Plus, Trash2, GripVertical, Loader2 } from 'lucide-react';
+import { ClipboardList, Plus, Trash2, GripVertical, Loader2, FileDown, Copy } from 'lucide-react';
+import { downloadJobListPDF } from '@/utils/generateJobListPDF';
 import { toast } from 'sonner';
 import {
   DndContext,
