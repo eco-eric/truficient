@@ -603,14 +603,32 @@ export default function JobAppointmentDialog({
 
           {/* Notes */}
           <div className="space-y-2">
-            <Label>Notes</Label>
+            <div className="flex items-center justify-between">
+              <Label>Notes</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleTranslateNotes}
+                disabled={translating || !formData.notes?.trim()}
+                className="border-[#d4a84b] text-[#d4a84b] hover:bg-[#d4a84b]/10 hover:text-[#d4a84b]"
+              >
+                {translating ? (
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Languages className="h-3.5 w-3.5" />
+                )}
+                Translate to Spanish
+              </Button>
+            </div>
             <Textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               placeholder="Appointment notes..."
-              rows={2}
+              rows={4}
             />
           </div>
+
 
           {/* Sync status indicator */}
           {syncedCount > 0 && (
