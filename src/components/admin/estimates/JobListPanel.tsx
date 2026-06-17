@@ -356,6 +356,14 @@ export const JobListPanel = ({ estimateId }: JobListPanelProps) => {
             <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={items.length === 0}>
               <FileDown className="h-4 w-4" /> Export PDF
             </Button>
+            <Button
+              size="sm"
+              onClick={() => setEmailOpen(true)}
+              disabled={items.length === 0}
+              style={{ backgroundColor: '#1e3a5f', color: 'white' }}
+            >
+              <Mail className="h-4 w-4" /> Email to Supplier
+            </Button>
           </div>
         </div>
       </CardHeader>
