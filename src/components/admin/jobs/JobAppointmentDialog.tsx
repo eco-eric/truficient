@@ -54,7 +54,8 @@ export default function JobAppointmentDialog({
 
   const handleTranslateNotes = async () => {
     const current = formData.notes?.trim() ?? '';
-    if (!current) {
+    const titleEn = formData.title?.trim() ?? '';
+    if (!current && !titleEn) {
       toast.info('Add notes first');
       return;
     }
@@ -65,12 +66,20 @@ export default function JobAppointmentDialog({
     setTranslating(true);
     try {
       const { data, error } = await supabase.functions.invoke('kb-translate', {
-        body: { title_en: '', content_en: englishSource, media: [] },
+        body: { title_en: titleEn, content_en: englishSource, media: [] },
       });
       if (error) throw error;
-      const spanish = (data?.content_es || '').trim();
-      if (!spanish) throw new Error('empty translation');
-      const combined = `${englishSource}\n\n${divider}\n\n${spanish}`;
+      const spanishContent = (data?.content_es || '').trim();
+      const spanishTitle = (data?.title_es || '').trim();
+      if (!spanishContent && !spanishTitle) throw new Error('empty translation');
+      const spanishBlock = [
+        spanishTitle ? `Título: ${spanishTitle}` : null,
+        spanishContent ? `Notas:\n${spanishContent}` : null,
+      ].filter(Boolean).join('\n\n');
+      const englishBlock = englishSource
+        ? englishSource
+        : (titleEn ? `Title: ${titleEn}` : '');
+      const combined = `${englishBlock}\n\n${divider}\n\n${spanishBlock}`;
       setFormData((prev) => ({ ...prev, notes: combined }));
       toast.success('Translated to Spanish');
     } catch (e) {
@@ -80,6 +89,7 @@ export default function JobAppointmentDialog({
       setTranslating(false);
     }
   };
+
   
   const [formData, setFormData] = useState({
     title: '',
