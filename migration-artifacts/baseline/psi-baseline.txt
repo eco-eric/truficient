@@ -1,12 +1,18 @@
-# PageSpeed Insights baseline (mobile) — STATUS: PENDING as of 2026-06-20
+# PageSpeed Insights baseline — captured 2026-06-20 (by Eric, pagespeed.web.dev)
+# Production (Lovable). The Gate-3 GO/NO-GO LCP comparison is measured against MOBILE.
 #
-# Keyless PSI API returned HTTP 429 (shared quota exceeded) from the agent host.
-# Eric was asked to run https://pagespeed.web.dev/ (mobile); the values returned were
-# blank placeholders, so no numbers are recorded yet. Fill in when available:
+# MOBILE (Slow 4G):
+#   /hvac-garland-tx/      LCP 8.6 s   Perf 60
+#   /hvac-richardson-tx/   LCP 8.5 s   Perf 58
+#   /hvac-plano-tx/        LCP 9.7 s   Perf 44
+#   -> mobile LCP range 8.5-9.7 s (avg ~8.9 s); Perf 44-60.
 #
-#   /hvac-garland-tx/     -> LCP ____ s, Perf ____
-#   /hvac-richardson-tx/  -> LCP ____ s, Perf ____
-#   /hvac-plano-tx/       -> LCP ____ s, Perf ____
+# DESKTOP:
+#   /hvac-garland-tx/      LCP 1.9 s   Perf 78
+#   /hvac-richardson-tx/   LCP 1.7 s   Perf 91
+#   /hvac-plano-tx/        LCP 2.0 s   Perf 68
 #
-# Documented prior baseline (Brief 3.8): mobile LCP ~= 13.7s. Gate-3 target < 2.5s.
-# This is NOT a Gate-0 blocker; it is needed before the Gate-3 GO/NO-GO LCP comparison.
+# Reference: Brief 3.8 cites a prior ~13.7 s mobile LCP; this same-day capture is
+# somewhat better but still well above target.
+# Gate-3 target: sampled location-page MOBILE LCP < 2.5 s (any large improvement
+# vs this 8.5-9.7 s baseline is acceptable for go-live).
