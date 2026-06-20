@@ -1,0 +1,12 @@
+# PageSpeed Insights baseline (mobile) — STATUS: PENDING as of 2026-06-20
+#
+# Keyless PSI API returned HTTP 429 (shared quota exceeded) from the agent host.
+# Eric was asked to run https://pagespeed.web.dev/ (mobile); the values returned were
+# blank placeholders, so no numbers are recorded yet. Fill in when available:
+#
+#   /hvac-garland-tx/     -> LCP ____ s, Perf ____
+#   /hvac-richardson-tx/  -> LCP ____ s, Perf ____
+#   /hvac-plano-tx/       -> LCP ____ s, Perf ____
+#
+# Documented prior baseline (Brief 3.8): mobile LCP ~= 13.7s. Gate-3 target < 2.5s.
+# This is NOT a Gate-0 blocker; it is needed before the Gate-3 GO/NO-GO LCP comparison.
