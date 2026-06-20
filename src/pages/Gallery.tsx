@@ -83,6 +83,35 @@ const Gallery = () => {
     },
   });
 
+  // Fetch today's rotating 8 featured images (deterministic by CST date)
+  const { data: todaysFeatured = [] } = useQuery({
+    queryKey: ['gallery-featured-daily-full'],
+    queryFn: async () => {
+      const { data: featured, error: fErr } = await supabase
+        .from('gallery_images')
+        .select('id')
+        .eq('is_active', true)
+        .eq('is_featured', true)
+        .order('sort_order', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: false });
+      if (fErr) throw fErr;
+      const ids = getTodaysFeaturedIds((featured || []).map(f => f.id), 8);
+      if (ids.length === 0) return [] as GalleryImage[];
+      const { data, error } = await supabase
+        .from('gallery_images')
+        .select('id, title, description, image_url, thumbnail_url, media_type, alt_text, sort_order')
+        .in('id', ids);
+      if (error) throw error;
+      const byId = new Map((data as GalleryImage[]).map(img => [img.id, img]));
+      return ids.map(id => byId.get(id)).filter(Boolean) as GalleryImage[];
+    },
+  });
+
+  const todaysFeaturedIdSet = useMemo(
+    () => new Set(todaysFeatured.map(i => i.id)),
+    [todaysFeatured]
+  );
+
   // Get image IDs that match selected tags
   const filteredImageIds = useMemo(() => {
     if (selectedTags.length === 0) return null;
@@ -95,7 +124,7 @@ const Gallery = () => {
     return Array.from(matchingIds);
   }, [selectedTags, imageTagRelations]);
 
-  // Infinite query for images
+  // Infinite query for images (excludes today's featured to avoid duplicates)
   const {
     data: imagesData,
     fetchNextPage,
@@ -107,18 +136,15 @@ const Gallery = () => {
     queryFn: async ({ pageParam = 0 }) => {
       let query = supabase
         .from('gallery_images')
-        .select('id, title, description, image_url, thumbnail_url, media_type, alt_text, sort_order, is_featured')
+        .select('id, title, description, image_url, thumbnail_url, media_type, alt_text, sort_order')
         .eq('is_active', true)
-        .order('is_featured', { ascending: false })
         .order('sort_order', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false })
         .range(pageParam * PAGE_SIZE, (pageParam + 1) * PAGE_SIZE - 1);
 
-      // If filtering by tags, only get matching images
       if (filteredImageIds && filteredImageIds.length > 0) {
         query = query.in('id', filteredImageIds);
       } else if (filteredImageIds && filteredImageIds.length === 0) {
-        // No matches for selected tags
         return { images: [], nextPage: null };
       }
 
@@ -134,14 +160,20 @@ const Gallery = () => {
     initialPageParam: 0,
   });
 
-  // Flatten all pages and filter by media type
+  // Flatten pages, prepend today's featured, dedupe, filter by media type
   const images = useMemo(() => {
-    const allImages = imagesData?.pages.flatMap(page => page.images) || [];
-    if (mediaFilter === 'all') return allImages;
-    return allImages.filter(img => 
+    const rest = (imagesData?.pages.flatMap(page => page.images) || [])
+      .filter(img => !todaysFeaturedIdSet.has(img.id));
+    // When filtering by tags, only include featured that match the tag set
+    const featuredForView = filteredImageIds
+      ? todaysFeatured.filter(img => filteredImageIds.includes(img.id))
+      : todaysFeatured;
+    const combined = [...featuredForView, ...rest];
+    if (mediaFilter === 'all') return combined;
+    return combined.filter(img =>
       mediaFilter === 'video' ? img.media_type === 'video' : img.media_type !== 'video'
     );
-  }, [imagesData, mediaFilter]);
+  }, [imagesData, mediaFilter, todaysFeatured, todaysFeaturedIdSet, filteredImageIds]);
 
   // Calculate filtered count
   const filteredCount = selectedTags.length > 0 
