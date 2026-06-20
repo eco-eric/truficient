@@ -1,42 +1,36 @@
-# Bulk Upload 7 New SEO Pages
+## Daily-rotating featured gallery photos
 
-Insert 7 new pages into `seo_location_pages` so they auto-publish, sync to `page_seo` via the existing trigger, appear in the sitemap, and get prerendered.
+Admins can mark unlimited gallery photos as "Featured". The public Gallery page and homepage preview show **8 featured photos**, rotated daily (same 8 all day, new set tomorrow).
 
-## Pages
+### How rotation works
 
-| Slug | Cluster | Page Type |
-|---|---|---|
-| /mini-split-cost-dallas-tx-2026 | Cost & Pricing | Pricing Pillar |
-| /ducted-vs-ductless-mini-split-dallas | Comparison | Comparison |
-| /gree-vs-mitsubishi-mini-split-dallas | Brand Comparison | Brand Pillar |
-| /daikin-vs-mitsubishi-mini-split-dallas | Brand Comparison | Brand Pillar |
-| /mini-split-home-office-dallas | Use Case | Use Case |
-| /inverter-hvac-vs-single-stage-dallas | Tech Education | Tech Pillar |
-| /mini-split-seer2-ratings-dallas | Tech Education | Tech Pillar |
+- All photos with `is_featured = true` form the "featured pool".
+- Each day, a deterministic 8-photo window is picked from the pool based on the current date (day-of-year). The window slides forward by 8 each day, wrapping around when it reaches the end.
+- Pool ≤ 8 → same photos show every day (no rotation needed).
+- Pool > 8 → fresh 8 each day, cycling through the whole pool over time.
+- Deterministic by date means every visitor sees the same 8 on a given day (cache-friendly, SEO-friendly, no flicker).
 
-## What I'll write per row
+### Changes
 
-- `neighborhood` (required NOT NULL) — set to the topical name (e.g. "Mini-Split Cost 2026") so the trigger has something to populate page_seo.page_name
-- `url_slug`, `meta_title` (≤60), `meta_description` (≤160), `h1_title`
-- `cluster`, `page_type`, `city='Dallas'`, `state='TX'`
-- `content` — full article body in HTML (matching existing seo_location_pages content shape)
-- `schema_json` — FAQPage / Article JSON-LD per page topic
-- `published = true` so the sync trigger fires
-- `service_tags`, `geography_tag='Dallas'`
+**`src/pages/Gallery.tsx`**
+- Replace the current `.order('is_featured', ...)` sort with a two-query approach:
+  1. Fetch today's 8 rotating featured IDs (see helper below).
+  2. In the infinite query, sort those IDs to the top, then the rest by existing rules.
 
-## How it flows
+**`src/components/home/GalleryPreview.tsx`** (homepage preview)
+- Pull from the same daily-rotation helper so the homepage and `/gallery` stay in sync.
 
-1. INSERT into `seo_location_pages` (one INSERT per row, 7 rows).
-2. `sync_seo_location_page_to_page_seo` trigger auto-creates matching `page_seo` rows with canonical `https://truficient.com<slug>`, robots `index, follow`, and the schema_json.
-3. Next nightly sitemap rebuild picks them up automatically. No code changes needed.
+**`src/lib/galleryRotation.ts`** (new)
+- Export `getTodaysFeaturedIds(featuredIds: string[], count = 8): string[]`
+- Uses CST day-of-year (per project timezone rule) to pick the window: `start = (dayOfYear * count) % pool.length`, then slice with wrap-around.
 
-## Out of scope
+**Admin (`src/pages/admin/Gallery.tsx` or wherever the featured toggle lives)**
+- Keep the current toggle exactly as-is (no lock, no cap).
+- Add a small helper text near the toggle: *"Featured photos rotate daily — 8 shown per day."*
+- Show a featured count badge somewhere on the page header: *"12 featured · 8 shown today"*.
 
-- No migrations (data-only).
-- No route code changes — these slugs are served by the existing dynamic LocationPage / SEO-page handler.
-- No edits to `static-routes-seo.mjs` (DB rows win in prerender).
+### Notes
 
-## Confirmation needed before I implement
-
-1. **Content depth** — should I write full long-form HTML (~1,200-1,800 words each with FAQ block) per page, or shorter ~600-word stubs you'll expand later?
-2. **Cluster labels** above — OK as-is, or do you want them aligned to an existing cluster taxonomy you already use?
+- No DB schema change — `is_featured` boolean stays as the source of truth.
+- No cron job needed — rotation is computed client-side from the date, so it "just works" at midnight CST without any backend trigger.
+- Public gallery still shows the full library below the featured 8 (existing infinite scroll unchanged).
