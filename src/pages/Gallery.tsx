@@ -12,6 +12,7 @@ import { usePageSEO } from '@/hooks/usePageSEO';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { motion } from 'framer-motion';
 import { Loader2, ChevronLeft, ChevronRight, Grid2X2, Grid3X3, LayoutGrid, Image as ImageIcon, Video, Play } from 'lucide-react';
+import { getTodaysFeaturedIds } from '@/lib/galleryRotation';
 
 type ThumbnailSize = 'small' | 'medium' | 'large';
 type MediaFilter = 'all' | 'image' | 'video';
