@@ -106,8 +106,9 @@ const Gallery = () => {
     queryFn: async ({ pageParam = 0 }) => {
       let query = supabase
         .from('gallery_images')
-        .select('id, title, description, image_url, thumbnail_url, media_type, alt_text, sort_order')
+        .select('id, title, description, image_url, thumbnail_url, media_type, alt_text, sort_order, is_featured')
         .eq('is_active', true)
+        .order('is_featured', { ascending: false })
         .order('sort_order', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false })
         .range(pageParam * PAGE_SIZE, (pageParam + 1) * PAGE_SIZE - 1);
