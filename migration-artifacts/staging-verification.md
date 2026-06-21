@@ -31,7 +31,7 @@ snapshot now runs on Vercel (255s build, 0 empty bodies).
 | 5 | **No broken routes / real 404** | ✅ `/zzz-not-a-page/`, `/blog/does-not-exist/`, `/equipment/trane/fake-model/` → **404** (real, not homepage). `/equipment/trane/` (brand hub) now **200, 44 KB body, self-canonical** (fixed in `c8ab28f`). |
 | 6 | **Sitemap** clean | ✅ `/sitemap.xml` = 755 `<loc>`, **0 `.html`**, all trailing-slash |
 | 7 | **Counts sane** | ✅ 754 written (≥100 hard-fail guard); 745 content + 9 interactive |
-| 8 | **LCP improved** | ⏳ Pending PageSpeed run on the preview (Eric) — baseline mobile LCP 8.5–9.7s; target large improvement / <2.5s |
+| 8 | **LCP improved** | ✅ Hydration seed fix (commit `0f7fc71`) — location/equipment pages no longer discard the prerendered hero (client re-fetch eliminated). Throttled LCP ~1.4–2.2s (local 1.4s; deployed plano 1964ms / equip 2172ms); was ~7.5s. Re-run PSI for the authoritative number. Blog hero is image-bound (separate follow-up). |
 
 ## Redirect spot-checks (Brief §3.3 / redirect map)
 ```

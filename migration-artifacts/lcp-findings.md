@@ -54,6 +54,33 @@ risk: low–medium, contained to public pages.
 image weight and helps page types whose hero *is* a local image (homepage/service pages),
 but will **not** move location-page LCP (text LCP).
 
+## RESOLUTION (implemented — commit `0f7fc71`)
+Implemented the embed-and-seed fix. Each content page now renders its fetched
+data into `<script id="__SSG_PAGE_DATA__">` (captured by the snapshot) and seeds
+its initial state from it; `main.tsx` reads the payload **before** `hydrateRoot()`
+(a lazy read during render races with React reconciling the script — that was the
+tricky part). Keyed on the initial pathname so SPA nav + StrictMode are unaffected.
+
+**Local (vite preview + Playwright, Slow-4G + 4× CPU):**
+- `/hvac-garland-tx/` LCP **1388 ms** (was ~7.5 s), **0 client re-fetch**, 0 spinner
+- `/equipment/.../` LCP **1380 ms**, main query seeded (the one fetch is the
+  below-fold *related-pages* query)
+- `/blog/...` LCP 5800 ms, **0 re-fetch** — its hero is a featured **image**
+  (`BlogHeroImage`), so blog LCP is image-bound (separate follow-up: preload it)
+
+**Deployed preview (same throttle, over real network):**
+- `/hvac-plano-tx/` LCP **1964 ms**, page-data fetches: **none**
+- `/equipment/.../` LCP **2172 ms**, only the below-fold related query
+- `/hvac-garland-tx/` LCP 4748 ms (single-run variance; larger payload) — re-run
+  PSI for the authoritative number; the structural win (no re-fetch, content from
+  static paint, no flash) is confirmed.
+
+No regression to the other Gate-3 checks (body/canonical/redirects/admin/404/sitemap
+all still pass on this build).
+
+**Remaining follow-ups (not blockers):** preload the blog featured image;
+optionally enable `sharp`+`svgo` for overall page weight.
+
 ## Go/No-Go framing
 The **primary migration goal** (crawlable bodies + self-canonical + URL consolidation —
 fixing the 982 unindexed pages) is fully achieved and independent of this. Per Brief §3.8
