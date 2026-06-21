@@ -158,4 +158,7 @@ export const STATIC_ROUTES_SEO = [
   { path: '/gallery', title: 'Project Gallery | Truficient Energy Solutions', description: 'Photos of recent Truficient HVAC installations and projects across Dallas-Fort Worth.' },
   { path: '/scanner', title: 'HVAC Equipment Scanner | Truficient', description: 'Scan your HVAC nameplate and instantly get specs, age, and replacement guidance.' },
   { path: '/equipment', title: 'HVAC Equipment Library | Truficient', description: 'Browse HVAC equipment specs, manuals, and documentation by brand and model.' },
+  // Brand hub (TraneBrand page). Not DB-backed, so it must be listed here or it
+  // 404s on Vercel (the /equipment/:slug rows are individual models, not brands).
+  { path: '/equipment/trane', title: 'Trane HVAC Systems Dallas-Fort Worth | Certified Installer | Truficient', description: 'Truficient Energy Solutions is a certified Trane installer serving Dallas-Fort Worth with reliable, professionally installed Trane heating and cooling systems.' },
 ];
