@@ -57,7 +57,16 @@ const DEFAULT_OG_IMAGE = `${SITE_HOST}/og-image.png`;
 const SITE_NAME = 'Truficient Energy Solutions';
 
 const PREVIEW_PORT = 4178;
-const SNAPSHOT_CONCURRENCY = 6;
+// Serverless build hosts (Vercel) run a @sparticuz/chromium binary; keep
+// concurrency modest there for stability/memory. Local builds use the bundled
+// Playwright Chromium and can go wider.
+const IS_SERVERLESS = !!(
+  process.env.VERCEL ||
+  process.env.AWS_REGION ||
+  process.env.AWS_LAMBDA_FUNCTION_NAME ||
+  process.env.NOW_REGION
+);
+const SNAPSHOT_CONCURRENCY = IS_SERVERLESS ? 4 : 6;
 const NAV_TIMEOUT_MS = 30000;
 const H1_TIMEOUT_MS = 9000;
 
@@ -398,6 +407,32 @@ async function startPreviewServer() {
 
 async function launchBrowser() {
   const { chromium } = await import('playwright');
+
+  // Serverless build hosts (Vercel/Lambda) cannot run Playwright's bundled
+  // Chromium — it needs system libraries that aren't present. Use the
+  // @sparticuz/chromium binary (built for exactly these environments). It is
+  // pinned to match Playwright's Chromium major (143) so the driver protocol
+  // lines up.
+  if (IS_SERVERLESS) {
+    try {
+      const sparticuz = (await import('@sparticuz/chromium')).default;
+      // WebGL/graphics are irrelevant to DOM snapshots — disable for speed.
+      if ('setGraphicsMode' in sparticuz) sparticuz.setGraphicsMode = false;
+      const executablePath = await sparticuz.executablePath();
+      // Drop single-process/no-zygote: the build container has ample memory and
+      // multi-process is far more stable for hundreds of sequential page loads.
+      const args = (sparticuz.args || []).filter(
+        (a) => a !== '--single-process' && a !== '--no-zygote',
+      );
+      const browser = await chromium.launch({ executablePath, args, headless: true });
+      console.log('[prerender] Launched @sparticuz/chromium (serverless build env).');
+      return browser;
+    } catch (err) {
+      console.error('[prerender] @sparticuz/chromium launch failed:', err?.message || err);
+      // fall through to the bundled attempt below
+    }
+  }
+
   try {
     return await chromium.launch({ headless: true });
   } catch (err) {
