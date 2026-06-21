@@ -1,7 +1,13 @@
 import React from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import App from "./App.tsx";
+import { captureSsgData } from "./lib/ssg/pageData";
 import "./index.css";
+
+// Read the prerendered SSG payload from the pristine server DOM BEFORE React
+// hydrates — so data-driven public pages can seed their initial state and
+// hydrate without a mismatch/re-fetch (see lib/ssg/pageData.tsx).
+captureSsgData();
 
 const container = document.getElementById("root")!;
 const app = (

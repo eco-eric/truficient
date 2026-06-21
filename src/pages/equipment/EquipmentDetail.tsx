@@ -1,4 +1,4 @@
-import { useParams, Link, Navigate } from 'react-router-dom';
+import { useParams, useLocation as useRouterLocation, Link, Navigate } from 'react-router-dom';
 import { WorkEdgeBanner } from '@/components/WorkEdgeBanner';
 import { EstimatorLinks } from '@/pages/scanner/components/EstimatorLinks';
 import { useQuery } from '@tanstack/react-query';
@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { usePageSEO } from '@/hooks/usePageSEO';
 import { setSocialMetaTags, cleanCanonicalUrl } from '@/lib/seo/socialMeta';
+import { useSsgData, SsgPageData } from '@/lib/ssg/pageData';
 import { useButtonTracking } from '@/hooks/useButtonTracking';
 
 const EQUIPMENT_TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -87,6 +88,10 @@ export default function EquipmentDetail() {
   // Also normalizes any other slashes/whitespace defensively.
   const slug = (rawSlug ?? '').replace(/\.html$/, '');
   const needsRedirect = slug.includes('/');
+
+  // SSG: seed the equipment query from the embedded payload on the prerendered
+  // page so the first hydration render matches the static HTML (fast LCP).
+  const ssg = useSsgData<{ equipment: any }>(useRouterLocation().pathname);
   const normalizedSlug = needsRedirect
     ? slug
         .toLowerCase()
@@ -110,6 +115,7 @@ export default function EquipmentDetail() {
       return data;
     },
     enabled: !!normalizedSlug && !needsRedirect,
+    initialData: ssg?.equipment,
   });
 
   // Query for related pages with same model number but different brands
@@ -311,6 +317,7 @@ export default function EquipmentDetail() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SsgPageData data={{ equipment }} />
       <Header />
 
       <main className="flex-1">
