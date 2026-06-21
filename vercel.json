@@ -1,5 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "bun install && npx --yes playwright install chromium",
+  "buildCommand": "bun run build",
+  "outputDirectory": "dist",
   "trailingSlash": true,
   "redirects": [
     {
@@ -9,13 +13,14 @@
     }
   ],
   "rewrites": [
-    { "source": "/admin/:path*", "destination": "/index.html" },
-    { "source": "/estimate/:path*", "destination": "/index.html" },
-    { "source": "/estimators/:path*", "destination": "/index.html" },
-    { "source": "/scanner/:path*", "destination": "/index.html" },
-    { "source": "/category/:path*", "destination": "/index.html" },
-    { "source": "/service-areas/:path*", "destination": "/index.html" },
-    { "source": "/resources/:path*", "destination": "/index.html" },
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/admin/(.*)", "destination": "/index.html" },
+    { "source": "/estimate/(.*)", "destination": "/index.html" },
+    { "source": "/estimators/(.*)", "destination": "/index.html" },
+    { "source": "/scanner/(.*)", "destination": "/index.html" },
+    { "source": "/category/(.*)", "destination": "/index.html" },
+    { "source": "/service-areas/(.*)", "destination": "/index.html" },
+    { "source": "/resources/(.*)", "destination": "/index.html" },
     { "source": "/(smart-group-march.*)", "destination": "/index.html" },
     { "source": "/(free-hvac-age-checker.*)", "destination": "/index.html" }
   ]
