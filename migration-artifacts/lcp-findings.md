@@ -78,6 +78,20 @@ tricky part). Keyed on the initial pathname so SPA nav + StrictMode are unaffect
 No regression to the other Gate-3 checks (body/canonical/redirects/admin/404/sitemap
 all still pass on this build).
 
+### Authoritative mobile LCP (deployed preview, Slow-4G + 4× CPU, 3 runs/page)
+| Page | LCP runs (ms) | Median | Range |
+|---|---|---|---|
+| /hvac-garland-tx/ | 5308, 2668, 2724 | **2724** | 2668–5308 (5308 = cold first run) |
+| /hvac-richardson-tx/ | 2624, 2384, 2584 | **2584** | 2384–2624 |
+| /hvac-plano-tx/ | 2404, 2312, 2768 | **2404** | 2312–2768 |
+
+**LCP element = the prerendered location description `<p>` (text), and FCP === LCP
+in every run** — i.e. the largest content paints at first paint, from the static
+HTML, NOT a post-hydration re-render. Median **~2.4–2.7 s**, right at the 2.5 s
+target and down from ~7.5–9.7 s / the 13.7 s baseline. The ~2.5 s floor is the
+HTML+render-blocking-CSS download under throttle; going lower would need more
+inlined critical CSS (optional, not needed for go-live).
+
 **Remaining follow-ups (not blockers):** preload the blog featured image;
 optionally enable `sharp`+`svgo` for overall page weight.
 
