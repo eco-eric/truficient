@@ -6,6 +6,7 @@ import Header from '@/components/layout/Header';
 import BlogHeroImage from '@/components/blog/BlogHeroImage';
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
+import { cleanCanonicalUrl } from '@/lib/seo/socialMeta';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Calendar, ArrowLeft, Tag, User, Maximize2, Minimize2 } from 'lucide-react';
@@ -118,9 +119,9 @@ const BlogPostPage = () => {
       robotsMeta.remove();
     }
 
-    // Set canonical URL
+    // Set canonical URL (clean trailing-slash form; matches the SSG prerender)
     let canonicalLink = document.querySelector('link[rel="canonical"]');
-    const canonicalUrl = post.canonical_url || `https://truficient.com/blog/${post.slug}`;
+    const canonicalUrl = cleanCanonicalUrl(post.canonical_url || `/blog/${post.slug}`);
     if (!canonicalLink) {
       canonicalLink = document.createElement('link');
       canonicalLink.setAttribute('rel', 'canonical');

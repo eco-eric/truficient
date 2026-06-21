@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { cleanCanonicalUrl } from '@/lib/seo/socialMeta';
 
 interface PageSEO {
   meta_title: string | null;
@@ -24,10 +25,12 @@ export const usePageSEO = (customPath?: string, options?: UsePageSEOOptions) => 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Always set a self-referencing canonical (non-www, https, no trailing
-    // slash on non-root paths) so every route maps to one canonical URL.
-    const trimmed = path.replace(/\/+$/, '');
-    const normalizedCanonical = `https://truficient.com${trimmed === '' ? '/' : trimmed}`;
+    // Always set a self-referencing canonical in the canonical URL form used
+    // site-wide and by the SSG prerender: https, non-www, clean path, TRAILING
+    // SLASH (e.g. https://truficient.com/hvac-garland-tx/). Keeping this in sync
+    // with the prerendered <link rel="canonical"> avoids the raw HTML and the
+    // hydrated DOM disagreeing on the canonical.
+    const normalizedCanonical = cleanCanonicalUrl(path);
     let canonical = document.querySelector('link[rel="canonical"]');
     if (!canonical) {
       canonical = document.createElement('link');
@@ -108,9 +111,11 @@ export const usePageSEO = (customPath?: string, options?: UsePageSEOOptions) => 
             }
           });
 
-          // Override canonical with DB value if provided
+          // Override canonical with DB value if provided — normalised to the
+          // clean trailing-slash form for same-origin URLs so an authored
+          // ".html" / no-slash value can't reintroduce a duplicate canonical.
           if ((data as any).canonical_url) {
-            canonical!.setAttribute('href', (data as any).canonical_url);
+            canonical!.setAttribute('href', cleanCanonicalUrl((data as any).canonical_url));
           }
 
           // Inject HVACBusiness JSON-LD schema for core pages (skip on equipment pages)

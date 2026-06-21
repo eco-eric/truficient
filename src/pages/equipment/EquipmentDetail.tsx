@@ -36,7 +36,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { usePageSEO } from '@/hooks/usePageSEO';
-import { setSocialMetaTags } from '@/lib/seo/socialMeta';
+import { setSocialMetaTags, cleanCanonicalUrl } from '@/lib/seo/socialMeta';
 import { useButtonTracking } from '@/hooks/useButtonTracking';
 
 const EQUIPMENT_TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -144,7 +144,8 @@ export default function EquipmentDetail() {
     if (!equipment) return;
 
     const specs = equipment.specs as Record<string, unknown> | undefined;
-    const canonicalUrl = `${BASE_URL}/equipment/${equipment.slug}`;
+    // Clean trailing-slash canonical (matches the SSG prerender output).
+    const canonicalUrl = cleanCanonicalUrl(`/equipment/${equipment.slug}`);
 
     // Remove existing canonical and JSON-LD if present
     const existingCanonical = document.querySelector('link[rel="canonical"]');

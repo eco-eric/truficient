@@ -10,7 +10,7 @@ import { LocationGallery } from '@/components/gallery/LocationGallery';
 import { useLocationGalleryPhotos } from '@/hooks/useLocationGalleryPhotos';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { setSocialMetaTags } from '@/lib/seo/socialMeta';
+import { setSocialMetaTags, cleanCanonicalUrl } from '@/lib/seo/socialMeta';
 
 /**
  * Split markdown content at specific paragraph boundaries.
@@ -159,8 +159,8 @@ const LocationPage = () => {
     // Self-referencing canonical tag — each location page canonicalizes to itself
     let canonicalUrl: string | null = null;
     if (location?.url_slug) {
-      const slug = location.url_slug.startsWith('/') ? location.url_slug : `/${location.url_slug}`;
-      canonicalUrl = `https://truficient.com${slug}`;
+      // Clean trailing-slash canonical (matches the SSG prerender output).
+      canonicalUrl = cleanCanonicalUrl(location.url_slug);
       let canonical = document.querySelector('link[rel="canonical"]');
       if (!canonical) {
         canonical = document.createElement('link');

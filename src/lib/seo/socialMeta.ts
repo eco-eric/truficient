@@ -16,6 +16,32 @@
  * passed in.
  */
 
+const SITE_ORIGIN = 'https://truficient.com';
+
+/**
+ * Normalise a path or absolute URL to the site-wide canonical form:
+ * https, non-www, clean path, TRAILING SLASH
+ * (e.g. https://truficient.com/hvac-garland-tx/).
+ *
+ * This is the single source of truth for the canonical URL shape, shared by
+ * the client (usePageSEO, LocationPage, BlogPost, EquipmentDetail) and mirrored
+ * by the build-time prerender (scripts/prerender.mjs) so the raw HTML and the
+ * hydrated DOM never disagree. Off-origin absolute URLs are returned unchanged
+ * so intentional cross-site canonicals are preserved.
+ */
+export function cleanCanonicalUrl(input: string): string {
+  let s = (input || '').trim();
+  if (/^https?:\/\//i.test(s)) {
+    const host = s.replace(/^https?:\/\//i, '').split('/')[0].replace(/^www\./i, '');
+    if (host !== 'truficient.com') return s; // off-origin — respect as authored
+    s = s.replace(/^https?:\/\/[^/]+/i, '');
+  }
+  if (!s.startsWith('/')) s = `/${s}`;
+  s = s.replace(/\/{2,}/g, '/').replace(/\.html$/i, '');
+  if (s === '/' || s === '') return `${SITE_ORIGIN}/`;
+  return `${SITE_ORIGIN}${s.replace(/\/+$/, '')}/`;
+}
+
 export interface SocialMetaInput {
   /** Page <title> equivalent — used for og:title & twitter:title. */
   title?: string | null;

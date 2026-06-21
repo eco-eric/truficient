@@ -1,0 +1,22 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "trailingSlash": true,
+  "redirects": [
+    {
+      "source": "/(.*)\\.html",
+      "destination": "/$1/",
+      "statusCode": 301
+    }
+  ],
+  "rewrites": [
+    { "source": "/admin/:path*", "destination": "/index.html" },
+    { "source": "/estimate/:path*", "destination": "/index.html" },
+    { "source": "/estimators/:path*", "destination": "/index.html" },
+    { "source": "/scanner/:path*", "destination": "/index.html" },
+    { "source": "/category/:path*", "destination": "/index.html" },
+    { "source": "/service-areas/:path*", "destination": "/index.html" },
+    { "source": "/resources/:path*", "destination": "/index.html" },
+    { "source": "/(smart-group-march.*)", "destination": "/index.html" },
+    { "source": "/(free-hvac-age-checker.*)", "destination": "/index.html" }
+  ]
+}
