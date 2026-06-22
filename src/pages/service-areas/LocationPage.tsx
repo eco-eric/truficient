@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useLocation as useRouterLocation, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useSsgData, SsgPageData } from '@/lib/ssg/pageData';
 import ReactMarkdown from 'react-markdown';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -10,7 +11,7 @@ import { LocationGallery } from '@/components/gallery/LocationGallery';
 import { useLocationGalleryPhotos } from '@/hooks/useLocationGalleryPhotos';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { setSocialMetaTags } from '@/lib/seo/socialMeta';
+import { setSocialMetaTags, cleanCanonicalUrl } from '@/lib/seo/socialMeta';
 
 /**
  * Split markdown content at specific paragraph boundaries.
@@ -104,11 +105,15 @@ const PHONE_TEL = 'tel:2142384349';
 const LocationPage = () => {
   const { locationSlug: rawLocationSlug } = useParams<{ locationSlug: string }>();
   const locationSlug = rawLocationSlug?.replace(/\.html$/, '');
-  const [location, setLocation] = useState<LocationData | null>(null);
-  const [seo, setSeo] = useState<SeoData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // SSG: on the prerendered page, seed initial state from the embedded payload
+  // so the first hydration render matches the static HTML (no flash, fast LCP).
+  const ssg = useSsgData<{ location: LocationData; seo: SeoData | null }>(useRouterLocation().pathname);
+  const [location, setLocation] = useState<LocationData | null>(ssg?.location ?? null);
+  const [seo, setSeo] = useState<SeoData | null>(ssg?.seo ?? null);
+  const [loading, setLoading] = useState(!ssg);
 
   useEffect(() => {
+    if (ssg) return; // already hydrated from the SSG payload
     if (!locationSlug) { setLoading(false); return; }
     const fetchData = async () => {
       const slugVariants = [
@@ -159,8 +164,8 @@ const LocationPage = () => {
     // Self-referencing canonical tag — each location page canonicalizes to itself
     let canonicalUrl: string | null = null;
     if (location?.url_slug) {
-      const slug = location.url_slug.startsWith('/') ? location.url_slug : `/${location.url_slug}`;
-      canonicalUrl = `https://truficient.com${slug}`;
+      // Clean trailing-slash canonical (matches the SSG prerender output).
+      canonicalUrl = cleanCanonicalUrl(location.url_slug);
       let canonical = document.querySelector('link[rel="canonical"]');
       if (!canonical) {
         canonical = document.createElement('link');
@@ -318,6 +323,7 @@ const LocationPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SsgPageData data={{ location, seo }} />
       <Header />
       <main className="flex-grow">
         {/* Breadcrumbs */}

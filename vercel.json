@@ -1,0 +1,27 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "bun install",
+  "buildCommand": "bun run build",
+  "outputDirectory": "dist",
+  "trailingSlash": true,
+  "redirects": [
+    {
+      "source": "/(.*)\\.html",
+      "destination": "/$1/",
+      "statusCode": 301
+    }
+  ],
+  "rewrites": [
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/admin/(.*)", "destination": "/index.html" },
+    { "source": "/estimate/(.*)", "destination": "/index.html" },
+    { "source": "/estimators/(.*)", "destination": "/index.html" },
+    { "source": "/scanner/(.*)", "destination": "/index.html" },
+    { "source": "/category/(.*)", "destination": "/index.html" },
+    { "source": "/service-areas/(.*)", "destination": "/index.html" },
+    { "source": "/resources/(.*)", "destination": "/index.html" },
+    { "source": "/(smart-group-march.*)", "destination": "/index.html" },
+    { "source": "/(free-hvac-age-checker.*)", "destination": "/index.html" }
+  ]
+}

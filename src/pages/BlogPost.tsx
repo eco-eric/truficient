@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { displayUrl } from '@/lib/imageUtils';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useLocation as useRouterLocation, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Header from '@/components/layout/Header';
 import BlogHeroImage from '@/components/blog/BlogHeroImage';
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
+import { cleanCanonicalUrl } from '@/lib/seo/socialMeta';
+import { useSsgData, SsgPageData } from '@/lib/ssg/pageData';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Calendar, ArrowLeft, Tag, User, Maximize2, Minimize2 } from 'lucide-react';
@@ -59,10 +61,13 @@ const BlogContent = ({ html }: { html: string }) => {
 const BlogPostPage = () => {
   const { slug: rawSlug } = useParams<{ slug: string }>();
   const slug = rawSlug?.replace(/\.html$/, '');
-  const [loading, setLoading] = useState(true);
-  const [post, setPost] = useState<BlogPost | null>(null);
+  // SSG: seed from the embedded payload on the prerendered page (see lib/ssg).
+  const ssg = useSsgData<{ post: BlogPost }>(useRouterLocation().pathname);
+  const [loading, setLoading] = useState(!ssg);
+  const [post, setPost] = useState<BlogPost | null>(ssg?.post ?? null);
 
   useEffect(() => {
+    if (ssg) return; // already hydrated from the SSG payload
     const fetchPost = async () => {
       if (!slug) return;
 
@@ -118,9 +123,9 @@ const BlogPostPage = () => {
       robotsMeta.remove();
     }
 
-    // Set canonical URL
+    // Set canonical URL (clean trailing-slash form; matches the SSG prerender)
     let canonicalLink = document.querySelector('link[rel="canonical"]');
-    const canonicalUrl = post.canonical_url || `https://truficient.com/blog/${post.slug}`;
+    const canonicalUrl = cleanCanonicalUrl(post.canonical_url || `/blog/${post.slug}`);
     if (!canonicalLink) {
       canonicalLink = document.createElement('link');
       canonicalLink.setAttribute('rel', 'canonical');
@@ -231,8 +236,9 @@ const BlogPostPage = () => {
 
   return (
     <div className="min-h-screen">
+      <SsgPageData data={{ post }} />
       <Header />
-      
+
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground py-16">
         <div className="container mx-auto px-4">

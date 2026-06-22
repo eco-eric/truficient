@@ -1,0 +1,7 @@
+# Body presence check (no-JS raw fetch) — 2026-06-20
+# Shows the SPA shell has NO page-specific body content at clean URLs.
+
+https://truficient.com/hvac-garland-tx/
+  occurrences of page-specific term 'Garland' in raw HTML: 0   (0 = empty SPA shell, body not prerendered)
+https://truficient.com/blog/ashrae-texas-code-dfw-humidity-requirements/
+  occurrences of page-specific term 'ASHRAE' in raw HTML: 0   (0 = empty SPA shell, body not prerendered)

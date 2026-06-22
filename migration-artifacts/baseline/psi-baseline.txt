@@ -1,0 +1,18 @@
+# PageSpeed Insights baseline — captured 2026-06-20 (by Eric, pagespeed.web.dev)
+# Production (Lovable). The Gate-3 GO/NO-GO LCP comparison is measured against MOBILE.
+#
+# MOBILE (Slow 4G):
+#   /hvac-garland-tx/      LCP 8.6 s   Perf 60
+#   /hvac-richardson-tx/   LCP 8.5 s   Perf 58
+#   /hvac-plano-tx/        LCP 9.7 s   Perf 44
+#   -> mobile LCP range 8.5-9.7 s (avg ~8.9 s); Perf 44-60.
+#
+# DESKTOP:
+#   /hvac-garland-tx/      LCP 1.9 s   Perf 78
+#   /hvac-richardson-tx/   LCP 1.7 s   Perf 91
+#   /hvac-plano-tx/        LCP 2.0 s   Perf 68
+#
+# Reference: Brief 3.8 cites a prior ~13.7 s mobile LCP; this same-day capture is
+# somewhat better but still well above target.
+# Gate-3 target: sampled location-page MOBILE LCP < 2.5 s (any large improvement
+# vs this 8.5-9.7 s baseline is acceptable for go-live).

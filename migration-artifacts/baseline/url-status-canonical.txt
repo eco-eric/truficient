@@ -1,0 +1,64 @@
+# Production Baseline — truficient.com (Lovable)
+# Captured: 2026-06-20
+# Method: curl (no-JS, no -L). 'canonical' = rel=canonical in raw served HTML (pre-hydration).
+
+## [homepage] https://truficient.com/
+  direct_status : 200
+  final(-L)     : 200 https://truficient.com/
+  canonical     : https://truficient.com/
+  title         : Truficient Energy Solutions | HVAC Services in Dallas-Fort Worth
+
+## [location-1] https://truficient.com/hvac-garland-tx/
+  direct_status : 200
+  final(-L)     : 200 https://truficient.com/hvac-garland-tx/
+  canonical     : https://truficient.com/
+  title         : Truficient Energy Solutions | HVAC Services in Dallas-Fort Worth
+
+## [location-2] https://truficient.com/hvac-richardson-tx/
+  direct_status : 200
+  final(-L)     : 200 https://truficient.com/hvac-richardson-tx/
+  canonical     : https://truficient.com/
+  title         : Truficient Energy Solutions | HVAC Services in Dallas-Fort Worth
+
+## [location-3] https://truficient.com/hvac-plano-tx/
+  direct_status : 200
+  final(-L)     : 200 https://truficient.com/hvac-plano-tx/
+  canonical     : https://truficient.com/
+  title         : Truficient Energy Solutions | HVAC Services in Dallas-Fort Worth
+
+## [equipment] https://truficient.com/equipment/trane/5ttv8x48a1000aa/
+  direct_status : 200
+  final(-L)     : 200 https://truficient.com/equipment/trane/5ttv8x48a1000aa/
+  canonical     : https://truficient.com/
+  title         : Truficient Energy Solutions | HVAC Services in Dallas-Fort Worth
+
+## [blog] https://truficient.com/blog/ashrae-texas-code-dfw-humidity-requirements/
+  direct_status : 200
+  final(-L)     : 200 https://truficient.com/blog/ashrae-texas-code-dfw-humidity-requirements/
+  canonical     : https://truficient.com/
+  title         : Truficient Energy Solutions | HVAC Services in Dallas-Fort Worth
+
+## [hub] https://truficient.com/service-areas.html
+  direct_status : 200
+  final(-L)     : 200 https://truficient.com/service-areas.html
+  canonical     : https://truficient.com/service-areas.html
+  title         : HVAC Service Areas Dallas TX | Truficient
+
+## [about] https://truficient.com/about.html
+  direct_status : 200
+  final(-L)     : 200 https://truficient.com/about.html
+  canonical     : https://truficient.com/about.html
+  title         : About Truficient Energy Solutions | Our Story
+
+## [contact] https://truficient.com/contact.html
+  direct_status : 200
+  final(-L)     : 200 https://truficient.com/contact.html
+  canonical     : https://truficient.com/contact.html
+  title         : Contact Us | Truficient Energy Solutions
+
+## [location-4] https://truficient.com/hvac-lakewood-dallas/
+  direct_status : 200
+  final(-L)     : 200 https://truficient.com/hvac-lakewood-dallas/
+  canonical     : https://truficient.com/
+  title         : Truficient Energy Solutions | HVAC Services in Dallas-Fort Worth
+

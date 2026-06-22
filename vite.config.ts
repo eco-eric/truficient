@@ -1,96 +1,15 @@
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { ViteImageOptimizer } from "vite-plugin-image-optimizer";
-import { pathToFileURL } from "node:url";
 
-/**
- * Run the SEO prerender step as part of `vite build` itself, so it executes
- * regardless of whether the deploy pipeline calls `npm run build` or
- * `vite build` directly. (Lovable hosting invokes `vite build` directly,
- * which previously skipped the npm-script chain.)
- */
-function syncSitemapPlugin(mode: string) {
-  return {
-    name: "truficient-sync-sitemap",
-    apply: "build" as const,
-    async buildStart() {
-      // Refresh public/sitemap.xml from the live generate-sitemap edge
-      // function BEFORE Vite copies the public/ directory into dist/.
-      // Lovable Hosting serves the static file, so this is the only way
-      // for the .html-suffixed URLs (emitted by the edge function) to
-      // actually reach production.
-      const env = loadEnv(mode, process.cwd(), "");
-      for (const [key, value] of Object.entries(env)) {
-        if (process.env[key] === undefined && value !== undefined) {
-          process.env[key] = value;
-        }
-      }
-      const scriptUrl = pathToFileURL(
-        path.resolve(__dirname, "scripts/sync-sitemap.mjs"),
-      ).href;
-      try {
-        await import(`${scriptUrl}?t=${Date.now()}`);
-      } catch (err) {
-        // Non-fatal: the script itself swallows fetch errors and keeps the
-        // existing file. Only an unexpected import failure lands here.
-        console.warn("[vite] sitemap sync skipped:", err);
-      }
-    },
-  };
-}
-
-function seoPrerenderPlugin(mode: string) {
-  return {
-    name: "truficient-seo-prerender",
-    apply: "build" as const,
-    async closeBundle() {
-      // Vite loads .env files into `import.meta.env` for the client bundle,
-      // but does NOT populate `process.env` for build-time scripts. On
-      // Lovable's deploy infra, `process.env.VITE_SUPABASE_URL` is therefore
-      // empty even though `.env` contains it — which silently caused the
-      // prerender script to skip every DB-backed route (blog, equipment,
-      // and ~440 location pages), shipping only the 26 static routes to
-      // production.
-      //
-      // Fix: explicitly load .env into process.env here, then bridge the
-      // VITE_-prefixed names into the non-prefixed names the prerender
-      // script reads.
-      const env = loadEnv(mode, process.cwd(), "");
-      for (const [key, value] of Object.entries(env)) {
-        if (process.env[key] === undefined && value !== undefined) {
-          process.env[key] = value;
-        }
-      }
-
-      if (!process.env.SUPABASE_URL && process.env.VITE_SUPABASE_URL) {
-        process.env.SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-      }
-      if (
-        !process.env.SUPABASE_ANON_KEY &&
-        !process.env.SUPABASE_SERVICE_ROLE_KEY &&
-        process.env.VITE_SUPABASE_PUBLISHABLE_KEY
-      ) {
-        process.env.SUPABASE_ANON_KEY =
-          process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      }
-
-      const scriptUrl = pathToFileURL(
-        path.resolve(__dirname, "scripts/prerender.mjs"),
-      ).href;
-      // Cache-bust so repeated builds in the same Node process re-import.
-      try {
-        await import(`${scriptUrl}?t=${Date.now()}`);
-      } catch (err) {
-        // Re-throw to fail the build — a silent prerender failure is what
-        // got us into this mess in the first place.
-        console.error("[vite] SEO prerender failed:", err);
-        throw err;
-      }
-    },
-  };
-}
+// NOTE: The SEO prerender + sitemap generation run as an explicit post-build
+// step (`scripts/prerender.mjs`, invoked by the npm `build` script), NOT as a
+// vite `closeBundle` plugin. The previous Lovable setup ran it as a plugin too,
+// which double-executed it under `npm run build` (plugin + npm step). On Vercel
+// the build command is `bun run build` (= `vite build && node scripts/prerender.mjs`),
+// so a single explicit invocation is correct and avoids the double-run.
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -106,8 +25,6 @@ export default defineConfig(({ mode }) => ({
       jpeg: { quality: 70 },
       png: { quality: 75 },
     }),
-    syncSitemapPlugin(mode),
-    seoPrerenderPlugin(mode),
   ].filter(Boolean),
   resolve: {
     alias: {

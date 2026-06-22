@@ -1,0 +1,19 @@
+# Gate 1 staging smoke (non-auth) — https://truficient.vercel.app
+# 2026-06-20
+
+homepage.httpStatus: 200
+homepage.title: Truficient Energy Solutions | HVAC Services in Dallas-Fort Worth
+homepage.rootChildren: 4 (React mounted)
+homepage.firstH1: "Your Comfort,Done Right."
+homepage.bodyTextLen: 1855
+clientNav.clickedHref: /contact
+clientNav.resultUrl: /contact
+clientNav.renderedAfterNav: YES
+deeplink /admin/login: http=404 mounted=false title="404: NOT_FOUND"
+deeplink /hvac-garland-tx/: http=404 mounted=false title="404: NOT_FOUND"
+deeplink /this-should-404-xyz/: http=404 mounted=false title="404: NOT_FOUND"
+console.errorCount: 3
+console.errors: ["Failed to load resource: the server responded with a status of 404 ()","Failed to load resource: the server responded with a status of 404 ()","Failed to load resource: the server responded with a status of 404 ()"]
+network.failedCount: 13
+network.failed: ["POST https://analytics.google.com/g/collect?v=2&tid=G-C8RCHPZDQC&gtm=45je66h0v876916067z89243582195za20gzb9243582195zd9243582195&_p=1781996290283&em=tv.1~em.fwhq4e9szbXWHp2ZsGQWQtL_Mvt8rtCDy4HR0JUv7XI&_gaz=1&gcd=13l3l3l3l1l1&npa=0&dma=0&ecid=1407045358&_eu=AAAAAGAC&are=1&cid=1552849196.1781996291&ec_mode=a&frm=0&pscdl=noapi&rcb=18&sr=390x844&uaa=arm&uab=64&uafvl=HeadlessChrome%3B143.0.7499.4%7CChromium%3B143.0.7499.4%7CNot%2520A(Brand%3B24.0.0.0&uam=&uamb=0&uap=iOS&uapv=16_0&uaw=0&ul=en-us&gaf=2&_s=1&tag_exp=115938466~115938469~119027224~119392696~119392704~119456239~119456247~119534189&sid=1781996290&sct=1&seg=0&dl=https%3A%2F%2Ftruficient.vercel.app%2F&dt=Truficient%20Energy%20Solutions%20%7C%20HVAC%20Services%20in%20Dallas-Fort%20Worth&en=page_view&_fv=1&_nsi=1&_ss=1&tfd=3772 :: net::ERR_ABORTED","GET https://truficient.vercel.app/assets/clock-B2hcJQD1.js :: net::ERR_ABORTED","GET https://truficient.vercel.app/assets/textarea-Cl_UYbYN.js :: net::ERR_ABORTED","GET https://truficient.vercel.app/assets/Contact-DYNWVRIr.js :: net::ERR_ABORTED","GET https://truficient.vercel.app/assets/types-CGXlcBA6.js :: net::ERR_ABORTED","POST https://analytics.google.com/g/collect?v=2&tid=G-C8RCHPZDQC&gtm=45je66h0v876916067za20gzb9243582195zd9243582195&_p=1781996290283&gcd=13l3l3l3l1l1&npa=0&dma=0&ecid=1407045358&_eu=AAAAAGQC&are=1&cid=1552849196.1781996291&frm=0&pscdl=noapi&rcb=18&sr=390x844&uaa=arm&uab=64&uafvl=HeadlessChrome%3B143.0.7499.4%7CChromium%3B143.0.7499.4%7CNot%2520A(Brand%3B24.0.0.0&uam=&uamb=0&uap=iOS&uapv=16_0&uaw=0&ul=en-us&gaf=2&_s=2&tag_exp=115938466~115938469~119027224~119392696~119392704~119456239~119456247~119534189&sid=1781996290&sct=1&seg=0&dl=https%3A%2F%2Ftruficient.vercel.app%2Fcontact&dt=Truficient%20Energy%20Solutions%20%7C%20HVAC%20Services%20in%20Dallas-Fort%20Worth&en=user_engagement&_et=1790&tfd=5561 :: net::ERR_ABORTED","GET https://truficient.vercel.app/assets/conversionTracking-CUbbgKys.js :: net::ERR_ABORTED","POST https://xvsgdzwadxbwpevdezbp.supabase.co/rest/v1/button_clicks :: net::ERR_ABORTED"]
+supabase.requests: ["200 https://xvsgdzwadxbwpevdezbp.supabase.co/rest/v1/rpc/get_public_tracking_settings","200 https://xvsgdzwadxbwpevdezbp.supabase.co/rest/v1/social_links","200 https://xvsgdzwadxbwpevdezbp.supabase.co/rest/v1/page_seo"]
