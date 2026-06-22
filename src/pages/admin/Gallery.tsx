@@ -798,7 +798,10 @@ const AdminGallery = () => {
                         checked={imageForm.is_featured}
                         onCheckedChange={(checked) => setImageForm(prev => ({ ...prev, is_featured: checked }))}
                       />
-                      <Label htmlFor="is_featured">Featured (show on home page)</Label>
+                      <Label htmlFor="is_featured" className="flex flex-col gap-0.5">
+                        <span>Featured (show on home page)</span>
+                        <span className="text-xs font-normal text-muted-foreground">Featured photos rotate daily — 8 shown per day.</span>
+                      </Label>
                     </div>
                     <div className="flex items-center gap-2">
                       <Switch

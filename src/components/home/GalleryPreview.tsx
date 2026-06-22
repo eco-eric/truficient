@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { ArrowRight, Play } from 'lucide-react';
 import { thumbnailUrl, buildImageSrcSet, GALLERY_SIZES } from '@/lib/imageUtils';
+import { getTodaysFeaturedIds } from '@/lib/galleryRotation';
 
 interface GalleryImage {
   id: string;
@@ -17,17 +18,42 @@ interface GalleryImage {
 
 const GalleryPreview = () => {
   const { data: images = [], isLoading } = useQuery({
-    queryKey: ['gallery-featured'],
+    queryKey: ['gallery-featured-daily'],
     queryFn: async () => {
+      // Fetch all featured photo IDs first
+      const { data: featured, error: featuredError } = await supabase
+        .from('gallery_images')
+        .select('id')
+        .eq('is_active', true)
+        .eq('is_featured', true)
+        .order('sort_order', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: false });
+      if (featuredError) throw featuredError;
+
+      const featuredIds = (featured || []).map(f => f.id);
+      const todaysIds = getTodaysFeaturedIds(featuredIds, 8);
+
+      // Fall back to most recent active photos if no featured set yet
+      if (todaysIds.length === 0) {
+        const { data, error } = await supabase
+          .from('gallery_images')
+          .select('id, title, image_url, thumbnail_url, media_type, alt_text')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true, nullsFirst: false })
+          .order('created_at', { ascending: false })
+          .limit(8);
+        if (error) throw error;
+        return data as GalleryImage[];
+      }
+
       const { data, error } = await supabase
         .from('gallery_images')
         .select('id, title, image_url, thumbnail_url, media_type, alt_text')
-        .eq('is_active', true)
-        .order('is_featured', { ascending: false })
-        .order('sort_order', { ascending: true })
-        .limit(8);
+        .in('id', todaysIds);
       if (error) throw error;
-      return data as GalleryImage[];
+      // Preserve rotation order
+      const byId = new Map((data as GalleryImage[]).map(img => [img.id, img]));
+      return todaysIds.map(id => byId.get(id)).filter(Boolean) as GalleryImage[];
     },
   });
 
