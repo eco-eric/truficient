@@ -183,6 +183,10 @@ const INTERACTIVE_RE = new RegExp(
     '^/smart-group-march', // -g, -F-26, -F-26v2, -G-26
     '^/free-hvac-age-checker',
     '^/cookie-preferences$',
+    // Gallery is a fully client-driven, interactive page (search/filter/lightbox)
+    // whose body is images + client-side filter buttons (no crawlable links). Serve
+    // a head-shell so it client-renders cleanly (createRoot, no hydration flash).
+    '^/gallery$',
   ].join('|'),
   'i',
 );
