@@ -25,7 +25,7 @@ export function GalleryToolbar(props: Props) {
   const mediaValue = selected.media[0] === 'Photos' ? 'photo' : selected.media[0] === 'Videos' ? 'video' : 'all';
 
   return (
-    <div className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <div className="sticky top-[88px] z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="container mx-auto px-4">
         {/* Row 1 */}
         <div className="flex flex-wrap items-center gap-3 py-3">

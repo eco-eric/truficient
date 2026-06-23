@@ -1,14 +1,16 @@
 import { Play } from 'lucide-react';
-import { thumbnailUrl, buildImageSrcSet, GALLERY_SIZES } from '@/lib/imageUtils';
+import { thumbnailUrl, buildImageSrcSet } from '@/lib/imageUtils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { tileTags, type GalleryItem } from '@/lib/gallery/facets';
 
 export type Density = 'comfortable' | 'large';
 
+// More columns = smaller tiles so whole photos fit on screen (masonry keeps the
+// full image — no crop). "large" is the fewer-columns / bigger option.
 const COLS: Record<Density, string> = {
-  comfortable: 'columns-2 sm:columns-3 lg:columns-4',
-  large: 'columns-1 sm:columns-2 lg:columns-3',
+  comfortable: 'columns-2 sm:columns-3 md:columns-4 lg:columns-5 xl:columns-6',
+  large: 'columns-1 sm:columns-2 md:columns-3 lg:columns-4',
 };
 
 interface Props {
@@ -23,9 +25,9 @@ interface Props {
 export function GalleryGrid({ items, loading, density, hasFilters, onOpenAt, onClear }: Props) {
   if (loading) {
     return (
-      <div className={`${COLS[density]} gap-4`}>
+      <div className={`${COLS[density]} gap-3`}>
         {Array.from({ length: 12 }).map((_, i) => (
-          <Skeleton key={i} className="mb-4 w-full rounded-lg" style={{ height: 220 + (i % 4) * 70 }} />
+          <Skeleton key={i} className="mb-3 w-full rounded-lg" style={{ height: 220 + (i % 4) * 70 }} />
         ))}
       </div>
     );
@@ -46,7 +48,7 @@ export function GalleryGrid({ items, loading, density, hasFilters, onOpenAt, onC
   }
 
   return (
-    <div className={`${COLS[density]} gap-4`}>
+    <div className={`${COLS[density]} gap-3`}>
       {items.map((item, index) => {
         const isVideo = item.media === 'video';
         const tags = tileTags(item);
@@ -55,7 +57,7 @@ export function GalleryGrid({ items, loading, density, hasFilters, onOpenAt, onC
           <button
             key={item.id}
             onClick={() => onOpenAt(index)}
-            className="group relative mb-4 block w-full break-inside-avoid overflow-hidden rounded-lg bg-muted text-left shadow-sm"
+            className="group relative mb-3 block w-full break-inside-avoid overflow-hidden rounded-lg bg-muted text-left shadow-sm"
           >
             {isVideo && !item.thumbnailUrl ? (
               <video src={item.imageUrl} muted playsInline className="w-full" />
@@ -63,7 +65,7 @@ export function GalleryGrid({ items, loading, density, hasFilters, onOpenAt, onC
               <img
                 src={thumbnailUrl(thumbSrc)}
                 srcSet={buildImageSrcSet(thumbSrc)}
-                sizes={GALLERY_SIZES}
+                sizes="(min-width:1280px) 16vw, (min-width:1024px) 20vw, (min-width:768px) 25vw, (min-width:640px) 33vw, 50vw"
                 alt={item.alt}
                 loading="lazy"
                 decoding="async"
