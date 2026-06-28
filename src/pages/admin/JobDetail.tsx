@@ -581,7 +581,15 @@ export default function JobDetail() {
           </CardContent>
         </Card>
 
+        {/* Material Job Lists */}
+        <MaterialJobListsCard
+          jobId={job.id}
+          customerId={job.customer_id}
+          sourceEstimateId={job.source_estimate_id}
+        />
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Customer & Location */}
