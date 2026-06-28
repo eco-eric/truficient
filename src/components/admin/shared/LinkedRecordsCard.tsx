@@ -4,10 +4,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Link as LinkIcon, ExternalLink, FileText, Kanban, Briefcase, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Link as LinkIcon, ExternalLink, FileText, Kanban, Briefcase, X, Plus, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface LinkedRecordsCardProps {
   entityType: 'job' | 'estimate' | 'pipeline';
@@ -16,6 +27,8 @@ interface LinkedRecordsCardProps {
   // For jobs: pass the current linked IDs
   sourceEstimateId?: string | null;
   sourcePipelineId?: string | null;
+  // For estimates: pass the WorkEdge project id so we can auto-match a job
+  workedgeProjectId?: string | null;
 }
 
 export function LinkedRecordsCard({ entityType, entityId, customerId, sourceEstimateId, sourcePipelineId }: LinkedRecordsCardProps) {
