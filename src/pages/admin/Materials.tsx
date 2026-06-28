@@ -682,7 +682,9 @@ const Materials = () => {
 
   const filteredMaterials = materials
     .filter(m => m.category === activeTab)
+    .filter(m => (showFieldOnly ? m.show_in_takeoff : true))
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
 
   // Selection handlers
   const toggleSelect = (id: string) => {
