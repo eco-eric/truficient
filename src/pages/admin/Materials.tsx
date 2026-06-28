@@ -837,11 +837,13 @@ const Materials = () => {
                             <TableHead>Name</TableHead>
                             <TableHead>Unit</TableHead>
                             <TableHead className="text-right">Unit Cost</TableHead>
+                            <TableHead>Visibility</TableHead>
                             <TableHead>Supplier</TableHead>
                             <TableHead>Part #</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Updated</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
+
                           </TableRow>
                         </TableHeader>
                         <TableBody>
