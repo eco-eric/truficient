@@ -88,11 +88,11 @@ export const navSections: NavSection[] = [
       { label: 'Maintenance Contracts', href: '/admin/contracts', icon: ClipboardCheck, permissionKey: 'nav.maintenance-contracts' },
       { label: 'Teams & Crew', href: '/admin/teams', icon: UsersRound, permissionKey: 'nav.teams' },
       { label: 'Timesheets', href: '/admin/timesheets', icon: ClipboardList, permissionKey: 'nav.timesheets' },
-      { label: 'Material Lists', href: '/admin/material-lists', icon: ClipboardList, permissionKey: 'nav.material-lists' },
       { label: 'WorkEdge Projects', href: '/admin/workedge', icon: Camera, permissionKey: 'nav.workedge' },
       { label: 'Job Types', href: '/admin/job-types', icon: Wrench, permissionKey: 'nav.job-types' },
       { label: 'Calendar Settings', href: '/admin/calendars', icon: Settings, permissionKey: 'nav.calendars' },
       { label: 'Knowledge Base', href: '/admin/knowledge-base', icon: BookOpen, permissionKey: 'nav.knowledge-base' },
+
     ],
   },
   {
@@ -123,6 +123,8 @@ export const navSections: NavSection[] = [
     items: [
       { label: 'Job Estimates', href: '/admin/estimates', icon: FileText, permissionKey: 'nav.estimates' },
       { label: 'Templates', href: '/admin/estimate-templates', icon: LayoutTemplate, permissionKey: 'nav.estimate-templates' },
+      { label: 'Material Lists', href: '/admin/material-lists', icon: ClipboardList, permissionKey: 'nav.material-lists' },
+      { label: 'Material Requests', href: '/admin/material-requests', icon: ClipboardList, permissionKey: 'nav.material-requests' },
       { label: 'System Pricing', href: '/admin/system-pricing', icon: DollarSign, permissionKey: 'nav.system-pricing' },
       { label: 'Customer Equipment', href: '/admin/customer-equipment', icon: Package, permissionKey: 'nav.customer-equipment' },
       { label: 'Individual Equipment', href: '/admin/equipment-pricing', icon: Package, permissionKey: 'nav.equipment-pricing' },
@@ -164,7 +166,6 @@ export const navSections: NavSection[] = [
     items: [
       { label: 'Users', href: '/admin/users', icon: Users, permissionKey: 'nav.users' },
       { label: 'Suppliers', href: '/admin/suppliers', icon: Truck, permissionKey: 'nav.suppliers' },
-      { label: 'Material Requests', href: '/admin/material-requests', icon: ClipboardList, permissionKey: 'nav.material-requests' },
       { label: 'Role Permissions', href: '/admin/permissions', icon: Shield, permissionKey: 'nav.permissions' },
       { label: 'AI Settings', href: '/admin/ai-settings', icon: Settings, permissionKey: 'nav.ai-settings' },
       { label: 'Automations', href: '/admin/automations', icon: Wrench, permissionKey: 'nav.automations' },
