@@ -88,6 +88,7 @@ export const navSections: NavSection[] = [
       { label: 'Maintenance Contracts', href: '/admin/contracts', icon: ClipboardCheck, permissionKey: 'nav.maintenance-contracts' },
       { label: 'Teams & Crew', href: '/admin/teams', icon: UsersRound, permissionKey: 'nav.teams' },
       { label: 'Timesheets', href: '/admin/timesheets', icon: ClipboardList, permissionKey: 'nav.timesheets' },
+      { label: 'Material Lists', href: '/admin/material-lists', icon: ClipboardList, permissionKey: 'nav.material-lists' },
       { label: 'WorkEdge Projects', href: '/admin/workedge', icon: Camera, permissionKey: 'nav.workedge' },
       { label: 'Job Types', href: '/admin/job-types', icon: Wrench, permissionKey: 'nav.job-types' },
       { label: 'Calendar Settings', href: '/admin/calendars', icon: Settings, permissionKey: 'nav.calendars' },

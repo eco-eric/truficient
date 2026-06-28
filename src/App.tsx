@@ -103,6 +103,7 @@ const AdminIndividualEquipmentPricing = lazy(() => import("./pages/admin/Individ
 const AdminTrashBin = lazy(() => import("./pages/admin/TrashBin"));
 const AdminSuppliers = lazy(() => import("./pages/admin/Suppliers"));
 const AdminMaterialRequests = lazy(() => import("./pages/admin/MaterialRequests"));
+const AdminMaterialLists = lazy(() => import("./pages/admin/MaterialLists"));
 const AdminAbandonedCarts = lazy(() => import("./pages/admin/AbandonedCarts"));
 const AdminCustomers = lazy(() => import("./pages/admin/Customers"));
 const AdminCustomerDetail = lazy(() => import("./pages/admin/CustomerDetail"));
@@ -334,6 +335,7 @@ const router = createBrowserRouter([
           { path: "/admin/suppliers", element: <ProtectedRoute><AdminSuppliers /></ProtectedRoute> },
           { path: "/admin/material-requests", element: <ProtectedRoute><AdminMaterialRequests /></ProtectedRoute> },
           { path: "/admin/material-requests/:id", element: <ProtectedRoute><AdminMaterialRequests /></ProtectedRoute> },
+          { path: "/admin/material-lists", element: <ProtectedRoute><AdminMaterialLists /></ProtectedRoute> },
           { path: "/admin/button-clicks", element: <ProtectedRoute><AdminButtonClicks /></ProtectedRoute> },
           { path: "/admin/scanner-analytics", element: <ProtectedRoute><AdminScannerAnalytics /></ProtectedRoute> },
           { path: "/admin/lead-sources", element: <ProtectedRoute><AdminLeadSourcesConfig /></ProtectedRoute> },
