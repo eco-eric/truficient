@@ -1501,6 +1501,7 @@ const EstimateBuilder = () => {
                 entityType="estimate"
                 entityId={id}
                 customerId={selectedCustomerId}
+                workedgeProjectId={workedgeProjectId || null}
               />
             )}
 
