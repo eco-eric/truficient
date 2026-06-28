@@ -491,6 +491,33 @@ const Materials = () => {
     }
   };
 
+  // Suppliers directory (active)
+  const { data: allSuppliers = [] } = useQuery({
+    queryKey: ['crm_suppliers', 'active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_suppliers')
+        .select('id, name, is_active')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true, nullsFirst: false })
+        .order('name');
+      if (error) throw error;
+      return data as SupplierLite[];
+    },
+  });
+
+  // material_suppliers rows (all materials, filtered client-side)
+  const { data: allMatSup = [] } = useQuery({
+    queryKey: ['material_suppliers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('material_suppliers')
+        .select('id, material_id, supplier_id, preference_rank');
+      if (error) throw error;
+      return data as MaterialSupplierRow[];
+    },
+  });
+
   const handleOpenDialog = (material?: Material) => {
     if (material) {
       setEditingMaterial(material);
@@ -503,7 +530,17 @@ const Materials = () => {
         supplier: material.supplier || '',
         part_number: material.part_number || '',
         is_active: material.is_active,
+        image_url: material.image_url || '',
+        name_es: material.name_es || '',
+        request_category: material.request_category || '',
+        show_in_estimates: material.show_in_estimates ?? true,
+        show_in_takeoff: material.show_in_takeoff ?? false,
       });
+      setMaterialSuppliers(
+        allMatSup
+          .filter((r) => r.material_id === material.id)
+          .map((r) => ({ ...r })),
+      );
     } else {
       setEditingMaterial(null);
       setFormData({
@@ -515,7 +552,13 @@ const Materials = () => {
         supplier: '',
         part_number: '',
         is_active: true,
+        image_url: '',
+        name_es: '',
+        request_category: '',
+        show_in_estimates: true,
+        show_in_takeoff: false,
       });
+      setMaterialSuppliers([]);
     }
     setIsDialogOpen(true);
   };
@@ -523,11 +566,65 @@ const Materials = () => {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingMaterial(null);
+    setMaterialSuppliers([]);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Reconcile material_suppliers rows for a given material id
+  const syncMaterialSuppliers = async (materialId: string) => {
+    const existing = allMatSup.filter((r) => r.material_id === materialId);
+    const selectedIdsSet = new Set(materialSuppliers.map((r) => r.supplier_id));
+    const existingIdsSet = new Set(existing.map((r) => r.supplier_id));
+
+    // Deletes
+    const toDelete = existing.filter((r) => !selectedIdsSet.has(r.supplier_id));
+    if (toDelete.length) {
+      const { error } = await supabase
+        .from('material_suppliers')
+        .delete()
+        .in('id', toDelete.map((r) => r.id!));
+      if (error) throw error;
+    }
+
+    // Inserts
+    const toInsert = materialSuppliers
+      .filter((r) => !existingIdsSet.has(r.supplier_id))
+      .map((r) => ({
+        material_id: materialId,
+        supplier_id: r.supplier_id,
+        preference_rank: r.preference_rank,
+      }));
+    if (toInsert.length) {
+      const { error } = await supabase.from('material_suppliers').insert(toInsert);
+      if (error) throw error;
+    }
+
+    // Updates (rank changed)
+    const toUpdate = materialSuppliers.filter((r) => {
+      const prev = existing.find((e) => e.supplier_id === r.supplier_id);
+      return prev && prev.preference_rank !== r.preference_rank;
+    });
+    for (const r of toUpdate) {
+      const prev = existing.find((e) => e.supplier_id === r.supplier_id)!;
+      const { error } = await supabase
+        .from('material_suppliers')
+        .update({ preference_rank: r.preference_rank })
+        .eq('id', prev.id!);
+      if (error) throw error;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    // Duplicate rank validation
+    const ranks = materialSuppliers
+      .map((r) => r.preference_rank)
+      .filter((n): n is number => n != null);
+    if (new Set(ranks).size !== ranks.length) {
+      toast.error('Duplicate preference ranks — each rank (1/2/3) can only be used once.');
+      return;
+    }
+
     const data = {
       name: formData.name,
       category: formData.category,
@@ -537,14 +634,45 @@ const Materials = () => {
       supplier: formData.supplier || null,
       part_number: formData.part_number || null,
       is_active: formData.is_active,
+      image_url: formData.image_url || null,
+      name_es: formData.name_es || null,
+      request_category: formData.request_category || null,
+      show_in_estimates: formData.show_in_estimates,
+      show_in_takeoff: formData.show_in_takeoff,
     };
 
-    if (editingMaterial) {
-      updateMutation.mutate({ id: editingMaterial.id, ...data });
-    } else {
-      createMutation.mutate(data);
+    try {
+      let materialId = editingMaterial?.id;
+      if (editingMaterial) {
+        const { error } = await supabase
+          .from('materials_catalog')
+          .update(data)
+          .eq('id', editingMaterial.id);
+        if (error) throw error;
+      } else {
+        const maxOrder = materials
+          .filter((m) => m.category === data.category)
+          .reduce((max, m) => Math.max(max, m.sort_order || 0), 0);
+        const { data: inserted, error } = await supabase
+          .from('materials_catalog')
+          .insert({ ...data, sort_order: maxOrder + 1 })
+          .select('id')
+          .single();
+        if (error) throw error;
+        materialId = inserted!.id;
+      }
+
+      if (materialId) await syncMaterialSuppliers(materialId);
+
+      queryClient.invalidateQueries({ queryKey: ['materials'] });
+      queryClient.invalidateQueries({ queryKey: ['material_suppliers'] });
+      toast.success(editingMaterial ? 'Material updated successfully' : 'Material added successfully');
+      handleCloseDialog();
+    } catch (err: any) {
+      toast.error('Save failed: ' + (err?.message || 'unknown error'));
     }
   };
+
 
   const handleDelete = (id: string, name: string) => {
     if (confirm(`Are you sure you want to delete "${name}"?`)) {
