@@ -154,6 +154,92 @@ export function LinkedRecordsCard({ entityType, entityId, customerId, sourceEsti
     onError: (err: any) => toast.error(err.message),
   });
 
+  // ===== Estimate-side: link a crm_job to this estimate =====
+  const [jobPickerOpen, setJobPickerOpen] = useState(false);
+  const [jobSearch, setJobSearch] = useState('');
+  const [showAllJobs, setShowAllJobs] = useState(false);
+  const [pendingLinkJob, setPendingLinkJob] = useState<any | null>(null);
+
+  // Auto-match a job by the estimate's WorkEdge project id
+  const { data: autoMatchJobs = [] } = useQuery({
+    queryKey: ['estimate-autolink-jobs', workedgeProjectId],
+    queryFn: async () => {
+      if (!workedgeProjectId) return [];
+      const { data } = await supabase
+        .from('crm_jobs')
+        .select('id, job_number, title, source_estimate_id, customer_id')
+        .eq('workedge_project_id', workedgeProjectId)
+        .is('deleted_at', null);
+      return data || [];
+    },
+    enabled: entityType === 'estimate' && !!workedgeProjectId,
+  });
+
+  // Manual picker — search existing jobs
+  const { data: pickerJobs = [] } = useQuery({
+    queryKey: ['estimate-link-job-picker', customerId, showAllJobs, jobSearch],
+    queryFn: async () => {
+      let q = supabase
+        .from('crm_jobs')
+        .select('id, job_number, title, source_estimate_id, customer_id, customer:crm_customers(first_name, last_name, company_name)')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (customerId && !showAllJobs) q = q.eq('customer_id', customerId);
+      if (jobSearch.trim()) {
+        const s = `%${jobSearch.trim()}%`;
+        q = q.or(`job_number.ilike.${s},title.ilike.${s}`);
+      }
+      const { data } = await q;
+      return data || [];
+    },
+    enabled: entityType === 'estimate' && jobPickerOpen,
+  });
+
+  const linkJobToEstimateMutation = useMutation({
+    mutationFn: async (jobId: string) => {
+      const { error } = await supabase
+        .from('crm_jobs')
+        .update({ source_estimate_id: entityId })
+        .eq('id', jobId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['linked-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['linked-estimate'] });
+      queryClient.invalidateQueries({ queryKey: ['crm_job'] });
+      queryClient.invalidateQueries({ queryKey: ['estimate-autolink-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['estimate-link-job-picker'] });
+      setPendingLinkJob(null);
+      setJobPickerOpen(false);
+      setJobSearch('');
+      toast.success('Job linked to estimate');
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const unlinkJobFromEstimateMutation = useMutation({
+    mutationFn: async (jobId: string) => {
+      const { error } = await supabase
+        .from('crm_jobs')
+        .update({ source_estimate_id: null })
+        .eq('id', jobId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['linked-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['linked-estimate'] });
+      queryClient.invalidateQueries({ queryKey: ['crm_job'] });
+      toast.success('Job unlinked');
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const requestLinkJob = (job: any) => {
+    setPendingLinkJob(job);
+  };
+
+
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(value);
 
