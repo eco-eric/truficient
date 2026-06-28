@@ -246,6 +246,7 @@ const EstimateBuilder = () => {
         .from('materials_catalog')
         .select('*')
         .eq('is_active', true)
+        .eq('show_in_estimates', true)
         .order('category')
         .order('name');
       if (error) throw error;
@@ -1500,6 +1501,7 @@ const EstimateBuilder = () => {
                 entityType="estimate"
                 entityId={id}
                 customerId={selectedCustomerId}
+                workedgeProjectId={workedgeProjectId || null}
               />
             )}
 

@@ -2933,27 +2933,45 @@ export type Database = {
       }
       crm_suppliers: {
         Row: {
+          account_number: string | null
+          address: string | null
+          company_id: string
           created_at: string
           id: string
           is_active: boolean
+          is_default: boolean
           name: string
           notes: string | null
+          phone: string | null
+          sort_order: number
           updated_at: string
         }
         Insert: {
+          account_number?: string | null
+          address?: string | null
+          company_id?: string
           created_at?: string
           id?: string
           is_active?: boolean
+          is_default?: boolean
           name: string
           notes?: string | null
+          phone?: string | null
+          sort_order?: number
           updated_at?: string
         }
         Update: {
+          account_number?: string | null
+          address?: string | null
+          company_id?: string
           created_at?: string
           id?: string
           is_active?: boolean
+          is_default?: boolean
           name?: string
           notes?: string | null
+          phone?: string | null
+          sort_order?: number
           updated_at?: string
         }
         Relationships: []
@@ -5829,15 +5847,182 @@ export type Database = {
         }
         Relationships: []
       }
+      material_request_items: {
+        Row: {
+          created_at: string
+          custom_item: string | null
+          from_takeoff: boolean
+          id: string
+          material_id: string | null
+          notes: string | null
+          quantity: number
+          request_id: string
+          sort_order: number
+          unit: string | null
+        }
+        Insert: {
+          created_at?: string
+          custom_item?: string | null
+          from_takeoff?: boolean
+          id?: string
+          material_id?: string | null
+          notes?: string | null
+          quantity?: number
+          request_id: string
+          sort_order?: number
+          unit?: string | null
+        }
+        Update: {
+          created_at?: string
+          custom_item?: string | null
+          from_takeoff?: boolean
+          id?: string
+          material_id?: string | null
+          notes?: string | null
+          quantity?: number
+          request_id?: string
+          sort_order?: number
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_request_items_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "material_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      material_requests: {
+        Row: {
+          company_id: string
+          created_at: string
+          customer_id: string | null
+          fulfilled_at: string | null
+          id: string
+          job_id: string | null
+          list_name: string | null
+          notes: string | null
+          requested_by: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_estimate_id: string | null
+          status: Database["public"]["Enums"]["material_request_status"]
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string
+          created_at?: string
+          customer_id?: string | null
+          fulfilled_at?: string | null
+          id?: string
+          job_id?: string | null
+          list_name?: string | null
+          notes?: string | null
+          requested_by: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_estimate_id?: string | null
+          status?: Database["public"]["Enums"]["material_request_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          customer_id?: string | null
+          fulfilled_at?: string | null
+          id?: string
+          job_id?: string | null
+          list_name?: string | null
+          notes?: string | null
+          requested_by?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_estimate_id?: string | null
+          status?: Database["public"]["Enums"]["material_request_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_requests_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "crm_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      material_suppliers: {
+        Row: {
+          created_at: string
+          id: string
+          material_id: string
+          preference_rank: number | null
+          supplier_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          material_id: string
+          preference_rank?: number | null
+          supplier_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          material_id?: string
+          preference_rank?: number | null
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_suppliers_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_suppliers_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "crm_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       materials_catalog: {
         Row: {
           category: Database["public"]["Enums"]["material_category"]
           created_at: string
           description: string | null
           id: string
+          image_url: string | null
           is_active: boolean
           name: string
+          name_es: string | null
           part_number: string | null
+          request_category: string | null
+          show_in_estimates: boolean
+          show_in_takeoff: boolean
           sort_order: number | null
           supplier: string | null
           unit: string
@@ -5849,9 +6034,14 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
           name: string
+          name_es?: string | null
           part_number?: string | null
+          request_category?: string | null
+          show_in_estimates?: boolean
+          show_in_takeoff?: boolean
           sort_order?: number | null
           supplier?: string | null
           unit?: string
@@ -5863,9 +6053,14 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
           name?: string
+          name_es?: string | null
           part_number?: string | null
+          request_category?: string | null
+          show_in_estimates?: boolean
+          show_in_takeoff?: boolean
           sort_order?: number | null
           supplier?: string | null
           unit?: string
@@ -7043,6 +7238,12 @@ export type Database = {
         | "controls"
         | "supports"
         | "misc"
+      material_request_status:
+        | "draft"
+        | "submitted"
+        | "reviewed"
+        | "fulfilled"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -7234,6 +7435,13 @@ export const Constants = {
         "controls",
         "supports",
         "misc",
+      ],
+      material_request_status: [
+        "draft",
+        "submitted",
+        "reviewed",
+        "fulfilled",
+        "cancelled",
       ],
     },
   },

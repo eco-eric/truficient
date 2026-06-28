@@ -30,9 +30,20 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ClipboardList, Plus, Trash2, GripVertical, Loader2, FileDown, Copy, Mail } from 'lucide-react';
+import { ClipboardList, Plus, Trash2, GripVertical, Loader2, FileDown, Copy, Mail, Send } from 'lucide-react';
 import { downloadJobListPDF } from '@/utils/generateJobListPDF';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   DndContext,
   closestCenter,
@@ -78,11 +89,14 @@ interface JobListItem {
   sort_order: number;
 }
 
-const INCLUDED_SECTIONS = ['equipment_controls', 'miscellaneous_inside', 'ducting'];
+const INCLUDED_SECTIONS = ['equipment_controls', 'miscellaneous_inside', 'miscellaneous_outside', 'ducting'];
 
 export const JobListPanel = ({ estimateId }: JobListPanelProps) => {
   const qc = useQueryClient();
   const [emailOpen, setEmailOpen] = useState(false);
+  const [pushConfirmOpen, setPushConfirmOpen] = useState(false);
+
+
 
 
   const { data: jobList, isLoading } = useQuery({
@@ -247,6 +261,76 @@ export const JobListPanel = ({ estimateId }: JobListPanelProps) => {
     onError: (e: any) => toast.error(e.message || 'Reorder failed'),
   });
 
+  const pushToTakeoffMutation = useMutation({
+    mutationFn: async () => {
+      if (!jobList || items.length === 0) throw new Error('No job list items to push');
+
+      // Resolve job via source_estimate_id
+      const { data: jobRow, error: jobErr } = await supabase
+        .from('crm_jobs')
+        .select('id, customer_id')
+        .eq('source_estimate_id', estimateId)
+        .is('deleted_at', null)
+        .limit(1)
+        .maybeSingle();
+      if (jobErr) throw jobErr;
+
+      const userRes = await supabase.auth.getUser();
+      const userId = userRes.data.user?.id;
+      if (!userId) throw new Error('Not signed in');
+
+      const listName = `From Estimate ${estimateMeta?.estimate_number ?? ''}`.trim() || 'From Estimate';
+
+      const { data: newReq, error: reqErr } = await supabase
+        .from('material_requests')
+        .insert({
+          job_id: jobRow?.id ?? null,
+          customer_id: jobRow?.customer_id ?? null,
+          source_estimate_id: estimateId,
+          list_name: listName,
+          requested_by: userId,
+          status: 'draft',
+        })
+        .select('id, job_id')
+        .single();
+      if (reqErr) throw reqErr;
+
+      const rows = items.map((i, idx) => ({
+        request_id: newReq.id,
+        material_id: null,
+        custom_item: i.name,
+        notes: i.description ?? null,
+        quantity: i.quantity,
+        unit: i.unit || 'each',
+        from_takeoff: true,
+        sort_order: i.sort_order ?? idx,
+      }));
+      const { error: itemsErr } = await supabase.from('material_request_items').insert(rows);
+      if (itemsErr) throw itemsErr;
+
+      return { requestId: newReq.id, jobId: newReq.job_id as string | null };
+    },
+    onSuccess: ({ jobId }) => {
+      if (jobId) {
+        toast.success('Pushed to Material Takeoff', {
+          description: 'Created a new field Material List attached to the job.',
+          action: {
+            label: 'Open Job',
+            onClick: () => {
+              window.location.href = `/admin/jobs/${jobId}?tab=materials`;
+            },
+          },
+        });
+      } else {
+        toast.success('Pushed to Material Takeoff', {
+          description: 'Created as an unattached list — attach it to a job later.',
+        });
+      }
+      setPushConfirmOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to push to takeoff'),
+  });
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -356,6 +440,30 @@ export const JobListPanel = ({ estimateId }: JobListPanelProps) => {
             <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={items.length === 0}>
               <FileDown className="h-4 w-4" /> Export PDF
             </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPushConfirmOpen(true)}
+                      disabled={items.length === 0 || pushToTakeoffMutation.isPending}
+                    >
+                      {pushToTakeoffMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                      Push to Material Takeoff
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {items.length === 0 && (
+                  <TooltipContent>Generate the Job List first.</TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
             <Button
               size="sm"
               onClick={() => setEmailOpen(true)}
@@ -455,6 +563,33 @@ export const JobListPanel = ({ estimateId }: JobListPanelProps) => {
           setEmailOpen(false);
         }}
       />
+      <AlertDialog open={pushConfirmOpen} onOpenChange={setPushConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Push to Material Takeoff?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Push these {items.length} item{items.length === 1 ? '' : 's'} to a new field Material Takeoff list?
+              The field crew will see it under Material Lists. This creates a separate list and does not change
+              your Job List.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={pushToTakeoffMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                pushToTakeoffMutation.mutate();
+              }}
+              disabled={pushToTakeoffMutation.isPending}
+            >
+              {pushToTakeoffMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Push to Takeoff
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };

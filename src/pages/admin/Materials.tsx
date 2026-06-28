@@ -51,6 +51,8 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { ImageUpload } from '@/components/admin/ImageUpload';
+
 
 type MaterialCategory = 'refrigerant' | 'copper' | 'electrical' | 'ductwork' | 'controls' | 'supports' | 'misc';
 
@@ -67,7 +69,30 @@ interface Material {
   sort_order: number;
   created_at: string;
   updated_at: string;
+  image_url: string | null;
+  name_es: string | null;
+  request_category: string | null;
+  show_in_estimates: boolean;
+  show_in_takeoff: boolean;
 }
+
+interface SupplierLite {
+  id: string;
+  name: string;
+  is_active: boolean;
+}
+
+interface MaterialSupplierRow {
+  id?: string;
+  material_id?: string;
+  supplier_id: string;
+  preference_rank: number | null;
+}
+
+const REQUEST_CATEGORIES = ['Tools', 'Electrical', 'Refrigerant', 'Install Materials'];
+const MATERIAL_IMAGE_BUCKET = 'gallery-images';
+const MATERIAL_IMAGE_FOLDER = 'materials';
+
 
 const CATEGORIES: { value: MaterialCategory; label: string }[] = [
   { value: 'refrigerant', label: 'Refrigerant' },
@@ -129,10 +154,33 @@ const SortableRow = ({ material, selectedIds, toggleSelect, onClone, onEdit, onD
           aria-label={`Select ${material.name}`}
         />
       </TableCell>
-      <TableCell className="font-medium">{material.name}</TableCell>
+      <TableCell className="font-medium">
+        <div className="flex items-center gap-2">
+          {material.image_url ? (
+            <img
+              src={material.image_url}
+              alt=""
+              className="h-8 w-8 rounded object-cover border"
+            />
+          ) : (
+            <div className="h-8 w-8 rounded border bg-muted" />
+          )}
+          <span>{material.name}</span>
+        </div>
+      </TableCell>
       <TableCell>{material.unit}</TableCell>
       <TableCell className="text-right font-mono">
         ${material.unit_cost.toFixed(2)}
+      </TableCell>
+      <TableCell>
+        <div className="flex gap-1">
+          {material.show_in_estimates && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-800">Est</span>
+          )}
+          {material.show_in_takeoff && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-800">Field</span>
+          )}
+        </div>
       </TableCell>
       <TableCell className="text-muted-foreground">
         {material.supplier || '—'}
@@ -149,6 +197,7 @@ const SortableRow = ({ material, selectedIds, toggleSelect, onClone, onEdit, onD
           {material.is_active ? 'Active' : 'Inactive'}
         </span>
       </TableCell>
+
       <TableCell className="text-muted-foreground text-sm">
         {format(new Date(material.updated_at), 'MMM d, yyyy')}
       </TableCell>
@@ -191,6 +240,7 @@ const Materials = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showFieldOnly, setShowFieldOnly] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     category: 'refrigerant' as MaterialCategory,
@@ -200,7 +250,14 @@ const Materials = () => {
     supplier: '',
     part_number: '',
     is_active: true,
+    image_url: '' as string,
+    name_es: '',
+    request_category: '' as string,
+    show_in_estimates: true,
+    show_in_takeoff: false,
   });
+  const [materialSuppliers, setMaterialSuppliers] = useState<MaterialSupplierRow[]>([]);
+
 
   // DnD sensors
   const sensors = useSensors(
@@ -460,6 +517,33 @@ const Materials = () => {
     }
   };
 
+  // Suppliers directory (active)
+  const { data: allSuppliers = [] } = useQuery({
+    queryKey: ['crm_suppliers', 'active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_suppliers')
+        .select('id, name, is_active')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true, nullsFirst: false })
+        .order('name');
+      if (error) throw error;
+      return data as SupplierLite[];
+    },
+  });
+
+  // material_suppliers rows (all materials, filtered client-side)
+  const { data: allMatSup = [] } = useQuery({
+    queryKey: ['material_suppliers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('material_suppliers')
+        .select('id, material_id, supplier_id, preference_rank');
+      if (error) throw error;
+      return data as MaterialSupplierRow[];
+    },
+  });
+
   const handleOpenDialog = (material?: Material) => {
     if (material) {
       setEditingMaterial(material);
@@ -472,7 +556,17 @@ const Materials = () => {
         supplier: material.supplier || '',
         part_number: material.part_number || '',
         is_active: material.is_active,
+        image_url: material.image_url || '',
+        name_es: material.name_es || '',
+        request_category: material.request_category || '',
+        show_in_estimates: material.show_in_estimates ?? true,
+        show_in_takeoff: material.show_in_takeoff ?? false,
       });
+      setMaterialSuppliers(
+        allMatSup
+          .filter((r) => r.material_id === material.id)
+          .map((r) => ({ ...r })),
+      );
     } else {
       setEditingMaterial(null);
       setFormData({
@@ -484,7 +578,13 @@ const Materials = () => {
         supplier: '',
         part_number: '',
         is_active: true,
+        image_url: '',
+        name_es: '',
+        request_category: '',
+        show_in_estimates: true,
+        show_in_takeoff: false,
       });
+      setMaterialSuppliers([]);
     }
     setIsDialogOpen(true);
   };
@@ -492,11 +592,65 @@ const Materials = () => {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingMaterial(null);
+    setMaterialSuppliers([]);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Reconcile material_suppliers rows for a given material id
+  const syncMaterialSuppliers = async (materialId: string) => {
+    const existing = allMatSup.filter((r) => r.material_id === materialId);
+    const selectedIdsSet = new Set(materialSuppliers.map((r) => r.supplier_id));
+    const existingIdsSet = new Set(existing.map((r) => r.supplier_id));
+
+    // Deletes
+    const toDelete = existing.filter((r) => !selectedIdsSet.has(r.supplier_id));
+    if (toDelete.length) {
+      const { error } = await supabase
+        .from('material_suppliers')
+        .delete()
+        .in('id', toDelete.map((r) => r.id!));
+      if (error) throw error;
+    }
+
+    // Inserts
+    const toInsert = materialSuppliers
+      .filter((r) => !existingIdsSet.has(r.supplier_id))
+      .map((r) => ({
+        material_id: materialId,
+        supplier_id: r.supplier_id,
+        preference_rank: r.preference_rank,
+      }));
+    if (toInsert.length) {
+      const { error } = await supabase.from('material_suppliers').insert(toInsert);
+      if (error) throw error;
+    }
+
+    // Updates (rank changed)
+    const toUpdate = materialSuppliers.filter((r) => {
+      const prev = existing.find((e) => e.supplier_id === r.supplier_id);
+      return prev && prev.preference_rank !== r.preference_rank;
+    });
+    for (const r of toUpdate) {
+      const prev = existing.find((e) => e.supplier_id === r.supplier_id)!;
+      const { error } = await supabase
+        .from('material_suppliers')
+        .update({ preference_rank: r.preference_rank })
+        .eq('id', prev.id!);
+      if (error) throw error;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    // Duplicate rank validation
+    const ranks = materialSuppliers
+      .map((r) => r.preference_rank)
+      .filter((n): n is number => n != null);
+    if (new Set(ranks).size !== ranks.length) {
+      toast.error('Duplicate preference ranks — each rank (1/2/3) can only be used once.');
+      return;
+    }
+
     const data = {
       name: formData.name,
       category: formData.category,
@@ -506,14 +660,45 @@ const Materials = () => {
       supplier: formData.supplier || null,
       part_number: formData.part_number || null,
       is_active: formData.is_active,
+      image_url: formData.image_url || null,
+      name_es: formData.name_es || null,
+      request_category: formData.request_category || null,
+      show_in_estimates: formData.show_in_estimates,
+      show_in_takeoff: formData.show_in_takeoff,
     };
 
-    if (editingMaterial) {
-      updateMutation.mutate({ id: editingMaterial.id, ...data });
-    } else {
-      createMutation.mutate(data);
+    try {
+      let materialId = editingMaterial?.id;
+      if (editingMaterial) {
+        const { error } = await supabase
+          .from('materials_catalog')
+          .update(data)
+          .eq('id', editingMaterial.id);
+        if (error) throw error;
+      } else {
+        const maxOrder = materials
+          .filter((m) => m.category === data.category)
+          .reduce((max, m) => Math.max(max, m.sort_order || 0), 0);
+        const { data: inserted, error } = await supabase
+          .from('materials_catalog')
+          .insert({ ...data, sort_order: maxOrder + 1 })
+          .select('id')
+          .single();
+        if (error) throw error;
+        materialId = inserted!.id;
+      }
+
+      if (materialId) await syncMaterialSuppliers(materialId);
+
+      queryClient.invalidateQueries({ queryKey: ['materials'] });
+      queryClient.invalidateQueries({ queryKey: ['material_suppliers'] });
+      toast.success(editingMaterial ? 'Material updated successfully' : 'Material added successfully');
+      handleCloseDialog();
+    } catch (err: any) {
+      toast.error('Save failed: ' + (err?.message || 'unknown error'));
     }
   };
+
 
   const handleDelete = (id: string, name: string) => {
     if (confirm(`Are you sure you want to delete "${name}"?`)) {
@@ -523,7 +708,9 @@ const Materials = () => {
 
   const filteredMaterials = materials
     .filter(m => m.category === activeTab)
+    .filter(m => (showFieldOnly ? m.show_in_takeoff : true))
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
 
   // Selection handlers
   const toggleSelect = (id: string) => {
@@ -569,10 +756,23 @@ const Materials = () => {
               <p className="text-muted-foreground">Manage materials and pricing for estimates</p>
             </div>
           </div>
-          <Button onClick={() => handleOpenDialog()}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Material
-          </Button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="show-field-only"
+                checked={showFieldOnly}
+                onCheckedChange={setShowFieldOnly}
+              />
+              <Label htmlFor="show-field-only" className="text-sm cursor-pointer">
+                Field catalog only
+              </Label>
+            </div>
+            <Button onClick={() => handleOpenDialog()}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Material
+            </Button>
+          </div>
+
         </div>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as MaterialCategory)}>
@@ -652,11 +852,13 @@ const Materials = () => {
                             <TableHead>Name</TableHead>
                             <TableHead>Unit</TableHead>
                             <TableHead className="text-right">Unit Cost</TableHead>
+                            <TableHead>Visibility</TableHead>
                             <TableHead>Supplier</TableHead>
                             <TableHead>Part #</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Updated</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
+
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -688,7 +890,7 @@ const Materials = () => {
 
         {/* Add/Edit Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingMaterial ? 'Edit Material' : 'Add New Material'}
@@ -802,7 +1004,143 @@ const Materials = () => {
                     onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
                   />
                 </div>
+
+                {/* Visibility */}
+                <div className="space-y-3 rounded-md border p-3">
+                  <div>
+                    <div className="font-semibold text-sm">Visibility</div>
+                    <p className="text-xs text-muted-foreground">
+                      Estimates = appears in the estimate builder with cost. Takeoff = appears in the field material catalog (no cost shown).
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show_in_estimates" className="text-sm font-normal">Show in Estimates</Label>
+                    <Switch
+                      id="show_in_estimates"
+                      checked={formData.show_in_estimates}
+                      onCheckedChange={(v) => setFormData({ ...formData, show_in_estimates: v })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show_in_takeoff" className="text-sm font-normal">Show in Takeoff / Field</Label>
+                    <Switch
+                      id="show_in_takeoff"
+                      checked={formData.show_in_takeoff}
+                      onCheckedChange={(v) => setFormData({ ...formData, show_in_takeoff: v })}
+                    />
+                  </div>
+                </div>
+
+                {/* Field info */}
+                <div className="space-y-3 rounded-md border p-3">
+                  <div className="font-semibold text-sm">Field info</div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm">Photo</Label>
+                    <ImageUpload
+                      bucketName={MATERIAL_IMAGE_BUCKET}
+                      folder={MATERIAL_IMAGE_FOLDER}
+                      currentUrl={formData.image_url || null}
+                      onUpload={(url) => setFormData({ ...formData, image_url: url })}
+                      onRemove={() => setFormData({ ...formData, image_url: '' })}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name_es">Spanish name (field display)</Label>
+                      <Input
+                        id="name_es"
+                        value={formData.name_es}
+                        onChange={(e) => setFormData({ ...formData, name_es: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="request_category">Request category</Label>
+                      <Select
+                        value={formData.request_category || '__none'}
+                        onValueChange={(v) => setFormData({ ...formData, request_category: v === '__none' ? '' : v })}
+                      >
+                        <SelectTrigger id="request_category">
+                          <SelectValue placeholder="None" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none">None</SelectItem>
+                          {REQUEST_CATEGORIES.map((c) => (
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Suppliers (Where to buy) */}
+                <div className="space-y-3 rounded-md border p-3">
+                  <div>
+                    <div className="font-semibold text-sm">Where to buy</div>
+                    <p className="text-xs text-muted-foreground">
+                      Tag the supply houses that carry this material. Leave rank blank for "any of these". Use 1/2/3 to set a preferred order.
+                    </p>
+                  </div>
+                  {allSuppliers.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No active suppliers. Add them in Suppliers.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {allSuppliers.map((s) => {
+                        const row = materialSuppliers.find((r) => r.supplier_id === s.id);
+                        const checked = !!row;
+                        return (
+                          <div key={s.id} className="flex items-center justify-between gap-3">
+                            <label className="flex items-center gap-2 text-sm cursor-pointer">
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={(v) => {
+                                  if (v) {
+                                    setMaterialSuppliers([
+                                      ...materialSuppliers,
+                                      { supplier_id: s.id, preference_rank: null },
+                                    ]);
+                                  } else {
+                                    setMaterialSuppliers(
+                                      materialSuppliers.filter((r) => r.supplier_id !== s.id),
+                                    );
+                                  }
+                                }}
+                              />
+                              <span>{s.name}</span>
+                            </label>
+                            {checked && (
+                              <Select
+                                value={row?.preference_rank == null ? '__blank' : String(row.preference_rank)}
+                                onValueChange={(v) => {
+                                  const rank = v === '__blank' ? null : parseInt(v, 10);
+                                  setMaterialSuppliers(
+                                    materialSuppliers.map((r) =>
+                                      r.supplier_id === s.id ? { ...r, preference_rank: rank } : r,
+                                    ),
+                                  );
+                                }}
+                              >
+                                <SelectTrigger className="w-24 h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__blank">Any</SelectItem>
+                                  <SelectItem value="1">1</SelectItem>
+                                  <SelectItem value="2">2</SelectItem>
+                                  <SelectItem value="3">3</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
+
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={handleCloseDialog}>

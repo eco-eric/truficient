@@ -92,6 +92,7 @@ export const navSections: NavSection[] = [
       { label: 'Job Types', href: '/admin/job-types', icon: Wrench, permissionKey: 'nav.job-types' },
       { label: 'Calendar Settings', href: '/admin/calendars', icon: Settings, permissionKey: 'nav.calendars' },
       { label: 'Knowledge Base', href: '/admin/knowledge-base', icon: BookOpen, permissionKey: 'nav.knowledge-base' },
+
     ],
   },
   {
@@ -122,6 +123,8 @@ export const navSections: NavSection[] = [
     items: [
       { label: 'Job Estimates', href: '/admin/estimates', icon: FileText, permissionKey: 'nav.estimates' },
       { label: 'Templates', href: '/admin/estimate-templates', icon: LayoutTemplate, permissionKey: 'nav.estimate-templates' },
+      { label: 'Material Lists', href: '/admin/material-lists', icon: ClipboardList, permissionKey: 'nav.material-lists' },
+      { label: 'Material Requests', href: '/admin/material-requests', icon: ClipboardList, permissionKey: 'nav.material-requests' },
       { label: 'System Pricing', href: '/admin/system-pricing', icon: DollarSign, permissionKey: 'nav.system-pricing' },
       { label: 'Customer Equipment', href: '/admin/customer-equipment', icon: Package, permissionKey: 'nav.customer-equipment' },
       { label: 'Individual Equipment', href: '/admin/equipment-pricing', icon: Package, permissionKey: 'nav.equipment-pricing' },
