@@ -440,6 +440,30 @@ export const JobListPanel = ({ estimateId }: JobListPanelProps) => {
             <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={items.length === 0}>
               <FileDown className="h-4 w-4" /> Export PDF
             </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPushConfirmOpen(true)}
+                      disabled={items.length === 0 || pushToTakeoffMutation.isPending}
+                    >
+                      {pushToTakeoffMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                      Push to Material Takeoff
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {items.length === 0 && (
+                  <TooltipContent>Generate the Job List first.</TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
             <Button
               size="sm"
               onClick={() => setEmailOpen(true)}
