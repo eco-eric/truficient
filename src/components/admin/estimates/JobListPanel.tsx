@@ -30,9 +30,21 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ClipboardList, Plus, Trash2, GripVertical, Loader2, FileDown, Copy, Mail } from 'lucide-react';
+import { ClipboardList, Plus, Trash2, GripVertical, Loader2, FileDown, Copy, Mail, Send } from 'lucide-react';
 import { downloadJobListPDF } from '@/utils/generateJobListPDF';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Link } from 'react-router-dom';
 import {
   DndContext,
   closestCenter,
