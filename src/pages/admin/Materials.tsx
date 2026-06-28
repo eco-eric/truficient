@@ -754,10 +754,23 @@ const Materials = () => {
               <p className="text-muted-foreground">Manage materials and pricing for estimates</p>
             </div>
           </div>
-          <Button onClick={() => handleOpenDialog()}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Material
-          </Button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="show-field-only"
+                checked={showFieldOnly}
+                onCheckedChange={setShowFieldOnly}
+              />
+              <Label htmlFor="show-field-only" className="text-sm cursor-pointer">
+                Field catalog only
+              </Label>
+            </div>
+            <Button onClick={() => handleOpenDialog()}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Material
+            </Button>
+          </div>
+
         </div>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as MaterialCategory)}>
