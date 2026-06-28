@@ -189,6 +189,12 @@ function SupplierRow({
 }) {
   const [name, setName] = useState(supplier.name);
   const [notes, setNotes] = useState(supplier.notes || '');
+  const [address, setAddress] = useState(supplier.address || '');
+  const [phone, setPhone] = useState(supplier.phone || '');
+  const [account, setAccount] = useState(supplier.account_number || '');
+  const [sortOrder, setSortOrder] = useState(
+    supplier.sort_order != null ? String(supplier.sort_order) : '',
+  );
   const activeCount = contacts.filter((c) => c.is_active).length;
 
   return (
@@ -200,9 +206,19 @@ function SupplierRow({
               {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
               <span className="font-medium" style={{ color: NAVY }}>{supplier.name}</span>
               <Badge variant="secondary">{activeCount} / {contacts.length} contacts</Badge>
+              {supplier.is_default && (
+                <Badge style={{ backgroundColor: GOLD, color: NAVY }}>Default</Badge>
+              )}
               {!supplier.is_active && <Badge variant="outline">Inactive</Badge>}
             </div>
             <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Default</span>
+                <Switch
+                  checked={supplier.is_default}
+                  onCheckedChange={(v) => onUpdate({ is_default: v })}
+                />
+              </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">Active</span>
                 <Switch
@@ -225,6 +241,42 @@ function SupplierRow({
                 />
               </div>
               <div>
+                <label className="text-xs text-muted-foreground">Phone</label>
+                <Input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  onBlur={() => phone !== (supplier.phone || '') && onUpdate({ phone: phone || null })}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="text-xs text-muted-foreground">Address</label>
+                <Input
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  onBlur={() => address !== (supplier.address || '') && onUpdate({ address: address || null })}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Account Number</label>
+                <Input
+                  value={account}
+                  onChange={(e) => setAccount(e.target.value)}
+                  onBlur={() => account !== (supplier.account_number || '') && onUpdate({ account_number: account || null })}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Sort Order</label>
+                <Input
+                  type="number"
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value)}
+                  onBlur={() => {
+                    const v = sortOrder === '' ? null : Number(sortOrder);
+                    if (v !== supplier.sort_order) onUpdate({ sort_order: v as any });
+                  }}
+                />
+              </div>
+              <div className="md:col-span-2">
                 <label className="text-xs text-muted-foreground">Notes</label>
                 <Textarea
                   value={notes}
@@ -234,6 +286,7 @@ function SupplierRow({
                 />
               </div>
             </div>
+
 
             <ContactsTable supplierId={supplier.id} contacts={contacts} />
 
