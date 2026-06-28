@@ -262,6 +262,76 @@ export const JobListPanel = ({ estimateId }: JobListPanelProps) => {
     onError: (e: any) => toast.error(e.message || 'Reorder failed'),
   });
 
+  const pushToTakeoffMutation = useMutation({
+    mutationFn: async () => {
+      if (!jobList || items.length === 0) throw new Error('No job list items to push');
+
+      // Resolve job via source_estimate_id
+      const { data: jobRow, error: jobErr } = await supabase
+        .from('crm_jobs')
+        .select('id, customer_id')
+        .eq('source_estimate_id', estimateId)
+        .is('deleted_at', null)
+        .limit(1)
+        .maybeSingle();
+      if (jobErr) throw jobErr;
+
+      const userRes = await supabase.auth.getUser();
+      const userId = userRes.data.user?.id;
+      if (!userId) throw new Error('Not signed in');
+
+      const listName = `From Estimate ${estimateMeta?.estimate_number ?? ''}`.trim() || 'From Estimate';
+
+      const { data: newReq, error: reqErr } = await supabase
+        .from('material_requests')
+        .insert({
+          job_id: jobRow?.id ?? null,
+          customer_id: jobRow?.customer_id ?? null,
+          source_estimate_id: estimateId,
+          list_name: listName,
+          requested_by: userId,
+          status: 'draft',
+        })
+        .select('id, job_id')
+        .single();
+      if (reqErr) throw reqErr;
+
+      const rows = items.map((i, idx) => ({
+        request_id: newReq.id,
+        material_id: null,
+        custom_item: i.name,
+        notes: i.description ?? null,
+        quantity: i.quantity,
+        unit: i.unit || 'each',
+        from_takeoff: true,
+        sort_order: i.sort_order ?? idx,
+      }));
+      const { error: itemsErr } = await supabase.from('material_request_items').insert(rows);
+      if (itemsErr) throw itemsErr;
+
+      return { requestId: newReq.id, jobId: newReq.job_id as string | null };
+    },
+    onSuccess: ({ jobId }) => {
+      if (jobId) {
+        toast.success('Pushed to Material Takeoff', {
+          description: 'Created a new field Material List attached to the job.',
+          action: {
+            label: 'Open Job',
+            onClick: () => {
+              window.location.href = `/admin/jobs/${jobId}?tab=materials`;
+            },
+          },
+        });
+      } else {
+        toast.success('Pushed to Material Takeoff', {
+          description: 'Created as an unattached list — attach it to a job later.',
+        });
+      }
+      setPushConfirmOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to push to takeoff'),
+  });
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
