@@ -1002,7 +1002,143 @@ const Materials = () => {
                     onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
                   />
                 </div>
+
+                {/* Visibility */}
+                <div className="space-y-3 rounded-md border p-3">
+                  <div>
+                    <div className="font-semibold text-sm">Visibility</div>
+                    <p className="text-xs text-muted-foreground">
+                      Estimates = appears in the estimate builder with cost. Takeoff = appears in the field material catalog (no cost shown).
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show_in_estimates" className="text-sm font-normal">Show in Estimates</Label>
+                    <Switch
+                      id="show_in_estimates"
+                      checked={formData.show_in_estimates}
+                      onCheckedChange={(v) => setFormData({ ...formData, show_in_estimates: v })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show_in_takeoff" className="text-sm font-normal">Show in Takeoff / Field</Label>
+                    <Switch
+                      id="show_in_takeoff"
+                      checked={formData.show_in_takeoff}
+                      onCheckedChange={(v) => setFormData({ ...formData, show_in_takeoff: v })}
+                    />
+                  </div>
+                </div>
+
+                {/* Field info */}
+                <div className="space-y-3 rounded-md border p-3">
+                  <div className="font-semibold text-sm">Field info</div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm">Photo</Label>
+                    <ImageUpload
+                      bucketName={MATERIAL_IMAGE_BUCKET}
+                      folder={MATERIAL_IMAGE_FOLDER}
+                      currentUrl={formData.image_url || null}
+                      onUpload={(url) => setFormData({ ...formData, image_url: url })}
+                      onRemove={() => setFormData({ ...formData, image_url: '' })}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name_es">Spanish name (field display)</Label>
+                      <Input
+                        id="name_es"
+                        value={formData.name_es}
+                        onChange={(e) => setFormData({ ...formData, name_es: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="request_category">Request category</Label>
+                      <Select
+                        value={formData.request_category || '__none'}
+                        onValueChange={(v) => setFormData({ ...formData, request_category: v === '__none' ? '' : v })}
+                      >
+                        <SelectTrigger id="request_category">
+                          <SelectValue placeholder="None" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none">None</SelectItem>
+                          {REQUEST_CATEGORIES.map((c) => (
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Suppliers (Where to buy) */}
+                <div className="space-y-3 rounded-md border p-3">
+                  <div>
+                    <div className="font-semibold text-sm">Where to buy</div>
+                    <p className="text-xs text-muted-foreground">
+                      Tag the supply houses that carry this material. Leave rank blank for "any of these". Use 1/2/3 to set a preferred order.
+                    </p>
+                  </div>
+                  {allSuppliers.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No active suppliers. Add them in Suppliers.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {allSuppliers.map((s) => {
+                        const row = materialSuppliers.find((r) => r.supplier_id === s.id);
+                        const checked = !!row;
+                        return (
+                          <div key={s.id} className="flex items-center justify-between gap-3">
+                            <label className="flex items-center gap-2 text-sm cursor-pointer">
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={(v) => {
+                                  if (v) {
+                                    setMaterialSuppliers([
+                                      ...materialSuppliers,
+                                      { supplier_id: s.id, preference_rank: null },
+                                    ]);
+                                  } else {
+                                    setMaterialSuppliers(
+                                      materialSuppliers.filter((r) => r.supplier_id !== s.id),
+                                    );
+                                  }
+                                }}
+                              />
+                              <span>{s.name}</span>
+                            </label>
+                            {checked && (
+                              <Select
+                                value={row?.preference_rank == null ? '__blank' : String(row.preference_rank)}
+                                onValueChange={(v) => {
+                                  const rank = v === '__blank' ? null : parseInt(v, 10);
+                                  setMaterialSuppliers(
+                                    materialSuppliers.map((r) =>
+                                      r.supplier_id === s.id ? { ...r, preference_rank: rank } : r,
+                                    ),
+                                  );
+                                }}
+                              >
+                                <SelectTrigger className="w-24 h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__blank">Any</SelectItem>
+                                  <SelectItem value="1">1</SelectItem>
+                                  <SelectItem value="2">2</SelectItem>
+                                  <SelectItem value="3">3</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
+
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={handleCloseDialog}>
