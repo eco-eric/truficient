@@ -2949,7 +2949,7 @@ export type Database = {
         Insert: {
           account_number?: string | null
           address?: string | null
-          company_id: string
+          company_id?: string
           created_at?: string
           id?: string
           is_active?: boolean
@@ -5920,7 +5920,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          company_id: string
+          company_id?: string
           created_at?: string
           customer_id?: string | null
           fulfilled_at?: string | null

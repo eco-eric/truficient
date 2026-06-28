@@ -92,6 +92,7 @@ const TemplateBuilder = () => {
         .from('materials_catalog')
         .select('*')
         .eq('is_active', true)
+        .eq('show_in_estimates', true)
         .order('category')
         .order('name');
       if (error) throw error;
