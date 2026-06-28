@@ -31,7 +31,7 @@ interface LinkedRecordsCardProps {
   workedgeProjectId?: string | null;
 }
 
-export function LinkedRecordsCard({ entityType, entityId, customerId, sourceEstimateId, sourcePipelineId }: LinkedRecordsCardProps) {
+export function LinkedRecordsCard({ entityType, entityId, customerId, sourceEstimateId, sourcePipelineId, workedgeProjectId }: LinkedRecordsCardProps) {
   const queryClient = useQueryClient();
   const [linkingType, setLinkingType] = useState<'estimate' | 'pipeline' | 'job' | null>(null);
 
