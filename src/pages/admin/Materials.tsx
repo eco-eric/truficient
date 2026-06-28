@@ -67,7 +67,30 @@ interface Material {
   sort_order: number;
   created_at: string;
   updated_at: string;
+  image_url: string | null;
+  name_es: string | null;
+  request_category: string | null;
+  show_in_estimates: boolean;
+  show_in_takeoff: boolean;
 }
+
+interface SupplierLite {
+  id: string;
+  name: string;
+  is_active: boolean;
+}
+
+interface MaterialSupplierRow {
+  id?: string;
+  material_id?: string;
+  supplier_id: string;
+  preference_rank: number | null;
+}
+
+const REQUEST_CATEGORIES = ['Tools', 'Electrical', 'Refrigerant', 'Install Materials'];
+const MATERIAL_IMAGE_BUCKET = 'gallery-images';
+const MATERIAL_IMAGE_FOLDER = 'materials';
+
 
 const CATEGORIES: { value: MaterialCategory; label: string }[] = [
   { value: 'refrigerant', label: 'Refrigerant' },
