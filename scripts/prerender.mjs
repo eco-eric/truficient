@@ -470,6 +470,11 @@ async function snapshotRoute(page, base, urlPath) {
   await page.goto(previewUrl(base, urlPath), { waitUntil: 'load', timeout: NAV_TIMEOUT_MS });
   // Wait for real body content; tolerate pages without an <h1>.
   await page.waitForSelector('h1', { timeout: H1_TIMEOUT_MS }).catch(() => {});
+  // Pages that load secondary data (e.g. LocationPage's related-links block)
+  // mark themselves [data-ssg-ready] once ALL async content has rendered, so
+  // the snapshot captures it. Pages without the marker fall through after a
+  // bounded wait — backward compatible.
+  await page.waitForSelector('[data-ssg-ready]', { timeout: 2000 }).catch(() => {});
   // Small settle for late hydration/data paints.
   await page.waitForTimeout(250);
   const html = await page.evaluate(() => '<!DOCTYPE html>\n' + document.documentElement.outerHTML);

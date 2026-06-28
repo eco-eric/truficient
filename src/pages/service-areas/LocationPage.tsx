@@ -12,6 +12,7 @@ import { useLocationGalleryPhotos } from '@/hooks/useLocationGalleryPhotos';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { setSocialMetaTags, cleanCanonicalUrl } from '@/lib/seo/socialMeta';
+import RelatedPages, { fetchRelatedPages, type RelatedPagesData, type RelatedSource } from '@/components/seo/RelatedPages';
 
 /**
  * Split markdown content at specific paragraph boundaries.
@@ -107,9 +108,10 @@ const LocationPage = () => {
   const locationSlug = rawLocationSlug?.replace(/\.html$/, '');
   // SSG: on the prerendered page, seed initial state from the embedded payload
   // so the first hydration render matches the static HTML (no flash, fast LCP).
-  const ssg = useSsgData<{ location: LocationData; seo: SeoData | null }>(useRouterLocation().pathname);
+  const ssg = useSsgData<{ location: LocationData; seo: SeoData | null; related: RelatedPagesData | null }>(useRouterLocation().pathname);
   const [location, setLocation] = useState<LocationData | null>(ssg?.location ?? null);
   const [seo, setSeo] = useState<SeoData | null>(ssg?.seo ?? null);
+  const [related, setRelated] = useState<RelatedPagesData | null>(ssg?.related ?? null);
   const [loading, setLoading] = useState(!ssg);
 
   useEffect(() => {
@@ -141,6 +143,10 @@ const LocationPage = () => {
               .single();
             if (seoData) setSeo(seoData as unknown as SeoData);
           }
+          // Compute the related-pages link block so the prerender snapshot bakes
+          // it into the static HTML (and seed it into the SSG payload below).
+          const rel = await fetchRelatedPages(data as unknown as RelatedSource);
+          setRelated(rel);
           break;
         }
       }
@@ -322,8 +328,8 @@ const LocationPage = () => {
   const hasFullContent = !!location.content;
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <SsgPageData data={{ location, seo }} />
+    <div className="min-h-screen flex flex-col" data-ssg-ready={(!loading && related !== null) ? 'true' : undefined}>
+      <SsgPageData data={{ location, seo, related }} />
       <Header />
       <main className="flex-grow">
         {/* Breadcrumbs */}
@@ -465,6 +471,7 @@ const LocationPage = () => {
             </div>
           </>
         )}
+        <RelatedPages data={related} />
       </main>
       <EstimatorCards />
       <Footer />
