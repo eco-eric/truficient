@@ -66,7 +66,9 @@ export default function Suppliers() {
       const { data, error } = await supabase
         .from('crm_suppliers')
         .select('*')
+        .order('sort_order', { ascending: true, nullsFirst: false })
         .order('name');
+
       if (error) throw error;
       return data as Supplier[];
     },
