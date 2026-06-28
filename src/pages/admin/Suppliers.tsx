@@ -31,7 +31,13 @@ interface Supplier {
   name: string;
   notes: string | null;
   is_active: boolean;
+  address: string | null;
+  phone: string | null;
+  account_number: string | null;
+  is_default: boolean;
+  sort_order: number | null;
 }
+
 
 interface Contact {
   id: string;
