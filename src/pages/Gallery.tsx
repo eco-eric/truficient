@@ -53,7 +53,7 @@ const Gallery = () => {
   });
 
   const items = useMemo(
-    () => buildGalleryItems(rawImages, new Map(tags.map((t) => [t.id, t.name])), relations),
+    () => buildGalleryItems(rawImages as any, new Map(tags.map((t) => [t.id, t.name])), relations),
     [rawImages, tags, relations],
   );
   const filtered = useMemo(() => filterItems(items, selected), [items, selected]);
