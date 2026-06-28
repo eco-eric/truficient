@@ -89,7 +89,7 @@ interface JobListItem {
   sort_order: number;
 }
 
-const INCLUDED_SECTIONS = ['equipment_controls', 'miscellaneous_inside', 'ducting'];
+const INCLUDED_SECTIONS = ['equipment_controls', 'miscellaneous_inside', 'miscellaneous_outside', 'ducting'];
 
 export const JobListPanel = ({ estimateId }: JobListPanelProps) => {
   const qc = useQueryClient();
