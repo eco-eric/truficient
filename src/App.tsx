@@ -335,6 +335,7 @@ const router = createBrowserRouter([
           { path: "/admin/suppliers", element: <ProtectedRoute><AdminSuppliers /></ProtectedRoute> },
           { path: "/admin/material-requests", element: <ProtectedRoute><AdminMaterialRequests /></ProtectedRoute> },
           { path: "/admin/material-requests/:id", element: <ProtectedRoute><AdminMaterialRequests /></ProtectedRoute> },
+          { path: "/admin/material-lists", element: <ProtectedRoute><AdminMaterialLists /></ProtectedRoute> },
           { path: "/admin/button-clicks", element: <ProtectedRoute><AdminButtonClicks /></ProtectedRoute> },
           { path: "/admin/scanner-analytics", element: <ProtectedRoute><AdminScannerAnalytics /></ProtectedRoute> },
           { path: "/admin/lead-sources", element: <ProtectedRoute><AdminLeadSourcesConfig /></ProtectedRoute> },
