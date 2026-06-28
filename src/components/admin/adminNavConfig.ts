@@ -163,6 +163,7 @@ export const navSections: NavSection[] = [
     items: [
       { label: 'Users', href: '/admin/users', icon: Users, permissionKey: 'nav.users' },
       { label: 'Suppliers', href: '/admin/suppliers', icon: Truck, permissionKey: 'nav.suppliers' },
+      { label: 'Material Requests', href: '/admin/material-requests', icon: ClipboardList, permissionKey: 'nav.material-requests' },
       { label: 'Role Permissions', href: '/admin/permissions', icon: Shield, permissionKey: 'nav.permissions' },
       { label: 'AI Settings', href: '/admin/ai-settings', icon: Settings, permissionKey: 'nav.ai-settings' },
       { label: 'Automations', href: '/admin/automations', icon: Wrench, permissionKey: 'nav.automations' },
