@@ -563,6 +563,33 @@ export const JobListPanel = ({ estimateId }: JobListPanelProps) => {
           setEmailOpen(false);
         }}
       />
+      <AlertDialog open={pushConfirmOpen} onOpenChange={setPushConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Push to Material Takeoff?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Push these {items.length} item{items.length === 1 ? '' : 's'} to a new field Material Takeoff list?
+              The field crew will see it under Material Lists. This creates a separate list and does not change
+              your Job List.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={pushToTakeoffMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                pushToTakeoffMutation.mutate();
+              }}
+              disabled={pushToTakeoffMutation.isPending}
+            >
+              {pushToTakeoffMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Push to Takeoff
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
