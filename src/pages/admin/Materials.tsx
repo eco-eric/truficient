@@ -152,10 +152,33 @@ const SortableRow = ({ material, selectedIds, toggleSelect, onClone, onEdit, onD
           aria-label={`Select ${material.name}`}
         />
       </TableCell>
-      <TableCell className="font-medium">{material.name}</TableCell>
+      <TableCell className="font-medium">
+        <div className="flex items-center gap-2">
+          {material.image_url ? (
+            <img
+              src={material.image_url}
+              alt=""
+              className="h-8 w-8 rounded object-cover border"
+            />
+          ) : (
+            <div className="h-8 w-8 rounded border bg-muted" />
+          )}
+          <span>{material.name}</span>
+        </div>
+      </TableCell>
       <TableCell>{material.unit}</TableCell>
       <TableCell className="text-right font-mono">
         ${material.unit_cost.toFixed(2)}
+      </TableCell>
+      <TableCell>
+        <div className="flex gap-1">
+          {material.show_in_estimates && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-800">Est</span>
+          )}
+          {material.show_in_takeoff && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-800">Field</span>
+          )}
+        </div>
       </TableCell>
       <TableCell className="text-muted-foreground">
         {material.supplier || '—'}
@@ -172,6 +195,7 @@ const SortableRow = ({ material, selectedIds, toggleSelect, onClone, onEdit, onD
           {material.is_active ? 'Active' : 'Inactive'}
         </span>
       </TableCell>
+
       <TableCell className="text-muted-foreground text-sm">
         {format(new Date(material.updated_at), 'MMM d, yyyy')}
       </TableCell>
