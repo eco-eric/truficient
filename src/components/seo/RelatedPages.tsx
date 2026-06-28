@@ -61,75 +61,66 @@ function labelFor(row: CandidateRow): string {
 }
 
 const PER_BUCKET = 5;
+const COLS = 'url_slug, h1_title, neighborhood, city, primary_service, cluster';
 
-/**
- * Fetch and rank related pages for a location row. One round-trip; ranked and
- * de-duplicated client-side. Returns empty buckets when the page has no
- * groupable fields (caller renders nothing).
- */
-export async function fetchRelatedPages(loc: RelatedSource): Promise<RelatedPagesData> {
-  const orParts: string[] = [];
-  if (loc.cluster) orParts.push(`cluster.eq.${loc.cluster}`);
-  if (loc.city) orParts.push(`city.eq.${loc.city}`);
-  if (loc.primary_service) orParts.push(`primary_service.eq.${loc.primary_service}`);
-  if (orParts.length === 0) return { services: [], nearby: [] };
-
+async function queryPages(
+  column: 'neighborhood' | 'cluster' | 'primary_service',
+  value: string,
+  excludeSlug: string,
+  limit: number,
+): Promise<CandidateRow[]> {
   const { data, error } = await supabase
     .from('seo_location_pages' as any)
-    .select('url_slug, h1_title, neighborhood, city, primary_service, cluster')
+    .select(COLS)
     .eq('published', true)
-    .neq('url_slug', loc.url_slug)
-    .or(orParts.join(','))
-    .limit(60);
+    .eq(column, value)
+    .neq('url_slug', excludeSlug)
+    .limit(limit);
+  if (error || !data) return [];
+  return data as unknown as CandidateRow[];
+}
 
-  if (error || !data) return { services: [], nearby: [] };
-  const rows = data as unknown as CandidateRow[];
+/**
+ * Fetch and rank related pages for a location row, prioritising specificity:
+ * same NEIGHBORHOOD (the true siblings) > same CLUSTER (region) > same SERVICE
+ * elsewhere. Three small targeted queries run in parallel — far more relevant
+ * than one broad city-wide query (a city like "Dallas" has hundreds of pages,
+ * so a single capped query never surfaces the same-neighborhood siblings).
+ * Returns empty buckets when the page has no groupable fields.
+ */
+export async function fetchRelatedPages(loc: RelatedSource): Promise<RelatedPagesData> {
+  const [sameHood, sameCluster, sameService] = await Promise.all([
+    loc.neighborhood ? queryPages('neighborhood', loc.neighborhood, loc.url_slug, 25) : Promise.resolve([]),
+    loc.cluster ? queryPages('cluster', loc.cluster, loc.url_slug, 40) : Promise.resolve([]),
+    loc.primary_service ? queryPages('primary_service', loc.primary_service, loc.url_slug, 25) : Promise.resolve([]),
+  ]);
 
-  const selfPath = toCleanPath(loc.url_slug);
-  const seen = new Set<string>([selfPath]);
-  const services: RelatedItem[] = [];
-  const nearby: RelatedItem[] = [];
-
-  // Bucket 1 — same area, a DIFFERENT service (most relevant cross-sell).
-  for (const r of rows) {
-    if (services.length >= PER_BUCKET) break;
-    const path = toCleanPath(r.url_slug);
-    if (seen.has(path)) continue;
-    const sameArea =
-      (loc.neighborhood && r.neighborhood === loc.neighborhood) ||
-      (loc.city && r.city === loc.city);
-    const differentService = r.primary_service !== loc.primary_service;
-    if (sameArea && differentService) {
-      seen.add(path);
-      services.push({ slug: path, label: labelFor(r) });
-    }
-  }
-
-  // Bucket 2 — same region/city, a DIFFERENT area (nearby coverage).
-  for (const r of rows) {
-    if (nearby.length >= PER_BUCKET) break;
-    const path = toCleanPath(r.url_slug);
-    if (seen.has(path)) continue;
-    const sameRegion =
-      (loc.cluster && r.cluster === loc.cluster) ||
-      (loc.city && r.city === loc.city);
-    const differentArea = r.neighborhood !== loc.neighborhood;
-    if (sameRegion && differentArea) {
-      seen.add(path);
-      nearby.push({ slug: path, label: labelFor(r) });
-    }
-  }
-
-  // Backfill: if a bucket is thin, pull any remaining unseen candidates so no
-  // page is left with too few links.
-  if (services.length + nearby.length < PER_BUCKET) {
+  const seen = new Set<string>([toCleanPath(loc.url_slug)]);
+  const take = (rows: CandidateRow[], bucket: RelatedItem[], cap: number, keep: (r: CandidateRow) => boolean) => {
     for (const r of rows) {
-      if (services.length + nearby.length >= PER_BUCKET * 2) break;
+      if (bucket.length >= cap) break;
       const path = toCleanPath(r.url_slug);
-      if (seen.has(path)) continue;
+      if (seen.has(path) || !keep(r)) continue;
       seen.add(path);
-      nearby.push({ slug: path, label: labelFor(r) });
+      bucket.push({ slug: path, label: labelFor(r) });
     }
+  };
+
+  // Bucket 1 — "Related HVAC Services": same neighborhood, a DIFFERENT service
+  // (the true siblings, e.g. ductless / heat-pump / AC-repair in this area).
+  // Backfilled with same-cluster different-service if the neighborhood is thin.
+  const services: RelatedItem[] = [];
+  take(sameHood, services, PER_BUCKET, (r) => r.primary_service !== loc.primary_service);
+  if (services.length < PER_BUCKET) {
+    take(sameCluster, services, PER_BUCKET, (r) => r.primary_service !== loc.primary_service);
+  }
+
+  // Bucket 2 — "Nearby Service Areas": same region, a DIFFERENT neighborhood;
+  // backfilled with the same service in other areas.
+  const nearby: RelatedItem[] = [];
+  take(sameCluster, nearby, PER_BUCKET, (r) => r.neighborhood !== loc.neighborhood);
+  if (nearby.length < PER_BUCKET) {
+    take(sameService, nearby, PER_BUCKET, (r) => r.neighborhood !== loc.neighborhood);
   }
 
   return { services, nearby };
