@@ -214,6 +214,7 @@ const Materials = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showFieldOnly, setShowFieldOnly] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     category: 'refrigerant' as MaterialCategory,
@@ -223,7 +224,14 @@ const Materials = () => {
     supplier: '',
     part_number: '',
     is_active: true,
+    image_url: '' as string,
+    name_es: '',
+    request_category: '' as string,
+    show_in_estimates: true,
+    show_in_takeoff: false,
   });
+  const [materialSuppliers, setMaterialSuppliers] = useState<MaterialSupplierRow[]>([]);
+
 
   // DnD sensors
   const sensors = useSensors(
