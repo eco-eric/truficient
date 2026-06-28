@@ -33,6 +33,8 @@ import { AIAssistantWidget } from '@/components/admin/ai/AIAssistantWidget';
 import { useUserRole } from '@/hooks/useUserRole';
 import JobTasksCard from '@/components/admin/jobs/JobTasksCard';
 import { LinkedRecordsCard } from '@/components/admin/shared/LinkedRecordsCard';
+import MaterialJobListsCard from '@/components/admin/jobs/MaterialJobListsCard';
+
 
 const InlineEditableAmount = ({ value, jobId, field, label }: { value: number | null; jobId: string; field: string; label: string }) => {
   const [editing, setEditing] = useState(false);
