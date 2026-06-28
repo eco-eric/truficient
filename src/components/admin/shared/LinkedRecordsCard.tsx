@@ -379,15 +379,112 @@ export function LinkedRecordsCard({ entityType, entityId, customerId, sourceEsti
                   <p className="text-xs text-muted-foreground truncate">{job.title}</p>
                 </div>
               </div>
-              {job.current_stage && (
-                <Badge variant="outline" className="text-[10px] px-1.5 h-4 shrink-0" style={{ borderColor: job.current_stage.color, color: job.current_stage.color }}>
-                  {job.current_stage.name}
-                </Badge>
-              )}
+              <div className="flex items-center gap-1 shrink-0">
+                {job.current_stage && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 h-4" style={{ borderColor: job.current_stage.color, color: job.current_stage.color }}>
+                    {job.current_stage.name}
+                  </Badge>
+                )}
+                {entityType === 'estimate' && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    title="Unlink job"
+                    onClick={() => {
+                      if (confirm(`Unlink ${job.job_number} from this estimate?`)) {
+                        unlinkJobFromEstimateMutation.mutate(job.id);
+                      }
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
             </div>
           ))
         ) : (
           <p className="text-xs text-muted-foreground text-center">No linked jobs</p>
+        )}
+
+        {/* Estimate-side: Link Job affordance when none linked */}
+        {entityType === 'estimate' && linkedJobs.length === 0 && (
+          <div className="space-y-2">
+            {autoMatchJobs.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  {autoMatchJobs.length === 1 ? 'Suggested match (WorkEdge)' : 'WorkEdge matches'}
+                </p>
+                {autoMatchJobs.map((job: any) => (
+                  <div key={job.id} className="flex items-center justify-between gap-2 p-2 rounded-lg border border-dashed">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{job.job_number}</p>
+                      <p className="text-xs text-muted-foreground truncate">{job.title}</p>
+                    </div>
+                    <Button size="sm" variant="secondary" className="h-7 text-xs shrink-0" onClick={() => requestLinkJob(job)}>
+                      <LinkIcon className="h-3 w-3 mr-1" /> Link
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!jobPickerOpen ? (
+              <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setJobPickerOpen(true)}>
+                <Briefcase className="h-3 w-3 mr-1" /> Link a {autoMatchJobs.length > 0 ? 'different ' : ''}job
+              </Button>
+            ) : (
+              <div className="space-y-2 p-2 border rounded-lg">
+                <div className="flex items-center gap-1">
+                  <Search className="h-3 w-3 text-muted-foreground" />
+                  <Input
+                    value={jobSearch}
+                    onChange={(e) => setJobSearch(e.target.value)}
+                    placeholder="Search job # or title..."
+                    className="h-7 text-xs"
+                  />
+                </div>
+                {customerId && (
+                  <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={showAllJobs}
+                      onChange={(e) => setShowAllJobs(e.target.checked)}
+                    />
+                    Search all customers
+                  </label>
+                )}
+                <div className="max-h-48 overflow-y-auto space-y-1">
+                  {pickerJobs.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-2">
+                      No CRM job found for this estimate. Jobs are created from WorkEdge sync or the Jobs Board — create the job there first, then link it.
+                    </p>
+                  ) : (
+                    pickerJobs.map((job: any) => {
+                      const cust = job.customer;
+                      const custName = cust ? (cust.company_name || `${cust.first_name || ''} ${cust.last_name || ''}`.trim()) : '';
+                      return (
+                        <button
+                          key={job.id}
+                          type="button"
+                          onClick={() => requestLinkJob(job)}
+                          className="w-full text-left p-1.5 rounded hover:bg-accent text-xs"
+                        >
+                          <div className="font-medium">{job.job_number}</div>
+                          <div className="text-muted-foreground truncate">
+                            {job.title}{custName ? ` · ${custName}` : ''}
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+                <Button variant="ghost" size="sm" className="w-full h-7 text-xs" onClick={() => { setJobPickerOpen(false); setJobSearch(''); }}>
+                  Cancel
+                </Button>
+              </div>
+            )}
+          </div>
         )}
 
         {/* For pipeline view: also show linked estimates */}
@@ -410,6 +507,36 @@ export function LinkedRecordsCard({ entityType, entityId, customerId, sourceEsti
           </>
         )}
       </CardContent>
+
+      {/* Confirm link (with overwrite warning if already linked elsewhere) */}
+      <AlertDialog open={!!pendingLinkJob} onOpenChange={(o) => !o && setPendingLinkJob(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingLinkJob?.source_estimate_id && pendingLinkJob.source_estimate_id !== entityId
+                ? 'Re-link this job?'
+                : 'Link this job to the estimate?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingLinkJob && (
+                <>
+                  Job <strong>{pendingLinkJob.job_number}</strong>
+                  {pendingLinkJob.title ? ` — ${pendingLinkJob.title}` : ''}.
+                  {pendingLinkJob.source_estimate_id && pendingLinkJob.source_estimate_id !== entityId && (
+                    <> This job is already linked to another estimate. Continuing will overwrite that link.</>
+                  )}
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => pendingLinkJob && linkJobToEstimateMutation.mutate(pendingLinkJob.id)}>
+              {pendingLinkJob?.source_estimate_id && pendingLinkJob.source_estimate_id !== entityId ? 'Re-link' : 'Link'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
