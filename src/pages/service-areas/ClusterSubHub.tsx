@@ -34,27 +34,42 @@ const CLUSTER_MAP: Record<string, string> = {
 const ClusterSubHub = () => {
   const { clusterSlug: rawClusterSlug } = useParams<{ clusterSlug: string }>();
   const clusterSlug = rawClusterSlug?.replace(/\.html$/, '');
-  const clusterName = CLUSTER_MAP[clusterSlug || ''] || clusterSlug || '';
   usePageSEO(`/service-areas/${clusterSlug}`);
+  const [clusterName, setClusterName] = useState<string>(CLUSTER_MAP[clusterSlug || ''] || clusterSlug || '');
   const [locations, setLocations] = useState<LocationPage[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchLocations = async () => {
+    if (!clusterSlug) { setLoading(false); return; }
+    const slugify = (s: string) => s.toLowerCase().replace(/\s+/g, '-');
+    const run = async () => {
+      // Resolve the real cluster value whose slugified form matches the URL.
+      // CLUSTER_MAP is a fast path; otherwise look it up from the data so EVERY
+      // populated cluster gets a working hub (not just the ~13 hardcoded ones).
+      let resolved = CLUSTER_MAP[clusterSlug];
+      if (!resolved) {
+        const { data: cl } = await supabase
+          .from('seo_location_pages' as any)
+          .select('cluster')
+          .eq('published', true);
+        const all = [...new Set(((cl as any[]) || []).map((r) => r.cluster).filter(Boolean))] as string[];
+        resolved = all.find((c) => slugify(c) === clusterSlug) || clusterSlug;
+      }
+      setClusterName(resolved);
       const { data, error } = await supabase
         .from('seo_location_pages' as any)
         .select('id, neighborhood, city, url_slug, primary_service, h1_title')
-        .eq('cluster', clusterName)
+        .eq('cluster', resolved)
         .eq('published', true)
         .order('neighborhood', { ascending: true });
       if (!error) setLocations((data as unknown as LocationPage[]) || []);
       setLoading(false);
     };
-    if (clusterName) fetchLocations();
-  }, [clusterName]);
+    run();
+  }, [clusterSlug]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" data-ssg-ready={!loading ? 'true' : undefined}>
       <Header />
       <main className="flex-grow">
         <section className="bg-primary text-primary-foreground py-16">
@@ -91,7 +106,7 @@ const ClusterSubHub = () => {
                     <div className="flex items-start gap-3">
                       <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                       <div>
-                        <div className="font-semibold">{page.neighborhood}</div>
+                        <div className="font-semibold">{page.h1_title || page.neighborhood}</div>
                         <div className="text-sm text-muted-foreground">{page.primary_service || 'HVAC Services'}</div>
                         <div className="text-xs text-primary mt-2 flex items-center gap-1">
                           Learn more <ArrowRight className="h-3 w-3" />
