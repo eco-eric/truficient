@@ -73,9 +73,7 @@ const brands: Brand[] = [
     badgeStyle: "outline",
     status: "available",
   },
-  { slug: "carrier", name: "Carrier", tagline: "Residential & Commercial", status: "coming-soon", expectedDate: "June 2026" },
-  { slug: "lennox", name: "Lennox", tagline: "Premium Residential", status: "coming-soon", expectedDate: "June 2026" },
-  { slug: "rheem", name: "Rheem", tagline: "HVAC & Water Heating", status: "coming-soon", expectedDate: "June 2026" },
+  { slug: "gree", name: "Gree", tagline: "Ductless Mini-Split Systems", status: "coming-soon", expectedDate: "July 2026" },
 ];
 
 const Catalogs = () => {
