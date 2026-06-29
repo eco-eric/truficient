@@ -106,19 +106,34 @@ export async function fetchRelatedPages(loc: RelatedSource): Promise<RelatedPage
     }
   };
 
+  // Ring-rotate the same-cluster pool so each page links a DIFFERENT window of
+  // its cluster (sorted by slug, started at this page's own position). Without
+  // this, every page picks the first N siblings, so in a large cluster (e.g. the
+  // 40-page UHI set) the first few get all the inbound links and the tail is
+  // left orphaned. The ring distributes inbound evenly — in a cluster bigger
+  // than the cap, every page receives links from its neighbors.
+  const ringRotate = (rows: CandidateRow[]): CandidateRow[] => {
+    if (rows.length < 2) return rows;
+    const sorted = [...rows].sort((a, b) => a.url_slug.localeCompare(b.url_slug));
+    let off = sorted.findIndex((r) => r.url_slug.localeCompare(loc.url_slug) > 0);
+    if (off < 0) off = 0;
+    return [...sorted.slice(off), ...sorted.slice(0, off)];
+  };
+  const clusterRing = ringRotate(sameCluster);
+
   // Bucket 1 — "Related HVAC Services": same neighborhood, a DIFFERENT service
   // (the true siblings, e.g. ductless / heat-pump / AC-repair in this area).
   // Backfilled with same-cluster different-service if the neighborhood is thin.
   const services: RelatedItem[] = [];
   take(sameHood, services, PER_BUCKET, (r) => r.primary_service !== loc.primary_service);
   if (services.length < PER_BUCKET) {
-    take(sameCluster, services, PER_BUCKET, (r) => r.primary_service !== loc.primary_service);
+    take(clusterRing, services, PER_BUCKET, (r) => r.primary_service !== loc.primary_service);
   }
 
-  // Bucket 2 — "Nearby Service Areas": same region, a DIFFERENT neighborhood;
-  // backfilled with the same service in other areas.
+  // Bucket 2 — "Nearby Service Areas": same region, a DIFFERENT neighborhood
+  // (ring-distributed); backfilled with the same service in other areas.
   const nearby: RelatedItem[] = [];
-  take(sameCluster, nearby, PER_BUCKET, (r) => r.neighborhood !== loc.neighborhood);
+  take(clusterRing, nearby, PER_BUCKET, (r) => r.neighborhood !== loc.neighborhood);
   if (nearby.length < PER_BUCKET) {
     take(sameService, nearby, PER_BUCKET, (r) => r.neighborhood !== loc.neighborhood);
   }
