@@ -21,8 +21,8 @@ export const WorkEdgeBanner = ({ location, variant = 'default' }: WorkEdgeBanner
     return (
       <a 
         href="https://workedge.pro" 
-        target="_blank" 
-        rel="noopener noreferrer"
+        target="_blank"
+        rel="nofollow sponsored noopener noreferrer"
         className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors border"
         onClick={handleClick}
       >
@@ -43,8 +43,8 @@ export const WorkEdgeBanner = ({ location, variant = 'default' }: WorkEdgeBanner
   return (
     <a 
       href="https://workedge.pro" 
-      target="_blank" 
-      rel="noopener noreferrer"
+      target="_blank"
+      rel="nofollow sponsored noopener noreferrer"
       className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors border border-amber-200 dark:border-amber-900"
       onClick={handleClick}
     >

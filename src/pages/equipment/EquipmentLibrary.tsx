@@ -130,8 +130,35 @@ export default function EquipmentLibrary() {
     },
   });
 
+  // Full, unfiltered index of every published model so the prerender snapshot
+  // bakes a crawlable internal link to ALL equipment pages (not just the top-50
+  // search-ranked grid). This is what gives the long tail of equipment pages an
+  // inbound link instead of being reachable only via client-side filtering.
+  const { data: allModels } = useQuery({
+    queryKey: ['equipment-all-index'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('equipment_pages')
+        .select('id, slug, brand, model_number, equipment_type')
+        .eq('published', true)
+        .order('equipment_type', { ascending: true })
+        .order('brand', { ascending: true })
+        .order('model_number', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string; slug: string; brand: string; model_number: string; equipment_type: string | null;
+      }>;
+    },
+  });
+
+  const groupedModels = (allModels ?? []).reduce<Record<string, typeof allModels>>((acc, m) => {
+    const key = m.equipment_type || 'Other Equipment';
+    (acc[key] ??= []).push(m);
+    return acc;
+  }, {});
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" data-ssg-ready={allModels !== undefined ? 'true' : undefined}>
       <Header />
 
       <main className="flex-1">
@@ -341,6 +368,29 @@ export default function EquipmentLibrary() {
             </div>
           )}
         </section>
+
+        {/* Full crawlable index — every published model gets an inbound link */}
+        {allModels && allModels.length > 0 && (
+          <section className="container mx-auto px-4 pb-12 border-t pt-10">
+            <h2 className="text-2xl font-bold mb-6 text-foreground">Browse All Equipment Models</h2>
+            <div className="space-y-6">
+              {Object.entries(groupedModels).map(([type, models]) => (
+                <div key={type}>
+                  <h3 className="font-semibold text-foreground mb-3">{type}</h3>
+                  <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
+                    {models.map((m) => (
+                      <li key={m.id}>
+                        <Link to={`/equipment/${m.slug}`} className="text-sm text-primary hover:underline">
+                          {m.brand} {m.model_number}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* WorkEdge Pro Banner */}
         <section className="container mx-auto px-4 pb-8">
