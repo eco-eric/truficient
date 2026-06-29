@@ -201,6 +201,7 @@ const SITEMAP_EXCLUDE_RE = new RegExp(
     '^/cookie-preferences$',
     '^/scanner/report$',
     '^/project(/|$)', // legacy soft-404s (no public route); keep out of sitemap
+    '^/equipment/[^/]+/[^/]+', // legacy slash-format equipment URLs (301 -> hyphen canonical); non-canonical duplicates
   ].join('|'),
   'i',
 );
