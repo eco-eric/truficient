@@ -200,6 +200,7 @@ const SITEMAP_EXCLUDE_RE = new RegExp(
     '^/free-hvac-age-checker',
     '^/cookie-preferences$',
     '^/scanner/report$',
+    '^/project(/|$)', // legacy soft-404s (no public route); keep out of sitemap
   ].join('|'),
   'i',
 );

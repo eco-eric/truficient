@@ -56,6 +56,50 @@ import { useState, useEffect } from 'react';
 
 const BASE_URL = 'https://truficient.com';
 
+/**
+ * Maps an equipment type to the most relevant Truficient service/money pages.
+ * This is what stops equipment pages being a one-way silo: every spec page now
+ * passes internal equity into the service pages that actually convert, with
+ * descriptive anchors. Falls back to DEFAULT_SERVICE_LINKS for unknown types.
+ */
+const SERVICE_LINKS_BY_TYPE: Record<string, { href: string; label: string }[]> = {
+  'Mini Split': [
+    { href: '/services/ductless', label: 'Ductless Mini-Split Installation in DFW' },
+    { href: '/hvac-estimate', label: 'Get a Mini-Split Installation Estimate' },
+  ],
+  'Heat Pump': [
+    { href: '/services/residential', label: 'Heat Pump Installation & Replacement' },
+    { href: '/hvac-estimate', label: 'Get a Heat Pump Replacement Estimate' },
+  ],
+  'Air Conditioner': [
+    { href: '/services/residential', label: 'AC Installation & Repair in DFW' },
+    { href: '/hvac-estimate', label: 'Get an AC Installation Estimate' },
+  ],
+  'Condenser': [
+    { href: '/services/residential', label: 'AC & Condenser Replacement in DFW' },
+    { href: '/hvac-estimate', label: 'Get an AC Replacement Estimate' },
+  ],
+  'Furnace': [
+    { href: '/services/residential', label: 'Furnace Installation & Heating Service' },
+    { href: '/hvac-estimate', label: 'Get a Furnace Replacement Estimate' },
+  ],
+  'Air Handler': [
+    { href: '/services/residential', label: 'Air Handler & System Installation' },
+    { href: '/services/ductless', label: 'Ductless & Air Handler Solutions' },
+  ],
+  'Evaporator Coil': [
+    { href: '/services/residential', label: 'AC System Installation & Repair' },
+    { href: '/hvac-estimate', label: 'Get a System Replacement Estimate' },
+  ],
+};
+
+const DEFAULT_SERVICE_LINKS = [
+  { href: '/services/residential', label: 'Residential HVAC Services in DFW' },
+  { href: '/services/commercial', label: 'Commercial HVAC Services in DFW' },
+  { href: '/hvac-estimate', label: 'Get a Free HVAC Estimate' },
+  { href: '/service-areas', label: 'HVAC Service Areas We Cover' },
+];
+
 interface SpecRowProps {
   icon: React.ReactNode;
   label: string;
@@ -522,6 +566,24 @@ export default function EquipmentDetail() {
                   </div>
                 </Card>
               )}
+
+              {/* Professional services — connect the equipment silo to money pages */}
+              <Card className="p-6">
+                <h2 className="text-xl font-bold mb-2">Professional Installation &amp; Service</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Considering this {equipment.equipment_type?.toLowerCase() || 'system'} for your home?
+                  Truficient installs and services it across Dallas–Fort Worth.
+                </p>
+                <ul className="space-y-2">
+                  {(SERVICE_LINKS_BY_TYPE[equipment.equipment_type ?? ''] ?? DEFAULT_SERVICE_LINKS).map((s) => (
+                    <li key={s.href}>
+                      <Link to={s.href} className="text-primary hover:underline text-sm font-medium">
+                        {s.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
 
               {/* Related Equipment (Same Model, Different Brands) */}
               {relatedPages && relatedPages.length > 0 && (

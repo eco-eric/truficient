@@ -515,7 +515,12 @@ const markdownComponents = {
       return <a href={PHONE_TEL} className="text-primary hover:underline font-medium" {...props}>{children}</a>;
     }
     if (href?.startsWith('/')) {
-      return <Link to={href} className="text-primary hover:underline" {...props}>{children}</Link>;
+      // Normalize legacy/author-entered internal links to the canonical
+      // extensionless trailing-slash form (strip .html, add trailing slash on
+      // bare paths) so in-content links never trigger a redirect hop.
+      let to = href.replace(/\.html(?=$|[#?])/i, '');
+      if (!/[#?]/.test(to) && !to.endsWith('/')) to += '/';
+      return <Link to={to} className="text-primary hover:underline" {...props}>{children}</Link>;
     }
     return <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
   },
