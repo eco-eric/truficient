@@ -174,11 +174,15 @@ export const AddToPipelineDialog = ({
       };
 
       if (isEditing && editingEntry) {
-        const { error } = await supabase
+        const { data: updated, error } = await supabase
           .from('crm_pipeline_entries')
           .update(payload)
-          .eq('id', editingEntry.id);
+          .eq('id', editingEntry.id)
+          .select();
         if (error) throw error;
+        if (!updated || updated.length === 0) {
+          throw new Error('Update blocked — you may not have permission to edit this entry.');
+        }
       } else {
         const { error } = await supabase
           .from('crm_pipeline_entries')
@@ -199,12 +203,15 @@ export const AddToPipelineDialog = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pipeline-entries'] });
       queryClient.invalidateQueries({ queryKey: ['pipeline-available-customers'] });
+      queryClient.invalidateQueries({
+        predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'customer-pipeline-entries',
+      });
       toast.success(isEditing ? 'Pipeline entry updated' : 'Added to pipeline');
       onOpenChange(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Pipeline mutation error:', error);
-      toast.error('Failed to save pipeline entry');
+      toast.error(error?.message ? `Failed to save: ${error.message}` : 'Failed to save pipeline entry');
     },
   });
 
