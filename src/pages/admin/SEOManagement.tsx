@@ -394,6 +394,12 @@ const SEOManagement = () => {
                 Performance
               </Link>
             </Button>
+            <Button variant="outline" asChild>
+              <Link to="/admin/seo/upload">
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Pages
+              </Link>
+            </Button>
             <Button variant="outline" onClick={handleExportCSV}>
               <Download className="h-4 w-4 mr-2" />
               Export CSV
