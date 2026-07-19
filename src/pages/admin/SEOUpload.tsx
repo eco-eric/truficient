@@ -162,11 +162,30 @@ export default function SEOUpload() {
 
   const handleSaveBatch = async () => {
     if (!savableFiles.length) return;
+
+    // Ensure we have a valid, non-expired session before hitting RLS-protected tables.
+    // (Cached role in sessionStorage can outlive the JWT; without a live token
+    // auth.uid() is NULL and every insert into seo_location_pages fails RLS.)
+    let session = (await supabase.auth.getSession()).data.session;
+    if (!session || (session.expires_at && session.expires_at * 1000 < Date.now() + 5000)) {
+      const refreshed = await supabase.auth.refreshSession();
+      session = refreshed.data.session;
+    }
+    if (!session) {
+      toast({
+        title: 'Session expired',
+        description: 'Please sign out and sign back in, then try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSaving(true);
     setSaveResults(null);
     const outcomes: SaveOutcome[] = [];
     const pageIds: string[] = [];
     const savedSlugs: string[] = [];
+
 
     for (const file of savableFiles) {
       const fm = file.frontmatter;
