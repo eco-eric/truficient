@@ -60,6 +60,13 @@ interface VerifyResult {
   found?: { title?: string; description?: string; canonical?: string };
 }
 
+interface SaveOutcome {
+  fileName: string;
+  slug: string;
+  status: 'inserted' | 'updated' | 'blocked' | 'error';
+  message?: string;
+}
+
 const BATCH_STORAGE_KEY = 'seo_upload_batches_v1';
 
 function loadBatches(): DraftBatch[] {
