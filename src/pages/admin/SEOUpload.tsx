@@ -97,6 +97,7 @@ export default function SEOUpload() {
   const [confirmPublish, setConfirmPublish] = useState<DraftBatch | null>(null);
   const [batches, setBatches] = useState<DraftBatch[]>(loadBatches());
   const [gsc, setGsc] = useState<Record<string, boolean>>({});
+  const [saveResults, setSaveResults] = useState<SaveOutcome[] | null>(null);
 
   useEffect(() => {
     saveBatches(batches);
