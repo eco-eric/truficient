@@ -1,0 +1,704 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  ArrowLeft,
+  Upload as UploadIcon,
+  FileText,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  Rocket,
+  RefreshCw,
+  ExternalLink,
+  Trash2,
+  Copy,
+} from 'lucide-react';
+import {
+  parseFile,
+  validateBatch,
+  type ValidatedPage,
+  type KnownSlugs,
+} from '@/lib/seo/pageUploadParser';
+
+interface DraftBatch {
+  id: string;
+  createdAt: string;
+  pageIds: string[]; // seo_location_pages ids
+  slugs: string[];
+  deploy?: {
+    triggeredAt: string;
+    ok: boolean;
+    error?: string;
+  };
+  verify?: Record<string, VerifyResult>;
+  sitemapRegenerated?: boolean;
+}
+
+interface VerifyResult {
+  slug: string;
+  status: 'verified' | 'not_prerendered' | 'failed';
+  http_status: number;
+  errors?: string[];
+  found?: { title?: string; description?: string; canonical?: string };
+}
+
+const BATCH_STORAGE_KEY = 'seo_upload_batches_v1';
+
+function loadBatches(): DraftBatch[] {
+  try {
+    const raw = localStorage.getItem(BATCH_STORAGE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+function saveBatches(batches: DraftBatch[]) {
+  try {
+    localStorage.setItem(BATCH_STORAGE_KEY, JSON.stringify(batches));
+  } catch {}
+}
+
+export default function SEOUpload() {
+  const { toast } = useToast();
+  const [files, setFiles] = useState<ValidatedPage[]>([]);
+  const [existingSlugs, setExistingSlugs] = useState<Set<string>>(new Set());
+  const [allDbSlugs, setAllDbSlugs] = useState<Set<string>>(new Set());
+  const [loadingSlugs, setLoadingSlugs] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [publishingBatchId, setPublishingBatchId] = useState<string | null>(null);
+  const [verifyingBatchId, setVerifyingBatchId] = useState<string | null>(null);
+  const [confirmPublish, setConfirmPublish] = useState<DraftBatch | null>(null);
+  const [batches, setBatches] = useState<DraftBatch[]>(loadBatches());
+  const [gsc, setGsc] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    saveBatches(batches);
+  }, [batches]);
+
+  // Fetch known slug sets for validation.
+  useEffect(() => {
+    (async () => {
+      setLoadingSlugs(true);
+      const [{ data: published }, { data: all }] = await Promise.all([
+        supabase.from('seo_location_pages' as any).select('url_slug').eq('published', true),
+        supabase.from('seo_location_pages' as any).select('url_slug'),
+      ]);
+      const { data: pageSeo } = await supabase.from('page_seo' as any).select('page_path');
+      const pubSet = new Set<string>((published || []).map((r: any) => r.url_slug));
+      const allSet = new Set<string>([
+        ...((all || []).map((r: any) => r.url_slug)),
+        ...((pageSeo || []).map((r: any) => r.page_path)),
+      ]);
+      setExistingSlugs(pubSet);
+      setAllDbSlugs(allSet);
+      setLoadingSlugs(false);
+    })();
+  }, []);
+
+  const knownSlugs: Omit<KnownSlugs, 'batchSlugs'> = useMemo(
+    () => ({ existing: existingSlugs, allDbSlugs }),
+    [existingSlugs, allDbSlugs],
+  );
+
+  const handleFiles = useCallback(
+    async (fileList: FileList | File[]) => {
+      const arr = Array.from(fileList).filter((f) => /\.md$/i.test(f.name));
+      if (!arr.length) {
+        toast({ title: 'No .md files', description: 'Drop Markdown (.md) files only.', variant: 'destructive' });
+        return;
+      }
+      if (arr.length > 15) {
+        toast({ title: 'Too many files', description: 'Upload 1–15 files at a time.', variant: 'destructive' });
+        return;
+      }
+      const parsed = await Promise.all(
+        arr.map(async (f) => parseFile(f.name, await f.text())),
+      );
+      const validated = validateBatch(parsed, knownSlugs);
+      setFiles(validated);
+    },
+    [knownSlugs, toast],
+  );
+
+  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files);
+  };
+  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.length) handleFiles(e.target.files);
+    e.target.value = '';
+  };
+
+  const anyRed = files.some((f) => !f.canSave);
+  const savableFiles = files.filter((f) => f.canSave);
+
+  const handleSaveBatch = async () => {
+    if (!savableFiles.length) return;
+    setSaving(true);
+    const pageIds: string[] = [];
+    const slugs: string[] = [];
+    try {
+      for (const file of savableFiles) {
+        const fm = file.frontmatter;
+        const pageName =
+          fm.h1_title ||
+          fm.meta_title ||
+          fm.url_slug;
+
+        const { data: seoEntry, error: seoError } = await supabase
+          .from('page_seo' as any)
+          .insert({
+            page_path: fm.url_slug,
+            page_name: pageName,
+            meta_title: fm.meta_title || null,
+            meta_description: fm.meta_description || null,
+            page_type: fm.page_type,
+            target_keyword: fm.target_keyword || null,
+            cluster: fm.cluster,
+            index_status: 'Pending',
+            schema_applied: true,
+            robots: 'index, follow',
+          })
+          .select('id')
+          .single();
+        if (seoError) throw seoError;
+
+        const { data: locRow, error: locError } = await supabase
+          .from('seo_location_pages' as any)
+          .insert({
+            page_seo_id: (seoEntry as any).id,
+            neighborhood: fm.neighborhood || fm.h1_title || fm.url_slug,
+            city: fm.city || 'Dallas',
+            state: fm.state || 'TX',
+            zip_code: fm.zip_code || null,
+            cluster: fm.cluster,
+            page_type: fm.page_type,
+            url_slug: fm.url_slug,
+            h1_title: fm.h1_title || null,
+            meta_title: fm.meta_title || null,
+            meta_description: fm.meta_description || null,
+            target_keyword: fm.target_keyword || null,
+            audience: fm.audience || null,
+            search_intent: fm.search_intent || null,
+            content: file.body, // byte-for-byte
+            schema_enabled: true,
+            schema_json: file.schemaJson,
+            published: false,
+          })
+          .select('id, url_slug')
+          .single();
+        if (locError) throw locError;
+
+        pageIds.push((locRow as any).id);
+        slugs.push((locRow as any).url_slug);
+      }
+
+      const newBatch: DraftBatch = {
+        id: `batch_${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        pageIds,
+        slugs,
+      };
+      setBatches((b) => [newBatch, ...b]);
+      setFiles([]);
+      // Refresh slug set so future validations see them.
+      setAllDbSlugs((prev) => {
+        const next = new Set(prev);
+        slugs.forEach((s) => next.add(s));
+        return next;
+      });
+      toast({
+        title: 'Batch saved as draft',
+        description: `${slugs.length} page(s) inserted (unpublished).`,
+      });
+    } catch (err: any) {
+      console.error('Save batch error:', err);
+      toast({ title: 'Save failed', description: err.message || String(err), variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePublishBatch = async (batch: DraftBatch) => {
+    setPublishingBatchId(batch.id);
+    try {
+      // 1. Flip published=true
+      const { error: upErr } = await supabase
+        .from('seo_location_pages' as any)
+        .update({ published: true })
+        .in('id', batch.pageIds);
+      if (upErr) throw upErr;
+
+      // 2. Trigger deploy
+      const { data: deployRes, error: deployErr } = await supabase.functions.invoke('trigger-deploy');
+      if (deployErr || !(deployRes as any)?.success) {
+        const errMsg = (deployRes as any)?.error || deployErr?.message || 'Deploy hook failed';
+        setBatches((all) =>
+          all.map((b) =>
+            b.id === batch.id
+              ? { ...b, deploy: { triggeredAt: new Date().toISOString(), ok: false, error: errMsg } }
+              : b,
+          ),
+        );
+        toast({
+          title: 'Pages published, but deploy hook failed',
+          description: errMsg,
+          variant: 'destructive',
+        });
+        return;
+      }
+      setBatches((all) =>
+        all.map((b) =>
+          b.id === batch.id
+            ? { ...b, deploy: { triggeredAt: new Date().toISOString(), ok: true } }
+            : b,
+        ),
+      );
+      toast({ title: 'Deploy triggered', description: 'Vercel is building. Verify live in ~2 minutes.' });
+    } catch (err: any) {
+      toast({ title: 'Publish failed', description: err.message || String(err), variant: 'destructive' });
+    } finally {
+      setPublishingBatchId(null);
+      setConfirmPublish(null);
+    }
+  };
+
+  const handleVerify = async (batch: DraftBatch) => {
+    setVerifyingBatchId(batch.id);
+    try {
+      // Look up meta title/description for each page.
+      const { data: pages, error } = await supabase
+        .from('seo_location_pages' as any)
+        .select('url_slug, meta_title, meta_description')
+        .in('id', batch.pageIds);
+      if (error) throw error;
+
+      const payload = (pages || []).map((p: any) => ({
+        slug: p.url_slug,
+        meta_title: p.meta_title || '',
+        meta_description: p.meta_description || '',
+      }));
+
+      const { data: res, error: fnErr } = await supabase.functions.invoke('verify-live-pages', {
+        body: { pages: payload },
+      });
+      if (fnErr) throw fnErr;
+
+      const results: VerifyResult[] = (res as any)?.results || [];
+      const map: Record<string, VerifyResult> = {};
+      results.forEach((r) => { map[r.slug] = r; });
+
+      const allVerified = results.length > 0 && results.every((r) => r.status === 'verified');
+
+      let sitemapRegenerated = batch.sitemapRegenerated || false;
+      if (allVerified && !sitemapRegenerated) {
+        try {
+          await supabase.functions.invoke('regenerate-sitemap');
+          sitemapRegenerated = true;
+        } catch (e) {
+          console.warn('regenerate-sitemap failed:', e);
+        }
+      }
+
+      setBatches((all) =>
+        all.map((b) => (b.id === batch.id ? { ...b, verify: map, sitemapRegenerated } : b)),
+      );
+
+      if (allVerified) {
+        toast({ title: 'All pages verified live', description: 'Sitemap regenerated.' });
+      } else {
+        toast({
+          title: 'Verify complete',
+          description: `${results.filter((r) => r.status === 'verified').length}/${results.length} verified.`,
+        });
+      }
+    } catch (err: any) {
+      toast({ title: 'Verify failed', description: err.message || String(err), variant: 'destructive' });
+    } finally {
+      setVerifyingBatchId(null);
+    }
+  };
+
+  const removeBatch = (id: string) => {
+    setBatches((all) => all.filter((b) => b.id !== id));
+  };
+
+  const markGsc = async (batch: DraftBatch, slug: string, checked: boolean) => {
+    setGsc((s) => ({ ...s, [`${batch.id}:${slug}`]: checked }));
+    if (checked) {
+      // Find page_seo row via page_path and mark Submitted.
+      await supabase
+        .from('page_seo' as any)
+        .update({ index_status: 'Submitted' })
+        .eq('page_path', slug);
+    }
+  };
+
+  return (
+    <AdminLayout title="Upload SEO Pages">
+      <div className="space-y-6 max-w-6xl">
+        <div className="flex items-center justify-between">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/admin/seo">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to SEO
+            </Link>
+          </Button>
+          {loadingSlugs && <span className="text-sm text-muted-foreground">Loading existing pages…</span>}
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UploadIcon className="h-5 w-5" />
+              Drop Markdown files
+            </CardTitle>
+            <CardDescription>
+              1–15 .md files with YAML frontmatter, a <code>```json</code> JSON-LD block, then the body.
+              Files stay as drafts until you click Publish Batch.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div
+              onDrop={onDrop}
+              onDragOver={(e) => e.preventDefault()}
+              className="border-2 border-dashed rounded-lg p-10 text-center hover:bg-muted/40 transition"
+            >
+              <UploadIcon className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+              <p className="text-sm text-muted-foreground mb-3">Drag & drop .md files here</p>
+              <label className="inline-block">
+                <input
+                  type="file"
+                  accept=".md,text/markdown"
+                  multiple
+                  className="hidden"
+                  onChange={onPick}
+                />
+                <Button variant="outline" asChild>
+                  <span>Choose files</span>
+                </Button>
+              </label>
+            </div>
+          </CardContent>
+        </Card>
+
+        {files.length > 0 && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Validation ({files.length} file{files.length === 1 ? '' : 's'})</CardTitle>
+                  <CardDescription>
+                    Red items block save. Yellow items are warnings you can proceed past.
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" onClick={() => setFiles([])}>Clear</Button>
+                  <Button
+                    disabled={saving || !savableFiles.length}
+                    onClick={handleSaveBatch}
+                  >
+                    {saving ? 'Saving…' : `Save Batch (${savableFiles.length})`}
+                  </Button>
+                </div>
+              </div>
+              {anyRed && (
+                <Alert variant="destructive" className="mt-3">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Some files can't be saved</AlertTitle>
+                  <AlertDescription>Fix the red items in the source .md file and re-drop it.</AlertDescription>
+                </Alert>
+              )}
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {files.map((f) => (
+                <FilePreviewCard key={f.fileName} file={f} />
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {batches.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Uploaded — Draft</CardTitle>
+              <CardDescription>Batches you've saved. Click Publish Batch to flip them live.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {batches.map((batch) => (
+                <BatchCard
+                  key={batch.id}
+                  batch={batch}
+                  gsc={gsc}
+                  onPublish={() => setConfirmPublish(batch)}
+                  onVerify={() => handleVerify(batch)}
+                  onRemove={() => removeBatch(batch.id)}
+                  onMarkGsc={(slug, checked) => markGsc(batch, slug, checked)}
+                  publishing={publishingBatchId === batch.id}
+                  verifying={verifyingBatchId === batch.id}
+                />
+              ))}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      <AlertDialog open={!!confirmPublish} onOpenChange={(o) => !o && setConfirmPublish(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Publish this batch?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div>
+                <p className="mb-2">This will set the pages to published and trigger a Vercel deploy.</p>
+                <ul className="list-disc pl-5 text-sm space-y-1">
+                  {confirmPublish?.slugs.map((s) => <li key={s}><code>{s}</code></li>)}
+                </ul>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => confirmPublish && handlePublishBatch(confirmPublish)}>
+              Publish & deploy
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </AdminLayout>
+  );
+}
+
+// --- Sub-components ---
+
+function FilePreviewCard({ file }: { file: ValidatedPage }) {
+  const fm = file.frontmatter;
+  const reds = file.issues.filter((i) => i.level === 'red');
+  const yellows = file.issues.filter((i) => i.level === 'yellow');
+  const [expanded, setExpanded] = useState(reds.length > 0);
+
+  return (
+    <div className={`border rounded-md p-4 ${file.canSave ? 'bg-white' : 'bg-red-50 border-red-200'}`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span className="font-medium truncate">{file.fileName}</span>
+            {file.canSave ? (
+              <Badge variant="outline" className="border-green-500 text-green-700">
+                <CheckCircle2 className="h-3 w-3 mr-1" /> Ready
+              </Badge>
+            ) : (
+              <Badge variant="destructive">
+                <XCircle className="h-3 w-3 mr-1" /> Blocked
+              </Badge>
+            )}
+            {yellows.length > 0 && (
+              <Badge variant="outline" className="border-amber-500 text-amber-700">
+                <AlertTriangle className="h-3 w-3 mr-1" /> {yellows.length} warning{yellows.length === 1 ? '' : 's'}
+              </Badge>
+            )}
+          </div>
+          <div className="text-sm text-muted-foreground mt-1 space-y-0.5">
+            <div>Slug: <code>{fm.url_slug || '(missing)'}</code></div>
+            <div>Title: {fm.meta_title || '(missing)'} <span className="text-xs">({(fm.meta_title || '').length} chars)</span></div>
+            <div>Cluster: {fm.cluster || '(missing)'} · Type: {fm.page_type || '(missing)'} · Audience: {fm.audience || '(missing)'}</div>
+            <div>Body: {file.bodyWordCount} words</div>
+          </div>
+        </div>
+        <Button variant="ghost" size="sm" onClick={() => setExpanded((e) => !e)}>
+          {expanded ? 'Hide checks' : 'Show checks'}
+        </Button>
+      </div>
+
+      {expanded && (
+        <div className="mt-3 pl-6 space-y-1 text-sm">
+          {file.issues.length === 0 ? (
+            <div className="text-green-700 flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4" /> All checks passed.
+            </div>
+          ) : (
+            file.issues.map((i, idx) => (
+              <div
+                key={idx}
+                className={`flex items-start gap-2 ${i.level === 'red' ? 'text-red-700' : 'text-amber-700'}`}
+              >
+                {i.level === 'red' ? <XCircle className="h-4 w-4 mt-0.5 shrink-0" /> : <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />}
+                <span>{i.message}</span>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BatchCard({
+  batch,
+  gsc,
+  onPublish,
+  onVerify,
+  onRemove,
+  onMarkGsc,
+  publishing,
+  verifying,
+}: {
+  batch: DraftBatch;
+  gsc: Record<string, boolean>;
+  onPublish: () => void;
+  onVerify: () => void;
+  onRemove: () => void;
+  onMarkGsc: (slug: string, checked: boolean) => void;
+  publishing: boolean;
+  verifying: boolean;
+}) {
+  const { toast } = useToast();
+  const allVerified =
+    batch.verify &&
+    batch.slugs.length > 0 &&
+    batch.slugs.every((s) => batch.verify?.[s]?.status === 'verified');
+
+  const copyLinks = () => {
+    const text = batch.slugs.map((s) => `https://truficient.com${s}`).join('\n');
+    navigator.clipboard.writeText(text);
+    toast({ title: 'Copied', description: `${batch.slugs.length} URL(s) copied.` });
+  };
+
+  return (
+    <div className="border rounded-md p-4 space-y-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <div className="font-medium">
+            Batch · {batch.slugs.length} page{batch.slugs.length === 1 ? '' : 's'}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Saved {new Date(batch.createdAt).toLocaleString()}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {!batch.deploy && (
+            <Button onClick={onPublish} disabled={publishing}>
+              <Rocket className="h-4 w-4 mr-2" />
+              {publishing ? 'Publishing…' : 'Publish Batch'}
+            </Button>
+          )}
+          {batch.deploy?.ok && (
+            <Button variant="outline" onClick={onVerify} disabled={verifying}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${verifying ? 'animate-spin' : ''}`} />
+              {verifying ? 'Verifying…' : 'Verify Live'}
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={onRemove}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {batch.deploy && !batch.deploy.ok && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Deploy hook error</AlertTitle>
+          <AlertDescription>{batch.deploy.error}</AlertDescription>
+        </Alert>
+      )}
+      {batch.deploy?.ok && !batch.verify && (
+        <Alert>
+          <Rocket className="h-4 w-4" />
+          <AlertTitle>Deploying…</AlertTitle>
+          <AlertDescription>Deploy triggered at {new Date(batch.deploy.triggeredAt).toLocaleTimeString()}. Wait ~2 min, then click Verify Live.</AlertDescription>
+        </Alert>
+      )}
+      {allVerified && (
+        <Alert className="border-green-500 bg-green-50">
+          <CheckCircle2 className="h-4 w-4 text-green-700" />
+          <AlertTitle className="text-green-800">Batch live and verified</AlertTitle>
+          <AlertDescription className="text-green-900">
+            <div className="flex items-center gap-2 mb-2">
+              <span>Request indexing in Search Console for each URL:</span>
+              <Button size="sm" variant="outline" onClick={copyLinks}>
+                <Copy className="h-3 w-3 mr-1" /> Copy all
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="divide-y border-t">
+        {batch.slugs.map((slug) => {
+          const v = batch.verify?.[slug];
+          const gscKey = `${batch.id}:${slug}`;
+          return (
+            <div key={slug} className="py-2 flex items-center gap-3 flex-wrap text-sm">
+              <a
+                href={`https://truficient.com${slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline flex items-center gap-1 min-w-0 truncate"
+              >
+                <code className="truncate">{slug}</code>
+                <ExternalLink className="h-3 w-3 shrink-0" />
+              </a>
+              <div className="flex-1" />
+              {v?.status === 'verified' && (
+                <Badge variant="outline" className="border-green-500 text-green-700">
+                  <CheckCircle2 className="h-3 w-3 mr-1" /> Verified
+                </Badge>
+              )}
+              {v?.status === 'not_prerendered' && (
+                <Badge variant="outline" className="text-muted-foreground">
+                  Not prerendered yet
+                </Badge>
+              )}
+              {v?.status === 'failed' && (
+                <Badge variant="destructive" title={(v.errors || []).join('\n')}>
+                  <XCircle className="h-3 w-3 mr-1" /> Failed
+                </Badge>
+              )}
+              {allVerified && (
+                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                  <Checkbox
+                    checked={!!gsc[gscKey]}
+                    onCheckedChange={(c) => onMarkGsc(slug, !!c)}
+                  />
+                  Marked as submitted in GSC
+                </label>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {batch.verify && Object.values(batch.verify).some((r) => r.status === 'failed') && (
+        <div className="text-xs text-red-700 space-y-1">
+          {Object.values(batch.verify)
+            .filter((r) => r.status === 'failed')
+            .map((r) => (
+              <div key={r.slug}>
+                <strong>{r.slug}:</strong> {(r.errors || []).join('; ')}
+              </div>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+}
