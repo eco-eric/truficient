@@ -26,3 +26,8 @@ Guidance for AI agents (Claude Code / Codex) working in this repo. **Read this b
 ## Workflow
 - Branch off `main`; open a PR; keep `main` clean so it doesn't collide with Lovable's CRM sync.
 - Frontend/SEO → Claude Code (this repo). Backend/DB → Supabase CLI migrations. They never touch the same files.
+
+## Deploy discipline (Vercel build budget)
+- NEVER push per-commit on feature/SEO branches. Work locally, commit as often as needed, but push ONLY when a changeset is complete and verified (local prod build passes, routes/canonicals spot-checked).
+- Target: one push per verified changeset, max 2-3 pushes per work session. Every push triggers a full Vercel preview build including the complete prerender of all published routes.
+- Exception: pushing to trigger the preview re-crawl gate before merge is required workflow — but that should be the SAME single push as the verified changeset, not an extra one.
