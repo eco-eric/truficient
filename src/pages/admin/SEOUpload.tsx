@@ -731,6 +731,28 @@ export default function SEOUpload() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={confirmPublishAll} onOpenChange={setConfirmPublishAll}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Publish all {pendingPages.length} pending page{pendingPages.length === 1 ? '' : 's'}?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div>
+                <p className="mb-2">This flips every unpublished page in the database to <strong>published</strong> and fires one Vercel deploy.</p>
+                <ul className="list-disc pl-5 text-xs space-y-0.5 max-h-48 overflow-auto">
+                  {pendingPages.map((p) => <li key={p.id}><code>{p.url_slug}</code></li>)}
+                </ul>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={publishingAll}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handlePublishAllPending} disabled={publishingAll}>
+              {publishingAll ? 'Publishing…' : 'Publish all & deploy'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }
