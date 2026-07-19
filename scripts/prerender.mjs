@@ -222,12 +222,33 @@ const ILLEGAL_PATH_RE = /[<>:"|*?\\]/;
 // Data sources
 // ---------------------------------------------------------------------------
 
+// PostgREST/supabase-js silently caps un-ranged selects at 1000 rows. page_seo
+// is already at 700+ and seo_location_pages at 500+ — without explicit paging,
+// crossing 1000 rows would silently drop published pages from the build.
+// Fetch in explicit ranges until a short page comes back.
+const FETCH_PAGE_SIZE = 1000;
+
+async function fetchAllRows(table, select, applyFilters = (q) => q) {
+  const rows = [];
+  for (let offset = 0; ; offset += FETCH_PAGE_SIZE) {
+    const query = applyFilters(supabase.from(table).select(select)).range(
+      offset,
+      offset + FETCH_PAGE_SIZE - 1,
+    );
+    const { data, error } = await query;
+    if (error) throw new Error(`${table} fetch failed: ${error.message}`);
+    rows.push(...(data || []));
+    if (!data || data.length < FETCH_PAGE_SIZE) break;
+  }
+  return rows;
+}
+
 async function loadPageSEO() {
   if (!supabase) return [];
-  const { data, error } = await supabase
-    .from('page_seo')
-    .select('page_path, meta_title, meta_description, og_title, og_description, og_image, canonical_url');
-  if (error) throw new Error(`page_seo fetch failed: ${error.message}`);
+  const data = await fetchAllRows(
+    'page_seo',
+    'page_path, meta_title, meta_description, og_title, og_description, og_image, canonical_url',
+  );
   return (data || []).map((r) => ({
     source: 'page_seo',
     path: r.page_path,
@@ -242,11 +263,11 @@ async function loadPageSEO() {
 
 async function loadBlogPosts() {
   if (!supabase) return [];
-  const { data, error } = await supabase
-    .from('blog_posts')
-    .select('slug, title, meta_title, meta_description, excerpt, og_title, og_description, og_image, featured_image, canonical_url')
-    .eq('status', 'published');
-  if (error) throw new Error(`blog_posts fetch failed: ${error.message}`);
+  const data = await fetchAllRows(
+    'blog_posts',
+    'slug, title, meta_title, meta_description, excerpt, og_title, og_description, og_image, featured_image, canonical_url',
+    (q) => q.eq('status', 'published'),
+  );
   return (data || []).map((r) => ({
     source: 'blog_posts',
     path: `/blog/${r.slug}`,
@@ -261,11 +282,11 @@ async function loadBlogPosts() {
 
 async function loadEquipmentPages() {
   if (!supabase) return [];
-  const { data, error } = await supabase
-    .from('equipment_pages')
-    .select('slug, brand, model_number, seo_title, seo_description')
-    .eq('published', true);
-  if (error) throw new Error(`equipment_pages fetch failed: ${error.message}`);
+  const data = await fetchAllRows(
+    'equipment_pages',
+    'slug, brand, model_number, seo_title, seo_description',
+    (q) => q.eq('published', true),
+  );
   return (data || []).map((r) => ({
     source: 'equipment_pages',
     path: `/equipment/${r.slug}`,
@@ -277,11 +298,11 @@ async function loadEquipmentPages() {
 
 async function loadLocationPages() {
   if (!supabase) return [];
-  const { data, error } = await supabase
-    .from('seo_location_pages')
-    .select('url_slug, meta_title, meta_description, h1_title, neighborhood, city')
-    .eq('published', true);
-  if (error) throw new Error(`seo_location_pages fetch failed: ${error.message}`);
+  const data = await fetchAllRows(
+    'seo_location_pages',
+    'url_slug, meta_title, meta_description, h1_title, neighborhood, city',
+    (q) => q.eq('published', true),
+  );
   return (data || []).map((r) => {
     let p = r.url_slug;
     if (!p.startsWith('/')) p = `/${p}`;
@@ -527,12 +548,49 @@ async function main() {
     throw err;
   }
 
+  // Source fetches are FATAL on error or on zero rows. Every one of these
+  // tables has published rows in production; an empty result always means a
+  // fetch/RLS/paging regression, not editorial intent. Building anyway would
+  // silently ship those pages as SPA-shell soft-404s with homepage meta and
+  // drop them from the sitemap — the exact failure the indexing crisis came
+  // from. Fail the deploy loudly instead.
+  if (!supabase) {
+    console.error(
+      '[prerender] FATAL: Supabase client not configured (URL/key missing) — ' +
+        'cannot fetch the DB-driven route list (page_seo, blog_posts, ' +
+        'equipment_pages, seo_location_pages).',
+    );
+    process.exit(1);
+  }
+
   const [pageSeoRows, blogRows, equipRows, locRows] = await Promise.all([
-    loadPageSEO().catch((e) => { console.error('[prerender] page_seo failed:', e.message); return []; }),
-    loadBlogPosts().catch((e) => { console.error('[prerender] blog_posts failed:', e.message); return []; }),
-    loadEquipmentPages().catch((e) => { console.error('[prerender] equipment_pages failed:', e.message); return []; }),
-    loadLocationPages().catch((e) => { console.error('[prerender] seo_location_pages failed:', e.message); return []; }),
-  ]);
+    loadPageSEO(),
+    loadBlogPosts(),
+    loadEquipmentPages(),
+    loadLocationPages(),
+  ]).catch((err) => {
+    console.error(
+      `[prerender] FATAL: DB route-source fetch failed — refusing to build with a ` +
+        `partial route list. ${err?.message || err}`,
+    );
+    process.exit(1);
+  });
+
+  for (const [name, rows] of [
+    ['page_seo', pageSeoRows],
+    ['blog_posts (published)', blogRows],
+    ['equipment_pages (published)', equipRows],
+    ['seo_location_pages (published)', locRows],
+  ]) {
+    if (rows.length === 0) {
+      console.error(
+        `[prerender] FATAL: ${name} returned 0 rows. This table always has ` +
+          `published rows in production, so an empty result means the fetch/RLS ` +
+          `is broken — never silently build fewer pages.`,
+      );
+      process.exit(1);
+    }
+  }
 
   console.log(
     `[prerender] Sources: page_seo=${pageSeoRows.length} blog=${blogRows.length} equipment=${equipRows.length} location=${locRows.length} static=${STATIC_ROUTES_SEO.length}`,
@@ -576,6 +634,19 @@ async function main() {
     `[prerender] Routes: content=${contentRoutes.length} interactive=${interactiveRoutes.length} ` +
       `(skipped: homepage=${skipped.homepage} .html=${skipped.html_source} illegal=${skipped.illegal} admin/preview=${skipped.excluded})`,
   );
+  // Static-only vs merged: the DB pull must only ever ADD routes on top of the
+  // static config. If merged ever drops below the static count, a source is
+  // being lost — fail rather than quietly emit fewer pages.
+  console.log(
+    `[prerender] Route list: static-only=${STATIC_ROUTES_SEO.length} static+DB merged=${routes.length}`,
+  );
+  if (routes.length < STATIC_ROUTES_SEO.length) {
+    console.error(
+      `[prerender] FATAL: merged route list (${routes.length}) is smaller than ` +
+        `the static config alone (${STATIC_ROUTES_SEO.length}).`,
+    );
+    process.exit(1);
+  }
 
   // --- Snapshot the content routes ---------------------------------------
   const snapshots = new Map(); // path -> { html, bodyTextLen }
