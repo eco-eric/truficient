@@ -60,6 +60,13 @@ interface VerifyResult {
   found?: { title?: string; description?: string; canonical?: string };
 }
 
+interface SaveOutcome {
+  fileName: string;
+  slug: string;
+  status: 'inserted' | 'updated' | 'blocked' | 'error';
+  message?: string;
+}
+
 const BATCH_STORAGE_KEY = 'seo_upload_batches_v1';
 
 function loadBatches(): DraftBatch[] {
@@ -90,6 +97,7 @@ export default function SEOUpload() {
   const [confirmPublish, setConfirmPublish] = useState<DraftBatch | null>(null);
   const [batches, setBatches] = useState<DraftBatch[]>(loadBatches());
   const [gsc, setGsc] = useState<Record<string, boolean>>({});
+  const [saveResults, setSaveResults] = useState<SaveOutcome[] | null>(null);
 
   useEffect(() => {
     saveBatches(batches);
@@ -155,88 +163,159 @@ export default function SEOUpload() {
   const handleSaveBatch = async () => {
     if (!savableFiles.length) return;
     setSaving(true);
+    setSaveResults(null);
+    const outcomes: SaveOutcome[] = [];
     const pageIds: string[] = [];
-    const slugs: string[] = [];
-    try {
-      for (const file of savableFiles) {
-        const fm = file.frontmatter;
-        const pageName =
-          fm.h1_title ||
-          fm.meta_title ||
-          fm.url_slug;
+    const savedSlugs: string[] = [];
 
-        const { data: seoEntry, error: seoError } = await supabase
-          .from('page_seo' as any)
-          .insert({
-            page_path: fm.url_slug,
-            page_name: pageName,
-            meta_title: fm.meta_title || null,
-            meta_description: fm.meta_description || null,
-            page_type: fm.page_type,
-            target_keyword: fm.target_keyword || null,
-            cluster: fm.cluster,
-            index_status: 'Pending',
-            schema_applied: true,
-            robots: 'index, follow',
-          })
-          .select('id')
-          .single();
-        if (seoError) throw seoError;
+    for (const file of savableFiles) {
+      const fm = file.frontmatter;
+      const slug = fm.url_slug;
+      const pageName = fm.h1_title || fm.meta_title || slug;
 
-        const { data: locRow, error: locError } = await supabase
-          .from('seo_location_pages' as any)
-          .insert({
-            page_seo_id: (seoEntry as any).id,
-            neighborhood: fm.neighborhood || fm.h1_title || fm.url_slug,
-            city: fm.city || 'Dallas',
-            state: fm.state || 'TX',
-            zip_code: fm.zip_code || null,
-            cluster: fm.cluster,
-            page_type: fm.page_type,
-            url_slug: fm.url_slug,
-            h1_title: fm.h1_title || null,
-            meta_title: fm.meta_title || null,
-            meta_description: fm.meta_description || null,
-            target_keyword: fm.target_keyword || null,
-            audience: fm.audience || null,
-            search_intent: fm.search_intent || null,
-            content: file.body, // byte-for-byte
-            schema_enabled: true,
-            schema_json: file.schemaJson,
-            published: false,
-          })
-          .select('id, url_slug')
-          .single();
-        if (locError) throw locError;
+      try {
+        const [{ data: existingLoc, error: locLookupErr }, { data: existingSeo, error: seoLookupErr }] = await Promise.all([
+          supabase
+            .from('seo_location_pages' as any)
+            .select('id, published, page_seo_id')
+            .eq('url_slug', slug)
+            .maybeSingle(),
+          supabase
+            .from('page_seo' as any)
+            .select('id')
+            .eq('page_path', slug)
+            .maybeSingle(),
+        ]);
+        if (locLookupErr) throw locLookupErr;
+        if (seoLookupErr) throw seoLookupErr;
 
-        pageIds.push((locRow as any).id);
-        slugs.push((locRow as any).url_slug);
+        if (existingLoc && (existingLoc as any).published === true) {
+          outcomes.push({ fileName: file.fileName, slug, status: 'blocked', message: 'Already live (published)' });
+          continue;
+        }
+
+        const seoPayload: any = {
+          page_path: slug,
+          page_name: pageName,
+          meta_title: fm.meta_title || null,
+          meta_description: fm.meta_description || null,
+          page_type: fm.page_type,
+          target_keyword: fm.target_keyword || null,
+          cluster: fm.cluster,
+          index_status: 'Pending',
+          schema_applied: true,
+          robots: 'index, follow',
+        };
+        const locPayload: any = {
+          neighborhood: fm.neighborhood || fm.h1_title || slug,
+          city: fm.city || 'Dallas',
+          state: fm.state || 'TX',
+          zip_code: fm.zip_code || null,
+          cluster: fm.cluster,
+          page_type: fm.page_type,
+          url_slug: slug,
+          h1_title: fm.h1_title || null,
+          meta_title: fm.meta_title || null,
+          meta_description: fm.meta_description || null,
+          target_keyword: fm.target_keyword || null,
+          audience: fm.audience || null,
+          search_intent: fm.search_intent || null,
+          content: file.body,
+          schema_enabled: true,
+          schema_json: file.schemaJson,
+          published: false,
+        };
+
+        if (existingLoc) {
+          // Draft exists — update both rows in place.
+          let seoId: string | null = (existingLoc as any).page_seo_id || (existingSeo as any)?.id || null;
+          if (seoId) {
+            const { error: e1 } = await supabase.from('page_seo' as any).update(seoPayload).eq('id', seoId);
+            if (e1) throw e1;
+          } else {
+            const { data: newSeo, error: e1 } = await supabase
+              .from('page_seo' as any)
+              .insert(seoPayload)
+              .select('id')
+              .single();
+            if (e1) throw e1;
+            seoId = (newSeo as any).id;
+          }
+          const { error: e2 } = await supabase
+            .from('seo_location_pages' as any)
+            .update({ ...locPayload, page_seo_id: seoId })
+            .eq('id', (existingLoc as any).id);
+          if (e2) throw e2;
+          pageIds.push((existingLoc as any).id);
+          savedSlugs.push(slug);
+          outcomes.push({ fileName: file.fileName, slug, status: 'updated' });
+        } else {
+          // No location row. Reuse orphan page_seo if present, else insert.
+          let seoId: string;
+          let createdSeo = false;
+          if (existingSeo) {
+            const { error: e1 } = await supabase.from('page_seo' as any).update(seoPayload).eq('id', (existingSeo as any).id);
+            if (e1) throw e1;
+            seoId = (existingSeo as any).id;
+          } else {
+            const { data: newSeo, error: e1 } = await supabase
+              .from('page_seo' as any)
+              .insert(seoPayload)
+              .select('id')
+              .single();
+            if (e1) throw e1;
+            seoId = (newSeo as any).id;
+            createdSeo = true;
+          }
+          const { data: newLoc, error: e2 } = await supabase
+            .from('seo_location_pages' as any)
+            .insert({ ...locPayload, page_seo_id: seoId })
+            .select('id')
+            .single();
+          if (e2) {
+            // Roll back the page_seo insert to avoid an orphan.
+            if (createdSeo) {
+              await supabase.from('page_seo' as any).delete().eq('id', seoId);
+            }
+            throw e2;
+          }
+          pageIds.push((newLoc as any).id);
+          savedSlugs.push(slug);
+          outcomes.push({ fileName: file.fileName, slug, status: 'inserted' });
+        }
+      } catch (err: any) {
+        console.error(`Save error for ${file.fileName}:`, err);
+        outcomes.push({ fileName: file.fileName, slug, status: 'error', message: err?.message || String(err) });
       }
+    }
 
+    if (savedSlugs.length) {
       const newBatch: DraftBatch = {
         id: `batch_${Date.now()}`,
         createdAt: new Date().toISOString(),
         pageIds,
-        slugs,
+        slugs: savedSlugs,
       };
       setBatches((b) => [newBatch, ...b]);
-      setFiles([]);
-      // Refresh slug set so future validations see them.
       setAllDbSlugs((prev) => {
         const next = new Set(prev);
-        slugs.forEach((s) => next.add(s));
+        savedSlugs.forEach((s) => next.add(s));
         return next;
       });
-      toast({
-        title: 'Batch saved as draft',
-        description: `${slugs.length} page(s) inserted (unpublished).`,
-      });
-    } catch (err: any) {
-      console.error('Save batch error:', err);
-      toast({ title: 'Save failed', description: err.message || String(err), variant: 'destructive' });
-    } finally {
-      setSaving(false);
     }
+    setSaveResults(outcomes);
+    setFiles([]);
+    setSaving(false);
+
+    const ins = outcomes.filter((o) => o.status === 'inserted').length;
+    const upd = outcomes.filter((o) => o.status === 'updated').length;
+    const blk = outcomes.filter((o) => o.status === 'blocked').length;
+    const err = outcomes.filter((o) => o.status === 'error').length;
+    toast({
+      title: 'Save complete',
+      description: `${ins} inserted · ${upd} updated · ${blk} blocked · ${err} error`,
+      variant: err > 0 ? 'destructive' : 'default',
+    });
   };
 
   const handlePublishBatch = async (batch: DraftBatch) => {
@@ -437,6 +516,33 @@ export default function SEOUpload() {
             </CardContent>
           </Card>
         )}
+
+        {saveResults && saveResults.length > 0 && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Save results</CardTitle>
+                  <CardDescription>Per-file outcome from the last Save Batch.</CardDescription>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setSaveResults(null)}>Dismiss</Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-1 text-sm">
+              {saveResults.map((r) => (
+                <div key={r.fileName} className="flex items-start gap-2">
+                  {r.status === 'inserted' && <Badge variant="outline" className="border-green-500 text-green-700">Inserted</Badge>}
+                  {r.status === 'updated' && <Badge variant="outline" className="border-blue-500 text-blue-700">Updated draft</Badge>}
+                  {r.status === 'blocked' && <Badge variant="outline" className="border-red-500 text-red-700">Blocked</Badge>}
+                  {r.status === 'error' && <Badge variant="destructive">Error</Badge>}
+                  <code className="truncate">{r.slug || r.fileName}</code>
+                  {r.message && <span className="text-muted-foreground">— {r.message}</span>}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
 
         {batches.length > 0 && (
           <Card>
