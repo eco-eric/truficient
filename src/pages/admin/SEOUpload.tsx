@@ -352,6 +352,81 @@ export default function SEOUpload() {
     });
   };
 
+  const handlePublishAllPending = async () => {
+    if (!pendingPages.length) return;
+    setPublishingAll(true);
+    try {
+      const ids = pendingPages.map((p) => p.id);
+      const publishedSlugs = pendingPages.map((p) => p.url_slug);
+
+      // 1. Flip every pending row to published.
+      const { data: updated, error: upErr } = await supabase
+        .from('seo_location_pages' as any)
+        .update({ published: true })
+        .in('id', ids)
+        .select('id');
+      if (upErr) throw upErr;
+
+      const updatedCount = (updated || []).length;
+      if (updatedCount === 0) {
+        throw new Error('No rows were updated — possible RLS block. Sign out and back in, then retry.');
+      }
+
+      // 2. Fire ONE Vercel deploy for the whole set.
+      const { data: deployRes, error: deployErr } = await supabase.functions.invoke('trigger-deploy');
+      const deployOk = !deployErr && (deployRes as any)?.success;
+
+      // 3. Mark any local batches whose pages were part of this run as deployed.
+      const publishedIdSet = new Set(ids);
+      setBatches((all) =>
+        all.map((b) =>
+          b.pageIds.some((pid) => publishedIdSet.has(pid))
+            ? {
+                ...b,
+                deploy: {
+                  triggeredAt: new Date().toISOString(),
+                  ok: !!deployOk,
+                  error: deployOk
+                    ? undefined
+                    : (deployRes as any)?.error || deployErr?.message || 'Deploy hook failed',
+                },
+              }
+            : b,
+        ),
+      );
+
+      // 4. Refresh known-slug sets so validation reflects the new published state.
+      setExistingSlugs((prev) => {
+        const next = new Set(prev);
+        publishedSlugs.forEach((s) => next.add(s));
+        return next;
+      });
+      await loadPending();
+
+      if (deployOk) {
+        toast({
+          title: `Published ${updatedCount} page${updatedCount === 1 ? '' : 's'}`,
+          description: 'Vercel deploy triggered. Live in ~2 minutes.',
+        });
+      } else {
+        toast({
+          title: `Published ${updatedCount} page${updatedCount === 1 ? '' : 's'}, deploy hook failed`,
+          description: (deployRes as any)?.error || deployErr?.message || 'Trigger the deploy manually.',
+          variant: 'destructive',
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: 'Publish all failed',
+        description: err.message || String(err),
+        variant: 'destructive',
+      });
+    } finally {
+      setPublishingAll(false);
+      setConfirmPublishAll(false);
+    }
+  };
+
   const handlePublishBatch = async (batch: DraftBatch) => {
     setPublishingBatchId(batch.id);
     try {
