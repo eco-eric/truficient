@@ -126,6 +126,19 @@ export default function SEOUpload() {
     })();
   }, []);
 
+  const loadPending = useCallback(async () => {
+    const { data } = await supabase
+      .from('seo_location_pages' as any)
+      .select('id, url_slug')
+      .eq('published', false)
+      .order('url_slug', { ascending: true });
+    setPendingPages(((data || []) as any[]).map((r) => ({ id: r.id, url_slug: r.url_slug })));
+  }, []);
+
+  useEffect(() => {
+    loadPending();
+  }, [loadPending]);
+
   const knownSlugs: Omit<KnownSlugs, 'batchSlugs'> = useMemo(
     () => ({ existing: existingSlugs, allDbSlugs }),
     [existingSlugs, allDbSlugs],
