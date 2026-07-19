@@ -517,6 +517,33 @@ export default function SEOUpload() {
           </Card>
         )}
 
+        {saveResults && saveResults.length > 0 && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Save results</CardTitle>
+                  <CardDescription>Per-file outcome from the last Save Batch.</CardDescription>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setSaveResults(null)}>Dismiss</Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-1 text-sm">
+              {saveResults.map((r) => (
+                <div key={r.fileName} className="flex items-start gap-2">
+                  {r.status === 'inserted' && <Badge variant="outline" className="border-green-500 text-green-700">Inserted</Badge>}
+                  {r.status === 'updated' && <Badge variant="outline" className="border-blue-500 text-blue-700">Updated draft</Badge>}
+                  {r.status === 'blocked' && <Badge variant="outline" className="border-red-500 text-red-700">Blocked</Badge>}
+                  {r.status === 'error' && <Badge variant="destructive">Error</Badge>}
+                  <code className="truncate">{r.slug || r.fileName}</code>
+                  {r.message && <span className="text-muted-foreground">— {r.message}</span>}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+
         {batches.length > 0 && (
           <Card>
             <CardHeader>
