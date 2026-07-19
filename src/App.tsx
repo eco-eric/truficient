@@ -74,6 +74,7 @@ const AdminSEOManagement = lazy(() => import("./pages/admin/SEOManagement"));
 const AdminSEOPerformance = lazy(() => import("./pages/admin/SEOPerformance"));
 const AdminSEOEditor = lazy(() => import("./pages/admin/SEOEditor"));
 const AdminLocationPageBuilder = lazy(() => import("./pages/admin/LocationPageBuilder"));
+const AdminSEOUpload = lazy(() => import("./pages/admin/SEOUpload"));
 const AdminCalculators = lazy(() => import("./pages/admin/Calculators"));
 const AdminCalculatorEditor = lazy(() => import("./pages/admin/CalculatorEditor"));
 const AdminUsers = lazy(() => import("./pages/admin/Users"));
@@ -304,6 +305,7 @@ const router = createBrowserRouter([
           { path: "/admin/seo-performance", element: <ProtectedRoute><AdminSEOPerformance /></ProtectedRoute> },
           { path: "/admin/seo/:id", element: <ProtectedRoute><AdminSEOEditor /></ProtectedRoute> },
           { path: "/admin/seo/location/:id", element: <ProtectedRoute><AdminLocationPageBuilder /></ProtectedRoute> },
+          { path: "/admin/seo/upload", element: <ProtectedRoute><AdminSEOUpload /></ProtectedRoute> },
           { path: "/admin/calculators", element: <ProtectedRoute><AdminCalculators /></ProtectedRoute> },
           { path: "/admin/calculators/:id", element: <ProtectedRoute><AdminCalculatorEditor /></ProtectedRoute> },
           { path: "/admin/system-pricing", element: <ProtectedRoute><AdminSystemPricing /></ProtectedRoute> },

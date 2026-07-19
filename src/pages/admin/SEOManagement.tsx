@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Loader2, Search, Pencil, Plus, Check, X, ExternalLink, ArrowUpDown, MapPin, FileText, ChevronDown, RefreshCw, BarChart3, Download, Tag } from 'lucide-react';
+import { Loader2, Search, Pencil, Plus, Check, X, ExternalLink, ArrowUpDown, MapPin, FileText, ChevronDown, RefreshCw, BarChart3, Download, Tag, Upload } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { SEOBachPanel } from '@/components/admin/seo/SEOBachPanel';
@@ -392,6 +392,12 @@ const SEOManagement = () => {
               <Link to="/admin/seo-performance">
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Performance
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/admin/seo/upload">
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Pages
               </Link>
             </Button>
             <Button variant="outline" onClick={handleExportCSV}>

@@ -103,5 +103,12 @@ verify_jwt = false
 [functions.social-scheduled-publish]
 verify_jwt = false
 
+[functions.trigger-deploy]
+verify_jwt = false
+
+[functions.verify-live-pages]
+verify_jwt = false
+
+
 
 
