@@ -169,9 +169,12 @@ export function validatePage(p: ParsedPage, known: KnownSlugs): ValidationIssue[
     issues.push({ level: 'red', code: 'slug_html', message: 'Slug contains .html' });
   }
 
-  // 2. Slug uniqueness
-  if (slug && (known.allDbSlugs.has(slug) || known.existing.has(slug))) {
-    issues.push({ level: 'red', code: 'slug_exists', message: `Slug already exists in DB: ${slug}` });
+  // 2. Slug uniqueness — only block when a PUBLISHED page already owns this slug.
+  // Unpublished drafts are handled by Save Batch (updated in place).
+  if (slug && known.existing.has(slug)) {
+    issues.push({ level: 'red', code: 'slug_exists', message: `Slug already published: ${slug}` });
+  } else if (slug && known.allDbSlugs.has(slug)) {
+    issues.push({ level: 'yellow', code: 'slug_draft_exists', message: `A draft already exists for this slug — saving will update it in place.` });
   }
 
   // 3. Forbidden legacy phones
