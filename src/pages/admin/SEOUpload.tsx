@@ -207,7 +207,7 @@ export default function SEOUpload() {
           robots: 'index, follow',
         };
         const locPayload: any = {
-          neighborhood: fm.neighborhood || fm.h1_title || slug,
+          neighborhood: fm.neighborhood || fm.city || 'Dallas',
           city: fm.city || 'Dallas',
           state: fm.state || 'TX',
           zip_code: fm.zip_code || null,
@@ -217,7 +217,6 @@ export default function SEOUpload() {
           h1_title: fm.h1_title || null,
           meta_title: fm.meta_title || null,
           meta_description: fm.meta_description || null,
-          target_keyword: fm.target_keyword || null,
           audience: fm.audience || null,
           search_intent: fm.search_intent || null,
           content: file.body,
