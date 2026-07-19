@@ -74,6 +74,7 @@ const AdminSEOManagement = lazy(() => import("./pages/admin/SEOManagement"));
 const AdminSEOPerformance = lazy(() => import("./pages/admin/SEOPerformance"));
 const AdminSEOEditor = lazy(() => import("./pages/admin/SEOEditor"));
 const AdminLocationPageBuilder = lazy(() => import("./pages/admin/LocationPageBuilder"));
+const AdminSEOUpload = lazy(() => import("./pages/admin/SEOUpload"));
 const AdminCalculators = lazy(() => import("./pages/admin/Calculators"));
 const AdminCalculatorEditor = lazy(() => import("./pages/admin/CalculatorEditor"));
 const AdminUsers = lazy(() => import("./pages/admin/Users"));
