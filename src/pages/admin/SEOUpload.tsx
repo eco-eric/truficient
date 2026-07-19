@@ -98,6 +98,9 @@ export default function SEOUpload() {
   const [batches, setBatches] = useState<DraftBatch[]>(loadBatches());
   const [gsc, setGsc] = useState<Record<string, boolean>>({});
   const [saveResults, setSaveResults] = useState<SaveOutcome[] | null>(null);
+  const [pendingPages, setPendingPages] = useState<{ id: string; url_slug: string }[]>([]);
+  const [publishingAll, setPublishingAll] = useState(false);
+  const [confirmPublishAll, setConfirmPublishAll] = useState(false);
 
   useEffect(() => {
     saveBatches(batches);
@@ -122,6 +125,19 @@ export default function SEOUpload() {
       setLoadingSlugs(false);
     })();
   }, []);
+
+  const loadPending = useCallback(async () => {
+    const { data } = await supabase
+      .from('seo_location_pages' as any)
+      .select('id, url_slug')
+      .eq('published', false)
+      .order('url_slug', { ascending: true });
+    setPendingPages(((data || []) as any[]).map((r) => ({ id: r.id, url_slug: r.url_slug })));
+  }, []);
+
+  useEffect(() => {
+    loadPending();
+  }, [loadPending]);
 
   const knownSlugs: Omit<KnownSlugs, 'batchSlugs'> = useMemo(
     () => ({ existing: existingSlugs, allDbSlugs }),
@@ -334,6 +350,81 @@ export default function SEOUpload() {
       description: `${ins} inserted · ${upd} updated · ${blk} blocked · ${err} error`,
       variant: err > 0 ? 'destructive' : 'default',
     });
+  };
+
+  const handlePublishAllPending = async () => {
+    if (!pendingPages.length) return;
+    setPublishingAll(true);
+    try {
+      const ids = pendingPages.map((p) => p.id);
+      const publishedSlugs = pendingPages.map((p) => p.url_slug);
+
+      // 1. Flip every pending row to published.
+      const { data: updated, error: upErr } = await supabase
+        .from('seo_location_pages' as any)
+        .update({ published: true })
+        .in('id', ids)
+        .select('id');
+      if (upErr) throw upErr;
+
+      const updatedCount = (updated || []).length;
+      if (updatedCount === 0) {
+        throw new Error('No rows were updated — possible RLS block. Sign out and back in, then retry.');
+      }
+
+      // 2. Fire ONE Vercel deploy for the whole set.
+      const { data: deployRes, error: deployErr } = await supabase.functions.invoke('trigger-deploy');
+      const deployOk = !deployErr && (deployRes as any)?.success;
+
+      // 3. Mark any local batches whose pages were part of this run as deployed.
+      const publishedIdSet = new Set(ids);
+      setBatches((all) =>
+        all.map((b) =>
+          b.pageIds.some((pid) => publishedIdSet.has(pid))
+            ? {
+                ...b,
+                deploy: {
+                  triggeredAt: new Date().toISOString(),
+                  ok: !!deployOk,
+                  error: deployOk
+                    ? undefined
+                    : (deployRes as any)?.error || deployErr?.message || 'Deploy hook failed',
+                },
+              }
+            : b,
+        ),
+      );
+
+      // 4. Refresh known-slug sets so validation reflects the new published state.
+      setExistingSlugs((prev) => {
+        const next = new Set(prev);
+        publishedSlugs.forEach((s) => next.add(s));
+        return next;
+      });
+      await loadPending();
+
+      if (deployOk) {
+        toast({
+          title: `Published ${updatedCount} page${updatedCount === 1 ? '' : 's'}`,
+          description: 'Vercel deploy triggered. Live in ~2 minutes.',
+        });
+      } else {
+        toast({
+          title: `Published ${updatedCount} page${updatedCount === 1 ? '' : 's'}, deploy hook failed`,
+          description: (deployRes as any)?.error || deployErr?.message || 'Trigger the deploy manually.',
+          variant: 'destructive',
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: 'Publish all failed',
+        description: err.message || String(err),
+        variant: 'destructive',
+      });
+    } finally {
+      setPublishingAll(false);
+      setConfirmPublishAll(false);
+    }
   };
 
   const handlePublishBatch = async (batch: DraftBatch) => {
@@ -561,6 +652,38 @@ export default function SEOUpload() {
           </Card>
         )}
 
+        {pendingPages.length > 0 && (
+          <Card>
+            <CardHeader className="flex flex-row items-start justify-between gap-4">
+              <div>
+                <CardTitle>All Pending Pages</CardTitle>
+                <CardDescription>
+                  {pendingPages.length} unpublished page{pendingPages.length === 1 ? '' : 's'} in the database (across all batches, including uploads from other sessions).
+                </CardDescription>
+              </div>
+              <Button
+                onClick={() => setConfirmPublishAll(true)}
+                disabled={publishingAll}
+              >
+                <Rocket className="h-4 w-4 mr-2" />
+                {publishingAll ? 'Publishing…' : `Publish all ${pendingPages.length}`}
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <details className="text-sm">
+                <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                  Show slugs
+                </summary>
+                <ul className="mt-2 list-disc pl-5 space-y-0.5 max-h-64 overflow-auto">
+                  {pendingPages.map((p) => (
+                    <li key={p.id}><code className="text-xs">{p.url_slug}</code></li>
+                  ))}
+                </ul>
+              </details>
+            </CardContent>
+          </Card>
+        )}
+
 
         {batches.length > 0 && (
           <Card>
@@ -604,6 +727,28 @@ export default function SEOUpload() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={() => confirmPublish && handlePublishBatch(confirmPublish)}>
               Publish & deploy
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmPublishAll} onOpenChange={setConfirmPublishAll}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Publish all {pendingPages.length} pending page{pendingPages.length === 1 ? '' : 's'}?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div>
+                <p className="mb-2">This flips every unpublished page in the database to <strong>published</strong> and fires one Vercel deploy.</p>
+                <ul className="list-disc pl-5 text-xs space-y-0.5 max-h-48 overflow-auto">
+                  {pendingPages.map((p) => <li key={p.id}><code>{p.url_slug}</code></li>)}
+                </ul>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={publishingAll}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handlePublishAllPending} disabled={publishingAll}>
+              {publishingAll ? 'Publishing…' : 'Publish all & deploy'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
