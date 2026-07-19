@@ -652,6 +652,38 @@ export default function SEOUpload() {
           </Card>
         )}
 
+        {pendingPages.length > 0 && (
+          <Card>
+            <CardHeader className="flex flex-row items-start justify-between gap-4">
+              <div>
+                <CardTitle>All Pending Pages</CardTitle>
+                <CardDescription>
+                  {pendingPages.length} unpublished page{pendingPages.length === 1 ? '' : 's'} in the database (across all batches, including uploads from other sessions).
+                </CardDescription>
+              </div>
+              <Button
+                onClick={() => setConfirmPublishAll(true)}
+                disabled={publishingAll}
+              >
+                <Rocket className="h-4 w-4 mr-2" />
+                {publishingAll ? 'Publishing…' : `Publish all ${pendingPages.length}`}
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <details className="text-sm">
+                <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                  Show slugs
+                </summary>
+                <ul className="mt-2 list-disc pl-5 space-y-0.5 max-h-64 overflow-auto">
+                  {pendingPages.map((p) => (
+                    <li key={p.id}><code className="text-xs">{p.url_slug}</code></li>
+                  ))}
+                </ul>
+              </details>
+            </CardContent>
+          </Card>
+        )}
+
 
         {batches.length > 0 && (
           <Card>
