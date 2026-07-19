@@ -305,6 +305,7 @@ const router = createBrowserRouter([
           { path: "/admin/seo-performance", element: <ProtectedRoute><AdminSEOPerformance /></ProtectedRoute> },
           { path: "/admin/seo/:id", element: <ProtectedRoute><AdminSEOEditor /></ProtectedRoute> },
           { path: "/admin/seo/location/:id", element: <ProtectedRoute><AdminLocationPageBuilder /></ProtectedRoute> },
+          { path: "/admin/seo/upload", element: <ProtectedRoute><AdminSEOUpload /></ProtectedRoute> },
           { path: "/admin/calculators", element: <ProtectedRoute><AdminCalculators /></ProtectedRoute> },
           { path: "/admin/calculators/:id", element: <ProtectedRoute><AdminCalculatorEditor /></ProtectedRoute> },
           { path: "/admin/system-pricing", element: <ProtectedRoute><AdminSystemPricing /></ProtectedRoute> },
