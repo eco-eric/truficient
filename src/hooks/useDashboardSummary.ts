@@ -68,11 +68,16 @@ export function useDashboardSummary() {
   return useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: async (): Promise<DashboardSummary> => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        throw new Error('Not authenticated');
+      }
       const { data, error } = await supabase.functions.invoke('dashboard-summary');
       if (error) throw error;
       return data as DashboardSummary;
     },
     staleTime: 60_000,
     refetchOnWindowFocus: false,
+    retry: false,
   });
 }
