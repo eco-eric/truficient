@@ -211,13 +211,26 @@ export function validatePage(p: ParsedPage, known: KnownSlugs): ValidationIssue[
     if (re.test(body)) issues.push({ level: 'red', code: 'urgency', message: `Contains prohibited language: "${label}"` });
   }
 
-  // 8. Warranty rule
+  // 8. Warranty rule — tiers updated 2026-07-21
+  // "Bumper-to-bumper" (parts AND labor) = Mitsubishi SVZ/PUZ ducted ONLY.
+  // 12-yr parts & compressor brands: Mitsubishi, Fujitsu, Daikin (mini-splits).
+  // 10-yr parts & compressor brands: Gree, Bosch, Goodman, Trane.
   if (audience === 'residential') {
-    if (!/12-year bumper-to-bumper/i.test(body)) {
-      issues.push({ level: 'red', code: 'warranty_res_missing', message: 'Residential page missing "12-year bumper-to-bumper"' });
+    const twelveYrBrand = /\b(mitsubishi|fujitsu|daikin)\b/i;
+    const tenYrBrand = /\b(gree|bosch|goodman|trane)\b/i;
+    // Bumper-to-bumper (parts AND labor) is SVZ/PUZ ducted only.
+    if (/bumper-to-bumper/i.test(body) && !/\b(svz|puz)\b/i.test(body)) {
+      issues.push({ level: 'red', code: 'warranty_scope', message: '"Bumper-to-bumper" (parts AND labor) applies only to Mitsubishi SVZ/PUZ ducted units — page must mention SVZ or PUZ, or drop the claim' });
+    }
+    // A 12-year claim on a page that names only a 10-year brand is a false claim.
+    if (/12[-\s]?year/i.test(body) && tenYrBrand.test(body) && !twelveYrBrand.test(body)) {
+      issues.push({ level: 'red', code: 'warranty_tier_brand', message: 'Page claims a 12-year warranty but names a 10-year brand (Gree/Bosch/Goodman/Trane) and no 12-year brand (Mitsubishi/Fujitsu/Daikin). Those brands carry a 10-year parts & compressor warranty.' });
     }
     if (/10-year commercial/i.test(body)) {
       issues.push({ level: 'red', code: 'warranty_res_wrong', message: 'Residential page contains "10-year commercial"' });
+    }
+    if (!/warranty/i.test(body)) {
+      issues.push({ level: 'yellow', code: 'warranty_mention', message: 'No warranty mention found — add the correct tier: 12-yr parts & compressor (Mitsubishi/Fujitsu/Daikin), 10-yr parts & compressor (Gree/Bosch/Goodman/Trane), or 12-yr bumper-to-bumper parts AND labor (Mitsubishi SVZ/PUZ ducted only).' });
     }
   } else if (audience === 'commercial') {
     if (!/10-year commercial warranty on parts and compressors/i.test(body)) {
