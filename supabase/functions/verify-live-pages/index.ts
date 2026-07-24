@@ -27,6 +27,20 @@ interface PageResult {
   errors?: string[];
 }
 
+// Decode the HTML entities the prerender's esc() produces, so raw-HTML
+// values compare equal to the plain-text DB values (e.g. a meta_title
+// containing "&" is correctly served as "&amp;" — that's a pass, not a
+// mismatch). Order matters: &amp; must be decoded last.
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0*39;/g, "'")
+    .replace(/&#x0*27;/gi, "'")
+    .replace(/&amp;/g, '&');
+}
+
 function extract(html: string): { title?: string; description?: string; canonical?: string } {
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   const descMatch = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["'][^>]*>/i)
@@ -34,9 +48,9 @@ function extract(html: string): { title?: string; description?: string; canonica
   const canonMatch = html.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']*)["'][^>]*>/i)
     || html.match(/<link[^>]+href=["']([^"']*)["'][^>]+rel=["']canonical["'][^>]*>/i);
   return {
-    title: titleMatch ? titleMatch[1].trim() : undefined,
-    description: descMatch ? descMatch[1] : undefined,
-    canonical: canonMatch ? canonMatch[1] : undefined,
+    title: titleMatch ? decodeEntities(titleMatch[1].trim()) : undefined,
+    description: descMatch ? decodeEntities(descMatch[1]) : undefined,
+    canonical: canonMatch ? decodeEntities(canonMatch[1]) : undefined,
   };
 }
 

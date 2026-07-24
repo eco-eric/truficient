@@ -15,6 +15,15 @@ import { setSocialMetaTags, cleanCanonicalUrl } from '@/lib/seo/socialMeta';
 import RelatedPages, { fetchRelatedPages, type RelatedPagesData, type RelatedSource } from '@/components/seo/RelatedPages';
 
 /**
+ * Strip HTML comments from markdown content. Uploaded .md files sometimes
+ * carry marker comments (e.g. "<!-- JSON-LD SCHEMA -->") that react-markdown
+ * renders as literal visible text instead of hiding them.
+ */
+function stripHtmlComments(md: string): string {
+  return md.replace(/<!--[\s\S]*?-->/g, '').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+/**
  * Split markdown content at specific paragraph boundaries.
  * A "paragraph" is a text block between \n\n that doesn't start with #, -, *, |, >
  */
@@ -536,7 +545,7 @@ function FullContentWithGallery({ location }: { location: LocationData }) {
     propertyTags: location.property_tags,
   });
 
-  const chunks = splitMarkdownByParagraphs(location.content!, [1, 3]);
+  const chunks = splitMarkdownByParagraphs(stripHtmlComments(location.content!), [1, 3]);
 
   const proseClasses = `prose prose-lg max-w-none
     prose-headings:text-foreground prose-p:text-muted-foreground

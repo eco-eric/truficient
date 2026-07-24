@@ -105,6 +105,11 @@ export function parseFile(fileName: string, raw: string): ParsedPage {
     body = afterFm.trim();
   }
 
+  // Strip HTML comments (e.g. "<!-- JSON-LD SCHEMA -->" markers above the
+  // fenced json block) — they are not content and react-markdown would
+  // render them as literal visible text on the live page.
+  body = body.replace(/<!--[\s\S]*?-->/g, '').replace(/\n{3,}/g, '\n\n').trim();
+
   const bodyWordCount = body.split(/\s+/).filter(Boolean).length;
 
   return { fileName, raw, frontmatter: fm, schemaJson, schemaRaw, body, bodyWordCount };
