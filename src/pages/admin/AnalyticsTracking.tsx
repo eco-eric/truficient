@@ -34,7 +34,6 @@ const AnalyticsTracking = () => {
         setGaId(ga.setting_value || '');
         setGaEnabled(ga.is_enabled);
       }
-      }
     }
   }, [settings]);
 
