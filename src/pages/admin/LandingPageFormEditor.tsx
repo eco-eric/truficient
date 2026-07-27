@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Loader2, Save, Tag } from 'lucide-react';
+import { ArrowLeft, Loader2, Save } from 'lucide-react';
 
 interface FieldsConfig {
   firstName: boolean;
@@ -31,13 +31,6 @@ interface FieldsConfig {
   message: boolean;
 }
 
-interface GHLTag {
-  id: string;
-  name: string;
-  tag_value: string;
-  color: string | null;
-  is_active: boolean;
-}
 
 const defaultFieldsConfig: FieldsConfig = {
   firstName: true,
@@ -84,34 +77,6 @@ export default function LandingPageFormEditor() {
     enabled: !isNew,
   });
 
-  // Fetch assigned tags
-  const { data: assignedTags } = useQuery({
-    queryKey: ['landing-page-form-tags', id],
-    queryFn: async () => {
-      if (isNew) return [];
-      const { data, error } = await supabase
-        .from('landing_page_form_tags')
-        .select('tag_id')
-        .eq('form_id', id);
-      if (error) throw error;
-      return data.map((t) => t.tag_id);
-    },
-    enabled: !isNew,
-  });
-
-  // Fetch all available tags
-  const { data: allTags } = useQuery({
-    queryKey: ['ghl-tags-all'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('ghl_tags')
-        .select('*')
-        .order('name');
-      if (error) throw error;
-      return data as GHLTag[];
-    },
-  });
-
   // Populate form when editing
   useEffect(() => {
     if (existingForm) {
@@ -127,12 +92,6 @@ export default function LandingPageFormEditor() {
       });
     }
   }, [existingForm]);
-
-  useEffect(() => {
-    if (assignedTags) {
-      setSelectedTags(assignedTags);
-    }
-  }, [assignedTags]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -154,17 +113,6 @@ export default function LandingPageFormEditor() {
           .single();
         if (error) throw error;
 
-        // Assign tags
-        if (selectedTags.length > 0) {
-          const { error: tagError } = await supabase
-            .from('landing_page_form_tags')
-            .insert(selectedTags.map((tagId) => ({
-              form_id: newForm.id,
-              tag_id: tagId,
-            })));
-          if (tagError) throw tagError;
-        }
-
         return newForm;
       } else {
         // Update existing form
@@ -183,17 +131,6 @@ export default function LandingPageFormEditor() {
           .eq('id', id);
         if (error) throw error;
 
-        // Update tags - delete existing and re-add
-        await supabase.from('landing_page_form_tags').delete().eq('form_id', id);
-        if (selectedTags.length > 0) {
-          const { error: tagError } = await supabase
-            .from('landing_page_form_tags')
-            .insert(selectedTags.map((tagId) => ({
-              form_id: id,
-              tag_id: tagId,
-            })));
-          if (tagError) throw tagError;
-        }
       }
     },
     onSuccess: () => {
@@ -220,12 +157,6 @@ export default function LandingPageFormEditor() {
     });
   };
 
-  const handleTagToggle = (tagId: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
-    );
-  };
-
   if (!isNew && formLoading) {
     return (
       <AdminLayout title="Loading...">
@@ -248,7 +179,7 @@ export default function LandingPageFormEditor() {
               {isNew ? 'Create New Form' : 'Edit Form'}
             </h1>
             <p className="text-muted-foreground">
-              Configure your landing page form settings and assign GHL tags
+              Configure your landing page form settings
             </p>
           </div>
           <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
@@ -265,7 +196,6 @@ export default function LandingPageFormEditor() {
           <TabsList>
             <TabsTrigger value="basic">Basic Info</TabsTrigger>
             <TabsTrigger value="fields">Fields</TabsTrigger>
-            <TabsTrigger value="tags">GHL Tags</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
@@ -358,61 +288,6 @@ export default function LandingPageFormEditor() {
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="tags">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Tag className="h-5 w-5" />
-                  GHL Tags
-                </CardTitle>
-                <CardDescription>
-                  Select which GoHighLevel tags to apply when this form is submitted
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {allTags && allTags.length > 0 ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {allTags.map((tag) => (
-                      <div
-                        key={tag.id}
-                        className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                          selectedTags.includes(tag.id)
-                            ? 'border-primary bg-primary/5'
-                            : 'hover:border-muted-foreground/50'
-                        } ${!tag.is_active ? 'opacity-50' : ''}`}
-                        onClick={() => handleTagToggle(tag.id)}
-                      >
-                        <Checkbox
-                          checked={selectedTags.includes(tag.id)}
-                          onCheckedChange={() => handleTagToggle(tag.id)}
-                        />
-                        <div className="flex-1">
-                          <Badge
-                            style={{ backgroundColor: tag.color || '#3b82f6' }}
-                            className="text-white"
-                          >
-                            {tag.name}
-                          </Badge>
-                          <p className="text-xs text-muted-foreground mt-1 font-mono">
-                            {tag.tag_value}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Tag className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No GHL tags available</p>
-                    <Button variant="link" onClick={() => navigate('/admin/ghl-tags')}>
-                      Create tags first
-                    </Button>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </TabsContent>
