@@ -486,8 +486,6 @@ interface PricingBreakdown {
 | \`efficiency_tier_id\` | UUID | FK to ducted_efficiency_tiers |
 | \`equipment_id\` | UUID | FK to ducted_equipment |
 | \`final_total\` | NUMERIC | Grand total |
-| \`ghl_contact_id\` | TEXT | GoHighLevel contact ID |
-| \`ghl_sync_status\` | TEXT | pending, synced, failed |
 
 ### \`ducted_equipment\`
 
@@ -1103,7 +1101,7 @@ const { data, error } = await supabase
 
 ## Overview
 
-The internal CRM system manages the complete customer lifecycle from lead capture through job completion. It is separate from the GoHighLevel (GHL) integration, which handles external CRM sync. This system provides:
+The internal CRM system manages the complete customer lifecycle from lead capture through job completion. This system provides:
 
 - **Customer Management** - Contact records, lifecycle tracking, segmentation
 - **Location Management** - Multi-property support with property data enrichment
@@ -1200,7 +1198,7 @@ The internal CRM system manages the complete customer lifecycle from lead captur
 
 | Table | Purpose | Key Fields |
 |-------|---------|------------|
-| \`crm_customers\` | Customer master records | first_name, last_name, email, phone, customer_status, customer_type, lead_source, tags[], ghl_contact_id |
+| \`crm_customers\` | Customer master records | first_name, last_name, email, phone, customer_status, customer_type, lead_source, tags[] |
 | \`crm_locations\` | Service addresses | customer_id, address_line1, city, state, zip_code, square_footage, year_built, stories, latitude, longitude |
 | \`crm_customer_contacts\` | Additional contacts | customer_id, first_name, last_name, email, phone, contact_type |
 | \`crm_interactions\` | Activity log | customer_id, interaction_type, direction, content, outcome, logged_by |
