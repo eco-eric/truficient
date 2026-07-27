@@ -74,6 +74,26 @@ const SubmissionDetail = () => {
         if (error) throw error;
 
         setSubmission(data as Submission);
+
+        const { data: attr } = await (supabase as any)
+          .from('lead_attribution')
+          .select('channel, landing_page, referrer, utm_source, utm_medium, utm_campaign, utm_term, utm_content, gclid, fbclid')
+          .eq('id', id)
+          .maybeSingle();
+
+        if (attr) {
+          setAttribution(attr as Attribution);
+          if (attr.channel === 'Organic Search') {
+            const { data: queries } = await (supabase as any)
+              .from('lead_search_queries')
+              .select('query, clicks, position')
+              .eq('lead_id', id)
+              .order('clicks', { ascending: false })
+              .limit(5);
+            setLeadQueries((queries as LeadQuery[]) ?? []);
+          }
+        }
+
       } catch (error) {
         console.error('Error fetching submission:', error);
         toast({
