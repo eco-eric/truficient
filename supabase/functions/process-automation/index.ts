@@ -285,16 +285,6 @@ async function executeActions(supabase: any, actions: any[], eventData: Record<s
           }
           break;
 
-        case "add_ghl_tag":
-          // This would call the GHL API to add a tag
-          result.message = `GHL tag action (${action.config?.tag}) - requires GHL integration`;
-          break;
-
-        case "create_ghl_task":
-          // This would call the GHL API to create a task
-          result.message = `GHL task action - requires GHL integration`;
-          break;
-
         case "send_notification":
           // This would send an internal notification
           result.message = `Notification: ${action.config?.message || "No message"}`;

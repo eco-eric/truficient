@@ -61,17 +61,17 @@ Deno.serve(async (req) => {
         .select('id, status, created_at, first_name, last_name, email, service_type'),
       supabase
         .from('landing_page_submissions')
-        .select('id, status, created_at, first_name, last_name, email, service_type, ghl_sync_status'),
+        .select('id, status, created_at, first_name, last_name, email, service_type'),
       supabase
         .from('ductless_estimate_submissions')
-        .select('id, status, created_at, customer_name, customer_email, final_total, ghl_sync_status, zone_count'),
+        .select('id, status, created_at, customer_name, customer_email, final_total, zone_count'),
       supabase
         .from('equipment_scans')
-        .select('id, status, created_at, customer_name, email, ghl_sync_status')
+        .select('id, status, created_at, customer_name, email')
         .not('email', 'is', null),
       supabase
         .from('ducted_estimate_submissions')
-        .select('id, status, created_at, customer_name, customer_email, final_total, ghl_sync_status'),
+        .select('id, status, created_at, customer_name, customer_email, final_total'),
     ]);
 
     // ---- Aggregated stats (replaces Dashboard's 4 fetches) ----
@@ -183,30 +183,6 @@ Deno.serve(async (req) => {
       };
     });
 
-    // ---- GHL sync health ----
-    const ghlRecords = [
-      ...ducted.map((r: any) => ({ ...r, source: 'Ducted' })),
-      ...ductless.map((r: any) => ({ ...r, source: 'Ductless' })),
-      ...((scannerSubs.data || []).map((r: any) => ({ ...r, source: 'Scanner' }))),
-      ...((landingSubs.data || []).map((r: any) => ({ ...r, source: 'Landing' }))),
-    ];
-    const ghlHealth = {
-      synced: ghlRecords.filter(r => r.ghl_sync_status === 'synced').length,
-      pending: ghlRecords.filter(r => r.ghl_sync_status === 'pending').length,
-      failed: ghlRecords.filter(r => r.ghl_sync_status === 'failed').length,
-      total: ghlRecords.length,
-      stalePending: ghlRecords.filter(r => r.ghl_sync_status === 'pending' && r.created_at < oneHourAgo).length,
-      recentActivity: ghlRecords
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 5)
-        .map(r => ({
-          id: r.id,
-          source: r.source,
-          status: r.ghl_sync_status || 'pending',
-          created_at: r.created_at,
-        })),
-    };
-
     // ---- Ducted/Ductless metrics cards ----
     const buildEstimatorMetrics = (all: any[]) => {
       const completed = all.filter(s => s.status !== 'partial');
@@ -217,9 +193,6 @@ Deno.serve(async (req) => {
         totalValue,
         avgQuoteValue: completed.length > 0 ? totalValue / completed.length : 0,
         abandonedCarts: abandoned.length,
-        syncedCount: completed.filter(s => s.ghl_sync_status === 'synced').length,
-        pendingCount: completed.filter(s => s.ghl_sync_status === 'pending').length,
-        failedCount: completed.filter(s => s.ghl_sync_status === 'failed').length,
         newCount: all.filter(s => s.status === 'new').length,
         closedCount: all.filter(s => s.status === 'closed').length,
       };
@@ -245,7 +218,6 @@ Deno.serve(async (req) => {
         leadMetrics,
         revenue,
         pipelineStages,
-        ghlHealth,
         ductedMetrics,
         ductlessMetrics,
         recentSubmissions,
