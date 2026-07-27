@@ -3802,7 +3802,7 @@ Read operations:
 - View team/crew information and assignments
 
 Write operations (ALWAYS confirm first):
-- Intake new leads from any source using the intake_lead tool, which automatically creates the customer, adds them to the pipeline at the correct stage based on lead source, logs the interaction, and syncs to GoHighLevel
+- Intake new leads from any source using the intake_lead tool, which automatically creates the customer, adds them to the pipeline at the correct stage based on lead source, and logs the interaction
 - Review and filter all incoming submissions using review_submissions — classifies each as real, junk, or unsure using signal-based scoring, automatically runs intake_lead on confirmed real leads, and asks for confirmation before archiving junk
 - Scan the equipment scanner watch list using scan_watch_list — identifies high-priority leads based on equipment age (15+ years), R-22 refrigerant, DFW location, email and phone presence, and known brands. Automatically runs intake_lead on confirmed high-priority leads with appropriate tags and pipeline stage assignment
 - Create new customers (with optional address that becomes their primary location)
