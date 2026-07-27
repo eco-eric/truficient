@@ -256,6 +256,73 @@ const SubmissionDetail = () => {
           </Card>
         </div>
 
+        {/* Attribution */}
+        {attribution && (attribution.landing_page || attribution.referrer || attribution.utm_source ||
+          attribution.utm_medium || attribution.utm_campaign || attribution.utm_term ||
+          attribution.utm_content || attribution.gclid || attribution.fbclid) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Attribution</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                {attribution.channel && (
+                  <div>
+                    <dt className="text-muted-foreground">Channel</dt>
+                    <dd className="font-medium">{attribution.channel}</dd>
+                  </div>
+                )}
+                {attribution.landing_page && (
+                  <div>
+                    <dt className="text-muted-foreground">Landing Page</dt>
+                    <dd className="font-medium break-all">{attribution.landing_page}</dd>
+                  </div>
+                )}
+                {attribution.referrer && (
+                  <div>
+                    <dt className="text-muted-foreground">Referrer</dt>
+                    <dd className="font-medium break-all">{attribution.referrer}</dd>
+                  </div>
+                )}
+                {([
+                  ['UTM Source', attribution.utm_source],
+                  ['UTM Medium', attribution.utm_medium],
+                  ['UTM Campaign', attribution.utm_campaign],
+                  ['UTM Term', attribution.utm_term],
+                  ['UTM Content', attribution.utm_content],
+                  ['GCLID', attribution.gclid],
+                  ['FBCLID', attribution.fbclid],
+                ] as const).map(([label, value]) =>
+                  value ? (
+                    <div key={label}>
+                      <dt className="text-muted-foreground">{label}</dt>
+                      <dd className="font-medium break-all">{value}</dd>
+                    </div>
+                  ) : null
+                )}
+              </dl>
+
+              {attribution.channel === 'Organic Search' && leadQueries.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Top Search Queries</p>
+                  <div className="space-y-1">
+                    {leadQueries.map((q) => (
+                      <div key={q.query} className="flex items-center justify-between text-sm border-b py-1">
+                        <span>{q.query}</span>
+                        <span className="text-muted-foreground">
+                          {q.clicks ?? 0} clicks · pos {q.position != null ? q.position.toFixed(1) : '—'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+
+
         {/* Quick Actions */}
         <Card>
           <CardHeader>
