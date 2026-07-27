@@ -17,6 +17,54 @@ const Settings = () => {
   const { toast } = useToast();
   const [claiming, setClaiming] = useState(false);
 
+  const claimAdminRole = async () => {
+    if (!user) return;
+    
+    setClaiming(true);
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: user.id,
+          role: 'admin',
+        });
+
+      if (error) {
+        if (error.message.includes('duplicate')) {
+          toast({
+            title: 'Already assigned',
+            description: 'You already have a role assigned.',
+            variant: 'destructive',
+          });
+        } else if (error.message.includes('policy')) {
+          toast({
+            title: 'Cannot claim admin',
+            description: 'An admin already exists. Ask them to grant you access.',
+            variant: 'destructive',
+          });
+        } else {
+          throw error;
+        }
+      } else {
+        toast({
+          title: 'Success!',
+          description: 'You are now an admin. Please refresh the page.',
+        });
+        // Refresh to update role
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Error claiming admin:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to claim admin role',
+        variant: 'destructive',
+      });
+    } finally {
+      setClaiming(false);
+    }
+  };
+
   return (
     <AdminLayout title="Settings">
       <div className="space-y-6 max-w-2xl">
