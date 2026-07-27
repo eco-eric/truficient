@@ -24,34 +24,6 @@ export const ScannerSubmissionDetail = ({ metadata }: ScannerSubmissionDetailPro
   const allEquipment = (metadata.allEquipment as EquipmentItem[]) || [];
   
 
-  const ghlContactId = metadata.ghlContactId as string | undefined;
-
-  const getSyncStatusBadge = () => {
-    switch (ghlSyncStatus) {
-      case 'synced':
-        return <Badge className="bg-green-100 text-green-800">Synced</Badge>;
-      case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      case 'failed':
-        return <Badge className="bg-red-100 text-red-800">Failed</Badge>;
-      case 'unknown':
-        return <Badge variant="secondary">Unknown</Badge>;
-      case 'not_applicable':
-        return <Badge variant="outline">N/A</Badge>;
-      default:
-        return <Badge variant="outline">{ghlSyncStatus || 'N/A'}</Badge>;
-    }
-  };
-
-  const getAgeBadge = (manufacturedYear: number | null) => {
-    if (!manufacturedYear) return null;
-    const age = currentYear - manufacturedYear;
-    return (
-      <Badge variant={age >= 15 ? "destructive" : age >= 10 ? "secondary" : "outline"}>
-        {age} years old
-      </Badge>
-    );
-  };
 
   return (
     <div className="space-y-4">
