@@ -235,6 +235,63 @@ Deno.serve(async (req) => {
       queriesUpserted = queryData.length;
     }
 
+    // 4. Page + query pairs (28d)
+    const pageQueryRows = await querySearchAnalytics(accessToken, siteUrl, {
+      startDate: fmtDate(start28),
+      endDate: fmtDate(endDate),
+      dimensions: ["page", "query"],
+      rowLimit: 5000,
+    });
+
+    let pageQueriesUpserted = 0;
+    if (pageQueryRows.length > 0) {
+      await supabase.from("gsc_page_query_metrics").delete().eq("date_range", "28d");
+
+      const nowIso = new Date().toISOString();
+      const pqMap = new Map<string, { page: string; query: string; clicks: number; impressions: number; position_weighted: number }>();
+      for (const r of pageQueryRows as any[]) {
+        let page = String(r.keys?.[0] ?? "");
+        try {
+          const u = new URL(page);
+          page = u.pathname + u.search;
+        } catch { /* keep as-is */ }
+        if (page.length > 1 && page.endsWith("/")) page = page.replace(/\/+$/, "");
+        const query = String(r.keys?.[1] ?? "").trim().toLowerCase();
+        if (!page || !query) continue;
+        const clicks = r.clicks || 0;
+        const impressions = r.impressions || 0;
+        const position = r.position || 0;
+        const key = `${page}\u0000${query}`;
+        const existing = pqMap.get(key);
+        if (existing) {
+          existing.clicks += clicks;
+          existing.impressions += impressions;
+          existing.position_weighted += position * impressions;
+        } else {
+          pqMap.set(key, { page, query, clicks, impressions, position_weighted: position * impressions });
+        }
+      }
+      const pqData = Array.from(pqMap.values()).map((m) => ({
+        page: m.page,
+        query: m.query,
+        date_range: "28d",
+        clicks: m.clicks,
+        impressions: m.impressions,
+        ctr: m.impressions > 0 ? m.clicks / m.impressions : 0,
+        position: m.impressions > 0 ? m.position_weighted / m.impressions : 0,
+        last_synced_at: nowIso,
+      }));
+      // Chunk upserts to stay within payload limits
+      for (let i = 0; i < pqData.length; i += 1000) {
+        const chunk = pqData.slice(i, i + 1000);
+        const { error } = await supabase
+          .from("gsc_page_query_metrics")
+          .upsert(chunk, { onConflict: "page,query,date_range" });
+        if (error) throw new Error(`page-query upsert: ${error.message}`);
+        pageQueriesUpserted += chunk.length;
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -243,9 +300,11 @@ Deno.serve(async (req) => {
         site_days: siteUpserted,
         pages: pagesUpserted,
         queries: queriesUpserted,
+        page_queries: pageQueriesUpserted,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
+
   } catch (err: any) {
     console.error("sync-gsc-performance error:", err);
     return new Response(

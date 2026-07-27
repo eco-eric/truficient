@@ -5214,6 +5214,48 @@ export type Database = {
         }
         Relationships: []
       }
+      gsc_page_query_metrics: {
+        Row: {
+          clicks: number
+          created_at: string
+          ctr: number
+          date_range: string
+          id: string
+          impressions: number
+          last_synced_at: string
+          page: string
+          position: number
+          query: string
+          updated_at: string
+        }
+        Insert: {
+          clicks?: number
+          created_at?: string
+          ctr?: number
+          date_range?: string
+          id?: string
+          impressions?: number
+          last_synced_at?: string
+          page: string
+          position?: number
+          query: string
+          updated_at?: string
+        }
+        Update: {
+          clicks?: number
+          created_at?: string
+          ctr?: number
+          date_range?: string
+          id?: string
+          impressions?: number
+          last_synced_at?: string
+          page?: string
+          position?: number
+          query?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       gsc_query_metrics: {
         Row: {
           clicks: number
