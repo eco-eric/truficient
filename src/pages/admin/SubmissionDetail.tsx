@@ -29,6 +29,25 @@ interface Submission {
   created_at: string;
 }
 
+interface Attribution {
+  channel: string | null;
+  landing_page: string | null;
+  referrer: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_term: string | null;
+  utm_content: string | null;
+  gclid: string | null;
+  fbclid: string | null;
+}
+
+interface LeadQuery {
+  query: string;
+  clicks: number | null;
+  position: number | null;
+}
+
 const SubmissionDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -37,6 +56,9 @@ const SubmissionDetail = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [submission, setSubmission] = useState<Submission | null>(null);
+  const [attribution, setAttribution] = useState<Attribution | null>(null);
+  const [leadQueries, setLeadQueries] = useState<LeadQuery[]>([]);
+
 
   useEffect(() => {
     const fetchSubmission = async () => {
@@ -52,6 +74,26 @@ const SubmissionDetail = () => {
         if (error) throw error;
 
         setSubmission(data as Submission);
+
+        const { data: attr } = await (supabase as any)
+          .from('lead_attribution')
+          .select('channel, landing_page, referrer, utm_source, utm_medium, utm_campaign, utm_term, utm_content, gclid, fbclid')
+          .eq('id', id)
+          .maybeSingle();
+
+        if (attr) {
+          setAttribution(attr as Attribution);
+          if (attr.channel === 'Organic Search') {
+            const { data: queries } = await (supabase as any)
+              .from('lead_search_queries')
+              .select('query, clicks, position')
+              .eq('lead_id', id)
+              .order('clicks', { ascending: false })
+              .limit(5);
+            setLeadQueries((queries as LeadQuery[]) ?? []);
+          }
+        }
+
       } catch (error) {
         console.error('Error fetching submission:', error);
         toast({
@@ -213,6 +255,73 @@ const SubmissionDetail = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Attribution */}
+        {attribution && (attribution.landing_page || attribution.referrer || attribution.utm_source ||
+          attribution.utm_medium || attribution.utm_campaign || attribution.utm_term ||
+          attribution.utm_content || attribution.gclid || attribution.fbclid) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Attribution</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                {attribution.channel && (
+                  <div>
+                    <dt className="text-muted-foreground">Channel</dt>
+                    <dd className="font-medium">{attribution.channel}</dd>
+                  </div>
+                )}
+                {attribution.landing_page && (
+                  <div>
+                    <dt className="text-muted-foreground">Landing Page</dt>
+                    <dd className="font-medium break-all">{attribution.landing_page}</dd>
+                  </div>
+                )}
+                {attribution.referrer && (
+                  <div>
+                    <dt className="text-muted-foreground">Referrer</dt>
+                    <dd className="font-medium break-all">{attribution.referrer}</dd>
+                  </div>
+                )}
+                {([
+                  ['UTM Source', attribution.utm_source],
+                  ['UTM Medium', attribution.utm_medium],
+                  ['UTM Campaign', attribution.utm_campaign],
+                  ['UTM Term', attribution.utm_term],
+                  ['UTM Content', attribution.utm_content],
+                  ['GCLID', attribution.gclid],
+                  ['FBCLID', attribution.fbclid],
+                ] as const).map(([label, value]) =>
+                  value ? (
+                    <div key={label}>
+                      <dt className="text-muted-foreground">{label}</dt>
+                      <dd className="font-medium break-all">{value}</dd>
+                    </div>
+                  ) : null
+                )}
+              </dl>
+
+              {attribution.channel === 'Organic Search' && leadQueries.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Top Search Queries</p>
+                  <div className="space-y-1">
+                    {leadQueries.map((q) => (
+                      <div key={q.query} className="flex items-center justify-between text-sm border-b py-1">
+                        <span>{q.query}</span>
+                        <span className="text-muted-foreground">
+                          {q.clicks ?? 0} clicks · pos {q.position != null ? q.position.toFixed(1) : '—'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+
 
         {/* Quick Actions */}
         <Card>
