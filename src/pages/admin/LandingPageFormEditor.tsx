@@ -59,7 +59,6 @@ export default function LandingPageFormEditor() {
     is_active: true,
   });
 
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   // Fetch existing form data
   const { data: existingForm, isLoading: formLoading } = useQuery({
