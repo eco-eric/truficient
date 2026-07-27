@@ -845,40 +845,70 @@ export type Database = {
       }
       contact_submissions: {
         Row: {
+          attribution_captured_at: string | null
           created_at: string
           email: string
+          fbclid: string | null
           first_name: string
+          gclid: string | null
           id: string
+          landing_page: string | null
           last_name: string
           message: string
           phone: string
+          referrer: string | null
           service_type: string | null
           status: string
           updated_at: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
         }
         Insert: {
+          attribution_captured_at?: string | null
           created_at?: string
           email: string
+          fbclid?: string | null
           first_name: string
+          gclid?: string | null
           id?: string
+          landing_page?: string | null
           last_name: string
           message: string
           phone: string
+          referrer?: string | null
           service_type?: string | null
           status?: string
           updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Update: {
+          attribution_captured_at?: string | null
           created_at?: string
           email?: string
+          fbclid?: string | null
           first_name?: string
+          gclid?: string | null
           id?: string
+          landing_page?: string | null
           last_name?: string
           message?: string
           phone?: string
+          referrer?: string | null
           service_type?: string | null
           status?: string
           updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Relationships: []
       }
@@ -5799,52 +5829,82 @@ export type Database = {
       }
       landing_page_submissions: {
         Row: {
+          attribution_captured_at: string | null
           created_at: string
           custom_fields: Json | null
           email: string
+          fbclid: string | null
           first_name: string
           form_id: string | null
+          gclid: string | null
           ghl_contact_id: string | null
           ghl_sync_status: string
           id: string
+          landing_page: string | null
           last_name: string
           message: string | null
           phone: string | null
+          referrer: string | null
           service_type: string | null
           status: string
           updated_at: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
         }
         Insert: {
+          attribution_captured_at?: string | null
           created_at?: string
           custom_fields?: Json | null
           email: string
+          fbclid?: string | null
           first_name: string
           form_id?: string | null
+          gclid?: string | null
           ghl_contact_id?: string | null
           ghl_sync_status?: string
           id?: string
+          landing_page?: string | null
           last_name: string
           message?: string | null
           phone?: string | null
+          referrer?: string | null
           service_type?: string | null
           status?: string
           updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Update: {
+          attribution_captured_at?: string | null
           created_at?: string
           custom_fields?: Json | null
           email?: string
+          fbclid?: string | null
           first_name?: string
           form_id?: string | null
+          gclid?: string | null
           ghl_contact_id?: string | null
           ghl_sync_status?: string
           id?: string
+          landing_page?: string | null
           last_name?: string
           message?: string | null
           phone?: string | null
+          referrer?: string | null
           service_type?: string | null
           status?: string
           updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Relationships: [
           {
@@ -7175,6 +7235,93 @@ export type Database = {
           tonnage?: string | null
           voltage_info?: string | null
           zip_code?: string | null
+        }
+        Relationships: []
+      }
+      lead_attribution: {
+        Row: {
+          attribution_captured_at: string | null
+          channel: string | null
+          created_at: string | null
+          email: string | null
+          fbclid: string | null
+          first_name: string | null
+          gclid: string | null
+          id: string | null
+          landing_page: string | null
+          last_name: string | null
+          message: string | null
+          phone: string | null
+          referrer: string | null
+          service_type: string | null
+          status: string | null
+          updated_at: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Insert: {
+          attribution_captured_at?: string | null
+          channel?: never
+          created_at?: string | null
+          email?: string | null
+          fbclid?: string | null
+          first_name?: string | null
+          gclid?: string | null
+          id?: string | null
+          landing_page?: string | null
+          last_name?: string | null
+          message?: string | null
+          phone?: string | null
+          referrer?: string | null
+          service_type?: string | null
+          status?: string | null
+          updated_at?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Update: {
+          attribution_captured_at?: string | null
+          channel?: never
+          created_at?: string | null
+          email?: string | null
+          fbclid?: string | null
+          first_name?: string | null
+          gclid?: string | null
+          id?: string | null
+          landing_page?: string | null
+          last_name?: string | null
+          message?: string | null
+          phone?: string | null
+          referrer?: string | null
+          service_type?: string | null
+          status?: string | null
+          updated_at?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Relationships: []
+      }
+      lead_search_queries: {
+        Row: {
+          clicks: number | null
+          ctr: number | null
+          date_range: string | null
+          impressions: number | null
+          landing_page: string | null
+          lead_id: string | null
+          page: string | null
+          position: number | null
+          query: string | null
+          rank: number | null
         }
         Relationships: []
       }
