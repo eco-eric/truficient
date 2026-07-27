@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle, Calendar, Home, ClipboardList, MapPin } from 'lucide-react';
 import { trackConversion } from '@/utils/conversionTracking';
-import { useFormSourceTags } from '@/hooks/useFormSourceTags';
 import { AddressAutocomplete, AddressComponents } from '@/components/AddressAutocomplete';
 import { isInServiceArea, getServiceAreaDisplay } from '@/lib/serviceArea';
 
@@ -23,7 +22,6 @@ const formatPhoneNumber = (value: string): string => {
 
 export const OnsiteEstimateForm = () => {
   const { toast } = useToast();
-  const { data: dynamicTags } = useFormSourceTags('contact');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [addressError, setAddressError] = useState<string | null>(null);

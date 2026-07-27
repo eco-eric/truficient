@@ -15,7 +15,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle } from 'lucide-react';
 import { trackConversion } from '@/utils/conversionTracking';
-import { useFormSourceTags } from '@/hooks/useFormSourceTags';
 
 // Phone formatting utility
 const formatPhoneNumber = (value: string): string => {
@@ -61,7 +60,6 @@ export const ContactForm = ({
   defaultServiceType = '',
 }: ContactFormProps) => {
   const { toast } = useToast();
-  const { data: dynamicTags } = useFormSourceTags('contact');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [formData, setFormData] = useState({

@@ -108,27 +108,6 @@ export default function SmartGroupMarchLanding() {
 
       if (insertError) throw insertError;
 
-      // Sync to GHL
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      fetch(`${supabaseUrl}/functions/v1/sync-ghl-contact`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          email,
-          phone,
-          source: "march_group_buy_landing",
-          tags: ["Goodman Group Buy", "March 2026", "Facebook Ad"],
-          customFields: {
-            zip_code: zip,
-            service_type: "Group Buy - Goodman SD Variable Speed",
-            message: `Timeline: ${timeline}. Referred by: ${referral || "N/A"}`,
-          },
-        }),
-      }).catch(() => {}); // Non-blocking
-
-      // Tracking
       if ((window as any).fbq) (window as any).fbq("track", "Lead");
       if ((window as any).gtag) (window as any).gtag("event", "generate_lead", { currency: "USD", value: 0 });
 
