@@ -23,7 +23,7 @@ export const ScannerSubmissionDetail = ({ metadata }: ScannerSubmissionDetailPro
   const equipmentCount = (metadata.equipmentCount as number) || 1;
   const allEquipment = (metadata.allEquipment as EquipmentItem[]) || [];
   
-  const ghlSyncStatus = metadata.ghlSyncStatus as string | undefined;
+
   const ghlContactId = metadata.ghlContactId as string | undefined;
 
   const getSyncStatusBadge = () => {
@@ -182,26 +182,6 @@ export const ScannerSubmissionDetail = ({ metadata }: ScannerSubmissionDetailPro
             )}
           </div>
         )}
-      </div>
-
-      {/* GHL Sync Status */}
-      <div>
-        <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-          <ExternalLink className="h-4 w-4" />
-          GHL Integration
-        </h4>
-        <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Sync Status:</span>
-            {getSyncStatusBadge()}
-          </div>
-          {ghlContactId && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Contact ID:</span>
-              <span className="font-mono text-xs">{ghlContactId}</span>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Marketing Opt-In */}

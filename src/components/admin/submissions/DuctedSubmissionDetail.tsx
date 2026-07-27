@@ -25,7 +25,6 @@ export const DuctedSubmissionDetail = ({ metadata }: DuctedSubmissionDetailProps
   const finalTotal = metadata.finalTotal as number | undefined;
   const bestTimeToCall = metadata.bestTimeToCall as string | undefined;
   const address = metadata.address as string | undefined;
-  const ghlSyncStatus = metadata.ghlSyncStatus as string | undefined;
   const notes = metadata.notes as string | undefined;
 
   return (
@@ -148,18 +147,6 @@ export const DuctedSubmissionDetail = ({ metadata }: DuctedSubmissionDetailProps
         </div>
       )}
 
-      {/* GHL Sync Status */}
-      {ghlSyncStatus && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>GHL Status:</span>
-          <Badge 
-            variant={ghlSyncStatus === "synced" ? "default" : "outline"}
-            className={ghlSyncStatus === "synced" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" : ""}
-          >
-            {ghlSyncStatus}
-          </Badge>
-        </div>
-      )}
     </div>
   );
 };

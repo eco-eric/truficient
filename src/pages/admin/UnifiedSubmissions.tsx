@@ -190,7 +190,6 @@ const UnifiedSubmissions = () => {
           taxAmount: s.tax_amount,
           finalTotal: s.final_total,
           bestTimeToCall: s.best_time_to_call,
-          ghlSyncStatus: s.ghl_sync_status,
           selectedAddons: s.selected_addons,
           notes: s.notes,
         },
@@ -234,8 +233,6 @@ const UnifiedSubmissions = () => {
           formName: (s.form as any)?.name || null,
           formSlug: (s.form as any)?.slug || null,
           customFields: s.custom_fields,
-          ghlContactId: s.ghl_contact_id,
-          ghlSyncStatus: s.ghl_sync_status,
         },
       });
     });
@@ -306,8 +303,6 @@ const UnifiedSubmissions = () => {
           customerAddress: primaryScan.customer_address,
           city: primaryScan.city,
           state: primaryScan.state,
-          ghlSyncStatus: primaryScan.ghl_sync_status,
-          ghlContactId: primaryScan.ghl_contact_id,
         },
       });
     });

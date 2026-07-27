@@ -10,21 +10,6 @@ export const LandingPageSubmissionDetail = ({ metadata }: LandingPageSubmissionD
   const serviceType = metadata.serviceType as string | null;
   const message = metadata.message as string | null;
   const customFields = metadata.customFields as Record<string, unknown> | null;
-  const ghlSyncStatus = metadata.ghlSyncStatus as string | null;
-  const ghlContactId = metadata.ghlContactId as string | null;
-
-  const getSyncStatusIcon = (status: string | null) => {
-    switch (status) {
-      case "synced":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case "failed":
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      case "pending":
-      default:
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-    }
-  };
-
   return (
     <div className="space-y-4">
       <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
@@ -49,22 +34,6 @@ export const LandingPageSubmissionDetail = ({ metadata }: LandingPageSubmissionD
         <div className="space-y-1">
           <p className="text-sm text-muted-foreground">Message</p>
           <p className="text-sm bg-muted/50 p-3 rounded-md whitespace-pre-wrap">{message}</p>
-        </div>
-      )}
-
-      {/* GHL Sync Status */}
-      <div className="space-y-1">
-        <p className="text-sm text-muted-foreground">GHL Sync Status</p>
-        <div className="flex items-center gap-2">
-          {getSyncStatusIcon(ghlSyncStatus)}
-          <span className="text-sm capitalize">{ghlSyncStatus || "pending"}</span>
-        </div>
-      </div>
-
-      {ghlContactId && (
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">GHL Contact ID</p>
-          <code className="text-xs bg-muted px-2 py-1 rounded">{ghlContactId}</code>
         </div>
       )}
 
