@@ -29,6 +29,25 @@ interface Submission {
   created_at: string;
 }
 
+interface Attribution {
+  channel: string | null;
+  landing_page: string | null;
+  referrer: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_term: string | null;
+  utm_content: string | null;
+  gclid: string | null;
+  fbclid: string | null;
+}
+
+interface LeadQuery {
+  query: string;
+  clicks: number | null;
+  position: number | null;
+}
+
 const SubmissionDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -37,6 +56,9 @@ const SubmissionDetail = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [submission, setSubmission] = useState<Submission | null>(null);
+  const [attribution, setAttribution] = useState<Attribution | null>(null);
+  const [leadQueries, setLeadQueries] = useState<LeadQuery[]>([]);
+
 
   useEffect(() => {
     const fetchSubmission = async () => {
