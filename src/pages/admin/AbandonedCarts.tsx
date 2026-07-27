@@ -264,7 +264,6 @@ const AbandonedCarts = () => {
         coverage: "entire_home",
         system_count: 1,
         status: "partial",
-        ghl_sync_status: "pending",
       };
 
       const { error } = await supabase

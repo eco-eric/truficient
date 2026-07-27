@@ -89,8 +89,6 @@ const TRIGGER_TYPES = [
 ];
 
 const ACTION_TYPES = [
-  { value: 'create_ghl_task', label: 'Create GHL Task' },
-  { value: 'add_ghl_tag', label: 'Add GHL Tag' },
   { value: 'update_customer_status', label: 'Update Customer Status' },
   { value: 'create_job', label: 'Create Job' },
   { value: 'send_notification', label: 'Send Notification' },

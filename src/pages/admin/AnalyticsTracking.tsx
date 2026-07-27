@@ -20,16 +20,12 @@ const AnalyticsTracking = () => {
   const [metaEnabled, setMetaEnabled] = useState(false);
   const [gaId, setGaId] = useState('');
   const [gaEnabled, setGaEnabled] = useState(false);
-  const [ghlWidgetId, setGhlWidgetId] = useState('');
-  const [ghlEnabled, setGhlEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (settings) {
       const meta = getTrackingSetting(settings, 'meta_pixel_id');
       const ga = getTrackingSetting(settings, 'ga_measurement_id');
-      const ghl = getTrackingSetting(settings, 'ghl_chat_widget_id');
-      
       if (meta) {
         setMetaPixelId(meta.setting_value || '');
         setMetaEnabled(meta.is_enabled);
@@ -38,9 +34,6 @@ const AnalyticsTracking = () => {
         setGaId(ga.setting_value || '');
         setGaEnabled(ga.is_enabled);
       }
-      if (ghl) {
-        setGhlWidgetId(ghl.setting_value || '');
-        setGhlEnabled(ghl.is_enabled);
       }
     }
   }, [settings]);
@@ -69,17 +62,6 @@ const AnalyticsTracking = () => {
         .eq('setting_key', 'ga_measurement_id');
 
       if (gaError) throw gaError;
-
-      // Update GHL Chat Widget
-      const { error: ghlError } = await supabase
-        .from('tracking_settings')
-        .update({ 
-          setting_value: ghlWidgetId, 
-          is_enabled: ghlEnabled 
-        })
-        .eq('setting_key', 'ghl_chat_widget_id');
-
-      if (ghlError) throw ghlError;
 
       await queryClient.invalidateQueries({ queryKey: ['tracking-settings'] });
 
@@ -231,60 +213,6 @@ const AnalyticsTracking = () => {
             </CardContent>
           </Card>
 
-          {/* GHL Chat Widget Card */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <MessageCircle className="h-5 w-5" />
-                    GHL Chat Widget
-                    {ghlEnabled && ghlWidgetId ? (
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-muted-foreground" />
-                    )}
-                  </CardTitle>
-                  <CardDescription>
-                    Live chat widget powered by Go High Level
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="ghl-widget-id">Widget ID</Label>
-                <Input
-                  id="ghl-widget-id"
-                  placeholder="Enter your GHL Widget ID"
-                  value={ghlWidgetId}
-                  onChange={(e) => setGhlWidgetId(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Find your Widget ID in GHL Chat Widget settings
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="ghl-enabled">Enable Chat Widget</Label>
-                <Switch
-                  id="ghl-enabled"
-                  checked={ghlEnabled}
-                  onCheckedChange={setGhlEnabled}
-                />
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => window.open('https://app.gohighlevel.com/', '_blank')}
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Open GHL Dashboard
-              </Button>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Save Button */}
