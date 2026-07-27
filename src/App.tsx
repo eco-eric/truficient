@@ -80,7 +80,6 @@ const AdminCalculatorEditor = lazy(() => import("./pages/admin/CalculatorEditor"
 const AdminUsers = lazy(() => import("./pages/admin/Users"));
 const AdminSocialMediaTracker = lazy(() => import("./pages/admin/SocialMediaTracker"));
 const AdminAnalyticsTracking = lazy(() => import("./pages/admin/AnalyticsTracking"));
-const AdminGHLTags = lazy(() => import("./pages/admin/GHLTags"));
 const AdminLandingPageForms = lazy(() => import("./pages/admin/LandingPageForms"));
 const AdminLandingPageFormEditor = lazy(() => import("./pages/admin/LandingPageFormEditor"));
 const AdminSystemPricing = lazy(() => import("./pages/admin/SystemPricing"));
@@ -91,7 +90,6 @@ const AdminEstimates = lazy(() => import("./pages/admin/Estimates"));
 const AdminEstimateBuilder = lazy(() => import("./pages/admin/EstimateBuilder"));
 const AdminEstimateTemplates = lazy(() => import("./pages/admin/EstimateTemplates"));
 const AdminTemplateBuilder = lazy(() => import("./pages/admin/TemplateBuilder"));
-const AdminGHLConversations = lazy(() => import("./pages/admin/GHLConversations"));
 const AdminButtonClicks = lazy(() => import("./pages/admin/ButtonClicks"));
 const AdminScannerAnalytics = lazy(() => import("./pages/admin/ScannerAnalytics"));
 const AdminDuctlessConfig = lazy(() => import("./pages/admin/DuctlessConfig"));
@@ -319,8 +317,6 @@ const router = createBrowserRouter([
           { path: "/admin/users", element: <ProtectedRoute><AdminUsers /></ProtectedRoute> },
           { path: "/admin/social-media", element: <ProtectedRoute><AdminSocialMediaTracker /></ProtectedRoute> },
           { path: "/admin/analytics", element: <ProtectedRoute><AdminAnalyticsTracking /></ProtectedRoute> },
-          { path: "/admin/ghl-tags", element: <ProtectedRoute><AdminGHLTags /></ProtectedRoute> },
-          { path: "/admin/ghl-conversations", element: <ProtectedRoute><AdminGHLConversations /></ProtectedRoute> },
           { path: "/admin/landing-pages", element: <ProtectedRoute><AdminLandingPageForms /></ProtectedRoute> },
           { path: "/admin/landing-pages/new", element: <ProtectedRoute><AdminLandingPageFormEditor /></ProtectedRoute> },
           { path: "/admin/landing-pages/submissions", element: <ProtectedRoute><AdminUnifiedSubmissions /></ProtectedRoute> },

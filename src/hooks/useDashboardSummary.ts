@@ -25,14 +25,6 @@ export interface DashboardSummary {
     closedValue: number;
   };
   pipelineStages: { name: string; count: number; value: number }[];
-  ghlHealth: {
-    synced: number;
-    pending: number;
-    failed: number;
-    total: number;
-    stalePending: number;
-    recentActivity: { id: string; source: string; status: string; created_at: string }[];
-  };
   ductedMetrics: {
     totalQuotes: number;
     totalValue: number;

@@ -76,8 +76,6 @@ interface WarmLead {
   fan_motor_info: string | null;
   compressor_info: string | null;
   factory_charge: string | null;
-  ghl_contact_id: string | null;
-  ghl_sync_status: string;
 }
 
 const getAgeBadgeColor = (age: number) => {
@@ -142,71 +140,6 @@ export default function DFWWatchList() {
     },
   });
 
-  // Push to GHL mutation
-  const pushToGHL = useMutation({
-    mutationFn: async (lead: WarmLead) => {
-      if (!lead.email) throw new Error("No email to sync");
-
-      const age = lead.manufactured_year ? CURRENT_YEAR - lead.manufactured_year : undefined;
-      const nameParts = lead.customer_name?.trim().split(' ') || [];
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-
-      // Build tags
-      const tags = ['equipment-scanner', lead.marketing_opt_in ? 'marketing-opted-in' : 'marketing-opted-out', 'dfw-lead'];
-      if (age !== undefined) {
-        if (age >= 20) {
-          tags.push('hot-lead');
-        } else if (age >= 12) {
-          tags.push('warm-lead');
-        }
-      }
-
-      const response = await supabase.functions.invoke('sync-ghl-contact', {
-        body: {
-          firstName,
-          lastName,
-          email: lead.email,
-          phone: lead.customer_phone || undefined,
-          tags,
-          source: 'Equipment Scanner - DFW Watch List',
-          zipCode: lead.zip_code,
-          isDfw: lead.is_dfw,
-          equipment: {
-            brand: lead.brand,
-            age,
-            tonnage: lead.tonnage,
-            refrigerant: lead.refrigerant,
-            seerRating: lead.seer_rating,
-            equipmentType: lead.equipment_type,
-          },
-        }
-      });
-
-      if (!response.data?.success) {
-        throw new Error(response.data?.error || 'GHL sync failed');
-      }
-
-      // Update the record
-      await supabase
-        .from('equipment_scans')
-        .update({
-          ghl_contact_id: response.data.contactId,
-          ghl_sync_status: 'synced'
-        })
-        .eq('id', lead.id);
-
-      return response.data.contactId;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dfw_warm_leads"] });
-      toast.success("Contact synced to GHL");
-    },
-    onError: (error) => {
-      toast.error(`Failed to sync: ${error.message}`);
-    },
-  });
-
   // Calculate stats
   const stats = {
     total: warmLeads?.length || 0,
@@ -220,7 +153,6 @@ export default function DFWWatchList() {
           ) / warmLeads.length
         )
       : 0,
-    syncedToGHL: warmLeads?.filter((l) => l.ghl_sync_status === 'synced').length || 0,
   };
 
   // Filter leads
@@ -360,18 +292,6 @@ export default function DFWWatchList() {
               <div className="text-2xl font-bold">{stats.avgAge} years</div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Synced to GHL</CardTitle>
-              <ExternalLink className="h-4 w-4 text-purple-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.syncedToGHL}</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.withEmail > 0 ? Math.round((stats.syncedToGHL / stats.withEmail) * 100) : 0}% of contactable
-              </p>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Filters */}
@@ -437,7 +357,6 @@ export default function DFWWatchList() {
                   <TableHead>Brand / Model</TableHead>
                   <TableHead>Age</TableHead>
                   <TableHead>Contact</TableHead>
-                  <TableHead>GHL</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
@@ -500,36 +419,6 @@ export default function DFWWatchList() {
                             )}
                             {!lead.email && !lead.customer_phone && (
                               <span className="text-muted-foreground text-sm">-</span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {lead.ghl_sync_status === 'synced' ? (
-                              <CheckCircle className="h-4 w-4 text-green-500" />
-                            ) : lead.ghl_sync_status === 'failed' ? (
-                              <XCircle className="h-4 w-4 text-red-500" />
-                            ) : lead.ghl_sync_status === 'pending' ? (
-                              <AlertCircle className="h-4 w-4 text-yellow-500" />
-                            ) : lead.email ? (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 px-2"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  pushToGHL.mutate(lead);
-                                }}
-                                disabled={pushToGHL.isPending}
-                              >
-                                {pushToGHL.isPending ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <RefreshCw className="h-4 w-4" />
-                                )}
-                              </Button>
-                            ) : (
-                              <span className="text-muted-foreground text-xs">-</span>
                             )}
                           </div>
                         </TableCell>
@@ -632,31 +521,9 @@ export default function DFWWatchList() {
                     fanMotorInfo: selectedLead.fan_motor_info,
                     compressorInfo: selectedLead.compressor_info,
                     factoryCharge: selectedLead.factory_charge,
-                    ghlSyncStatus: selectedLead.ghl_sync_status,
-                    ghlContactId: selectedLead.ghl_contact_id,
                   }}
                 />
 
-                {/* Push to GHL Button */}
-                {selectedLead.email && selectedLead.ghl_sync_status !== 'synced' && (
-                  <Button
-                    onClick={() => pushToGHL.mutate(selectedLead)}
-                    disabled={pushToGHL.isPending}
-                    className="w-full"
-                  >
-                    {pushToGHL.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Syncing...
-                      </>
-                    ) : (
-                      <>
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Push to GoHighLevel
-                      </>
-                    )}
-                  </Button>
-                )}
               </div>
             )}
           </SheetContent>

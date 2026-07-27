@@ -21,12 +21,11 @@ interface CookiePreferences {
 export const TrackingScripts = () => {
   const location = useLocation();
   const { data: settings } = useTrackingSettings();
-  const initializedRef = useRef<{ meta: boolean; ga: boolean; ghl: boolean }>({ meta: false, ga: false, ghl: false });
+  const initializedRef = useRef<{ meta: boolean; ga: boolean }>({ meta: false, ga: false });
   const [cookieConsent, setCookieConsent] = useState<CookiePreferences | null>(getCookieConsent);
 
   const metaPixel = getTrackingSetting(settings, 'meta_pixel_id');
   const googleAnalytics = getTrackingSetting(settings, 'ga_measurement_id');
-  const ghlChatWidget = getTrackingSetting(settings, 'ghl_chat_widget_id');
 
   // Listen for cookie consent updates
   useEffect(() => {
@@ -108,47 +107,6 @@ export const TrackingScripts = () => {
     window.gtag('config', measurementId);
     initializedRef.current.ga = true;
   }, [location.pathname, googleAnalytics?.is_enabled, googleAnalytics?.setting_value, cookieConsent?.analytics]);
-
-  // Initialize/Remove GHL Chat Widget based on settings (hide on admin pages)
-  useEffect(() => {
-    const isAdminPage = location.pathname.startsWith('/admin');
-    const isLandingPage = location.pathname.startsWith('/go/') || 
-                          location.pathname.startsWith('/landing/') ||
-                          location.pathname.startsWith('/estimate/smart-group') ||
-                          location.pathname.startsWith('/smart-group');
-    // GHL chat widget temporarily disabled - building replacement chatbot engine
-    const shouldLoad = false;
-
-    if (shouldLoad && !initializedRef.current.ghl) {
-      // Load the widget
-      const widgetId = ghlChatWidget.setting_value;
-      const script = document.createElement('script');
-      script.src = 'https://widgets.leadconnectorhq.com/loader.js';
-      script.setAttribute('data-resources-url', 'https://widgets.leadconnectorhq.com/chat-widget/loader.js');
-      script.setAttribute('data-widget-id', widgetId);
-      script.id = 'ghl-chat-widget-script';
-      document.body.appendChild(script);
-      initializedRef.current.ghl = true;
-    } else if (!shouldLoad && initializedRef.current.ghl) {
-      // Remove the widget
-      const script = document.getElementById('ghl-chat-widget-script');
-      if (script) {
-        script.remove();
-      }
-      
-      // Remove GHL-created elements (chat widget container)
-      const ghlElements = document.querySelectorAll('[class*="lc_"], [id*="lc-"]');
-      ghlElements.forEach(el => el.remove());
-      
-      // Also try common GHL widget selectors
-      const chatWidget = document.querySelector('iframe[src*="leadconnectorhq"]');
-      if (chatWidget) {
-        chatWidget.parentElement?.remove();
-      }
-      
-      initializedRef.current.ghl = false;
-    }
-  }, [location.pathname, ghlChatWidget?.is_enabled, ghlChatWidget?.setting_value, cookieConsent?.marketing]);
 
   // Track page views on route change (skip admin routes)
   useEffect(() => {

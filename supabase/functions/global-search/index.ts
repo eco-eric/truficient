@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
         .limit(5),
       supabase
         .from("ducted_estimate_submissions")
-        .select("id, customer_name, customer_email, customer_address, final_total, created_at, ghl_sync_status")
+        .select("id, customer_name, customer_email, customer_address, final_total, created_at")
         .or(`customer_name.ilike.%${q}%,customer_email.ilike.%${q}%,customer_address.ilike.%${q}%`)
         .limit(5),
       supabase
@@ -226,7 +226,7 @@ Deno.serve(async (req) => {
         sublabel: `Ducted · ${d.final_total ? "$" + Number(d.final_total).toLocaleString() : ""}`,
         route: `/admin/submissions/ducted/${d.id}`,
         entity_type: "estimate",
-        badge: d.ghl_sync_status || "new",
+        badge: "new",
         snippet: extractSnippet(d.customer_address, q),
       })),
     ].slice(0, 5);

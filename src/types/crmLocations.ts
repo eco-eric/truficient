@@ -18,7 +18,6 @@ export interface CrmCustomer {
   billing_city: string | null;
   billing_state: string | null;
   billing_zip: string | null;
-  ghl_contact_id: string | null;
   created_at: string;
   updated_at: string;
 }

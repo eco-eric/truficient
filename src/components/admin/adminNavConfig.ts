@@ -147,8 +147,6 @@ export const navSections: NavSection[] = [
       { label: 'SEO', href: '/admin/seo', icon: Search, permissionKey: 'nav.seo' },
       { label: 'Calculators', href: '/admin/calculators', icon: Calculator, permissionKey: 'nav.calculators' },
       { label: 'Landing Pages', href: '/admin/landing-pages', icon: FileInput, permissionKey: 'nav.landing-pages' },
-      { label: 'GHL Tags', href: '/admin/ghl-tags', icon: Tag, permissionKey: 'nav.ghl-tags' },
-      { label: 'GHL Conversations', href: '/admin/ghl-conversations', icon: MessageSquare, permissionKey: 'nav.ghl-conversations' },
       { label: 'Email Templates', href: '/admin/email-templates', icon: Mail, permissionKey: 'nav.email-templates' },
     ],
   },

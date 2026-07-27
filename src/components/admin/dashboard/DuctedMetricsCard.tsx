@@ -81,31 +81,6 @@ export const DuctedMetricsCard = () => {
           </div>
         </div>
 
-        <div className="pt-3 border-t">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <RefreshCw className="h-3 w-3" />
-              GHL Sync Status
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1 text-sm">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="font-medium">{metrics?.syncedCount || 0}</span>
-            </span>
-            <span className="flex items-center gap-1 text-sm">
-              <Clock className="h-4 w-4 text-amber-500" />
-              <span className="font-medium">{metrics?.pendingCount || 0}</span>
-            </span>
-            {(metrics?.failedCount || 0) > 0 && (
-              <span className="flex items-center gap-1 text-sm">
-                <AlertCircle className="h-4 w-4 text-red-500" />
-                <span className="font-medium text-red-600">{metrics?.failedCount}</span>
-              </span>
-            )}
-          </div>
-        </div>
-
         <div className="flex items-center justify-between pt-3 border-t">
           <span className="flex items-center gap-2 text-sm text-muted-foreground">
             <ShoppingCart className="h-4 w-4" />

@@ -51,14 +51,6 @@ const documents: DocumentInfo[] = [
     lines: 672,
   },
   {
-    id: 'ghl-integration',
-    title: 'GHL Integration',
-    filename: 'GHL-INTEGRATION.md',
-    description: 'GoHighLevel CRM sync and lead management',
-    icon: <Zap className="h-5 w-5" />,
-    lines: 408,
-  },
-  {
     id: 'financing-integration',
     title: 'Financing Integration',
     filename: 'FINANCING-INTEGRATION.md',
@@ -146,7 +138,7 @@ The admin dashboard provides a centralized interface for managing submissions, c
 | **Content** | Mixed | Blog, Gallery*, Equipment Library* |
 | **Estimators** | Admin only | Estimates, Templates, System Pricing, Customer Equipment, Ductless Config |
 | **Financials** | Admin only | Materials, Labor Rates, Admin Costs, Financing |
-| **Marketing** | Admin only | SEO, Calculators, Landing Pages, GHL Tags, GHL Conversations |
+| **Marketing** | Admin only | SEO, Calculators, Landing Pages |
 | **Analytics** | Admin only | Scanner Analytics, Button Clicks, Analytics, Social Media |
 | **System** | Mixed | Users*, Trash Bin*, Settings |
 
@@ -182,7 +174,7 @@ The admin dashboard provides a centralized interface for managing submissions, c
 ├───────────────────────────────────────────────────────────────┤
 │  ┌───────────────┐ ┌───────────────┐ ┌───────────────────┐   │
 │  │ ACTIVITY FEED │ │ RECENT SUBS   │ │ RECENT CHATS     │   │
-│  │ (timeline)    │ │ (table)       │ │ (GHL convos)     │   │
+│  │ (timeline)    │ │ (table)       │ │ (activity)       │   │
 │  └───────────────┘ └───────────────┘ └───────────────────┘   │
 └───────────────────────────────────────────────────────────────┘
 \`\`\`
@@ -255,7 +247,6 @@ Wraps admin pages to enforce authentication and role requirements.
 | \`src/components/admin/dashboard/EngagementStats.tsx\` | Click analytics |
 | \`src/components/admin/dashboard/ActivityFeed.tsx\` | Activity timeline |
 | \`src/components/admin/dashboard/RecentSubmissions.tsx\` | Latest submissions |
-| \`src/components/admin/dashboard/RecentChats.tsx\` | GHL conversations |
 
 ### Auth & Access
 | File | Purpose |
@@ -495,8 +486,6 @@ interface PricingBreakdown {
 | \`efficiency_tier_id\` | UUID | FK to ducted_efficiency_tiers |
 | \`equipment_id\` | UUID | FK to ducted_equipment |
 | \`final_total\` | NUMERIC | Grand total |
-| \`ghl_contact_id\` | TEXT | GoHighLevel contact ID |
-| \`ghl_sync_status\` | TEXT | pending, synced, failed |
 
 ### \`ducted_equipment\`
 
@@ -525,48 +514,6 @@ interface PricingBreakdown {
 
 ---
 
-## GHL Integration
-
-The GHL sync is triggered in \`Step9CustomerInfo.tsx\` after successful form submission:
-
-\`\`\`typescript
-// 1. Insert submission to Supabase
-const { data: submission } = await supabase
-  .from('ducted_estimate_submissions')
-  .insert({ ... })
-  .select()
-  .single();
-
-// 2. Sync to GHL
-const { data: ghlResponse } = await supabase.functions.invoke('sync-ghl-contact', {
-  body: {
-    firstName: customerInfo.name.split(' ')[0],
-    lastName: customerInfo.name.split(' ').slice(1).join(' '),
-    email: customerInfo.email,
-    phone: customerInfo.phone,
-    address: customerInfo.address,
-    source: 'ducted_estimator',
-    tags: ['Ducted Estimator', 'Online Estimate'],
-    customFields: {
-      quote_raw_details: buildQuoteRawDetails(),
-      service_type: heatingType === 'heat_pump' ? 'Heat Pump' : 'AC + Furnace',
-      equipment_tonnage: selectedTonnage,
-      estimated_total: totals.finalTotal,
-    },
-  },
-});
-
-// 3. Update submission with GHL contact ID
-await supabase
-  .from('ducted_estimate_submissions')
-  .update({ 
-    ghl_contact_id: ghlResponse.contactId,
-    ghl_sync_status: 'synced'
-  })
-  .eq('id', submission.id);
-\`\`\``,
-
-  'ductless-estimator': `# Ductless Mini-Split Estimator Documentation
 
 ## Overview
 
@@ -837,207 +784,6 @@ const addonsCost = selectedAddons.reduce((sum, addon) => {
 | \`seer_rating\` | NUMERIC | SEER efficiency rating |
 | \`warranty_years\` | INTEGER | Warranty period |`,
 
-  'ghl-integration': `# GoHighLevel (GHL) Integration Documentation
-
-> Last Updated: January 2026
-
-## Overview
-
-This document describes the GoHighLevel (GHL) integration architecture used for lead capture, CRM synchronization, and internal notifications across all forms and estimators.
-
----
-
-## Architecture Diagram
-
-\`\`\`
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          FRONTEND FORMS                                  │
-├─────────────────────────────────────────────────────────────────────────┤
-│  Contact Form    │  Onsite Estimate  │  Equipment Scanner  │ Estimators │
-│  (Contact.tsx)   │  (OnsiteEstimate) │  (EmailCapture.tsx) │ (Ducted/   │
-│                  │                    │                     │  Ductless) │
-└────────┬─────────┴─────────┬──────────┴─────────┬───────────┴─────┬─────┘
-         │                   │                    │                 │
-         ▼                   ▼                    ▼                 ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                     SUPABASE EDGE FUNCTIONS                              │
-├─────────────────────────────────────────────────────────────────────────┤
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │                    sync-ghl-contact                             │    │
-│  │  - Upserts contact to GHL via LeadConnector API                │    │
-│  │  - Maps custom fields (service_type, quote_raw_details, etc.)  │    │
-│  │  - Returns contactId on success                                 │    │
-│  └────────────────────────────────────────────────────────────────┘    │
-│                              │                                          │
-│                              ▼                                          │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │               send-estimator-notification                       │    │
-│  │  - Creates notes on GHL contact                                 │    │
-│  │  - Creates follow-up tasks                                      │    │
-│  │  - Triggers GHL automation workflows                            │    │
-│  └────────────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────────────┘
-\`\`\`
-
----
-
-## Edge Functions
-
-### 1. \`sync-ghl-contact\`
-
-**Purpose:** Primary function for creating/updating contacts in GHL.
-
-**File:** \`supabase/functions/sync-ghl-contact/index.ts\`
-
-**Required Environment Variables:**
-| Variable | Description |
-|----------|-------------|
-| \`GHL_API_Key_Contact\` | GHL Private Integration API Key |
-| \`GHL_LOCATION_ID\` | GHL Location/Sub-account ID |
-
-**Request Payload:**
-\`\`\`typescript
-interface ContactData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  serviceType?: string;
-  message?: string;
-  tags?: string[];
-  source?: string;
-  equipmentReportUrl?: string;
-  zipCode?: string;
-  isDfw?: boolean;
-  equipment?: {
-    brand?: string;
-    age?: number;
-    tonnage?: string;
-    refrigerant?: string;
-    seerRating?: number;
-  };
-  quote?: {
-    systemType?: string;
-    tonnage?: string;
-    equipment?: string;
-    price?: string;
-    monthlyPayment?: string;
-    quoteRawDetails?: string;
-  };
-}
-\`\`\`
-
-**Custom Fields Mapped:**
-| GHL Field Key | Source |
-|---------------|--------|
-| \`service_type\` | contactData.serviceType |
-| \`message\` | contactData.message |
-| \`equipment_report_url\` | contactData.equipmentReportUrl |
-| \`zip_code\` | contactData.zipCode |
-| \`is_dfw\` | contactData.isDfw ("Yes"/"No") |
-| \`equipment_brand\` | contactData.equipment.brand |
-| \`equipment_age\` | contactData.equipment.age |
-| \`quote_raw_details\` | contactData.quote.quoteRawDetails |
-
----
-
-### 2. \`send-estimator-notification\`
-
-**Purpose:** Creates internal notes and tasks in GHL for staff follow-up.
-
-**Workflow:**
-1. Receives notification data from estimator submission
-2. Searches for the contact in GHL by email
-3. Adds a detailed note to the contact with full quote breakdown
-4. Creates a follow-up task assigned to staff
-
----
-
-### 3. \`verify-ghl-custom-fields\`
-
-**Purpose:** Audit utility for admins to verify GHL configuration.
-
-**Admin Access:** Settings → GoHighLevel Integration → "Verify Custom Fields"
-
----
-
-## Form Integration Points
-
-| Form | File | Source Tag |
-|------|------|------------|
-| Contact Form | \`src/pages/Contact.tsx\` | "Website Contact Form" |
-| Onsite Estimate | \`src/components/forms/OnsiteEstimateForm.tsx\` | "HVAC Estimate Page - Onsite Request" |
-| Equipment Scanner | \`src/pages/scanner/components/EmailCapture.tsx\` | "Equipment Scanner" |
-| Ducted Estimator | \`src/pages/estimators/ducted/steps/Step9CustomerInfo.tsx\` | "Ducted HVAC Estimator" |
-| Ductless Estimator | \`src/pages/estimators/ductless/steps/QuoteSummary.tsx\` | "Ductless Mini-Split Estimator" |
-
----
-
-## Submission Sync Sequence
-
-\`\`\`
-User Submits Form
-       │
-       ▼
-┌─────────────────────────────────────┐
-│  1. Insert to Supabase Table        │
-│     (contact_submissions,           │
-│      ducted_estimate_submissions,   │
-│      ductless_estimate_submissions) │
-└──────────────┬──────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────┐
-│  2. Call sync-ghl-contact           │
-│     - Upsert contact to GHL         │
-│     - Map all custom fields         │
-│     - Get contactId                 │
-└──────────────┬──────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────┐
-│  3. Update Supabase Record          │
-│     - ghl_contact_id = contactId    │
-│     - ghl_sync_status = 'synced'    │
-└──────────────┬──────────────────────┘
-               │
-               ▼ (Estimators only)
-┌─────────────────────────────────────┐
-│  4. Call send-estimator-notification│
-│     - Add note to contact           │
-│     - Create follow-up task         │
-│     - Trigger GHL automations       │
-└─────────────────────────────────────┘
-\`\`\`
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-1. **GHL Credentials Not Configured**
-   - Check Supabase secrets for \`GHL_API_Key_Contact\` and \`GHL_LOCATION_ID\`
-
-2. **Custom Fields Not Syncing**
-   - Run verification from Admin → Settings → GoHighLevel Integration
-   - Ensure custom fields exist in GHL Location Settings
-
-3. **Sync Failed Status**
-   - Check edge function logs for API errors
-   - Verify GHL API key has correct permissions
-
----
-
-## Related Files
-
-| File | Purpose |
-|------|---------|
-| \`supabase/functions/sync-ghl-contact/index.ts\` | Contact sync function |
-| \`supabase/functions/send-estimator-notification/index.ts\` | Internal notifications |
-| \`supabase/functions/verify-ghl-custom-fields/index.ts\` | Field verification |
-| \`src/hooks/useFormSourceTags.ts\` | Dynamic tag fetching |
-| \`src/pages/admin/GHLTags.tsx\` | Tag management UI |`,
 
   'financing-integration': `# Financing Integration Documentation
 
@@ -1355,7 +1101,7 @@ const { data, error } = await supabase
 
 ## Overview
 
-The internal CRM system manages the complete customer lifecycle from lead capture through job completion. It is separate from the GoHighLevel (GHL) integration, which handles external CRM sync. This system provides:
+The internal CRM system manages the complete customer lifecycle from lead capture through job completion. This system provides:
 
 - **Customer Management** - Contact records, lifecycle tracking, segmentation
 - **Location Management** - Multi-property support with property data enrichment
@@ -1452,7 +1198,7 @@ The internal CRM system manages the complete customer lifecycle from lead captur
 
 | Table | Purpose | Key Fields |
 |-------|---------|------------|
-| \`crm_customers\` | Customer master records | first_name, last_name, email, phone, customer_status, customer_type, lead_source, tags[], ghl_contact_id |
+| \`crm_customers\` | Customer master records | first_name, last_name, email, phone, customer_status, customer_type, lead_source, tags[] |
 | \`crm_locations\` | Service addresses | customer_id, address_line1, city, state, zip_code, square_footage, year_built, stories, latitude, longitude |
 | \`crm_customer_contacts\` | Additional contacts | customer_id, first_name, last_name, email, phone, contact_type |
 | \`crm_interactions\` | Activity log | customer_id, interaction_type, direction, content, outcome, logged_by |

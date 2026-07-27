@@ -94,7 +94,7 @@ export const EstimateRequestForm = ({
       });
       if (insertError) throw insertError;
 
-      // Non-blocking notifications (Resend email + GHL sync — existing pipeline)
+      // Non-blocking notifications (Resend email)
       supabase.functions
         .invoke("send-contact-notification", {
           body: {
@@ -108,20 +108,6 @@ export const EstimateRequestForm = ({
           },
         })
         .then(({ error }) => error && console.error("Email notify failed:", error));
-
-      supabase.functions
-        .invoke("sync-ghl-contact", {
-          body: {
-            firstName,
-            lastName,
-            phone: parsed.data.phone,
-            serviceType: systemType,
-            message,
-            source,
-            tags: [`estimate-page-${sourcePage.replace(/^\//, "")}`, systemType.toLowerCase()],
-          },
-        })
-        .then(({ error }) => error && console.error("GHL sync failed:", error));
 
       trackConversion("Lead", {
         content_name: "Estimate Request",

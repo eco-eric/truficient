@@ -526,7 +526,7 @@ const tools = [
     type: "function" as const,
     function: {
       name: "intake_lead",
-      description: "Full lead intake: creates customer, adds location, adds to pipeline at the correct stage based on lead source, logs interaction, and syncs to GoHighLevel — all in one confirmed action. Use this instead of calling create_customer + add_to_pipeline separately when intake is the goal. ALWAYS confirm first.",
+      description: "Full lead intake: creates customer, adds location, adds to pipeline at the correct stage based on lead source, logs interaction, — all in one confirmed action. Use this instead of calling create_customer + add_to_pipeline separately when intake is the goal. ALWAYS confirm first.",
       parameters: {
         type: "object",
         properties: {
@@ -1971,11 +1971,10 @@ async function executeIntakeLead(supabase: any, userId: string, input: any) {
         address: addressDisplay,
         lead_source: input.lead_source || "not provided",
         pipeline_stage: stage.display_name,
-        ghl_sync: "Yes",
         tags: input.tags?.length ? input.tags.join(", ") : "none",
         notes: input.notes || "none",
       },
-      confirmation_prompt: `Ready to intake lead:\n\n👤 **${customerName}**\n📧 ${input.email || "—"} / 📱 ${input.phone || "—"}\n📍 ${addressDisplay}\n🏷️ Source: ${input.lead_source || "—"}\n📊 Pipeline: **${stage.display_name}**\n🔄 GHL Sync: Yes\n🏷️ Tags: ${input.tags?.length ? input.tags.join(", ") : "none"}\n📝 Notes: ${input.notes || "none"}\n\nReply "yes" to confirm or provide corrections.`,
+      confirmation_prompt: `Ready to intake lead:\n\n👤 **${customerName}**\n📧 ${input.email || "—"} / 📱 ${input.phone || "—"}\n📍 ${addressDisplay}\n🏷️ Source: ${input.lead_source || "—"}\n📊 Pipeline: **${stage.display_name}**\n🏷️ Tags: ${input.tags?.length ? input.tags.join(", ") : "none"}\n📝 Notes: ${input.notes || "none"}\n\nReply "yes" to confirm or provide corrections.`,
     };
   }
 
@@ -2089,42 +2088,10 @@ async function executeIntakeLead(supabase: any, userId: string, input: any) {
   });
   results.interaction = "✓ Interaction logged";
 
-  // Step 5: GHL Sync (non-blocking — failure doesn't abort)
-  let ghlStatus = "failed";
-  try {
-    const ghlPayload = {
-      firstName: input.first_name,
-      lastName: input.last_name,
-      email: input.email || undefined,
-      phone: input.phone || undefined,
-      address: hasAddress ? `${input.address_line1}, ${input.city}, ${input.state || "TX"} ${input.zip_code}` : undefined,
-      source: input.lead_source || "Bach Intake",
-      tags: ["Bach Intake", ...(input.tags || [])],
-    };
-
-    const { data: ghlResult, error: ghlError } = await supabase.functions.invoke("sync-ghl-contact", {
-      body: ghlPayload,
-    });
-
-    if (ghlError) {
-      console.error("GHL sync failed:", ghlError);
-    } else if (ghlResult?.contactId) {
-      // Step 6: Write GHL contact ID back to customer
-      await supabase.from("crm_customers").update({ ghl_contact_id: ghlResult.contactId }).eq("id", customer.id);
-      ghlStatus = "success";
-    } else {
-      ghlStatus = "success"; // call succeeded even if no contactId returned
-    }
-  } catch (ghlErr: any) {
-    console.error("GHL sync error:", ghlErr);
-  }
-  results.ghl = `${ghlStatus === "success" ? "✓" : "⚠️"} GHL sync: ${ghlStatus}`;
-
   return {
     success: true,
     customer_id: customer.id,
-    ghl_sync: ghlStatus,
-    message: `Lead intake complete:\n${results.customer}\n${results.location}\n${results.address_verify || ""}\n${results.property || ""}\n${results.pipeline}\n${results.interaction}\n${results.ghl}`.replace(/\n\n+/g, "\n"),
+    message: `Lead intake complete:\n${results.customer}\n${results.location}\n${results.address_verify || ""}\n${results.property || ""}\n${results.pipeline}\n${results.interaction}`.replace(/\n\n+/g, "\n"),
   };
 }
 
@@ -2292,7 +2259,6 @@ async function executeReviewSubmissions(supabase: any, userId: string, input: an
         source: r.source,
         success: r.result?.success || false,
         customer_id: r.result?.customer_id,
-        ghl_sync: r.result?.ghl_sync,
         error: r.result?.error || r.error,
       })),
     };
@@ -2632,7 +2598,6 @@ async function executeScanWatchList(supabase: any, userId: string, input: any) {
         skipped: r.skipped || false,
         reason: r.reason,
         customer_id: r.result?.customer_id,
-        ghl_sync: r.result?.ghl_sync,
       })),
       message: `Watch list intake complete: ${successCount} intaked, ${skippedCount} skipped (already in CRM).`,
     };
@@ -3837,7 +3802,7 @@ Read operations:
 - View team/crew information and assignments
 
 Write operations (ALWAYS confirm first):
-- Intake new leads from any source using the intake_lead tool, which automatically creates the customer, adds them to the pipeline at the correct stage based on lead source, logs the interaction, and syncs to GoHighLevel
+- Intake new leads from any source using the intake_lead tool, which automatically creates the customer, adds them to the pipeline at the correct stage based on lead source, and logs the interaction
 - Review and filter all incoming submissions using review_submissions — classifies each as real, junk, or unsure using signal-based scoring, automatically runs intake_lead on confirmed real leads, and asks for confirmation before archiving junk
 - Scan the equipment scanner watch list using scan_watch_list — identifies high-priority leads based on equipment age (15+ years), R-22 refrigerant, DFW location, email and phone presence, and known brands. Automatically runs intake_lead on confirmed high-priority leads with appropriate tags and pipeline stage assignment
 - Create new customers (with optional address that becomes their primary location)

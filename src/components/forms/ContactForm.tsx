@@ -15,7 +15,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle } from 'lucide-react';
 import { trackConversion } from '@/utils/conversionTracking';
-import { useFormSourceTags } from '@/hooks/useFormSourceTags';
 
 // Phone formatting utility
 const formatPhoneNumber = (value: string): string => {
@@ -50,7 +49,7 @@ const contactSchema = z.object({
 });
 
 interface ContactFormProps {
-  /** Optional override for the GHL source/tag context */
+  /** Optional override for the source/tag context */
   source?: string;
   /** Default service type */
   defaultServiceType?: string;
@@ -61,7 +60,6 @@ export const ContactForm = ({
   defaultServiceType = '',
 }: ContactFormProps) => {
   const { toast } = useToast();
-  const { data: dynamicTags } = useFormSourceTags('contact');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [formData, setFormData] = useState({
@@ -126,24 +124,6 @@ export const ContactForm = ({
           status: 'new',
         });
       if (submitError) throw submitError;
-
-      // Sync to GHL (non-blocking — don't fail the user if GHL hiccups)
-      supabase.functions
-        .invoke('sync-ghl-contact', {
-          body: {
-            firstName: parsed.data.firstName,
-            lastName: parsed.data.lastName,
-            email: parsed.data.email,
-            phone: parsed.data.phone,
-            serviceType: parsed.data.serviceType,
-            message: parsed.data.message,
-            source,
-            tags: dynamicTags || ['website-contact-form'],
-          },
-        })
-        .then(({ error: ghlError }) => {
-          if (ghlError) console.error('GHL sync failed (non-critical):', ghlError);
-        });
 
       // Send email notifications (non-blocking — internal alert + customer ack)
       supabase.functions

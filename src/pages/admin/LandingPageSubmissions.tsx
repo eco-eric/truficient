@@ -41,8 +41,6 @@ interface Submission {
   service_type: string | null;
   message: string | null;
   custom_fields: Record<string, unknown> | null;
-  ghl_contact_id: string | null;
-  ghl_sync_status: string;
   status: string;
   created_at: string;
   form?: {
@@ -113,35 +111,6 @@ export default function LandingPageSubmissions() {
     },
   });
 
-  const retrySyncMutation = useMutation({
-    mutationFn: async (submission: Submission) => {
-      const { error } = await supabase.functions.invoke('sync-ghl-contact', {
-        body: {
-          firstName: submission.first_name,
-          lastName: submission.last_name,
-          email: submission.email,
-          phone: submission.phone,
-          serviceType: submission.service_type,
-          message: submission.message,
-          tags: ['website-lead'],
-        },
-      });
-      if (error) throw error;
-
-      await supabase
-        .from('landing_page_submissions')
-        .update({ ghl_sync_status: 'synced' })
-        .eq('id', submission.id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['landing-page-submissions'] });
-      toast({ title: 'Contact synced to GHL successfully' });
-    },
-    onError: (error: Error) => {
-      toast({ title: 'Error syncing contact', description: error.message, variant: 'destructive' });
-    },
-  });
-
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'new':
@@ -152,18 +121,6 @@ export default function LandingPageSubmissions() {
         return <Badge className="bg-green-500 text-white">Converted</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
-  const getSyncStatusIcon = (status: string) => {
-    switch (status) {
-      case 'synced':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'failed':
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'pending':
-      default:
-        return <Clock className="h-4 w-4 text-yellow-500" />;
     }
   };
 
@@ -219,7 +176,6 @@ export default function LandingPageSubmissions() {
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Form</TableHead>
-                    <TableHead>GHL Sync</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -240,22 +196,6 @@ export default function LandingPageSubmissions() {
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getSyncStatusIcon(submission.ghl_sync_status)}
-                          {submission.ghl_sync_status === 'failed' && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6"
-                              onClick={() => retrySyncMutation.mutate(submission)}
-                              disabled={retrySyncMutation.isPending}
-                            >
-                              <RefreshCw className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
                       </TableCell>
                       <TableCell>
                         <Select
@@ -328,13 +268,6 @@ export default function LandingPageSubmissions() {
                     <p className="text-sm text-muted-foreground">Status</p>
                     {getStatusBadge(selectedSubmission.status)}
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">GHL Sync</p>
-                    <div className="flex items-center gap-2">
-                      {getSyncStatusIcon(selectedSubmission.ghl_sync_status)}
-                      <span className="capitalize">{selectedSubmission.ghl_sync_status}</span>
-                    </div>
-                  </div>
                 </div>
                 {selectedSubmission.message && (
                   <div>
@@ -348,14 +281,6 @@ export default function LandingPageSubmissions() {
                     {format(new Date(selectedSubmission.created_at), 'MMMM d, yyyy h:mm a')}
                   </p>
                 </div>
-                {selectedSubmission.ghl_contact_id && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">GHL Contact ID</p>
-                    <code className="text-sm bg-muted px-2 py-1 rounded">
-                      {selectedSubmission.ghl_contact_id}
-                    </code>
-                  </div>
-                )}
               </div>
             )}
           </DialogContent>

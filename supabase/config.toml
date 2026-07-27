@@ -3,12 +3,6 @@ project_id = "xvsgdzwadxbwpevdezbp"
 [functions.admin-password-reset]
 verify_jwt = false
 
-[functions.sync-ghl-contact]
-verify_jwt = false
-
-[functions.get-ghl-conversations]
-verify_jwt = false
-
 [functions.decode-equipment]
 verify_jwt = false
 
@@ -19,9 +13,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-estimator-notification]
-verify_jwt = false
-
-[functions.verify-ghl-custom-fields]
 verify_jwt = false
 
 [functions.save-abandoned-cart]

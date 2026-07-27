@@ -123,25 +123,6 @@ export default function SmartGroupMarchV2Landing() {
 
       if (insertError) throw insertError;
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      fetch(`${supabaseUrl}/functions/v1/sync-ghl-contact`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          email,
-          phone,
-          source: "smart_group_march_v2",
-          tags: ["Smart Group Buy", "Goodman SD", "March 2026", "Facebook Ad", "V2"],
-          customFields: {
-            zip_code: zip,
-            service_type: "Smart Group - Goodman SD Variable Speed 16-17 SEER2",
-            message: `Timeline: ${timeline}. Referred by: ${referral || "N/A"}`,
-          },
-        }),
-      }).catch(() => {});
-
       if ((window as any).fbq) (window as any).fbq("track", "Lead");
       if ((window as any).gtag) (window as any).gtag("event", "generate_lead", { currency: "USD", value: 0 });
 

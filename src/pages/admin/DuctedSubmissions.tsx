@@ -32,7 +32,6 @@ interface DuctedSubmission {
   tax_amount: number | null;
   final_total: number | null;
   status: string;
-  ghl_sync_status: string | null;
   created_at: string;
   best_time_to_call: string | null;
 }
@@ -195,7 +194,6 @@ const DuctedSubmissions = () => {
                 <TableHead>Tonnage</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>GHL</TableHead>
                 <TableHead className="w-[80px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -228,17 +226,6 @@ const DuctedSubmissions = () => {
                   <TableCell className="font-medium">{formatMoney(sub.final_total)}</TableCell>
                   <TableCell>{getStatusBadge(sub.status)}</TableCell>
                   <TableCell>
-                    <span className={`text-xs px-1.5 py-0.5 rounded ${
-                      sub.ghl_sync_status === "synced" 
-                        ? "bg-green-100 text-green-700" 
-                        : sub.ghl_sync_status === "failed"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-gray-100 text-gray-500"
-                    }`}>
-                      {sub.ghl_sync_status || "pending"}
-                    </span>
-                  </TableCell>
-                  <TableCell>
                     <Button variant="ghost" size="icon" onClick={() => openDetail(sub)}>
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -247,7 +234,7 @@ const DuctedSubmissions = () => {
               ))}
               {!filteredSubmissions.length && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     No submissions found
                   </TableCell>
                 </TableRow>
@@ -408,7 +395,6 @@ const DuctedSubmissions = () => {
                   {/* Metadata */}
                   <div className="text-xs text-muted-foreground pt-4 border-t">
                     <div>Submitted: {format(new Date(selectedSubmission.created_at), "PPpp")}</div>
-                    <div>GHL Status: {selectedSubmission.ghl_sync_status || "pending"}</div>
                   </div>
                 </div>
               </>

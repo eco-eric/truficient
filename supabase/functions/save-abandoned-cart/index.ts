@@ -63,7 +63,6 @@ Deno.serve(async (req) => {
         rebates: data.rebates || 0,
         final_total: data.final_total || 0,
         status: "partial",
-        ghl_sync_status: "pending",
       };
 
       if (data.partial_submission_id) {
@@ -112,7 +111,6 @@ Deno.serve(async (req) => {
         coverage: data.coverage || "entire_home",
         system_count: data.system_count || 1,
         status: "partial",
-        ghl_sync_status: "pending",
       };
 
       if (data.partial_submission_id) {
@@ -143,137 +141,6 @@ Deno.serve(async (req) => {
         submissionId = insertedData.id;
         console.log("Created ducted partial submission:", submissionId);
       }
-    }
-
-    // ========== GHL SYNC ==========
-    const GHL_API_KEY = Deno.env.get('GHL_API_Key_Contact');
-    const GHL_LOCATION_ID = Deno.env.get('GHL_LOCATION_ID');
-    const tableName = isDuctless ? 'ductless_estimate_submissions' : 'ducted_estimate_submissions';
-
-    // Debug logging for credentials
-    console.log("GHL credentials check:", {
-      hasApiKey: !!GHL_API_KEY,
-      apiKeyLength: GHL_API_KEY?.length || 0,
-      hasLocationId: !!GHL_LOCATION_ID,
-      locationIdLength: GHL_LOCATION_ID?.length || 0,
-    });
-
-    if (GHL_API_KEY && GHL_LOCATION_ID) {
-      try {
-        // Parse name into first/last
-        const nameParts = (data.customer_name || "").trim().split(" ");
-        const firstName = nameParts[0] || "";
-        const lastName = nameParts.slice(1).join(" ") || "";
-
-        // Build GHL payload
-        const ghlPayload: Record<string, unknown> = {
-          firstName,
-          lastName,
-          email: data.customer_email || undefined,
-          phone: data.customer_phone || undefined,
-          address1: data.customer_address || undefined,
-          city: data.customer_city || undefined,
-          state: data.customer_state || "TX",
-          postalCode: data.customer_zip || undefined,
-          locationId: GHL_LOCATION_ID,
-          source: isDuctless 
-            ? "Ductless Estimator - Abandoned Cart" 
-            : "Ducted Estimator - Abandoned Cart",
-          tags: [
-            "abandoned-cart", 
-            isDuctless ? "ductless-estimator" : "ducted-estimator", 
-            "website-lead"
-          ],
-        };
-
-        // Build custom fields array
-        const customFields: { key: string; field_value: string }[] = [];
-
-        if (isDuctless) {
-          // Ductless-specific fields
-          if (data.zone_count) {
-            customFields.push({ key: "zone_count", field_value: String(data.zone_count) });
-          }
-          if (data.customer_address) {
-            customFields.push({ key: "customer_address", field_value: data.customer_address });
-          }
-        } else {
-          // Ducted-specific fields
-          if (data.home_type) {
-            customFields.push({ key: "home_type", field_value: data.home_type });
-          }
-          if (data.square_footage) {
-            customFields.push({ key: "square_footage", field_value: data.square_footage });
-          }
-          if (data.home_layout) {
-            customFields.push({ key: "home_layout", field_value: data.home_layout });
-          }
-          if (data.heating_type) {
-            customFields.push({ key: "heating_type", field_value: data.heating_type });
-          }
-          if (data.customer_address) {
-            customFields.push({ key: "customer_address", field_value: data.customer_address });
-          }
-          if (data.best_time_to_call) {
-            customFields.push({ key: "best_time_to_call", field_value: data.best_time_to_call });
-          }
-          if (data.coverage) {
-            customFields.push({ key: "coverage", field_value: data.coverage });
-          }
-        }
-
-        if (customFields.length > 0) {
-          ghlPayload.customFields = customFields;
-        }
-
-        console.log("GHL payload:", JSON.stringify(ghlPayload, null, 2));
-
-        // Call GHL Contacts Upsert API
-        const ghlResponse = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${GHL_API_KEY}`,
-            'Content-Type': 'application/json',
-            'Version': '2021-07-28',
-          },
-          body: JSON.stringify(ghlPayload),
-        });
-
-        const responseText = await ghlResponse.text();
-        console.log('GHL API response status:', ghlResponse.status);
-        console.log('GHL API response:', responseText);
-
-        let ghlContactId: string | null = null;
-        let syncStatus = "failed";
-
-        if (ghlResponse.ok) {
-          const ghlData: any = JSON.parse(responseText);
-          ghlContactId = ghlData.contact?.id || null;
-          syncStatus = "synced";
-          console.log("GHL sync successful. Contact ID:", ghlContactId);
-        } else {
-          console.error("GHL API error:", responseText);
-        }
-
-        // Update sync status in database
-        await supabaseAdmin
-          .from(tableName)
-          .update({ 
-            ghl_sync_status: syncStatus,
-            ghl_contact_id: ghlContactId,
-          })
-          .eq('id', submissionId);
-
-      } catch (ghlError) {
-        console.error("GHL sync error:", ghlError);
-        // Update status to failed but don't throw - we still saved the submission
-        await supabaseAdmin
-          .from(tableName)
-          .update({ ghl_sync_status: "failed" })
-          .eq('id', submissionId);
-      }
-    } else {
-      console.warn("GHL credentials not configured - skipping sync");
     }
 
     return new Response(

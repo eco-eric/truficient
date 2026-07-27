@@ -69,24 +69,6 @@ export const LandingPageForm = ({ slug, className, onSuccess }: LandingPageFormP
     },
   });
 
-  // Fetch assigned tags for this form
-  const { data: formTags } = useQuery({
-    queryKey: ['landing-page-form-tags', formConfig?.id],
-    queryFn: async () => {
-      if (!formConfig?.id) return [];
-      const { data, error } = await supabase
-        .from('landing_page_form_tags')
-        .select(`
-          tag_id,
-          tag:ghl_tags(tag_value)
-        `)
-        .eq('form_id', formConfig.id);
-      if (error) throw error;
-      return data.map((t) => (t.tag as { tag_value: string })?.tag_value).filter(Boolean);
-    },
-    enabled: !!formConfig?.id,
-  });
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -104,7 +86,7 @@ export const LandingPageForm = ({ slug, className, onSuccess }: LandingPageFormP
 
     try {
       // Save submission to database
-      const { data: submission, error: submitError } = await supabase
+      const { error: submitError } = await supabase
         .from('landing_page_submissions')
         .insert({
           form_id: formConfig.id,
@@ -114,51 +96,10 @@ export const LandingPageForm = ({ slug, className, onSuccess }: LandingPageFormP
           phone: formData.phone || null,
           service_type: formData.serviceType || null,
           message: formData.message || null,
-          ghl_sync_status: 'pending',
           status: 'new',
-        })
-        .select()
-        .single();
-
-      if (submitError) throw submitError;
-
-      // Get tags for this form
-      const tags = formTags && formTags.length > 0 ? formTags : ['website-lead'];
-
-      // Sync to GHL
-      try {
-        const { error: ghlError } = await supabase.functions.invoke('sync-ghl-contact', {
-          body: {
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            email: formData.email,
-            phone: formData.phone,
-            serviceType: formData.serviceType,
-            message: formData.message,
-            tags,
-            source: `Landing Page: ${formConfig.name}`,
-          },
         });
 
-        if (ghlError) {
-          console.error('GHL sync error:', ghlError);
-          await supabase
-            .from('landing_page_submissions')
-            .update({ ghl_sync_status: 'failed' })
-            .eq('id', submission.id);
-        } else {
-          await supabase
-            .from('landing_page_submissions')
-            .update({ ghl_sync_status: 'synced' })
-            .eq('id', submission.id);
-        }
-      } catch (ghlErr) {
-        console.error('GHL sync failed:', ghlErr);
-        await supabase
-          .from('landing_page_submissions')
-          .update({ ghl_sync_status: 'failed' })
-          .eq('id', submission.id);
-      }
+      if (submitError) throw submitError;
 
       // Track conversion
       trackConversion('Lead', {
