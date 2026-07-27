@@ -108,28 +108,6 @@ export const OnsiteEstimateForm = () => {
 
       if (submitError) throw submitError;
 
-      // Sync to GHL
-      supabase.functions.invoke('sync-ghl-contact', {
-        body: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          address: fullAddress,
-          city: formData.city,
-          state: formData.state,
-          postalCode: formData.zipCode,
-          serviceType: 'Onsite Estimate',
-          message: formData.message,
-          source: 'HVAC Estimate Page - Onsite Request',
-          tags: dynamicTags || ['onsite-estimate-request'],
-        },
-      }).then(({ error: ghlError }) => {
-        if (ghlError) {
-          console.error('GHL sync failed (non-critical):', ghlError);
-        }
-      });
-
       // Track conversion
       trackConversion('Lead', {
         content_name: 'Onsite Estimate Request',

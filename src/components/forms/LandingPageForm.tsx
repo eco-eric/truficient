@@ -114,7 +114,6 @@ export const LandingPageForm = ({ slug, className, onSuccess }: LandingPageFormP
           phone: formData.phone || null,
           service_type: formData.serviceType || null,
           message: formData.message || null,
-          ghl_sync_status: 'pending',
           status: 'new',
         })
         .select()
@@ -124,41 +123,6 @@ export const LandingPageForm = ({ slug, className, onSuccess }: LandingPageFormP
 
       // Get tags for this form
       const tags = formTags && formTags.length > 0 ? formTags : ['website-lead'];
-
-      // Sync to GHL
-      try {
-        const { error: ghlError } = await supabase.functions.invoke('sync-ghl-contact', {
-          body: {
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            email: formData.email,
-            phone: formData.phone,
-            serviceType: formData.serviceType,
-            message: formData.message,
-            tags,
-            source: `Landing Page: ${formConfig.name}`,
-          },
-        });
-
-        if (ghlError) {
-          console.error('GHL sync error:', ghlError);
-          await supabase
-            .from('landing_page_submissions')
-            .update({ ghl_sync_status: 'failed' })
-            .eq('id', submission.id);
-        } else {
-          await supabase
-            .from('landing_page_submissions')
-            .update({ ghl_sync_status: 'synced' })
-            .eq('id', submission.id);
-        }
-      } catch (ghlErr) {
-        console.error('GHL sync failed:', ghlErr);
-        await supabase
-          .from('landing_page_submissions')
-          .update({ ghl_sync_status: 'failed' })
-          .eq('id', submission.id);
-      }
 
       // Track conversion
       trackConversion('Lead', {
