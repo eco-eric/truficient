@@ -39,12 +39,6 @@ const DuctedMetricsCard = lazy(() =>
 const DuctlessMetricsCard = lazy(() =>
   import('@/components/admin/dashboard/DuctlessMetricsCard').then(m => ({ default: m.DuctlessMetricsCard }))
 );
-const GHLSyncHealth = lazy(() =>
-  import('@/components/admin/dashboard/GHLSyncHealth').then(m => ({ default: m.GHLSyncHealth }))
-);
-const FailedSyncsAlert = lazy(() =>
-  import('@/components/admin/dashboard/FailedSyncsAlert').then(m => ({ default: m.FailedSyncsAlert }))
-);
 const JobTypeBoardPreview = lazy(() =>
   import('@/components/admin/dashboard/JobTypeBoardPreview').then(m => ({ default: m.JobTypeBoardPreview }))
 );
@@ -113,17 +107,6 @@ const Dashboard = () => {
           <Suspense fallback={<WidgetFallback height={420} />}>
             <UpcomingAppointments />
           </Suspense>
-        </DeferredWidget>
-
-        <DeferredWidget minHeight={350}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Suspense fallback={<WidgetFallback height={350} />}>
-              <GHLSyncHealth />
-            </Suspense>
-            <Suspense fallback={<WidgetFallback height={350} />}>
-              <FailedSyncsAlert />
-            </Suspense>
-          </div>
         </DeferredWidget>
 
         <DeferredWidget minHeight={420}>
