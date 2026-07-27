@@ -22,8 +22,14 @@ export const ScannerSubmissionDetail = ({ metadata }: ScannerSubmissionDetailPro
   const currentYear = new Date().getFullYear();
   const equipmentCount = (metadata.equipmentCount as number) || 1;
   const allEquipment = (metadata.allEquipment as EquipmentItem[]) || [];
-  
 
+  const getAgeBadge = (year: number | null) => {
+    if (!year) return <Badge variant="outline">Unknown age</Badge>;
+    const age = currentYear - year;
+    if (age >= 20) return <Badge className="bg-red-100 text-red-800">{age} yrs</Badge>;
+    if (age >= 12) return <Badge className="bg-yellow-100 text-yellow-800">{age} yrs</Badge>;
+    return <Badge className="bg-green-100 text-green-800">{age} yrs</Badge>;
+  };
 
   return (
     <div className="space-y-4">
