@@ -596,6 +596,40 @@ export default function AdminIndividualEquipmentPricing() {
                   <Input type="number" step="0.01" min="0" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} className="pl-7" />
                 </div>
               </div>
+              {editingRow && (editingRow.price_updated_at || editingRow.previous_price !== null) && (
+                <div className="rounded-md border bg-muted/40 p-3 text-sm space-y-1">
+                  {editingRow.price_updated_at && (
+                    <p className={stalenessClass(editingRow.price_updated_at)}>
+                      Price last updated {formatDate(editingRow.price_updated_at)}
+                      {daysSince(editingRow.price_updated_at) !== null && ` (${daysSince(editingRow.price_updated_at)} days ago)`}
+                    </p>
+                  )}
+                  {editingRow.previous_price !== null && (
+                    <p className="text-muted-foreground">
+                      Previous price: ${Number(editingRow.previous_price).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </p>
+                  )}
+                </div>
+              )}
+              <div>
+                <Label>Supplier</Label>
+                <Select value={form.supplier_id} onValueChange={v => setForm(f => ({ ...f, supplier_id: v }))}>
+                  <SelectTrigger><SelectValue placeholder="No supplier" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_SUPPLIER}>No supplier</SelectItem>
+                    {suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Supplier Product URL</Label>
+                <Input value={form.supplier_url} onChange={e => setForm(f => ({ ...f, supplier_url: e.target.value }))} placeholder="https://..." />
+                {form.supplier_url.trim() && isValidUrl(form.supplier_url) && (
+                  <a href={form.supplier_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-1">
+                    Open product page <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
               <div>
                 <Label>Notes</Label>
                 <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} />
