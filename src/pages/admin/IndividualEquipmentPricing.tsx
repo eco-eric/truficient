@@ -182,7 +182,7 @@ export default function AdminIndividualEquipmentPricing() {
   const pageRows = filtered.slice(page * pageSize, (page + 1) * pageSize);
 
   const upsertMutation = useMutation({
-    mutationFn: async (data: { brand: string; model_number: string; type: string; size: string; price: number; notes: string | null; is_active: boolean }) => {
+    mutationFn: async (data: { brand: string; model_number: string; type: string; size: string; price: number; notes: string | null; is_active: boolean; supplier_id: string | null; supplier_url: string | null }) => {
       if (editingId) {
         const { error } = await supabase.from('individual_equipment_pricing').update(data).eq('id', editingId);
         if (error) throw error;
@@ -301,8 +301,8 @@ export default function AdminIndividualEquipmentPricing() {
   // CSV Export
   const exportCSV = () => {
     const rows = selected.size > 0 ? filtered.filter(r => selected.has(r.id)) : filtered;
-    const header = 'Brand,Model #,Type,Size,Price,Active,Notes';
-    const csv = [header, ...rows.map(r => `"${r.brand}","${r.model_number}","${r.type}","${r.size}",${r.price},${r.is_active},"${(r.notes || '').replace(/"/g, '""')}"`)].join('\n');
+    const header = 'Brand,Model #,Type,Size,Price,Active,Supplier,Price Updated,Notes';
+    const csv = [header, ...rows.map(r => `"${r.brand}","${r.model_number}","${r.type}","${r.size}",${r.price},${r.is_active},"${(r.supplier_id ? supplierNameById.get(r.supplier_id) || '' : '').replace(/"/g, '""')}","${formatDate(r.price_updated_at)}","${(r.notes || '').replace(/"/g, '""')}"`)].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
