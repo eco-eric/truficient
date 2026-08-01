@@ -5408,9 +5408,13 @@ export type Database = {
           is_active: boolean
           model_number: string
           notes: string | null
+          previous_price: number | null
           price: number
+          price_updated_at: string | null
           size: string | null
           sort_order: number
+          supplier_id: string | null
+          supplier_url: string | null
           type: string
           updated_at: string
         }
@@ -5421,9 +5425,13 @@ export type Database = {
           is_active?: boolean
           model_number: string
           notes?: string | null
+          previous_price?: number | null
           price?: number
+          price_updated_at?: string | null
           size?: string | null
           sort_order?: number
+          supplier_id?: string | null
+          supplier_url?: string | null
           type: string
           updated_at?: string
         }
@@ -5434,13 +5442,25 @@ export type Database = {
           is_active?: boolean
           model_number?: string
           notes?: string | null
+          previous_price?: number | null
           price?: number
+          price_updated_at?: string | null
           size?: string | null
           sort_order?: number
+          supplier_id?: string | null
+          supplier_url?: string | null
           type?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "individual_equipment_pricing_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "crm_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       integration_configs: {
         Row: {
