@@ -41,7 +41,7 @@ const TYPE_COLORS: Record<string, string> = {
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 200];
 
-type SortField = 'brand' | 'model_number' | 'type' | 'size' | 'price' | 'is_active';
+type SortField = 'brand' | 'model_number' | 'type' | 'size' | 'price' | 'is_active' | 'price_updated_at';
 type SortDir = 'asc' | 'desc';
 
 interface EquipmentRow {
@@ -54,8 +54,17 @@ interface EquipmentRow {
   is_active: boolean;
   sort_order: number;
   notes: string | null;
+  supplier_id: string | null;
+  supplier_url: string | null;
+  price_updated_at: string | null;
+  previous_price: number | null;
   created_at: string;
   updated_at: string;
+}
+
+interface SupplierOption {
+  id: string;
+  name: string;
 }
 
 interface FormData {
@@ -66,15 +75,36 @@ interface FormData {
   price: string;
   notes: string;
   is_active: boolean;
+  supplier_id: string;
+  supplier_url: string;
 }
 
-const emptyForm: FormData = { brand: '', model_number: '', type: 'Air Handler', size: '', price: '', notes: '', is_active: true };
+const NO_SUPPLIER = '__none__';
+
+const emptyForm: FormData = { brand: '', model_number: '', type: 'Air Handler', size: '', price: '', notes: '', is_active: true, supplier_id: NO_SUPPLIER, supplier_url: '' };
+
+const formatDate = (value: string | null | undefined) =>
+  value ? new Date(value).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '';
+
+const daysSince = (value: string | null | undefined) =>
+  value ? Math.floor((Date.now() - new Date(value).getTime()) / 86400000) : null;
+
+const stalenessClass = (value: string | null | undefined) => {
+  const d = daysSince(value);
+  if (d === null) return 'text-muted-foreground';
+  if (d > 180) return 'text-destructive font-medium';
+  if (d > 90) return 'text-amber-600 font-medium';
+  return '';
+};
+
+const isValidUrl = (value: string) => /^https?:\/\/\S+/i.test(value.trim());
 
 export default function AdminIndividualEquipmentPricing() {
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [brandFilter, setBrandFilter] = useState('all');
+  const [supplierFilter, setSupplierFilter] = useState('all');
   const [activeOnly, setActiveOnly] = useState(true);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<number>(25);
@@ -105,6 +135,25 @@ export default function AdminIndividualEquipmentPricing() {
     },
   });
 
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ['crm-suppliers-active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_suppliers')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as SupplierOption[];
+    },
+  });
+
+  const supplierNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    suppliers.forEach(s => map.set(s.id, s.name));
+    return map;
+  }, [suppliers]);
+
   const brands = useMemo(() => [...new Set(equipment.map(e => e.brand))].sort(), [equipment]);
 
   const filtered = useMemo(() => {
@@ -112,26 +161,28 @@ export default function AdminIndividualEquipmentPricing() {
     if (activeOnly) rows = rows.filter(r => r.is_active);
     if (typeFilter !== 'all') rows = rows.filter(r => r.type === typeFilter);
     if (brandFilter !== 'all') rows = rows.filter(r => r.brand === brandFilter);
+    if (supplierFilter === 'none') rows = rows.filter(r => !r.supplier_id);
+    else if (supplierFilter !== 'all') rows = rows.filter(r => r.supplier_id === supplierFilter);
     if (search) {
       const q = search.toLowerCase();
       rows = rows.filter(r => r.brand.toLowerCase().includes(q) || r.model_number.toLowerCase().includes(q) || r.type.toLowerCase().includes(q));
     }
     rows = [...rows].sort((a, b) => {
-      const av = a[sortField];
-      const bv = b[sortField];
+      const av = a[sortField] ?? '';
+      const bv = b[sortField] ?? '';
       if (typeof av === 'string' && typeof bv === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
       if (typeof av === 'number' && typeof bv === 'number') return sortDir === 'asc' ? av - bv : bv - av;
       if (typeof av === 'boolean' && typeof bv === 'boolean') return sortDir === 'asc' ? (av === bv ? 0 : av ? -1 : 1) : (av === bv ? 0 : av ? 1 : -1);
       return 0;
     });
     return rows;
-  }, [equipment, activeOnly, typeFilter, brandFilter, search, sortField, sortDir]);
+  }, [equipment, activeOnly, typeFilter, brandFilter, supplierFilter, search, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageRows = filtered.slice(page * pageSize, (page + 1) * pageSize);
 
   const upsertMutation = useMutation({
-    mutationFn: async (data: { brand: string; model_number: string; type: string; size: string; price: number; notes: string | null; is_active: boolean }) => {
+    mutationFn: async (data: { brand: string; model_number: string; type: string; size: string; price: number; notes: string | null; is_active: boolean; supplier_id: string | null; supplier_url: string | null }) => {
       if (editingId) {
         const { error } = await supabase.from('individual_equipment_pricing').update(data).eq('id', editingId);
         if (error) throw error;
@@ -185,9 +236,21 @@ export default function AdminIndividualEquipmentPricing() {
     return sortDir === 'asc' ? <ArrowUp className="h-3 w-3 ml-1" /> : <ArrowDown className="h-3 w-3 ml-1" />;
   };
 
+  const editingRow = useMemo(() => equipment.find(r => r.id === editingId) || null, [equipment, editingId]);
+
   const openEdit = (row: EquipmentRow) => {
     setEditingId(row.id);
-    setForm({ brand: row.brand, model_number: row.model_number, type: row.type, size: row.size, price: String(row.price), notes: row.notes || '', is_active: row.is_active });
+    setForm({
+      brand: row.brand,
+      model_number: row.model_number,
+      type: row.type,
+      size: row.size,
+      price: String(row.price),
+      notes: row.notes || '',
+      is_active: row.is_active,
+      supplier_id: row.supplier_id || NO_SUPPLIER,
+      supplier_url: row.supplier_url || '',
+    });
     setDialogOpen(true);
   };
 
@@ -202,6 +265,10 @@ export default function AdminIndividualEquipmentPricing() {
       toast({ title: 'Please fill all required fields', variant: 'destructive' });
       return;
     }
+    if (form.supplier_url.trim() && !isValidUrl(form.supplier_url)) {
+      toast({ title: 'Supplier product URL must start with http', variant: 'destructive' });
+      return;
+    }
     upsertMutation.mutate({
       brand: form.brand.trim(),
       model_number: form.model_number.trim(),
@@ -210,6 +277,8 @@ export default function AdminIndividualEquipmentPricing() {
       price: parseFloat(form.price),
       notes: form.notes || null,
       is_active: form.is_active,
+      supplier_id: form.supplier_id === NO_SUPPLIER ? null : form.supplier_id,
+      supplier_url: form.supplier_url.trim() || null,
     });
   };
 
@@ -232,8 +301,8 @@ export default function AdminIndividualEquipmentPricing() {
   // CSV Export
   const exportCSV = () => {
     const rows = selected.size > 0 ? filtered.filter(r => selected.has(r.id)) : filtered;
-    const header = 'Brand,Model #,Type,Size,Price,Active,Notes';
-    const csv = [header, ...rows.map(r => `"${r.brand}","${r.model_number}","${r.type}","${r.size}",${r.price},${r.is_active},"${(r.notes || '').replace(/"/g, '""')}"`)].join('\n');
+    const header = 'Brand,Model #,Type,Size,Price,Active,Supplier,Price Updated,Notes';
+    const csv = [header, ...rows.map(r => `"${r.brand}","${r.model_number}","${r.type}","${r.size}",${r.price},${r.is_active},"${(r.supplier_id ? supplierNameById.get(r.supplier_id) || '' : '').replace(/"/g, '""')}","${formatDate(r.price_updated_at)}","${(r.notes || '').replace(/"/g, '""')}"`)].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -252,6 +321,9 @@ export default function AdminIndividualEquipmentPricing() {
       if (lines.length < 2) { setImportErrors(['File must have a header row and at least one data row']); return; }
       const errors: string[] = [];
       const rows: Partial<EquipmentRow>[] = [];
+      const headerCols = (lines[0].match(/(".*?"|[^,]+)/g) || []).map(c => c.replace(/^"|"$/g, '').trim().toLowerCase());
+      const supplierIdx = headerCols.findIndex(h => h === 'supplier');
+      const suppliersByName = new Map(suppliers.map(s => [s.name.trim().toLowerCase(), s.id]));
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].match(/(".*?"|[^,]+)/g)?.map(c => c.replace(/^"|"$/g, '').trim()) || [];
         if (cols.length < 4) { errors.push(`Row ${i}: not enough columns`); continue; }
@@ -260,7 +332,15 @@ export default function AdminIndividualEquipmentPricing() {
         const price = parseFloat(priceStr || size || '0');
         if (isNaN(price)) { errors.push(`Row ${i}: invalid price`); continue; }
         const hasSize = cols.length >= 5 && size && isNaN(parseFloat(size));
-        rows.push({ brand, model_number, type, size: hasSize ? size : '', price: cols.length >= 5 ? parseFloat(priceStr) : parseFloat(size), is_active: true });
+        let supplier_id: string | null = null;
+        if (supplierIdx >= 0) {
+          const supplierName = (cols[supplierIdx] || '').trim();
+          if (supplierName) {
+            supplier_id = suppliersByName.get(supplierName.toLowerCase()) ?? null;
+            if (!supplier_id) errors.push(`Row ${i}: supplier "${supplierName}" not found — imported without a supplier`);
+          }
+        }
+        rows.push({ brand, model_number, type, size: hasSize ? size : '', price: cols.length >= 5 ? parseFloat(priceStr) : parseFloat(size), is_active: true, supplier_id });
       }
       setImportRows(rows);
       setImportErrors(errors);
@@ -314,6 +394,14 @@ export default function AdminIndividualEquipmentPricing() {
               {EQUIPMENT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={supplierFilter} onValueChange={v => { setSupplierFilter(v); setPage(0); }}>
+            <SelectTrigger className="w-44"><SelectValue placeholder="All Suppliers" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Suppliers</SelectItem>
+              <SelectItem value="none">No supplier</SelectItem>
+              {suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <Select value={brandFilter} onValueChange={v => { setBrandFilter(v); setPage(0); }}>
             <SelectTrigger className="w-40"><SelectValue placeholder="All Brands" /></SelectTrigger>
             <SelectContent>
@@ -359,6 +447,10 @@ export default function AdminIndividualEquipmentPricing() {
                 <TableHead className="cursor-pointer select-none text-right" onClick={() => handleSort('price')}>
                   <span className="flex items-center justify-end">Price <SortIcon field="price" /></span>
                 </TableHead>
+                <TableHead>Supplier</TableHead>
+                <TableHead className="cursor-pointer select-none" onClick={() => handleSort('price_updated_at')}>
+                  <span className="flex items-center">Price Updated <SortIcon field="price_updated_at" /></span>
+                </TableHead>
                 <TableHead className="cursor-pointer select-none" onClick={() => handleSort('is_active')}>
                   <span className="flex items-center">Status <SortIcon field="is_active" /></span>
                 </TableHead>
@@ -367,9 +459,9 @@ export default function AdminIndividualEquipmentPricing() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
               ) : pageRows.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No equipment found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">No equipment found</TableCell></TableRow>
               ) : pageRows.map(row => (
                 <TableRow key={row.id} className="hover:bg-muted/50">
                   <TableCell><Checkbox checked={selected.has(row.id)} onCheckedChange={() => toggleSelect(row.id)} /></TableCell>
@@ -384,6 +476,21 @@ export default function AdminIndividualEquipmentPricing() {
                   </TableCell>
                   <TableCell>{row.size}</TableCell>
                   <TableCell className="text-right font-medium">${Number(row.price).toLocaleString('en-US', { minimumFractionDigits: 2 })}</TableCell>
+                  <TableCell className="text-sm">
+                    {row.supplier_id ? (
+                      row.supplier_url ? (
+                        <a href={row.supplier_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
+                          {supplierNameById.get(row.supplier_id) || 'Supplier'}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : (
+                        supplierNameById.get(row.supplier_id) || '—'
+                      )
+                    ) : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell className={`text-sm ${stalenessClass(row.price_updated_at)}`}>
+                    {row.price_updated_at ? formatDate(row.price_updated_at) : '—'}
+                  </TableCell>
                   <TableCell>
                     <Badge variant={row.is_active ? 'default' : 'secondary'}>{row.is_active ? 'Active' : 'Inactive'}</Badge>
                   </TableCell>
@@ -405,7 +512,7 @@ export default function AdminIndividualEquipmentPricing() {
                       </Button>
                       <Button variant="ghost" size="icon" title="Duplicate" onClick={() => {
                         setEditingId(null);
-                        setForm({ brand: row.brand, model_number: row.model_number, type: row.type, size: row.size, price: String(row.price), notes: row.notes || '', is_active: row.is_active });
+                        setForm({ brand: row.brand, model_number: row.model_number, type: row.type, size: row.size, price: String(row.price), notes: row.notes || '', is_active: row.is_active, supplier_id: row.supplier_id || NO_SUPPLIER, supplier_url: row.supplier_url || '' });
                         setDialogOpen(true);
                       }}><Copy className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => openEdit(row)}><Pencil className="h-4 w-4" /></Button>
@@ -488,6 +595,40 @@ export default function AdminIndividualEquipmentPricing() {
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                   <Input type="number" step="0.01" min="0" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} className="pl-7" />
                 </div>
+              </div>
+              {editingRow && (editingRow.price_updated_at || editingRow.previous_price !== null) && (
+                <div className="rounded-md border bg-muted/40 p-3 text-sm space-y-1">
+                  {editingRow.price_updated_at && (
+                    <p className={stalenessClass(editingRow.price_updated_at)}>
+                      Price last updated {formatDate(editingRow.price_updated_at)}
+                      {daysSince(editingRow.price_updated_at) !== null && ` (${daysSince(editingRow.price_updated_at)} days ago)`}
+                    </p>
+                  )}
+                  {editingRow.previous_price !== null && (
+                    <p className="text-muted-foreground">
+                      Previous price: ${Number(editingRow.previous_price).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </p>
+                  )}
+                </div>
+              )}
+              <div>
+                <Label>Supplier</Label>
+                <Select value={form.supplier_id} onValueChange={v => setForm(f => ({ ...f, supplier_id: v }))}>
+                  <SelectTrigger><SelectValue placeholder="No supplier" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_SUPPLIER}>No supplier</SelectItem>
+                    {suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Supplier Product URL</Label>
+                <Input value={form.supplier_url} onChange={e => setForm(f => ({ ...f, supplier_url: e.target.value }))} placeholder="https://..." />
+                {form.supplier_url.trim() && isValidUrl(form.supplier_url) && (
+                  <a href={form.supplier_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-1">
+                    Open product page <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
               </div>
               <div>
                 <Label>Notes</Label>
