@@ -1578,6 +1578,48 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_events: {
+        Row: {
+          actor_id: string | null
+          actor_label: string | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          event_type: string
+          id: string
+          occurred_at: string
+          payload: Json
+          source: string
+          tenant_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_label?: string | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          event_type: string
+          id?: string
+          occurred_at?: string
+          payload?: Json
+          source?: string
+          tenant_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          actor_label?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          event_type?: string
+          id?: string
+          occurred_at?: string
+          payload?: Json
+          source?: string
+          tenant_id?: string | null
+        }
+        Relationships: []
+      }
       crm_interactions: {
         Row: {
           content: string | null
@@ -7368,6 +7410,18 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      log_crm_event: {
+        Args: {
+          _actor_id?: string
+          _actor_label?: string
+          _entity_id: string
+          _entity_type: string
+          _event_type: string
+          _payload?: Json
+          _source?: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       admin_cost_type: "fixed" | "percentage" | "per_job"
