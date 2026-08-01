@@ -394,6 +394,14 @@ export default function AdminIndividualEquipmentPricing() {
               {EQUIPMENT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={supplierFilter} onValueChange={v => { setSupplierFilter(v); setPage(0); }}>
+            <SelectTrigger className="w-44"><SelectValue placeholder="All Suppliers" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Suppliers</SelectItem>
+              <SelectItem value="none">No supplier</SelectItem>
+              {suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <Select value={brandFilter} onValueChange={v => { setBrandFilter(v); setPage(0); }}>
             <SelectTrigger className="w-40"><SelectValue placeholder="All Brands" /></SelectTrigger>
             <SelectContent>
@@ -439,6 +447,10 @@ export default function AdminIndividualEquipmentPricing() {
                 <TableHead className="cursor-pointer select-none text-right" onClick={() => handleSort('price')}>
                   <span className="flex items-center justify-end">Price <SortIcon field="price" /></span>
                 </TableHead>
+                <TableHead>Supplier</TableHead>
+                <TableHead className="cursor-pointer select-none" onClick={() => handleSort('price_updated_at')}>
+                  <span className="flex items-center">Price Updated <SortIcon field="price_updated_at" /></span>
+                </TableHead>
                 <TableHead className="cursor-pointer select-none" onClick={() => handleSort('is_active')}>
                   <span className="flex items-center">Status <SortIcon field="is_active" /></span>
                 </TableHead>
@@ -447,9 +459,9 @@ export default function AdminIndividualEquipmentPricing() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
               ) : pageRows.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No equipment found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">No equipment found</TableCell></TableRow>
               ) : pageRows.map(row => (
                 <TableRow key={row.id} className="hover:bg-muted/50">
                   <TableCell><Checkbox checked={selected.has(row.id)} onCheckedChange={() => toggleSelect(row.id)} /></TableCell>
@@ -464,6 +476,21 @@ export default function AdminIndividualEquipmentPricing() {
                   </TableCell>
                   <TableCell>{row.size}</TableCell>
                   <TableCell className="text-right font-medium">${Number(row.price).toLocaleString('en-US', { minimumFractionDigits: 2 })}</TableCell>
+                  <TableCell className="text-sm">
+                    {row.supplier_id ? (
+                      row.supplier_url ? (
+                        <a href={row.supplier_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
+                          {supplierNameById.get(row.supplier_id) || 'Supplier'}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : (
+                        supplierNameById.get(row.supplier_id) || '—'
+                      )
+                    ) : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell className={`text-sm ${stalenessClass(row.price_updated_at)}`}>
+                    {row.price_updated_at ? formatDate(row.price_updated_at) : '—'}
+                  </TableCell>
                   <TableCell>
                     <Badge variant={row.is_active ? 'default' : 'secondary'}>{row.is_active ? 'Active' : 'Inactive'}</Badge>
                   </TableCell>
@@ -485,7 +512,7 @@ export default function AdminIndividualEquipmentPricing() {
                       </Button>
                       <Button variant="ghost" size="icon" title="Duplicate" onClick={() => {
                         setEditingId(null);
-                        setForm({ brand: row.brand, model_number: row.model_number, type: row.type, size: row.size, price: String(row.price), notes: row.notes || '', is_active: row.is_active });
+                        setForm({ brand: row.brand, model_number: row.model_number, type: row.type, size: row.size, price: String(row.price), notes: row.notes || '', is_active: row.is_active, supplier_id: row.supplier_id || NO_SUPPLIER, supplier_url: row.supplier_url || '' });
                         setDialogOpen(true);
                       }}><Copy className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => openEdit(row)}><Pencil className="h-4 w-4" /></Button>
