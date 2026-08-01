@@ -321,6 +321,9 @@ export default function AdminIndividualEquipmentPricing() {
       if (lines.length < 2) { setImportErrors(['File must have a header row and at least one data row']); return; }
       const errors: string[] = [];
       const rows: Partial<EquipmentRow>[] = [];
+      const headerCols = (lines[0].match(/(".*?"|[^,]+)/g) || []).map(c => c.replace(/^"|"$/g, '').trim().toLowerCase());
+      const supplierIdx = headerCols.findIndex(h => h === 'supplier');
+      const suppliersByName = new Map(suppliers.map(s => [s.name.trim().toLowerCase(), s.id]));
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].match(/(".*?"|[^,]+)/g)?.map(c => c.replace(/^"|"$/g, '').trim()) || [];
         if (cols.length < 4) { errors.push(`Row ${i}: not enough columns`); continue; }
@@ -329,7 +332,15 @@ export default function AdminIndividualEquipmentPricing() {
         const price = parseFloat(priceStr || size || '0');
         if (isNaN(price)) { errors.push(`Row ${i}: invalid price`); continue; }
         const hasSize = cols.length >= 5 && size && isNaN(parseFloat(size));
-        rows.push({ brand, model_number, type, size: hasSize ? size : '', price: cols.length >= 5 ? parseFloat(priceStr) : parseFloat(size), is_active: true });
+        let supplier_id: string | null = null;
+        if (supplierIdx >= 0) {
+          const supplierName = (cols[supplierIdx] || '').trim();
+          if (supplierName) {
+            supplier_id = suppliersByName.get(supplierName.toLowerCase()) ?? null;
+            if (!supplier_id) errors.push(`Row ${i}: supplier "${supplierName}" not found — imported without a supplier`);
+          }
+        }
+        rows.push({ brand, model_number, type, size: hasSize ? size : '', price: cols.length >= 5 ? parseFloat(priceStr) : parseFloat(size), is_active: true, supplier_id });
       }
       setImportRows(rows);
       setImportErrors(errors);
