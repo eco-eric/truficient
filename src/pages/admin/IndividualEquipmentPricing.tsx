@@ -104,6 +104,7 @@ export default function AdminIndividualEquipmentPricing() {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [brandFilter, setBrandFilter] = useState('all');
+  const [supplierFilter, setSupplierFilter] = useState('all');
   const [activeOnly, setActiveOnly] = useState(true);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<number>(25);
@@ -134,6 +135,25 @@ export default function AdminIndividualEquipmentPricing() {
     },
   });
 
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ['crm-suppliers-active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_suppliers')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as SupplierOption[];
+    },
+  });
+
+  const supplierNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    suppliers.forEach(s => map.set(s.id, s.name));
+    return map;
+  }, [suppliers]);
+
   const brands = useMemo(() => [...new Set(equipment.map(e => e.brand))].sort(), [equipment]);
 
   const filtered = useMemo(() => {
@@ -141,20 +161,22 @@ export default function AdminIndividualEquipmentPricing() {
     if (activeOnly) rows = rows.filter(r => r.is_active);
     if (typeFilter !== 'all') rows = rows.filter(r => r.type === typeFilter);
     if (brandFilter !== 'all') rows = rows.filter(r => r.brand === brandFilter);
+    if (supplierFilter === 'none') rows = rows.filter(r => !r.supplier_id);
+    else if (supplierFilter !== 'all') rows = rows.filter(r => r.supplier_id === supplierFilter);
     if (search) {
       const q = search.toLowerCase();
       rows = rows.filter(r => r.brand.toLowerCase().includes(q) || r.model_number.toLowerCase().includes(q) || r.type.toLowerCase().includes(q));
     }
     rows = [...rows].sort((a, b) => {
-      const av = a[sortField];
-      const bv = b[sortField];
+      const av = a[sortField] ?? '';
+      const bv = b[sortField] ?? '';
       if (typeof av === 'string' && typeof bv === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
       if (typeof av === 'number' && typeof bv === 'number') return sortDir === 'asc' ? av - bv : bv - av;
       if (typeof av === 'boolean' && typeof bv === 'boolean') return sortDir === 'asc' ? (av === bv ? 0 : av ? -1 : 1) : (av === bv ? 0 : av ? 1 : -1);
       return 0;
     });
     return rows;
-  }, [equipment, activeOnly, typeFilter, brandFilter, search, sortField, sortDir]);
+  }, [equipment, activeOnly, typeFilter, brandFilter, supplierFilter, search, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageRows = filtered.slice(page * pageSize, (page + 1) * pageSize);
@@ -214,9 +236,21 @@ export default function AdminIndividualEquipmentPricing() {
     return sortDir === 'asc' ? <ArrowUp className="h-3 w-3 ml-1" /> : <ArrowDown className="h-3 w-3 ml-1" />;
   };
 
+  const editingRow = useMemo(() => equipment.find(r => r.id === editingId) || null, [equipment, editingId]);
+
   const openEdit = (row: EquipmentRow) => {
     setEditingId(row.id);
-    setForm({ brand: row.brand, model_number: row.model_number, type: row.type, size: row.size, price: String(row.price), notes: row.notes || '', is_active: row.is_active });
+    setForm({
+      brand: row.brand,
+      model_number: row.model_number,
+      type: row.type,
+      size: row.size,
+      price: String(row.price),
+      notes: row.notes || '',
+      is_active: row.is_active,
+      supplier_id: row.supplier_id || NO_SUPPLIER,
+      supplier_url: row.supplier_url || '',
+    });
     setDialogOpen(true);
   };
 
@@ -231,6 +265,10 @@ export default function AdminIndividualEquipmentPricing() {
       toast({ title: 'Please fill all required fields', variant: 'destructive' });
       return;
     }
+    if (form.supplier_url.trim() && !isValidUrl(form.supplier_url)) {
+      toast({ title: 'Supplier product URL must start with http', variant: 'destructive' });
+      return;
+    }
     upsertMutation.mutate({
       brand: form.brand.trim(),
       model_number: form.model_number.trim(),
@@ -239,6 +277,8 @@ export default function AdminIndividualEquipmentPricing() {
       price: parseFloat(form.price),
       notes: form.notes || null,
       is_active: form.is_active,
+      supplier_id: form.supplier_id === NO_SUPPLIER ? null : form.supplier_id,
+      supplier_url: form.supplier_url.trim() || null,
     });
   };
 
