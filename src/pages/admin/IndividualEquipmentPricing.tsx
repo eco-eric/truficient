@@ -41,7 +41,7 @@ const TYPE_COLORS: Record<string, string> = {
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 200];
 
-type SortField = 'brand' | 'model_number' | 'type' | 'size' | 'price' | 'is_active';
+type SortField = 'brand' | 'model_number' | 'type' | 'size' | 'price' | 'is_active' | 'price_updated_at';
 type SortDir = 'asc' | 'desc';
 
 interface EquipmentRow {
@@ -54,8 +54,17 @@ interface EquipmentRow {
   is_active: boolean;
   sort_order: number;
   notes: string | null;
+  supplier_id: string | null;
+  supplier_url: string | null;
+  price_updated_at: string | null;
+  previous_price: number | null;
   created_at: string;
   updated_at: string;
+}
+
+interface SupplierOption {
+  id: string;
+  name: string;
 }
 
 interface FormData {
@@ -66,9 +75,29 @@ interface FormData {
   price: string;
   notes: string;
   is_active: boolean;
+  supplier_id: string;
+  supplier_url: string;
 }
 
-const emptyForm: FormData = { brand: '', model_number: '', type: 'Air Handler', size: '', price: '', notes: '', is_active: true };
+const NO_SUPPLIER = '__none__';
+
+const emptyForm: FormData = { brand: '', model_number: '', type: 'Air Handler', size: '', price: '', notes: '', is_active: true, supplier_id: NO_SUPPLIER, supplier_url: '' };
+
+const formatDate = (value: string | null | undefined) =>
+  value ? new Date(value).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '';
+
+const daysSince = (value: string | null | undefined) =>
+  value ? Math.floor((Date.now() - new Date(value).getTime()) / 86400000) : null;
+
+const stalenessClass = (value: string | null | undefined) => {
+  const d = daysSince(value);
+  if (d === null) return 'text-muted-foreground';
+  if (d > 180) return 'text-destructive font-medium';
+  if (d > 90) return 'text-amber-600 font-medium';
+  return '';
+};
+
+const isValidUrl = (value: string) => /^https?:\/\/\S+/i.test(value.trim());
 
 export default function AdminIndividualEquipmentPricing() {
   const qc = useQueryClient();
