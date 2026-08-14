@@ -84,73 +84,168 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Optional body: { prefix?: string, expiresIn?: number }
+    // Optional body: { prefix?: string, expiresIn?: number, folders?: string[] }
     const body = await req.json().catch(() => ({} as Record<string, unknown>));
     const rawPrefix = typeof body.prefix === "string" ? body.prefix : "";
     const prefix = rawPrefix.replace(/^\/+|\/+$/g, "").slice(0, 200);
     const expiresIn = typeof body.expiresIn === "number" && body.expiresIn > 0 && body.expiresIn <= 86400
       ? Math.floor(body.expiresIn)
       : 3600;
+    const folderFilter = Array.isArray(body.folders)
+      ? (body.folders as unknown[]).filter((f): f is string => typeof f === "string")
+      : null;
 
-    // --- 1. Recursively enumerate files ---
-    const paths: string[] = [];
-    await listRecursive(admin, prefix, paths);
+    // --- 1. Enumerate immediate subfolders (each becomes its own zip) ---
+    const groups: { name: string; prefix: string }[] = [];
+    const rootFiles: string[] = [];
+    {
+      let offset = 0;
+      const limit = 100;
+      while (true) {
+        const { data, error } = await admin.storage
+          .from(SOURCE_BUCKET)
+          .list(prefix, { limit, offset, sortBy: { column: "name", order: "asc" } });
+        if (error) throw new Error(`list("${prefix}") failed: ${error.message}`);
+        if (!data || data.length === 0) break;
+        for (const entry of data) {
+          if (entry.name === ".emptyFolderPlaceholder") continue;
+          const path = prefix ? `${prefix}/${entry.name}` : entry.name;
+          if (entry.id === null || !entry.metadata) {
+            groups.push({ name: entry.name, prefix: path });
+          } else {
+            rootFiles.push(path);
+          }
+        }
+        if (data.length < limit) break;
+        offset += limit;
+      }
+    }
 
-    if (paths.length === 0) {
-      return new Response(JSON.stringify({ error: "No files found in the attachments bucket", prefix }), {
+    // Second level: for shallow containers like `customer/` and `estimate/`,
+    // zip each child folder separately to keep memory bounded.
+    const finalGroups: { name: string; prefix: string }[] = [];
+    for (const g of groups) {
+      let offset = 0;
+      const limit = 100;
+      const children: { name: string; prefix: string }[] = [];
+      let hasFiles = false;
+      while (true) {
+        const { data, error } = await admin.storage
+          .from(SOURCE_BUCKET)
+          .list(g.prefix, { limit, offset, sortBy: { column: "name", order: "asc" } });
+        if (error) throw new Error(`list("${g.prefix}") failed: ${error.message}`);
+        if (!data || data.length === 0) break;
+        for (const entry of data) {
+          if (entry.name === ".emptyFolderPlaceholder") continue;
+          if (entry.id === null || !entry.metadata) {
+            children.push({ name: `${g.name}-${entry.name}`, prefix: `${g.prefix}/${entry.name}` });
+          } else {
+            hasFiles = true;
+          }
+        }
+        if (data.length < limit) break;
+        offset += limit;
+      }
+      if (children.length > 0) {
+        finalGroups.push(...children);
+        if (hasFiles) finalGroups.push({ name: `${g.name}-root`, prefix: g.prefix });
+      } else {
+        finalGroups.push(g);
+      }
+    }
+    if (rootFiles.length > 0) finalGroups.push({ name: "_root", prefix: prefix || "" });
+
+    const targets = folderFilter
+      ? finalGroups.filter((g) => folderFilter.includes(g.name) || folderFilter.includes(g.prefix))
+      : finalGroups;
+
+    if (targets.length === 0) {
+      return new Response(JSON.stringify({ error: "No folders found in the attachments bucket", prefix }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // --- 2. Download + zip ---
-    const zipWriter = new ZipWriter(new BlobWriter("application/zip"));
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const archives: {
+      folder: string;
+      url: string;
+      path: string;
+      file_count: number;
+      size_bytes: number;
+    }[] = [];
     const skipped: { path: string; reason: string }[] = [];
-    let added = 0;
+    const emptyFolders: string[] = [];
 
-    for (const path of paths) {
-      const { data: file, error: dlErr } = await admin.storage.from(SOURCE_BUCKET).download(path);
-      if (dlErr || !file) {
-        skipped.push({ path, reason: dlErr?.message ?? "download failed" });
+    // --- 2. Zip + upload each folder independently ---
+    for (const group of targets) {
+      const paths: string[] = [];
+      if (group.name === "_root") {
+        paths.push(...rootFiles);
+      } else {
+        await listRecursive(admin, group.prefix, paths);
+      }
+      if (paths.length === 0) {
+        emptyFolders.push(group.name);
         continue;
       }
-      await zipWriter.add(path, new BlobReader(file), { level: 0 });
-      added++;
+
+      const zipWriter = new ZipWriter(new BlobWriter("application/zip"));
+      let added = 0;
+      for (const path of paths) {
+        const { data: file, error: dlErr } = await admin.storage.from(SOURCE_BUCKET).download(path);
+        if (dlErr || !file) {
+          skipped.push({ path, reason: dlErr?.message ?? "download failed" });
+          continue;
+        }
+        await zipWriter.add(path, new BlobReader(file), { level: 0 });
+        added++;
+      }
+      const zipBlob: Blob = await zipWriter.close();
+
+      if (added === 0) {
+        skipped.push({ path: group.prefix, reason: "all downloads failed" });
+        continue;
+      }
+
+      const safeName = group.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80);
+      const zipPath = `${user.id}/${stamp}/${safeName}.zip`;
+      const { error: upErr } = await admin.storage
+        .from(DEST_BUCKET)
+        .upload(zipPath, zipBlob, { contentType: "application/zip", upsert: true });
+      if (upErr) throw new Error(`Zip upload failed for ${group.name}: ${upErr.message}`);
+
+      const { data: signed, error: signErr } = await admin.storage
+        .from(DEST_BUCKET)
+        .createSignedUrl(zipPath, expiresIn, { download: `${safeName}.zip` });
+      if (signErr || !signed?.signedUrl) {
+        throw new Error(`Signed URL failed for ${group.name}: ${signErr?.message ?? "unknown"}`);
+      }
+
+      archives.push({
+        folder: group.name,
+        url: signed.signedUrl,
+        path: zipPath,
+        file_count: added,
+        size_bytes: zipBlob.size,
+      });
     }
 
-    const zipBlob: Blob = await zipWriter.close();
-
-    if (added === 0) {
-      return new Response(JSON.stringify({ error: "All downloads failed", skipped }), {
-        status: 500,
+    if (archives.length === 0) {
+      return new Response(JSON.stringify({ error: "No files found to export", prefix, skipped }), {
+        status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // --- 3. Upload to the temporary export bucket ---
-    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const zipPath = `${user.id}/attachments-${stamp}.zip`;
-    const { error: upErr } = await admin.storage
-      .from(DEST_BUCKET)
-      .upload(zipPath, zipBlob, { contentType: "application/zip", upsert: true });
-    if (upErr) throw new Error(`Zip upload failed: ${upErr.message}`);
-
-    // --- 4. Signed download URL ---
-    const { data: signed, error: signErr } = await admin.storage
-      .from(DEST_BUCKET)
-      .createSignedUrl(zipPath, expiresIn, { download: `attachments-${stamp}.zip` });
-    if (signErr || !signed?.signedUrl) {
-      throw new Error(`Signed URL failed: ${signErr?.message ?? "unknown"}`);
-    }
-
     return new Response(
       JSON.stringify({
-        url: signed.signedUrl,
-        path: zipPath,
-        file_count: added,
-        total_found: paths.length,
-        size_bytes: zipBlob.size,
+        archives,
+        archive_count: archives.length,
+        total_files: archives.reduce((n, a) => n + a.file_count, 0),
+        total_bytes: archives.reduce((n, a) => n + a.size_bytes, 0),
         expires_in: expiresIn,
+        empty_folders: emptyFolders,
         skipped,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
