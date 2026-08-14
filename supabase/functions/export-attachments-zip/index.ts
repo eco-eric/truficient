@@ -166,6 +166,28 @@ Deno.serve(async (req) => {
       });
     }
 
+    // --- listOnly: enumerate folders + file counts, no downloads/zipping ---
+    if (body.listOnly === true) {
+      const folders: { folder: string; prefix: string; file_count: number }[] = [];
+      for (const group of targets) {
+        const paths: string[] = [];
+        if (group.name === "_root") {
+          paths.push(...rootFiles);
+        } else {
+          await listRecursive(admin, group.prefix, paths);
+        }
+        folders.push({ folder: group.name, prefix: group.prefix, file_count: paths.length });
+      }
+      return new Response(
+        JSON.stringify({
+          folders,
+          folder_count: folders.length,
+          total_files: folders.reduce((n, f) => n + f.file_count, 0),
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     const archives: {
       folder: string;
