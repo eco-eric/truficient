@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
         skipped.push({ path, reason: dlErr?.message ?? "download failed" });
         continue;
       }
-      await zipWriter.add(path, new BlobReader(file), { level: 6 });
+      await zipWriter.add(path, new BlobReader(file), { level: 0 });
       added++;
     }
 
