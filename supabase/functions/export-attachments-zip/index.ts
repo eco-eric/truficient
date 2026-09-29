@@ -9,12 +9,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const SOURCE_BUCKET = "attachments";
+const DEFAULT_SOURCE_BUCKET = "attachments";
 const DEST_BUCKET = "attachment-exports";
 const MAX_FILES = 2000;
 
 async function listRecursive(
   supabase: ReturnType<typeof createClient>,
+  bucket: string,
   prefix: string,
   out: string[],
   depth = 0,
@@ -25,7 +26,7 @@ async function listRecursive(
   const limit = 100;
   while (true) {
     const { data, error } = await supabase.storage
-      .from(SOURCE_BUCKET)
+      .from(bucket)
       .list(prefix, { limit, offset, sortBy: { column: "name", order: "asc" } });
     if (error) throw new Error(`list("${prefix}") failed: ${error.message}`);
     if (!data || data.length === 0) break;
@@ -35,7 +36,7 @@ async function listRecursive(
       const path = prefix ? `${prefix}/${entry.name}` : entry.name;
       // Folders come back with a null id / no metadata
       if (entry.id === null || !entry.metadata) {
-        await listRecursive(supabase, path, out, depth + 1);
+        await listRecursive(supabase, bucket, path, out, depth + 1);
       } else if (out.length < MAX_FILES) {
         out.push(path);
       }
@@ -86,6 +87,8 @@ Deno.serve(async (req) => {
 
     // Optional body: { prefix?: string, expiresIn?: number, folders?: string[] }
     const body = await req.json().catch(() => ({} as Record<string, unknown>));
+    const rawBucket = typeof body.bucket === "string" && body.bucket.trim() ? body.bucket.trim() : DEFAULT_SOURCE_BUCKET;
+    const sourceBucket = rawBucket.replace(/^\/+|\/+$/g, "").slice(0, 100);
     const rawPrefix = typeof body.prefix === "string" ? body.prefix : "";
     const prefix = rawPrefix.replace(/^\/+|\/+$/g, "").slice(0, 200);
     const expiresIn = typeof body.expiresIn === "number" && body.expiresIn > 0 && body.expiresIn <= 86400
@@ -103,7 +106,7 @@ Deno.serve(async (req) => {
       const limit = 100;
       while (true) {
         const { data, error } = await admin.storage
-          .from(SOURCE_BUCKET)
+          .from(sourceBucket)
           .list(prefix, { limit, offset, sortBy: { column: "name", order: "asc" } });
         if (error) throw new Error(`list("${prefix}") failed: ${error.message}`);
         if (!data || data.length === 0) break;
@@ -131,7 +134,7 @@ Deno.serve(async (req) => {
       let hasFiles = false;
       while (true) {
         const { data, error } = await admin.storage
-          .from(SOURCE_BUCKET)
+          .from(sourceBucket)
           .list(g.prefix, { limit, offset, sortBy: { column: "name", order: "asc" } });
         if (error) throw new Error(`list("${g.prefix}") failed: ${error.message}`);
         if (!data || data.length === 0) break;
@@ -160,7 +163,7 @@ Deno.serve(async (req) => {
       : finalGroups;
 
     if (targets.length === 0) {
-      return new Response(JSON.stringify({ error: "No folders found in the attachments bucket", prefix }), {
+      return new Response(JSON.stringify({ error: `No folders found in the "${sourceBucket}" bucket`, bucket: sourceBucket, prefix }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -174,16 +177,44 @@ Deno.serve(async (req) => {
         if (group.name === "_root") {
           paths.push(...rootFiles);
         } else {
-          await listRecursive(admin, group.prefix, paths);
+          await listRecursive(admin, sourceBucket, group.prefix, paths);
         }
         folders.push({ folder: group.name, prefix: group.prefix, file_count: paths.length });
       }
       return new Response(
         JSON.stringify({
+          bucket: sourceBucket,
           folders,
           folder_count: folders.length,
           total_files: folders.reduce((n, f) => n + f.file_count, 0),
         }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // --- signedUrlsOnly: return a signed URL per file, no downloads/zipping ---
+    if (body.signedUrlsOnly === true) {
+      const out: { folder: string; path: string; url: string }[] = [];
+      for (const group of targets) {
+        const paths: string[] = [];
+        if (group.name === "_root") {
+          paths.push(...rootFiles);
+        } else {
+          await listRecursive(admin, sourceBucket, group.prefix, paths);
+        }
+        for (let i = 0; i < paths.length; i += 100) {
+          const chunk = paths.slice(i, i + 100);
+          const { data, error } = await admin.storage
+            .from(sourceBucket)
+            .createSignedUrls(chunk, expiresIn);
+          if (error) throw new Error(`Signed URLs failed: ${error.message}`);
+          for (const row of data ?? []) {
+            if (row.signedURL && row.path) out.push({ folder: group.name, path: row.path, url: row.signedURL });
+          }
+        }
+      }
+      return new Response(
+        JSON.stringify({ bucket: sourceBucket, files: out, file_count: out.length, expires_in: expiresIn }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -205,7 +236,7 @@ Deno.serve(async (req) => {
       if (group.name === "_root") {
         paths.push(...rootFiles);
       } else {
-        await listRecursive(admin, group.prefix, paths);
+        await listRecursive(admin, sourceBucket, group.prefix, paths);
       }
       if (paths.length === 0) {
         emptyFolders.push(group.name);
@@ -215,7 +246,7 @@ Deno.serve(async (req) => {
       const zipWriter = new ZipWriter(new BlobWriter("application/zip"));
       let added = 0;
       for (const path of paths) {
-        const { data: file, error: dlErr } = await admin.storage.from(SOURCE_BUCKET).download(path);
+        const { data: file, error: dlErr } = await admin.storage.from(sourceBucket).download(path);
         if (dlErr || !file) {
           skipped.push({ path, reason: dlErr?.message ?? "download failed" });
           continue;
@@ -254,7 +285,7 @@ Deno.serve(async (req) => {
     }
 
     if (archives.length === 0) {
-      return new Response(JSON.stringify({ error: "No files found to export", prefix, skipped }), {
+      return new Response(JSON.stringify({ error: "No files found to export", bucket: sourceBucket, prefix, skipped }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -262,6 +293,7 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({
+        bucket: sourceBucket,
         archives,
         archive_count: archives.length,
         total_files: archives.reduce((n, a) => n + a.file_count, 0),
