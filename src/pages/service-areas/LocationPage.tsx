@@ -12,6 +12,7 @@ import { useLocationGalleryPhotos } from '@/hooks/useLocationGalleryPhotos';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { setSocialMetaTags, cleanCanonicalUrl } from '@/lib/seo/socialMeta';
+import { stripSchemaBlocks } from '@/lib/seo/stripSchemaBlocks';
 import RelatedPages, { fetchRelatedPages, type RelatedPagesData, type RelatedSource } from '@/components/seo/RelatedPages';
 
 /**
@@ -20,7 +21,7 @@ import RelatedPages, { fetchRelatedPages, type RelatedPagesData, type RelatedSou
  * renders as literal visible text instead of hiding them.
  */
 function stripHtmlComments(md: string): string {
-  return md.replace(/<!--[\s\S]*?-->/g, '').replace(/\n{3,}/g, '\n\n').trim();
+  return stripSchemaBlocks(md.replace(/<!--[\s\S]*?-->/g, '')).replace(/\n{3,}/g, '\n\n').trim();
 }
 
 /**

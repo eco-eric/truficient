@@ -1,6 +1,8 @@
 // Parser + validator for Markdown page uploads used by /admin/seo/upload.
 // Format: YAML frontmatter, then a fenced ```json JSON-LD block, then markdown body.
 
+import { stripSchemaBlocks } from './stripSchemaBlocks';
+
 export interface ParsedPage {
   fileName: string;
   raw: string;
@@ -117,7 +119,7 @@ export function parseFile(fileName: string, raw: string): ParsedPage {
   // Strip HTML comments (e.g. "<!-- JSON-LD SCHEMA -->" markers above the
   // fenced json block) — they are not content and react-markdown would
   // render them as literal visible text on the live page.
-  body = body.replace(/<!--[\s\S]*?-->/g, '').replace(/\n{3,}/g, '\n\n').trim();
+  body = stripSchemaBlocks(body.replace(/<!--[\s\S]*?-->/g, '')).replace(/\n{3,}/g, '\n\n').trim();
 
   const bodyWordCount = body.split(/\s+/).filter(Boolean).length;
 
