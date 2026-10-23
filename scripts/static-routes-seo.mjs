@@ -74,6 +74,12 @@ export const STATIC_ROUTES_SEO = [
       'Ductless mini-split design and installation for Dallas-Fort Worth homes. Mitsubishi-certified installers.',
   },
   {
+    path: '/air-sealing-dallas-tx',
+    title: 'Air Sealing & Weatherization in Dallas, TX | Truficient',
+    description:
+      'Dallas attics hit 130°F+ in summer. Air sealing keeps that heat and humidity out, verified with blower door and Duct Blaster tests. Call 214-238-4349.',
+  },
+  {
     path: '/residential-services',
     title: 'Residential HVAC Services Dallas-Fort Worth | Truficient',
     description:

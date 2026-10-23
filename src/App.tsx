@@ -21,6 +21,7 @@ const About = lazy(() => import("./pages/About"));
 const ResidentialServices = lazy(() => import("./pages/services/ResidentialServices"));
 const CommercialServices = lazy(() => import("./pages/services/CommercialServices"));
 const DuctlessServices = lazy(() => import("./pages/services/DuctlessServices"));
+const AirSealingDallas = lazy(() => import("./pages/services/AirSealingDallas"));
 const HvacEstimate = lazy(() => import("./pages/HvacEstimate"));
 const HeatPumpAdvantage = lazy(() => import("./pages/HeatPumpAdvantage"));
 const SizingCalculator = lazy(() => import("./pages/estimators/SizingCalculator"));
@@ -265,7 +266,11 @@ const router = createBrowserRouter([
       { path: "/smart-group-march-g", element: <CampaignLandingPage /> },
       
       { path: "/estimate/preview/:id", element: <PublicEstimatePreview /> },
-      
+
+      // Hand-built content page — MUST stay above the /:locationSlug catch-all,
+      // or LocationPage will swallow it.
+      { path: "/air-sealing-dallas-tx", element: <AirSealingDallas /> },
+
       { path: "/:locationSlug", element: <LocationPage /> },
       
       // Admin Routes
