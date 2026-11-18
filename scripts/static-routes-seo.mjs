@@ -38,6 +38,18 @@ export const STATIC_ROUTES_SEO = [
       'Join the Truficient Energy Solutions team. HVAC technician, installer, and support roles open across Dallas-Fort Worth.',
   },
   {
+    path: '/careers/mini-split-installer',
+    title: 'Mini-Split Installer Jobs in Dallas-Fort Worth | Truficient',
+    description:
+      'Full-time mini-split installer jobs in DFW with a Mitsubishi Diamond Contractor. Hiring lead installers, mid-level installers and helpers. Apply online.',
+  },
+  {
+    path: '/careers/hvac-service-technician',
+    title: 'HVAC Service Technician Jobs in Dallas-Fort Worth | Truficient',
+    description:
+      'Experienced HVAC service technician job in DFW with a Mitsubishi Diamond Contractor. Ductless and multi-zone service, 3+ years experience. Apply online.',
+  },
+  {
     path: '/financing',
     title: 'HVAC Financing Options | Truficient Energy Solutions',
     description:

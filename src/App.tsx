@@ -44,6 +44,7 @@ const ServiceAreasHub = lazy(() => import("./pages/service-areas/ServiceAreasHub
 const ClusterSubHub = lazy(() => import("./pages/service-areas/ClusterSubHub"));
 const LocationPage = lazy(() => import("./pages/service-areas/LocationPage"));
 const Careers = lazy(() => import("./pages/Careers"));
+const JobPage = lazy(() => import("./pages/careers/JobPage"));
 const Financing = lazy(() => import("./pages/Financing"));
 const FreeHvacAgeCheckerFB = lazy(() => import("./pages/landing/FreeHvacAgeCheckerFB"));
 const CampaignLandingPage = lazy(() => import("./pages/landing/CampaignLandingPage"));
@@ -234,6 +235,8 @@ const router = createBrowserRouter([
       { path: "/mini-split-estimate", element: <MiniSplitEstimate /> },
       { path: "/multi-zone-estimate", element: <MultiZoneEstimate /> },
       { path: "/careers", element: <Careers /> },
+      { path: "/careers/mini-split-installer", element: <JobPage slug="mini-split-installer" /> },
+      { path: "/careers/hvac-service-technician", element: <JobPage slug="hvac-service-technician" /> },
       { path: "/careers.html", element: <Careers /> },
       { path: "/financing", element: <Financing /> },
       { path: "/financing.html", element: <Financing /> },
