@@ -103,7 +103,7 @@ export default function MaintenanceContractDetail() {
           <Card><CardContent className="p-6 text-muted-foreground">Equipment from WorkEdge — coming in Phase 2.</CardContent></Card>
         </TabsContent>
         <TabsContent value="billing">
-          <Card><CardContent className="p-6 text-muted-foreground">Otto Pay invoice history — coming in Phase 2.</CardContent></Card>
+          <Card><CardContent className="p-6 text-muted-foreground">OttoPay invoice history — coming in Phase 2.</CardContent></Card>
         </TabsContent>
       </Tabs>
     </div>

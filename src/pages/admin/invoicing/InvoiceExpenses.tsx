@@ -47,7 +47,7 @@ const InvoiceExpenses = () => {
       {/* Actions */}
       <div className="flex gap-2 mb-4">
         <Button variant="outline" onClick={() => window.open(OTTOPAY_APP_URL, '_blank')}>
-          <ExternalLink className="h-4 w-4 mr-1" /> Manage in Otto Pay
+          <ExternalLink className="h-4 w-4 mr-1" /> Manage in OttoPay
         </Button>
       </div>
 

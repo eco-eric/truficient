@@ -126,7 +126,7 @@ const InvoicesList = () => {
           </SelectContent>
         </Select>
         <Button variant="outline" size="sm" onClick={exportCSV}><Download className="h-4 w-4 mr-1" /> Export</Button>
-        <Button variant="outline" onClick={() => window.open(OTTOPAY_APP_URL, '_blank')}><ExternalLink className="h-4 w-4 mr-1" /> Manage in Otto Pay</Button>
+        <Button variant="outline" onClick={() => window.open(OTTOPAY_APP_URL, '_blank')}><ExternalLink className="h-4 w-4 mr-1" /> Manage in OttoPay</Button>
       </div>
 
       {/* Status Tabs */}
@@ -181,7 +181,7 @@ const InvoicesList = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedInvoice(inv); }}><Eye className="h-4 w-4 mr-2" /> View</DropdownMenuItem>
-                            <DropdownMenuItem onClick={e => { e.stopPropagation(); window.open(OTTOPAY_APP_URL, '_blank'); }}><ExternalLink className="h-4 w-4 mr-2" /> Manage in Otto Pay</DropdownMenuItem>
+                            <DropdownMenuItem onClick={e => { e.stopPropagation(); window.open(OTTOPAY_APP_URL, '_blank'); }}><ExternalLink className="h-4 w-4 mr-2" /> Manage in OttoPay</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -288,7 +288,7 @@ const InvoicesList = () => {
                     <Printer className="h-4 w-4 mr-1" /> Print / PDF
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => window.open(OTTOPAY_APP_URL, '_blank')}>
-                    <ExternalLink className="h-4 w-4 mr-1" /> Manage in Otto Pay
+                    <ExternalLink className="h-4 w-4 mr-1" /> Manage in OttoPay
                   </Button>
                 </div>
               </div>
