@@ -157,12 +157,12 @@ export function ExampleDataPlates() {
       >
         <img 
           src={workedgeProLogo} 
-          alt="Workedge Pro" 
+          alt="WorkEdge Pro" 
           className="w-8 h-8 object-contain flex-shrink-0"
         />
         <p className="text-sm text-center">
           <span className="text-muted-foreground">Scanner powered by </span>
-          <span className="font-semibold text-primary">Workedge Pro</span>
+          <span className="font-semibold text-primary">WorkEdge Pro</span>
         </p>
       </a>
 

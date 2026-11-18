@@ -105,7 +105,7 @@ const OttoEstimatesList = () => {
             <SelectItem value="90days">Last 90 Days</SelectItem>
           </SelectContent>
         </Select>
-        <Button variant="outline" onClick={() => window.open(OTTOPAY_APP_URL, '_blank')}><ExternalLink className="h-4 w-4 mr-1" /> Manage in Otto Pay</Button>
+        <Button variant="outline" onClick={() => window.open(OTTOPAY_APP_URL, '_blank')}><ExternalLink className="h-4 w-4 mr-1" /> Manage in OttoPay</Button>
       </div>
 
       {/* Status Tabs */}
@@ -153,7 +153,7 @@ const OttoEstimatesList = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedEstimate(est); }}><Eye className="h-4 w-4 mr-2" /> View</DropdownMenuItem>
-                          <DropdownMenuItem onClick={e => { e.stopPropagation(); window.open(OTTOPAY_APP_URL, '_blank'); }}><ExternalLink className="h-4 w-4 mr-2" /> Manage in Otto Pay</DropdownMenuItem>
+                          <DropdownMenuItem onClick={e => { e.stopPropagation(); window.open(OTTOPAY_APP_URL, '_blank'); }}><ExternalLink className="h-4 w-4 mr-2" /> Manage in OttoPay</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -235,7 +235,7 @@ const OttoEstimatesList = () => {
                     <Printer className="h-4 w-4 mr-1" /> Print / PDF
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => window.open(OTTOPAY_APP_URL, '_blank')}>
-                    <ExternalLink className="h-4 w-4 mr-1" /> Manage in Otto Pay
+                    <ExternalLink className="h-4 w-4 mr-1" /> Manage in OttoPay
                   </Button>
                 </div>
               </div>

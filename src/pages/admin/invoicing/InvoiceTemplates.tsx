@@ -22,7 +22,7 @@ const InvoiceTemplates = () => {
       <div className="flex justify-between items-center mb-6">
         <p className="text-sm text-muted-foreground">{(templates || []).length} templates</p>
         <Button variant="outline" onClick={() => window.open(OTTOPAY_APP_URL, '_blank')}>
-          <ExternalLink className="h-4 w-4 mr-1" /> Manage in Otto Pay
+          <ExternalLink className="h-4 w-4 mr-1" /> Manage in OttoPay
         </Button>
       </div>
 
@@ -63,7 +63,7 @@ const InvoiceTemplates = () => {
               </Table>
               <div className="mt-6">
                 <Button variant="outline" size="sm" onClick={() => window.open(OTTOPAY_APP_URL, '_blank')}>
-                  <ExternalLink className="h-4 w-4 mr-1" /> Edit in Otto Pay
+                  <ExternalLink className="h-4 w-4 mr-1" /> Edit in OttoPay
                 </Button>
               </div>
             </>

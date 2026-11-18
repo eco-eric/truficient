@@ -28,12 +28,12 @@ export const WorkEdgeBanner = ({ location, variant = 'default' }: WorkEdgeBanner
       >
         <img 
           src={workedgeProLogo} 
-          alt="Workedge Pro" 
+          alt="WorkEdge Pro" 
           className="w-12 h-12 object-contain flex-shrink-0"
         />
         <p className="text-sm">
           <span className="text-muted-foreground">Powered by </span>
-          <span className="font-bold text-primary">Workedge Pro</span>
+          <span className="font-bold text-primary">WorkEdge Pro</span>
           <span className="text-muted-foreground"> – A Field Documentation App for Service Pros.</span>
         </p>
       </a>
@@ -50,11 +50,11 @@ export const WorkEdgeBanner = ({ location, variant = 'default' }: WorkEdgeBanner
     >
       <img 
         src={workedgeProLogo} 
-        alt="Workedge Pro" 
+        alt="WorkEdge Pro" 
         className="w-12 h-12 object-contain flex-shrink-0"
       />
       <p className="text-sm text-amber-800 dark:text-amber-200">
-        <strong className="font-medium">Powered by Workedge Pro</strong> – A Field Documentation App for Service Pros.
+        <strong className="font-medium">Powered by WorkEdge Pro</strong> – A Field Documentation App for Service Pros.
       </p>
     </a>
   );
